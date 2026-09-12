@@ -1,0 +1,1 @@
+.window{position:fixed;inset:0;background:#000}.fullscreen{position:absolute;z-index:10;right:.8rem;bottom:.8rem;display:grid;width:2.35rem;height:2.35rem;place-items:center;border:1px solid #ffffff20;background:#090a0dcc;color:#ddd;opacity:.12;transition:opacity .2s}.fullscreen:hover{opacity:1}.fullscreen svg{width:1rem}

@@ -1,0 +1,131 @@
+.shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--primary) 25%, var(--border));
+  background: color-mix(in oklch, var(--background) 96%, var(--primary));
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--background) 80%, transparent);
+}
+
+.pageBar { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.pageTabs { display: flex; gap: 0.35rem; }
+.pageTab { padding: 0.5rem 0.75rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.pageTab[aria-selected='true'] { border-color: var(--primary); color: var(--primary); }
+.addPageButton { display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; border: 0; background: transparent; color: var(--primary); font-size: 0.75rem; cursor: pointer; }
+.addPageButton svg { width: 0.9rem; height: 0.9rem; }
+.pageNameRow { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.75rem; font-size: 0.75rem; }
+.pageNameRow label { color: var(--muted-foreground); }
+.pageNameRow input { min-width: 0; flex: 1; border: 1px solid var(--border); background: transparent; padding: 0.4rem 0.55rem; outline: none; }
+.pageNameRow input:focus { border-color: var(--primary); }
+.pageNameRow button { display: inline-flex; align-items: center; gap: 0.3rem; border: 0; background: transparent; color: var(--destructive); cursor: pointer; }
+.pageNameRow button svg { width: 0.85rem; height: 0.85rem; }
+
+.shell:focus-within {
+  border-color: color-mix(in oklch, var(--primary) 65%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 16%, transparent);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--primary) 20%, var(--border));
+  background: color-mix(in oklch, var(--primary) 5%, var(--background));
+}
+.formatButtons { display: flex; align-items: center; gap: 0.3rem; }
+.formatButtons button { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid var(--border); background: transparent; color: var(--foreground); cursor: pointer; }
+.formatButtons button[aria-pressed='true'] { border-color: var(--primary); background: color-mix(in oklch, var(--primary) 14%, transparent); color: var(--primary); }
+.formatButtons button:hover, .formatButtons button:focus-visible { border-color: var(--primary); outline: none; }
+.formatButtons button svg { width: 0.95rem; height: 0.95rem; }
+.formatButtons span { margin-left: 0.3rem; color: var(--muted-foreground); font-size: 0.68rem; }
+
+.toolbarTitle {
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toolbarHint {
+  margin-top: 0.15rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.addButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 55%, transparent);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.addButton:hover,
+.addButton:focus-visible {
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  outline: none;
+}
+
+.addButton:disabled { opacity: 0.45; cursor: default; }
+.addButton svg { width: 0.9rem; height: 0.9rem; }
+
+.deleteBlockButton {
+  position: absolute;
+  right: 1rem;
+  z-index: 2;
+  display: grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--destructive) 55%, transparent);
+  background: color-mix(in oklch, var(--background) 92%, transparent);
+  color: var(--destructive);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.deleteBlockButton:hover,
+.deleteBlockButton:focus-visible {
+  background: color-mix(in oklch, var(--destructive) 14%, var(--background));
+  outline: none;
+}
+
+.editor {
+  min-height: 18rem;
+  padding: 0.9rem 0.75rem 5rem;
+  outline: none;
+}
+
+.editor > * {
+  position: relative;
+  min-height: 3.5rem;
+  margin-top: 0 !important;
+  padding: 0.7rem 2.6rem 0.7rem 0.85rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 16%, var(--border));
+  background: color-mix(in oklch, var(--background) 98%, var(--primary));
+}
+
+.editor > p { min-height: 5.5rem; }
+.editor > * + * { margin-top: 0.75rem !important; }
+
+.editor > *:hover {
+  border-color: color-mix(in oklch, var(--primary) 42%, transparent);
+  background: color-mix(in oklch, var(--primary) 5%, transparent);
+}
+
+@media (max-width: 32rem) {
+  .toolbar { align-items: flex-start; }
+  .toolbarHint { max-width: 13rem; }
+  .addButton { padding-inline: 0.5rem; }
+  .formatButtons span { display: none; }
+  .pageNameRow { flex-wrap: wrap; }
+}

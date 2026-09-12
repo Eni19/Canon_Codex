@@ -1,0 +1,329 @@
+.page {
+  container: character-page / inline-size;
+  max-width: 100rem;
+  margin-inline: auto;
+}
+
+.composition {
+  display: grid;
+  grid-template-areas: 'identity' 'metadata' 'summary' 'portrait' 'details' 'content';
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.composition > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.identity {
+  grid-area: identity;
+  align-self: end;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--primary) 60%, transparent);
+}
+
+.metadata {
+  grid-area: metadata;
+  margin-top: -1rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.art {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  transform: translateX(clamp(-2.5rem, -3cqw, -0.75rem));
+}
+
+.name {
+  font-size: clamp(2rem, 1.5rem + 2cqw, 3.5rem);
+  line-height: 1.1;
+}
+
+.summary {
+  grid-area: summary;
+  display: grid;
+  grid-template-columns: minmax(5.75rem, 0.95fr) minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: end;
+  align-content: end;
+  gap: 0.75rem 0.65rem;
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.summary dt { font-size: 0.625rem; letter-spacing: 0.03em; }
+
+.portrait {
+  grid-area: portrait;
+  width: 100%;
+  max-width: 28rem;
+  justify-self: center;
+  align-self: start;
+  position: relative;
+  z-index: auto;
+}
+
+.identity,
+.metadata,
+.details,
+.summary,
+.content {
+  position: relative;
+  z-index: 2;
+}
+
+.personalityBox {
+  min-height: 4rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.details {
+  grid-area: details;
+  min-height: 0;
+  padding-block: 1rem;
+}
+
+.storyScroll {
+  height: clamp(20rem, calc(100dvh - 17.5rem), 42rem);
+   padding-left: 0.65rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: transparent;
+  outline: none;
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+  direction: rtl;
+}
+
+.storyScroll > * { direction: ltr; }
+
+.storyScroll:hover,
+.storyScroll:focus-visible {
+  scrollbar-color: color-mix(in oklch, var(--primary) 38%, transparent) transparent;
+}
+
+.storyScroll:focus-visible {
+  box-shadow: inset 2px 0 0 color-mix(in oklch, var(--primary) 28%, transparent);
+}
+
+.storyScroll :global(.tiptap-content) {
+  padding-bottom: 1.5rem;
+  font-size: clamp(0.875rem, 0.82rem + 0.15cqw, 1rem);
+  line-height: 1.75;
+}
+
+@container character-page (max-width: 39.999rem) {
+  .storyScroll { height: min(65dvh, 34rem); }
+}
+
+.attributeGroup {
+  position: relative;
+}
+.attributeTrigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  cursor: help;
+  background: transparent;
+  border: 0;
+}
+.attributeTrigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.attributeHint {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--primary);
+  background: var(--background);
+  color: var(--primary);
+  font-size: 0.75rem;
+}
+@media (hover: hover) {
+  .attributeHint { opacity: 0; }
+  .attributeTrigger:focus-visible .attributeHint { opacity: 1; }
+}
+.attributePanel {
+  position: absolute;
+  z-index: 5;
+  top: 24%;
+  right: 0;
+  width: min(22rem, 100%);
+  padding: 0.75rem 1rem 1rem 0.25rem;
+  visibility: hidden;
+  pointer-events: none;
+  transform: perspective(58rem) rotateY(-9deg) translateZ(0);
+  transform-origin: right center;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0.55rem 0.35rem 0.65rem color-mix(in oklch, var(--background) 78%, transparent));
+  backface-visibility: hidden;
+}
+.attributePanel[data-open='true'] { pointer-events: auto; }
+.attributePanel [data-attribute-item] { opacity: 0; transform: translateX(18px); }
+.attributeTitle {
+  display: inline-block;
+  margin: 0 0 1.25rem;
+  padding: 0.45rem 2rem 0.45rem 1rem;
+  clip-path: polygon(0 0, 100% 9%, 92% 45%, 96% 100%, 3% 91%);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  box-shadow: 0.35rem 0.3rem 0 color-mix(in oklch, var(--primary) 28%, var(--background));
+}
+.attributeList { display: grid; gap: 0.8rem; margin: 0; }
+.attributeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0 0.25rem;
+  padding: 0.25rem 0.375rem;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--background) 96%, transparent), color-mix(in oklch, var(--background) 70%, transparent));
+  box-shadow: 0.4rem 0.35rem 0 color-mix(in oklch, var(--primary) 9%, var(--background));
+}
+.attributeRow:nth-child(2) { margin-left: 0.75rem; }
+.attributeRow:nth-child(3) { margin-left: 1.25rem; }
+.attributeRow:nth-child(4) { margin-left: 1.75rem; }
+.attributeRow:nth-child(5) { margin-left: 2.25rem; }
+.attributeRow dt {
+  color: var(--foreground);
+  font-family: var(--font-serif);
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+.attributeRow dd { min-width: 0; margin: 0; }
+.attributeValue,
+.attributeDiamond {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.875rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: var(--font-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+  clip-path: polygon(0.6rem 0, 100% 0, 100% calc(100% - 0.6rem), calc(100% - 0.6rem) 100%, 0 100%, 0 0.6rem);
+}
+.attributeDiamond {
+  width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+  font-size: 1.05rem;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+a.attributeValue:hover { text-decoration: underline; }
+a.attributeValue:focus-visible { outline: none; text-decoration: underline; box-shadow: inset 0 0 0 3px var(--foreground); }
+@media (prefers-reduced-motion: reduce) {
+  .attributePanel [data-attribute-item] { transform: none; }
+}
+
+@container character-page (max-width: 39.999rem) {
+  .attributePanel { transform: perspective(58rem) rotateY(-9deg); }
+}
+
+.content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rule {
+  display: none;
+  pointer-events: none;
+}
+
+/* Use the space remaining after the sidebar, rather than the window breakpoint. */
+@container character-page (min-width: 40rem) {
+  .composition {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'identity summary' 'metadata .' 'details portrait' 'content content';
+    align-items: start;
+    column-gap: 2rem;
+  }
+
+  .identity,
+  .summary {
+    align-self: stretch;
+    align-items: end;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid color-mix(in oklch, var(--primary) 60%, transparent);
+  }
+  .identity { display: flex; }
+}
+
+@container character-page (min-width: 54rem) {
+  .composition {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-areas: 'identity portrait summary' 'metadata portrait content' 'details portrait content';
+    grid-template-rows: minmax(clamp(7rem, 13cqw, 13rem), auto) auto 1fr;
+    gap: 0.5rem clamp(1.5rem, 2.5cqw, 2.5rem);
+  }
+
+  .identity,
+  .summary {
+    border: 0;
+  }
+
+  .identity {
+    justify-content: end;
+    text-align: right;
+  }
+
+  .portrait {
+    max-width: none;
+  }
+  .attributePanel {
+    right: auto;
+    left: calc(100% - 3rem);
+    transform: perspective(58rem) rotateY(-15deg) translateZ(0);
+  }
+
+  .art {
+    aspect-ratio: auto;
+    height: var(--portrait-viewport-height, calc(100dvh - 5rem));
+  }
+
+  .metadata {
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .badges {
+    justify-content: end;
+  }
+
+  .content {
+    padding-top: 1rem;
+  }
+
+  .rule {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    align-self: end;
+    height: 1px;
+    background: color-mix(in oklch, var(--primary) 60%, transparent);
+  }
+}

@@ -1,0 +1,14 @@
+import Link from 'next/link'
+import { connection } from 'next/server'
+import { ArrowRight, Clapperboard } from 'lucide-react'
+import { SceneCreateForm, type SceneLocationOption } from '@/components/scenes/scene-create-form'
+import { SceneListActions } from '@/components/scenes/scene-list-actions'
+import { getAssetStore, getSceneRepository, getWorldRepository } from '@/repositories'
+import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
+export default async function ScenesPage() {
+  await connection(); const world = await getCurrentWorld(), repo = getWorldRepository()
+  const [scenes, locations] = await Promise.all([getSceneRepository().listScenes(world.id), repo.listEntities(world.id, { type: 'location' })])
+  const locationOptions: SceneLocationOption[] = await Promise.all(locations.map(async (l) => { const ids = [...new Set([l.coverAssetId, ...(l.galleryAssetIds ?? [])].filter((id): id is string => Boolean(id)))]; const assets = await Promise.all(ids.map(async (id, i) => ({ id, label: (await getAssetStore().getAsset(world.id, id))?.originalFilename ?? `Imagem ${i + 1}` }))); return { id: l.id, title: l.title, assets } }))
+  const locationTitles = new Map(locations.map((l) => [l.id, l.title]))
+  return <div className="mx-auto max-w-6xl px-5 py-8 md:px-10"><header className="mb-8 border-b pb-5"><p className="text-xs font-semibold tracking-[.22em] text-primary uppercase">Theater of Mind</p><h1 className="mt-2 font-serif text-4xl font-semibold">Cenas</h1><p className="mt-2 text-sm text-muted-foreground">Coloque seu mundo em cena para narrar, movimentar e revelar.</p></header><div className="grid gap-8 lg:grid-cols-[1fr_20rem]"><section>{scenes.length ? <div className="grid gap-4 sm:grid-cols-2">{scenes.map((s) => <article key={s.id} className="border bg-card/50 p-5"><div className="flex justify-between"><div><p className="text-[.6rem] tracking-[.18em] text-primary uppercase">{locationTitles.get(s.background.locationId) ?? 'Local indisponível'}</p><h2 className="mt-1 font-serif text-xl">{s.title}</h2></div><SceneListActions id={s.id} title={s.title} /></div>{s.description && <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{s.description}</p>}<Link href={`/scenes/${s.id}`} className="mt-5 flex items-center justify-between border-t pt-3 text-sm hover:text-primary">Abrir cena <ArrowRight className="size-4" /></Link></article>)}</div> : <div className="grid min-h-72 place-items-center border border-dashed text-center"><div><Clapperboard className="mx-auto mb-3 size-10 text-primary" /><h2 className="font-serif text-2xl">Nenhuma cena preparada</h2></div></div>}</section><aside className="h-fit border bg-card/40 p-5"><h2 className="mb-5 font-serif text-xl">Preparar nova cena</h2><SceneCreateForm locations={locationOptions} /></aside></div></div>
+}

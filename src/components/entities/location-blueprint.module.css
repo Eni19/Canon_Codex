@@ -1,0 +1,69 @@
+.desk {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100dvh - 3rem);
+  overflow: hidden;
+  background-color: var(--background);
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--primary) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--primary) 5%, transparent) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+}
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+.copy { position: relative; z-index: 2; max-width: 46rem; }
+.boardSlot { position: relative; z-index: 3; min-height: 20rem; }
+.board {
+  position: relative;
+  width: min(100%, 38rem);
+  aspect-ratio: 16 / 10;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--primary) 58%, transparent);
+  background-color: oklch(0.22 0.045 235);
+  background-image:
+    linear-gradient(oklch(0.82 0.09 210 / 12%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.82 0.09 210 / 12%) 1px, transparent 1px);
+  background-size: 1.5rem 1.5rem;
+  box-shadow: 0.8rem 1rem 2rem oklch(0 0 0 / 45%), inset 0 0 0 0.3rem oklch(0.82 0.09 210 / 8%);
+  transform: rotate(2.5deg);
+  cursor: zoom-in;
+}
+.board::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: oklch(0.28 0.06 230 / 18%); mix-blend-mode: color; }
+.image { object-fit: contain; filter: saturate(0.55) contrast(1.08) sepia(0.08); }
+.pin { position: absolute; z-index: 3; display: grid; width: 2rem; height: 2rem; translate: -50% -50%; place-items: center; border: 2px solid white; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); font-weight: 800; box-shadow: 0 0 0 0.3rem color-mix(in oklch, var(--primary) 25%, transparent); }
+.overlay { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; padding: 4rem; background: oklch(0.08 0.015 240 / 88%); backdrop-filter: blur(8px); }
+.viewer {
+  width: min(76rem, 88vw);
+  max-height: calc(100dvh - 5rem);
+  padding: 0.25rem 0.75rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+}
+.viewer:hover,
+.viewer:focus-within { scrollbar-color: color-mix(in oklch, var(--primary) 45%, transparent) transparent; }
+.viewerBoard { width: 100%; transform: none; cursor: default; }
+.close { position: fixed; z-index: 1002; top: 1.5rem; right: 1.5rem; }
+.legend { margin-top: 1rem; overflow: hidden; border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent); background: color-mix(in oklch, var(--background) 94%, transparent); }
+.pointHeader { padding: 0.75rem 1rem; background: color-mix(in oklch, var(--background) 82%, black); border-bottom: 2px solid var(--primary); }
+.pointTable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pointTable th { padding: 0.45rem 0.65rem; background: color-mix(in oklch, var(--primary) 14%, var(--background)); color: var(--primary); text-align: left; text-transform: uppercase; letter-spacing: 0.04em; }
+.pointTable td { padding: 0.55rem 0.65rem; border-top: 1px solid color-mix(in oklch, var(--primary) 18%, transparent); vertical-align: top; }
+.pointTable tr:nth-child(even) td { background: color-mix(in oklch, var(--primary) 5%, transparent); }
+.pointContext { padding: 0.75rem 1rem; border-top: 1px solid color-mix(in oklch, var(--primary) 24%, transparent); color: var(--muted-foreground); font-size: 0.8rem; line-height: 1.55; white-space: pre-wrap; }
+.sectionTitle { width: fit-content; margin-bottom: 0.75rem; padding: 0.25rem 1.4rem 0.25rem 0.65rem; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); background: var(--primary); color: var(--primary-foreground); font-family: var(--font-serif); text-transform: uppercase; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; }
+.card { border-top: 1px solid color-mix(in oklch, var(--primary) 48%, transparent); background: color-mix(in oklch, var(--background) 94%, var(--primary)); padding: 0.8rem; }
+@media (min-width: 64rem) {
+  .layout { grid-template-columns: minmax(24rem, 0.9fr) minmax(30rem, 1.1fr); align-items: start; }
+  .boardSlot { position: sticky; top: 2rem; min-height: 32rem; }
+  .board { width: min(43vw, 46rem); margin-right: -2rem; transform: rotate(3deg); }
+  .viewerBoard { width: 100%; margin-inline: auto; transform: none; }
+}
+@media (max-width: 39.999rem) {
+  .overlay { padding: 3.5rem 0.75rem 1rem; }
+  .viewer { width: 100%; max-height: calc(100dvh - 4.5rem); padding-inline: 0.25rem; }
+}
+@media (prefers-reduced-motion: reduce) { .board { transform: none; } }

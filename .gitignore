@@ -1,8 +1,6 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
-/.pnp
+/node_modules/
+/.pnp/
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -10,32 +8,47 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# build and test output
 /.next/
 /out/
+/build/
+/coverage/
+*.tsbuildinfo
+next-env.d.ts
 
-# production
-/build
+# Canon Codex user data
+# Worlds, entities, uploaded images, boards, scenes and internal trash are private local data.
+/workspace/
 
-# misc
-.DS_Store
-*.pem
+# local agent and editor configuration
+/.agents/
+/.claude/
+/.cod/
+/.codex/
+/.idea/
+/.vscode/
 
-# debug
+# environment files
+.env*
+!.env.example
+
+# deployment
+.vercel/
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# credentials and certificates
+*.pem
+*.key
+*.p12
+*.pfx
