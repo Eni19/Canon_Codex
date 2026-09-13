@@ -1,10 +1,16 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowRight, BookOpen } from 'lucide-react'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { Badge } from '@/components/ui/badge'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import styles from './entity-card.module.css'
+
+function text(value: unknown) {
+  return typeof value === 'string' ? value : ''
+}
 
 export function EntityCard({
   entity,
@@ -17,19 +23,31 @@ export function EntityCard({
   showTypeLabel?: boolean
   contextLabel?: string
 }) {
+  if (entityType.id === 'concept') {
+    const summary = text(entity.properties.summary)
+    const category = text(entity.properties.category)
+    return <Link href={`/entity/${entity.id}`} className={styles.conceptCard}>
+      <header><span><BookOpen />CONCEITO</span>{category && <em>{category}</em>}</header>
+      <h3>{entity.title}</h3>
+      {summary && <p>{summary}</p>}
+      <footer><span>{entity.status || entity.tags.slice(0, 2).join(' · ') || 'Referência'}</span><ArrowRight /></footer>
+    </Link>
+  }
+
   return (
     <Link
       href={`/entity/${entity.id}`}
       className="group flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <div className="relative aspect-4/3 w-full shrink-0 bg-muted">
+      <div className={`relative w-full shrink-0 bg-muted ${entityType.id === 'tale' ? 'aspect-3/4' : 'aspect-4/3'}`}>
         {entity.coverAssetId ? (
           <Image
-            src={assetVariantUrl(entity.coverAssetId, 'thumbnail')}
+            src={assetVariantUrl(entity.coverAssetId, entityType.id === 'tale' ? 'original' : 'thumbnail')}
             alt=""
             fill
             sizes="(max-width: 640px) 50vw, 240px"
             className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -48,11 +66,7 @@ export function EntityCard({
         <h3 className="font-serif text-base leading-snug font-medium text-balance">{entity.title}</h3>
         {entity.tags.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1 pt-1">
-            {entity.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-[10px]">
-                {tag}
-              </Badge>
-            ))}
+            {entity.tags.slice(0, 3).map((tag) => <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>)}
           </div>
         )}
       </div>

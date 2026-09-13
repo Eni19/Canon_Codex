@@ -11,7 +11,17 @@ import styles from './content-editor.module.css'
 
 const emptyBody: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
 
-export function ContentEditor({ content, theme }: { content: ContentDocument; theme?: CharacterTheme }) {
+export function ContentEditor({
+  content,
+  theme,
+  maxPages = 2,
+  pageNoun = 'página',
+}: {
+  content: ContentDocument
+  theme?: CharacterTheme
+  maxPages?: number
+  pageNoun?: 'página' | 'capítulo'
+}) {
   const [pages, setPages] = useState<ContentPage[]>(content.pages)
   const [activeId, setActiveId] = useState(content.pages[0].id)
   const activePage = pages.find((page) => page.id === activeId) ?? pages[0]
@@ -21,8 +31,9 @@ export function ContentEditor({ content, theme }: { content: ContentDocument; th
   }
 
   function addPage() {
-    if (pages.length >= 2) return
-    const page: ContentPage = { id: crypto.randomUUID(), title: 'Página 2', body: emptyBody }
+    if (pages.length >= maxPages) return
+    const nextNumber = pages.length + 1
+    const page: ContentPage = { id: crypto.randomUUID(), title: pageNoun === 'capítulo' ? `Capítulo ${nextNumber}` : `Página ${nextNumber}`, body: emptyBody }
     setPages((current) => [...current, page])
     setActiveId(page.id)
   }
@@ -43,10 +54,10 @@ export function ContentEditor({ content, theme }: { content: ContentDocument; th
               className={styles.pageTab} onClick={() => setActiveId(page.id)}>{page.title}</button>
           ))}
         </div>
-        {pages.length < 2 && <button type="button" className={styles.addPageButton} onClick={addPage}><Plus aria-hidden="true" /> Nova página</button>}
+        {pages.length < maxPages && <button type="button" className={styles.addPageButton} onClick={addPage}><Plus aria-hidden="true" /> Novo {pageNoun}</button>}
       </div>
       <div className={styles.pageNameRow}>
-        <label htmlFor={`content-page-${activePage.id}`}>Nome da página</label>
+        <label htmlFor={`content-page-${activePage.id}`}>Nome do {pageNoun}</label>
         <input id={`content-page-${activePage.id}`} value={activePage.title} maxLength={40}
           onChange={(event) => updatePage({ title: event.target.value || 'Sem título' })} />
         {pages.length > 1 && <button type="button" onClick={removeActivePage}><Trash2 aria-hidden="true" /> Excluir página</button>}

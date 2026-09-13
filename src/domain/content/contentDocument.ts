@@ -16,7 +16,7 @@ export type ContentPage = z.infer<typeof ContentPageSchema>
 export const ContentDocumentSchema = z.object({
   format: z.literal('tiptap-json'),
   schemaVersion: z.number().int(),
-  pages: ContentPageSchema.array().min(1).max(2),
+  pages: ContentPageSchema.array().min(1).max(50),
 })
 export type ContentDocument = z.infer<typeof ContentDocumentSchema>
 

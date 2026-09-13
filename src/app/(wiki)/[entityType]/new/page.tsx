@@ -44,7 +44,7 @@ export default async function NewEntityPage(props: PageProps<'/[entityType]/new'
           <Input id="tags" name="tags" />
         </div>
         <div>
-          {(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology') && <CharacterThemePicker label={entityType.id === 'location' ? 'Cor do local' : entityType.id === 'creature' ? 'Cor da criatura' : entityType.id === 'cosmology' ? 'Paleta da entidade' : 'Cor do personagem'} />}
+          {(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' || entityType.id === 'tale') && <CharacterThemePicker label={entityType.id === 'location' ? 'Cor do local' : entityType.id === 'creature' ? 'Cor da criatura' : entityType.id === 'cosmology' ? 'Paleta da entidade' : entityType.id === 'tale' ? 'Cor editorial' : 'Cor do personagem'} />}
         </div>
         <div>
           <Button type="submit">Criar e continuar editando</Button>

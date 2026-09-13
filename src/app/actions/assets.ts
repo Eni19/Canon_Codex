@@ -73,3 +73,22 @@ export async function importCosmologySymbolAction(entityId: string, formData: Fo
   revalidatePath('/entity/' + entityId)
   revalidatePath('/entity/' + entityId + '/edit')
 }
+async function removeAssetWhenUnused(worldId: string, assetId: string) {
+  const entities = await getWorldRepository().listEntities(worldId)
+  if (!isAssetReferenced(entities, assetId)) await getAssetStore().removeAsset(worldId, assetId)
+}
+
+export async function removeCoverImageAction(entityId: string): Promise<void> {
+  const world = await getCurrentWorld()
+  const repo = getWorldRepository()
+  const entity = await repo.getEntity(world.id, entityId)
+  if (!entity) notFound()
+  if (!entity.coverAssetId) return
+
+  const previousAssetId = entity.coverAssetId
+  await repo.updateEntity(world.id, entityId, { coverAssetId: null })
+  await removeAssetWhenUnused(world.id, previousAssetId)
+  revalidatePath('/' + entity.type)
+  revalidatePath('/entity/' + entityId)
+  revalidatePath('/entity/' + entityId + '/edit')
+}

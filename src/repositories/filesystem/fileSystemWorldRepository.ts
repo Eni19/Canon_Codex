@@ -121,7 +121,7 @@ export class FileSystemWorldRepository implements WorldRepository {
       ...(parsedPatch.tags !== undefined ? { tags: parsedPatch.tags } : {}),
       ...(parsedPatch.status !== undefined ? { status: parsedPatch.status } : {}),
       ...(parsedPatch.theme !== undefined ? { theme: parsedPatch.theme } : {}),
-      ...(parsedPatch.coverAssetId !== undefined ? { coverAssetId: parsedPatch.coverAssetId } : {}),
+      ...(parsedPatch.coverAssetId !== undefined ? { coverAssetId: parsedPatch.coverAssetId ?? undefined } : {}),
       ...(parsedPatch.galleryAssetIds !== undefined ? { galleryAssetIds: parsedPatch.galleryAssetIds } : {}),
       ...(parsedPatch.properties !== undefined ? { properties: parsedPatch.properties } : {}),
       updatedAt: new Date().toISOString(),

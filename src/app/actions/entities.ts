@@ -8,6 +8,7 @@ import { LocationPointsSchema } from '@/domain/entities/locationPoint'
 import { EvidenceFindingsSchema } from '@/domain/entities/evidenceFinding'
 import { OrganizationGroupsSchema } from '@/domain/entities/organizationGroup'
 import { ArtifactDetailsSchema } from '@/domain/entities/artifactDetail'
+import { ConceptBlocksSchema } from '@/domain/entities/conceptBlock'
 import type { EntityTypeDefinition, PropertyDefinition } from '@/domain/entities/entityType'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
@@ -70,7 +71,7 @@ export async function createEntityAction(formData: FormData): Promise<void> {
     title,
     aliases: parseListField(formData.get('aliases')),
     tags: parseListField(formData.get('tags')),
-    ...(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' ? { theme: CharacterThemeSchema.parse(formData.get('theme') ?? 'amber') } : {}),
+    ...(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' || entityType.id === 'tale' ? { theme: CharacterThemeSchema.parse(formData.get('theme') ?? 'amber') } : {}),
   })
 
   revalidatePath(`/${entityType.id}`)
@@ -110,13 +111,17 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
     const rawDetails = formData.get('artifactDetails')
     properties.artifactDetails = ArtifactDetailsSchema.parse(typeof rawDetails === 'string' ? JSON.parse(rawDetails) : [])
   }
+  if (entity.type === 'concept') {
+    const rawBlocks = formData.get('conceptBlocks')
+    properties.conceptBlocks = ConceptBlocksSchema.parse(typeof rawBlocks === 'string' ? JSON.parse(rawBlocks) : [])
+  }
 
   await repo.updateEntity(world.id, entityId, {
     title,
     aliases: parseListField(formData.get('aliases')),
     tags: parseListField(formData.get('tags')),
     status: String(formData.get('status') ?? '').trim(),
-    ...(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' ? { theme: CharacterThemeSchema.parse(formData.get('theme') ?? entity.theme ?? 'amber') } : {}),
+    ...(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' || entityType.id === 'tale' ? { theme: CharacterThemeSchema.parse(formData.get('theme') ?? entity.theme ?? 'amber') } : {}),
     properties,
   })
 
@@ -144,4 +149,3 @@ export async function deleteEntityAction(entityId: string, entityTypeId: string)
   revalidatePath('/scenes', 'layout')
   redirect(`/${entityTypeId}`)
 }
-

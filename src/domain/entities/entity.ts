@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { RelationSchema } from '@/domain/relations/relation'
 import { CharacterThemeSchema } from './characterTheme'
 
-export const ENTITY_SCHEMA_VERSION = 3
+export const ENTITY_SCHEMA_VERSION = 4
 
 export const EntitySchema = z.object({
   id: z.uuid(),
@@ -45,7 +45,7 @@ export const EntityPatchSchema = z
     tags: z.array(z.string()),
     status: z.string().optional(),
     theme: CharacterThemeSchema.optional(),
-    coverAssetId: z.uuid().optional(),
+    coverAssetId: z.uuid().nullable().optional(),
     galleryAssetIds: z.array(z.uuid()).optional(),
     properties: z.record(z.string(), z.unknown()),
     expectedUpdatedAt: z.iso.datetime().optional(),

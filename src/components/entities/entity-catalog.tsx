@@ -11,7 +11,7 @@ import { assetVariantUrl } from '@/lib/assetUrl'
 import { cn } from '@/lib/utils'
 import styles from './entity-catalog.module.css'
 
-type CatalogMode = 'name' | 'organization' | 'location' | 'hierarchy' | 'nature'
+type CatalogMode = 'name' | 'organization' | 'location' | 'hierarchy' | 'nature' | 'recordKind' | 'discipline' | 'subtype'
 
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
 
@@ -37,12 +37,23 @@ function modesFor(typeId: string): Array<{ id: CatalogMode; label: string }> {
     { id: 'nature', label: 'Natureza' },
     { id: 'name', label: 'Nome' },
   ]
+  if (typeId === 'species') return [
+    { id: 'recordKind', label: 'Espécies e povos' },
+    { id: 'name', label: 'Nome' },
+  ]
+  if (typeId === 'naturalScience') return [
+    { id: 'discipline', label: 'Área' },
+    { id: 'subtype', label: 'Subtipo' },
+    { id: 'name', label: 'Nome' },
+  ]
   return [{ id: 'name', label: 'Nome' }]
 }
 
 function initialMode(typeId: string): CatalogMode {
   if (typeId === 'location') return 'hierarchy'
   if (typeId === 'creature') return 'nature'
+  if (typeId === 'species') return 'recordKind'
+  if (typeId === 'naturalScience') return 'discipline'
   return 'name'
 }
 
@@ -105,6 +116,17 @@ export function EntityCatalog({
       const rank = new Map([['Monstro', 0], ['Animal', 1], ['Não classificada', 2]])
       return ordered.sort((a, b) => (rank.get(a.label) ?? 10) - (rank.get(b.label) ?? 10) || collator.compare(a.label, b.label))
     }
+    if (mode === 'recordKind') {
+      const ordered = groupedByLabel(filtered, (entity) => String(entity.properties.recordKind || 'Não classificado'))
+      const rank = new Map([['Espécie', 0], ['Povo / Cultura', 1], ['Não classificado', 2]])
+      return ordered.sort((a, b) => (rank.get(a.label) ?? 10) - (rank.get(b.label) ?? 10) || collator.compare(a.label, b.label))
+    }
+    if (mode === 'discipline') {
+      const ordered = groupedByLabel(filtered, (entity) => String(entity.properties.discipline || 'Não classificado'))
+      const rank = new Map([['Natureza', 0], ['Medicina', 1], ['Não classificado', 2]])
+      return ordered.sort((a, b) => (rank.get(a.label) ?? 10) - (rank.get(b.label) ?? 10) || collator.compare(a.label, b.label))
+    }
+    if (mode === 'subtype') return groupedByLabel(filtered, (entity) => String(entity.properties.scienceSubtype || 'Não classificado'))
     return alphabeticGroups(filtered)
   }, [filtered, mode, titleById])
 

@@ -20,7 +20,7 @@ export function AssetPicker({
     <form ref={formRef} action={importAction} className="flex items-center gap-4">
       <div className="relative flex aspect-4/3 w-40 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
         {currentAssetId ? (
-          <Image src={assetVariantUrl(currentAssetId, 'thumbnail')} alt="" fill sizes="160px" className={contain ? 'object-contain p-3' : 'object-cover'} />
+          <Image src={assetVariantUrl(currentAssetId, 'thumbnail')} alt="" fill sizes="160px" className={contain ? 'object-contain p-3' : 'object-cover'} unoptimized />
         ) : (
           <ImagePlus className="size-6 text-muted-foreground" aria-hidden="true" />
         )}

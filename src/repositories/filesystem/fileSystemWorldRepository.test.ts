@@ -30,8 +30,8 @@ describe('FileSystemWorldRepository', () => {
   it('seeds a default world with all preconfigured entity types', async () => {
     const worlds = await repo.listWorlds()
     expect(worlds).toHaveLength(1)
-    expect(worlds[0].entityTypes).toHaveLength(15)
-    expect(worlds[0].entityTypes.map((type) => type.id)).toEqual(expect.arrayContaining(['character', 'tale', 'cosmology']))
+    expect(worlds[0].entityTypes).toHaveLength(17)
+    expect(worlds[0].entityTypes.map((type) => type.id)).toEqual(expect.arrayContaining(['character', 'tale', 'cosmology', 'species', 'naturalScience']))
   })
 
   it('creates and reads back an entity', async () => {
@@ -76,6 +76,20 @@ describe('FileSystemWorldRepository', () => {
     expect(updated.slug).toBe('new-name')
     expect(updated.id).toBe(entity.id)
     expect(updated.updatedAt).not.toBe(entity.updatedAt)
+  })
+
+  it('removes an existing cover image explicitly', async () => {
+    const coverAssetId = crypto.randomUUID()
+    const entity = await repo.createEntity(worldId, {
+      type: 'tale',
+      title: 'Sem capa',
+      coverAssetId,
+    })
+
+    const updated = await repo.updateEntity(worldId, entity.id, { coverAssetId: null })
+
+    expect(updated.coverAssetId).toBeUndefined()
+    expect((await repo.getEntity(worldId, entity.id))?.coverAssetId).toBeUndefined()
   })
 
   it('rejects a concurrent update when expectedUpdatedAt is stale', async () => {

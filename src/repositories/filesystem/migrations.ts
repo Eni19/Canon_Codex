@@ -4,6 +4,7 @@ import { CONTENT_SCHEMA_VERSION } from '@/domain/content/contentDocument'
 import { ENTITY_SCHEMA_VERSION } from '@/domain/entities/entity'
 import { WORLD_SCHEMA_VERSION } from '@/domain/worlds/world'
 import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
+import { ConceptBlocksSchema } from '@/domain/entities/conceptBlock'
 import type { MigrationRegistry } from '@/lib/migrations/registry'
 
 export const worldMigrations: MigrationRegistry = {
@@ -169,6 +170,101 @@ export const worldMigrations: MigrationRegistry = {
         }
       }),
     }),
+    11: (data) => ({
+      ...data,
+      schemaVersion: 12,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => {
+        if (type.id !== 'tale') return type
+        const knownKeys = new Set(['subtitle', 'taleType', 'period', 'setting', 'characters', 'culture', 'narrator', 'openingLayout', 'notes'])
+        return {
+          ...type,
+          label: 'Conto',
+          pluralLabel: 'Contos',
+          properties: [
+            { key: 'subtitle', label: 'Subtítulo', kind: 'text' as const },
+            { key: 'taleType', label: 'Tipo', kind: 'enum' as const, options: ['Conto', 'Crônica', 'Novela', 'Romance', 'Lenda', 'Mito', 'Fábula', 'Relato oral'] },
+            { key: 'period', label: 'Período', kind: 'text' as const },
+            { key: 'setting', label: 'Local', kind: 'reference' as const, refType: 'location' },
+            { key: 'characters', label: 'Personagens', kind: 'referenceList' as const, refType: 'character' },
+            { key: 'culture', label: 'Cultura ou tradição', kind: 'text' as const },
+            { key: 'narrator', label: 'Narrador ou fonte', kind: 'text' as const },
+            { key: 'openingLayout', label: 'Layout de abertura', kind: 'enum' as const, options: ['Panorâmico', 'Centralizado', 'Editorial'] },
+            { key: 'notes', label: 'Notas opcionais', kind: 'textarea' as const },
+            ...type.properties.filter((property) => !knownKeys.has(property.key)),
+          ],
+        }
+      }),
+    }),
+    12: (data) => ({
+      ...data,
+      schemaVersion: 13,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => {
+        if (type.id !== 'concept') return type
+        const knownKeys = new Set(['category', 'summary', 'notation', 'paperStyle'])
+        return {
+          ...type,
+          properties: [
+            type.properties.find((property) => property.key === 'category') ?? { key: 'category', label: 'Categoria', kind: 'text' as const },
+            { key: 'summary', label: 'Subtítulo ou resumo', kind: 'textarea' as const },
+            ...type.properties.filter((property) => !knownKeys.has(property.key)),
+          ],
+        }
+      }),
+    }),
+    13: (data) => ({
+      ...data,
+      schemaVersion: 14,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => {
+        if (type.id !== 'concept') return type
+        const category = type.properties.find((property) => property.key === 'category') ?? { key: 'category', label: 'Categoria', kind: 'text' as const }
+        const summary = { key: 'summary', label: 'Subtítulo ou resumo', kind: 'textarea' as const }
+        return { ...type, properties: [category, summary, ...type.properties.filter((property) => !['category', 'summary', 'notation', 'paperStyle'].includes(property.key))] }
+      }),
+    }),
+    14: (data) => {
+      const entityTypes = EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => type.id === 'phenomenon' ? { ...type, showInSidebar: false } : type)
+      const additions = [
+        {
+          id: 'species', label: 'Espécie / Povo', pluralLabel: 'Espécies / Povos', icon: 'Dna', color: 'accent' as const,
+          layout: ['header', 'hero', 'properties', 'content', 'gallery', 'relations', 'backlinks'] as const, showInSidebar: true,
+          properties: [
+            { key: 'recordKind', label: 'Tipo de registro', kind: 'enum' as const, options: ['Espécie', 'Povo / Cultura'] },
+            { key: 'classification', label: 'Classificação', kind: 'text' as const },
+            { key: 'relatedSpecies', label: 'Espécies associadas', kind: 'referenceList' as const, refType: 'species' },
+            { key: 'originLocation', label: 'Origem', kind: 'reference' as const, refType: 'location' },
+            { key: 'habitats', label: 'Regiões habitadas', kind: 'referenceList' as const, refType: 'location' },
+            { key: 'languages', label: 'Idiomas', kind: 'tags' as const },
+            { key: 'traits', label: 'Características', kind: 'tags' as const },
+            { key: 'lifespan', label: 'Expectativa de vida', kind: 'text' as const },
+            { key: 'population', label: 'População', kind: 'text' as const },
+            { key: 'socialStructure', label: 'Estrutura social', kind: 'textarea' as const },
+            { key: 'customs', label: 'Costumes e tradições', kind: 'textarea' as const },
+            { key: 'relatedOrganizations', label: 'Organizações relacionadas', kind: 'referenceList' as const, refType: 'organization' },
+          ],
+        },
+        {
+          id: 'naturalScience', label: 'Natureza / Medicina', pluralLabel: 'Natureza / Medicina', icon: 'Microscope', color: 'accent' as const,
+          layout: ['header', 'hero', 'properties', 'content', 'gallery', 'relations', 'backlinks'] as const, showInSidebar: true,
+          properties: [
+            { key: 'discipline', label: 'Área', kind: 'enum' as const, options: ['Natureza', 'Medicina'] },
+            { key: 'scienceSubtype', label: 'Subtipo', kind: 'enum' as const, options: ['Flora', 'Fauna', 'Fungo', 'Mineral', 'Ecossistema', 'Recurso natural', 'Doença', 'Condição', 'Ferimento', 'Substância', 'Medicamento', 'Veneno', 'Tratamento', 'Anatomia'] },
+            { key: 'scientificName', label: 'Nome técnico ou científico', kind: 'text' as const },
+            { key: 'habitat', label: 'Habitat ou ocorrência', kind: 'reference' as const, refType: 'location' },
+            { key: 'distribution', label: 'Distribuição', kind: 'referenceList' as const, refType: 'location' },
+            { key: 'notableProperties', label: 'Propriedades', kind: 'tags' as const },
+            { key: 'toxicity', label: 'Toxicidade', kind: 'enum' as const, options: ['Nenhuma', 'Baixa', 'Moderada', 'Alta', 'Letal', 'Desconhecida'] },
+            { key: 'affectedSystem', label: 'Sistema afetado', kind: 'text' as const },
+            { key: 'transmission', label: 'Transmissão', kind: 'text' as const },
+            { key: 'symptoms', label: 'Sintomas', kind: 'tags' as const },
+            { key: 'progression', label: 'Progressão', kind: 'text' as const },
+            { key: 'uses', label: 'Usos e aplicações', kind: 'textarea' as const },
+            { key: 'treatment', label: 'Tratamento ou manejo', kind: 'textarea' as const },
+            { key: 'relatedEntries', label: 'Registros relacionados', kind: 'referenceList' as const, refType: 'naturalScience' },
+          ],
+        },
+      ]
+      return { ...data, schemaVersion: 15, entityTypes: [...entityTypes, ...additions.filter((addition) => !entityTypes.some((type) => type.id === addition.id))] }
+    },
   },
 }
 export const entityMigrations: MigrationRegistry = {
@@ -188,6 +284,27 @@ export const entityMigrations: MigrationRegistry = {
         return { ...data, properties: { ...remaining, relatedEvent: relatedCase }, schemaVersion: 3 }
       }
       return { ...data, schemaVersion: 3 }
+    },
+    3: (data) => {
+      const properties = data.properties && typeof data.properties === 'object' ? { ...data.properties } as Record<string, unknown> : {}
+      if (data.type !== 'concept' || !Array.isArray(properties.conceptBlocks)) return { ...data, schemaVersion: 4 }
+      const typeMap: Record<string, string> = {
+        definition: 'overview',
+        note: 'notes',
+        rule: 'rules',
+        example: 'examples',
+        terms: 'terminology',
+        formula: 'diagram',
+        sketch: 'diagram',
+        question: 'notes',
+      }
+      const converted = properties.conceptBlocks.map((value) => {
+        if (!value || typeof value !== 'object') return value
+        const block = value as Record<string, unknown>
+        const type = typeof block.type === 'string' ? typeMap[block.type] ?? block.type : block.type
+        return { ...block, type }
+      })
+      return { ...data, properties: { ...properties, conceptBlocks: ConceptBlocksSchema.parse(converted) }, schemaVersion: 4 }
     },
   },
 }

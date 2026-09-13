@@ -14,6 +14,10 @@ import { CreatureEntityPage } from '@/components/entities/creature-entity-page'
 import { EventNewspaperPage } from '@/components/entities/event-newspaper-page'
 import { ArtifactEntityPage } from '@/components/entities/artifact-entity-page'
 import { CosmologyEntityPage } from '@/components/entities/cosmology-entity-page'
+import { TaleEntityPage } from '@/components/entities/tale-entity-page'
+import { ConceptEntityPage } from '@/components/entities/concept-entity-page'
+import { SpeciesGuidePage } from '@/components/entities/species-guide-page'
+import { NaturalSciencePage } from '@/components/entities/natural-science-page'
 import { PropertyDisplayList } from '@/components/entities/property-display-list'
 import { RelationsPanel, type RelationTargetOption } from '@/components/entities/relations-panel'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +54,10 @@ export function EntityPage(props: EntityPageProps) {
   if (entity.type === 'event') return <EventNewspaperPage {...props} />
   if (entity.type === 'artifact') return <ArtifactEntityPage {...props} />
   if (entity.type === 'cosmology') return <CosmologyEntityPage {...props} />
+  if (entity.type === 'tale') return <TaleEntityPage {...props} />
+  if (entity.type === 'concept') return <ConceptEntityPage {...props} />
+  if (entity.type === 'species') return <SpeciesGuidePage {...props} />
+  if (entity.type === 'naturalScience') return <NaturalSciencePage {...props} />
 
   // Portrait-driven types get a bespoke wide layout (art dominant, everything flanking it) —
   // see PortraitEntityPage and design-inspiration/style-notes.md — instead of the generic stack.
@@ -155,4 +163,3 @@ function Section({ title, className, children }: { title: string; className?: st
     </div>
   )
 }
-

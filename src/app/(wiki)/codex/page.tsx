@@ -7,7 +7,7 @@ import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 import styles from './codex-home.module.css'
 
-const principalIds = new Set(['character', 'location', 'organization', 'creature', 'artifact', 'cosmology'])
+const principalIds = new Set(['character', 'location', 'organization', 'creature', 'artifact', 'cosmology', 'species', 'naturalScience'])
 
 export default async function HomePage() {
   const world = await getCurrentWorld()

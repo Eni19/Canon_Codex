@@ -3,7 +3,7 @@ import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import { ContentDocumentSchema } from '@/domain/content/contentDocument'
 import { WorldSchema } from '@/domain/worlds/world'
 import { migrateToLatest } from '@/lib/migrations/registry'
-import { contentMigrations, worldMigrations } from './migrations'
+import { contentMigrations, entityMigrations, worldMigrations } from './migrations'
 
 describe('character profile migration', () => {
   it('adds the profile field to existing worlds without changing other definitions', () => {
@@ -39,5 +39,93 @@ describe('content pages migration', () => {
       format: 'tiptap-json', schemaVersion: 2,
       pages: [{ id: 'principal', title: 'Principal', body }],
     })
+  })
+})
+describe('tale catalog migration', () => {
+  it('renames the category and adds literary fields to existing worlds', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 11,
+      entityTypes: world.entityTypes.map((type) => type.id === 'tale' ? {
+        ...type,
+        label: 'Conto ou Lenda',
+        pluralLabel: 'Contos e Lendas',
+        properties: type.properties.filter((property) => ['taleType', 'culture', 'period', 'narrator'].includes(property.key)),
+      } : type),
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const tale = migrated.entityTypes.find((type) => type.id === 'tale')!
+
+    expect(migrated.schemaVersion).toBe(15)
+    expect(tale.label).toBe('Conto')
+    expect(tale.pluralLabel).toBe('Contos')
+    expect(tale.properties.map((property) => property.key)).toEqual(expect.arrayContaining([
+      'subtitle', 'taleType', 'period', 'setting', 'characters', 'openingLayout', 'notes',
+    ]))
+  })
+})
+describe('concept reference manual migration', () => {
+  it('keeps only the neutral reference fields in existing worlds', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 12,
+      entityTypes: world.entityTypes.map((type) => type.id === 'concept' ? {
+        ...type,
+        properties: [{ key: 'category', label: 'Categoria personalizada', kind: 'text' as const }],
+      } : type),
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const concept = migrated.entityTypes.find((type) => type.id === 'concept')!
+
+    expect(migrated.schemaVersion).toBe(15)
+    expect(concept.properties.find((property) => property.key === 'category')?.label).toBe('Categoria personalizada')
+    expect(concept.properties.map((property) => property.key)).toEqual(['category', 'summary'])
+    expect(concept.properties.find((property) => property.key === 'summary')?.label).toBe('Subtítulo ou resumo')
+  })
+})
+describe('concept block migration', () => {
+  it('converts sketchbook blocks into reference manual sections', () => {
+    const migrated = migrateToLatest(entityMigrations, {
+      type: 'concept',
+      schemaVersion: 3,
+      properties: {
+        conceptBlocks: [
+          { id: 'a', type: 'definition', title: 'Definição', body: 'Texto' },
+          { id: 'b', type: 'rule', title: 'Regras', body: 'Regra' },
+          { id: 'c', type: 'question', title: 'Dúvida', body: 'Questão' },
+        ],
+      },
+    })
+
+    expect(migrated.schemaVersion).toBe(4)
+    expect((migrated.properties as { conceptBlocks: Array<{ type: string }> }).conceptBlocks.map((block) => block.type)).toEqual([
+      'overview', 'rules', 'notes',
+    ])
+  })
+})
+describe('world reference areas migration', () => {
+  it('hides phenomena and adds species plus natural sciences without deleting old definitions', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 14,
+      entityTypes: world.entityTypes
+        .filter((type) => type.id !== 'species' && type.id !== 'naturalScience')
+        .map((type) => type.id === 'phenomenon' ? { ...type, showInSidebar: true } : type),
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const phenomenon = migrated.entityTypes.find((type) => type.id === 'phenomenon')
+    const species = migrated.entityTypes.find((type) => type.id === 'species')
+    const naturalScience = migrated.entityTypes.find((type) => type.id === 'naturalScience')
+
+    expect(migrated.schemaVersion).toBe(15)
+    expect(phenomenon?.showInSidebar).toBe(false)
+    expect(species?.properties.find((property) => property.key === 'recordKind')?.options).toEqual(['Espécie', 'Povo / Cultura'])
+    expect(naturalScience?.properties.find((property) => property.key === 'discipline')?.options).toEqual(['Natureza', 'Medicina'])
   })
 })
