@@ -33,7 +33,7 @@ export function OrganizationDossierPage(props: EntityPageProps) {
         <div><Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]} />
           <div className={styles.caseHeading}><Building2 className="size-6" /><div><span className={styles.classification}>ARQUIVO INSTITUCIONAL</span><h1>{entity.title}</h1></div></div>
         </div>
-        <div className={styles.headerActions}><span className={styles.confidential}>CONFIDENCIAL</span><Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button></div>
+        <div className={styles.headerActions}><span className={styles.confidential}>CONFIDENCIAL</span><Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button></div>
       </header>
 
       <section className={styles.coverSheet}>

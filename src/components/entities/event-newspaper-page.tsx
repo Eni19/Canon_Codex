@@ -20,7 +20,7 @@ export function EventNewspaperPage({ entity, entityType, worldName, content, ent
   const participantIds = ids(entity.properties.participants)
 
   return <div className={styles.newsstand}><main className={styles.paper}>
-    <div className={styles.toolbar}><Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]} /><Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button></div>
+    <div className={styles.toolbar}><Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]} /><Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button></div>
     <header className={styles.masthead}><div className={styles.kicker}>EDIÇÃO EXTRAORDINÁRIA · ARQUIVO DE EVENTOS</div><div className={styles.brand}>CANON CODEX</div><div className={styles.issue}><span>{date || 'DATA NÃO REGISTRADA'}</span><span>{status || entity.status || 'REGISTRO ABERTO'}</span></div></header>
     <section className={styles.headline}><h1>{entity.title}</h1>{entity.aliases.length > 0 && <p>{entity.aliases.join(' · ')}</p>}</section>
     <div className={styles.factLine}>

@@ -129,3 +129,54 @@
   .formatButtons span { display: none; }
   .pageNameRow { flex-wrap: wrap; }
 }
+
+.blockActions {
+  position: absolute;
+  right: 1rem;
+  z-index: 3;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.blockActions .deleteBlockButton {
+  position: static;
+  right: auto;
+  z-index: auto;
+}
+
+.moveBlockButton {
+  display: grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--primary) 40%, var(--border));
+  background: color-mix(in oklch, var(--background) 92%, transparent);
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.moveBlockButton:hover,
+.moveBlockButton:focus-visible {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 12%, var(--background));
+  outline: none;
+}
+
+.moveBlockButton:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.moveBlockButton svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.editor > * {
+  padding-right: 7rem;
+}
+
+@media (max-width: 32rem) {
+  .blockActions { right: 0.5rem; }
+  .editor > * { padding-right: 6.5rem; }
+}

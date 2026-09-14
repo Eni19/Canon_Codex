@@ -7,8 +7,9 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // Next.js 16 only serves quality 75 unless explicitly allow-listed. 90 is used for the
-    // character portrait hero, where sharpness matters more than for thumbnails/cards.
+    // Wiki assets are protected by the active-Codex cookie. Next's server-side optimizer does
+    // not forward that cookie, so every entity image must be requested directly by the browser.
+    unoptimized: true,
     qualities: [75, 90],
   },
 };

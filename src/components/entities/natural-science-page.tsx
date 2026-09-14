@@ -47,7 +47,7 @@ export function NaturalSciencePage({ entity, entityType, worldName, content, ent
           <h1>{entity.title}</h1>
           {prose(entity.properties.scientificName) && <p className={styles.scientificName}>{prose(entity.properties.scientificName)}</p>}
         </div>
-        <Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
       </header>
 
       <section className={styles.plate}>

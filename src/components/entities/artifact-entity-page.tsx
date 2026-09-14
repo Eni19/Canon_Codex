@@ -40,7 +40,7 @@ export function ArtifactEntityPage({ entity, entityType, worldName, content, ent
     <div className={styles.worktop}>
       <header className={styles.header}>
         <div><Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]}/><p className={styles.eyebrow}><Archive />Coleção catalogada · {registration}</p><h1>{entity.title}</h1>{entity.aliases.length > 0 && <p className={styles.aliases}>{entity.aliases.join(' · ')}</p>}</div>
-        <Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
       </header>
 
       <section className={styles.catalogGrid}>

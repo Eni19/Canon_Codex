@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { notFound, redirect } from 'next/navigation'
+import { notFound, redirect, RedirectType } from 'next/navigation'
 import { CONTENT_SCHEMA_VERSION } from '@/domain/content/contentDocument'
 import { CharacterThemeSchema } from '@/domain/entities/characterTheme'
 import { LocationPointsSchema } from '@/domain/entities/locationPoint'
@@ -77,7 +77,7 @@ export async function createEntityAction(formData: FormData): Promise<void> {
   revalidatePath(`/${entityType.id}`)
   revalidatePath('/boards', 'layout')
   revalidatePath('/scenes', 'layout')
-  redirect(`/entity/${entity.id}/edit`)
+  redirect(`/entity/${entity.id}/edit`, RedirectType.replace)
 }
 
 export async function updateEntityAction(entityId: string, formData: FormData): Promise<void> {
@@ -138,7 +138,7 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
   revalidatePath(`/entity/${entityId}`)
   revalidatePath('/boards', 'layout')
   revalidatePath('/scenes', 'layout')
-  redirect(`/entity/${entityId}`)
+  redirect(`/entity/${entityId}`, RedirectType.replace)
 }
 
 export async function deleteEntityAction(entityId: string, entityTypeId: string): Promise<void> {
@@ -147,5 +147,5 @@ export async function deleteEntityAction(entityId: string, entityTypeId: string)
   revalidatePath(`/${entityTypeId}`)
   revalidatePath('/boards', 'layout')
   revalidatePath('/scenes', 'layout')
-  redirect(`/${entityTypeId}`)
+  redirect(`/${entityTypeId}`, RedirectType.replace)
 }

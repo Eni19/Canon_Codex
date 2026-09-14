@@ -75,7 +75,7 @@ export function ConceptEntityPage(props: EntityPageProps) {
     <nav className={styles.topbar} aria-label="Navegação do conceito">
       <Link href="/concept"><ArrowLeft />Conceitos</Link>
       <span>{worldName}</span>
-      <Link href={`/entity/${entity.id}/edit`}><Pencil />Editar</Link>
+      <Link replace href={`/entity/${entity.id}/edit`}><Pencil />Editar</Link>
     </nav>
 
     <article className={styles.manual}>

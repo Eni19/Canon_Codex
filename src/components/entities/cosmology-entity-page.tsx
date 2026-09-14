@@ -35,7 +35,7 @@ export function CosmologyEntityPage({ entity, entityType, worldName, content, en
     <main className={styles.page}>
       <header className={styles.header}>
         <Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: '/' + entityType.id }, { label: entity.title }]}/>
-        <Button asChild variant="outline" size="sm"><Link href={'/entity/' + entity.id + '/edit'}><Pencil className="size-4"/>Editar</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link replace href={'/entity/' + entity.id + '/edit'}><Pencil className="size-4"/>Editar</Link></Button>
       </header>
 
       <section className={styles.masthead}>

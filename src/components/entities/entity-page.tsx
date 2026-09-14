@@ -96,7 +96,7 @@ export function EntityPage(props: EntityPageProps) {
             )}
           </div>
           <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link href={`/entity/${entity.id}/edit`}>
+            <Link replace href={`/entity/${entity.id}/edit`}>
               <Pencil className="size-4" />
               Editar
             </Link>

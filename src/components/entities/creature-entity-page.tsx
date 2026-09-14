@@ -31,7 +31,7 @@ export function CreatureEntityPage({ entity, entityType, worldName, content, ent
           <div className={styles.identity}><PawPrint className="size-5 text-primary" /><div><span className={styles.eyebrow}>REGISTRO DE CRIATURA</span><h1>{entity.title}</h1></div></div>
           {(entity.status || entity.tags.length > 0) && <div className={styles.badges}>{entity.status && <Badge variant="outline">{entity.status}</Badge>}{entity.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
         </div>
-        <Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
       </header>
 
       <div className={styles.composition}>

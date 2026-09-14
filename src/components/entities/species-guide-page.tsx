@@ -45,7 +45,7 @@ export function SpeciesGuidePage({ entity, entityType, worldName, content, entit
           <h1>{entity.title}</h1>
           {entity.aliases.length > 0 && <p className={styles.aliases}>{entity.aliases.join(' · ')}</p>}
         </div>
-        <Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
       </header>
 
       <section className={styles.profile}>

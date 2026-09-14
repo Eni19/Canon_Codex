@@ -26,7 +26,7 @@ export function LocationEntityPage({ entity, entityType, worldName, content, ent
             <Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]} />
             <div className="mt-3 flex items-center gap-3"><MapPin className="size-5 text-primary" /><h1 className="font-serif text-4xl font-medium uppercase text-primary">{entity.title}</h1>{entity.status && <Badge variant="outline">{entity.status}</Badge>}</div>
           </div>
-          <Button asChild variant="outline" size="sm"><Link href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>
         </div>
 
         <div className={styles.layout}>

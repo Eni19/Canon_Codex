@@ -49,6 +49,7 @@ export function PortraitHero({
               sizes="100vw"
               quality={90}
               className="relative z-10 origin-top object-cover object-top scale-[1.4]"
+              unoptimized
               priority
             />
           ) : (

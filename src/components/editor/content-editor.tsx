@@ -2,7 +2,7 @@
 
 import type { Editor, JSONContent } from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/react'
-import { Bold, Italic, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Bold, Italic, Plus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { getEditorExtensions } from '@/components/editor/extensions'
 import type { ContentDocument, ContentPage } from '@/domain/content/contentDocument'
@@ -68,9 +68,11 @@ export function ContentEditor({
   )
 }
 
+type ActiveBlock = { position: number; top: number; index: number; count: number }
+
 function PageEditor({ page, onChange }: { page: ContentPage; onChange: (body: JSONContent) => void }) {
   const shellRef = useRef<HTMLDivElement>(null)
-  const [activeBlock, setActiveBlock] = useState<{ position: number; top: number } | null>(null)
+  const [activeBlock, setActiveBlock] = useState<ActiveBlock | null>(null)
   const [, forceToolbarUpdate] = useState(0)
 
   function locateActiveBlock(currentEditor: Editor) {
@@ -80,9 +82,20 @@ function PageEditor({ page, onChange }: { page: ContentPage; onChange: (body: JS
       if (!shell || $from.depth === 0) return setActiveBlock(null)
       const position = $from.before(1)
       const nodeElement = currentEditor.view.nodeDOM(position)
-      if (nodeElement instanceof HTMLElement) {
-        setActiveBlock({ position, top: nodeElement.getBoundingClientRect().top - shell.getBoundingClientRect().top })
-      }
+      if (!(nodeElement instanceof HTMLElement)) return setActiveBlock(null)
+
+      let index = -1
+      currentEditor.state.doc.forEach((_node, offset, childIndex) => {
+        if (offset === position) index = childIndex
+      })
+      if (index < 0) return setActiveBlock(null)
+
+      setActiveBlock({
+        position,
+        index,
+        count: currentEditor.state.doc.childCount,
+        top: nodeElement.getBoundingClientRect().top - shell.getBoundingClientRect().top,
+      })
     })
   }
 
@@ -94,6 +107,26 @@ function PageEditor({ page, onChange }: { page: ContentPage; onChange: (body: JS
     onUpdate: ({ editor: currentEditor }) => { onChange(currentEditor.getJSON()); locateActiveBlock(currentEditor) },
     onSelectionUpdate: ({ editor: currentEditor }) => { locateActiveBlock(currentEditor); forceToolbarUpdate((value) => value + 1) },
   })
+
+  function moveActiveBlock(direction: -1 | 1) {
+    if (!editor || !activeBlock) return
+    const document = editor.getJSON()
+    const blocks = [...(document.content ?? [])]
+    const targetIndex = activeBlock.index + direction
+    if (targetIndex < 0 || targetIndex >= blocks.length) return
+
+    const currentBlock = blocks[activeBlock.index]
+    blocks[activeBlock.index] = blocks[targetIndex]
+    blocks[targetIndex] = currentBlock
+    editor.commands.setContent({ ...document, content: blocks })
+
+    let nextPosition = 0
+    editor.state.doc.forEach((_node, offset, childIndex) => {
+      if (childIndex === targetIndex) nextPosition = offset
+    })
+    editor.chain().focus().setTextSelection(Math.min(nextPosition + 1, editor.state.doc.content.size)).run()
+    locateActiveBlock(editor)
+  }
 
   function deleteActiveBlock() {
     if (!editor || !activeBlock) return
@@ -117,8 +150,14 @@ function PageEditor({ page, onChange }: { page: ContentPage; onChange: (body: JS
           <Plus aria-hidden="true" /> Novo bloco de texto
         </button>
       </div>
-      {activeBlock && <button type="button" className={styles.deleteBlockButton} style={{ top: activeBlock.top + 8 }}
-        aria-label="Excluir este bloco" title="Excluir este bloco" onMouseDown={(event) => event.preventDefault()} onClick={deleteActiveBlock}>×</button>}
+      {activeBlock && <div className={styles.blockActions} style={{ top: activeBlock.top + 8 }}>
+        <button type="button" className={styles.moveBlockButton} disabled={activeBlock.index === 0}
+          aria-label="Mover bloco para cima" title="Mover bloco para cima" onMouseDown={(event) => event.preventDefault()} onClick={() => moveActiveBlock(-1)}><ArrowUp aria-hidden="true" /></button>
+        <button type="button" className={styles.moveBlockButton} disabled={activeBlock.index === activeBlock.count - 1}
+          aria-label="Mover bloco para baixo" title="Mover bloco para baixo" onMouseDown={(event) => event.preventDefault()} onClick={() => moveActiveBlock(1)}><ArrowDown aria-hidden="true" /></button>
+        <button type="button" className={styles.deleteBlockButton}
+          aria-label="Excluir este bloco" title="Excluir este bloco" onMouseDown={(event) => event.preventDefault()} onClick={deleteActiveBlock}>×</button>
+      </div>}
       <EditorContent editor={editor} />
     </div>
   )

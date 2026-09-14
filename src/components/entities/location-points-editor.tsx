@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { MapPin, Plus, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, MapPin, Plus, X } from 'lucide-react'
 import { useState, type MouseEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,13 +18,33 @@ export function LocationPointsEditor({ coverAssetId, initialPoints, targets }: {
 }) {
   const [points, setPoints] = useState(initialPoints)
   const [activeId, setActiveId] = useState<string | null>(initialPoints[0]?.id ?? null)
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set(initialPoints.map((point) => point.id)))
   const active = points.find((point) => point.id === activeId)
   const update = (id: string, patch: Partial<LocationPoint>) => setPoints((current) => current.map((point) => point.id === id ? { ...point, ...patch } : point))
+
+  function toggleCollapsed(id: string) {
+    setCollapsedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   function addPoint() {
     const point: LocationPoint = { id: crypto.randomUUID(), label: `Ponto ${points.length + 1}`, kind: 'text', discoveries: [], x: 50, y: 50 }
     setPoints((current) => [...current, point])
     setActiveId(point.id)
+  }
+
+  function removePoint(id: string) {
+    setPoints((current) => current.filter((item) => item.id !== id))
+    setCollapsedIds((current) => {
+      const next = new Set(current)
+      next.delete(id)
+      return next
+    })
+    if (activeId === id) setActiveId(null)
   }
 
   function addDiscovery(point: LocationPoint) {
@@ -67,40 +87,53 @@ export function LocationPointsEditor({ coverAssetId, initialPoints, targets }: {
       )}
       {!coverAssetId && <p className="mb-4 border border-dashed border-border p-4 text-sm text-muted-foreground">Importe uma imagem principal para posicionar os pontos.</p>}
       <div className="grid gap-3">
-        {points.map((point, index) => (
-          <div key={point.id} className={`border p-3 ${activeId === point.id ? 'border-primary/60 bg-primary/5' : 'border-border'}`}>
-            <div className="flex items-center gap-2">
+        {points.map((point, index) => {
+          const collapsed = collapsedIds.has(point.id)
+          return <section key={point.id} className={`border p-3 ${activeId === point.id ? 'border-primary/60 bg-primary/5' : 'border-border'}`}>
+            <div className="flex flex-wrap items-center gap-2">
               <button type="button" className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground" onClick={() => setActiveId(point.id)}>{index + 1}</button>
-              <Input aria-label="Nome do ponto" value={point.label} onChange={(event) => update(point.id, { label: event.target.value })} />
+              <Input className="min-w-40 flex-1" aria-label="Nome do ponto" value={point.label} onChange={(event) => update(point.id, { label: event.target.value })} />
               <select aria-label="Tipo do ponto" value={point.kind} onChange={(event) => update(point.id, { kind: event.target.value as LocationPoint['kind'], targetId: undefined })} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
                 <option value="text">Texto</option><option value="evidence">Evidência</option><option value="document">Documento</option>
               </select>
-              <Button type="button" variant="ghost" size="icon" aria-label={`Apagar ${point.label}`} onClick={() => { setPoints((current) => current.filter((item) => item.id !== point.id)); if (activeId === point.id) setActiveId(null) }}><X className="size-4" /></Button>
+              <Button type="button" variant="ghost" size="icon" aria-expanded={!collapsed}
+                aria-label={collapsed ? `Expandir ${point.label}` : `Minimizar ${point.label}`}
+                title={collapsed ? 'Expandir ponto' : 'Minimizar ponto'} onClick={() => toggleCollapsed(point.id)}>
+                {collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              </Button>
+              <Button type="button" variant="ghost" size="icon" aria-label={`Apagar ${point.label}`} onClick={() => removePoint(point.id)}><X className="size-4" /></Button>
             </div>
-            <Textarea className="mt-3" rows={3} aria-label="Apresentação do ponto" placeholder="Apresentação — o que pode ser percebido ao investigar este ponto..." value={point.basicDescription ?? point.description ?? ''} onChange={(event) => update(point.id, { basicDescription: event.target.value, description: undefined })} />
-            {point.kind !== 'text' && (
-              <select className="mt-2 h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={point.targetId ?? ''} onChange={(event) => update(point.id, { targetId: event.target.value || undefined })}>
-                <option value="">Selecione {point.kind === 'evidence' ? 'uma evidência' : 'um documento'}</option>
-                {targets.filter((target) => target.type === point.kind).map((target) => <option key={target.id} value={target.id}>{target.title}</option>)}
-              </select>
-            )}
-            <div className="mt-4 border-t border-border pt-3">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium">Descobertas</p><p className="text-xs text-muted-foreground">Defina livremente como a informação pode ser encontrada.</p></div><Button type="button" variant="outline" size="sm" onClick={() => addDiscovery(point)} disabled={point.discoveries.length >= 20}><Plus className="size-3" />Linha</Button></div>
-              <div className="mt-2 grid gap-2">
-                {point.discoveries.map((discovery) => (
-                  <div key={discovery.id} className="grid gap-2 border-l-2 border-primary/40 pl-3 sm:grid-cols-[1fr_0.8fr_auto]">
-                    <Input aria-label="Abordagem" placeholder="Abordagem (observar, conversar...)" value={discovery.approach} onChange={(event) => updateDiscovery(point, discovery.id, { approach: event.target.value })} />
-                    <Input aria-label="Condição" placeholder="Condição opcional" value={discovery.condition} onChange={(event) => updateDiscovery(point, discovery.id, { condition: event.target.value })} />
-                    <Button type="button" variant="ghost" size="icon" aria-label="Apagar descoberta" onClick={() => update(point.id, { discoveries: point.discoveries.filter((item) => item.id !== discovery.id) })}><X className="size-4" /></Button>
-                    <Textarea className="sm:col-span-3" rows={2} aria-label="Informação descoberta" placeholder="Informação revelada..." value={discovery.information} onChange={(event) => updateDiscovery(point, discovery.id, { information: event.target.value })} />
-                  </div>
-                ))}
+
+            {collapsed ? <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+              <span>{point.discoveries.length} {point.discoveries.length === 1 ? 'descoberta' : 'descobertas'}</span>
+              <span className="flex items-center gap-1"><MapPin className="size-3" />{point.x.toFixed(1)}%, {point.y.toFixed(1)}%</span>
+            </div> : <>
+              <Textarea className="mt-3" rows={3} aria-label="Apresentação do ponto" placeholder="Apresentação — o que pode ser percebido ao investigar este ponto..." value={point.basicDescription ?? point.description ?? ''} onChange={(event) => update(point.id, { basicDescription: event.target.value, description: undefined })} />
+              {point.kind !== 'text' && (
+                <select className="mt-2 h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={point.targetId ?? ''} onChange={(event) => update(point.id, { targetId: event.target.value || undefined })}>
+                  <option value="">Selecione {point.kind === 'evidence' ? 'uma evidência' : 'um documento'}</option>
+                  {targets.filter((target) => target.type === point.kind).map((target) => <option key={target.id} value={target.id}>{target.title}</option>)}
+                </select>
+              )}
+              <div className="mt-4 border-t border-border pt-3">
+                <div><p className="text-sm font-medium">Descobertas</p><p className="text-xs text-muted-foreground">Defina livremente como a informação pode ser encontrada.</p></div>
+                <div className="mt-2 grid gap-2">
+                  {point.discoveries.map((discovery) => (
+                    <div key={discovery.id} className="grid gap-2 border-l-2 border-primary/40 pl-3 sm:grid-cols-[1fr_0.8fr_auto]">
+                      <Input aria-label="Abordagem" placeholder="Abordagem (observar, conversar...)" value={discovery.approach} onChange={(event) => updateDiscovery(point, discovery.id, { approach: event.target.value })} />
+                      <Input aria-label="Condição" placeholder="Condição opcional" value={discovery.condition} onChange={(event) => updateDiscovery(point, discovery.id, { condition: event.target.value })} />
+                      <Button type="button" variant="ghost" size="icon" aria-label="Apagar descoberta" onClick={() => update(point.id, { discoveries: point.discoveries.filter((item) => item.id !== discovery.id) })}><X className="size-4" /></Button>
+                      <Textarea className="sm:col-span-3" rows={2} aria-label="Informação descoberta" placeholder="Informação revelada..." value={discovery.information} onChange={(event) => updateDiscovery(point, discovery.id, { information: event.target.value })} />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex justify-end"><Button type="button" variant="outline" size="sm" onClick={() => addDiscovery(point)} disabled={point.discoveries.length >= 20}><Plus className="size-3" />Adicionar linha</Button></div>
               </div>
-            </div>
-            <Textarea className="mt-4" rows={4} aria-label="Notas contextuais" placeholder="Notas contextuais — segredos, consequências e orientações para quem conduz..." value={point.contextualDescription ?? ''} onChange={(event) => update(point.id, { contextualDescription: event.target.value })} />
-            <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="size-3" />{point.x.toFixed(1)}%, {point.y.toFixed(1)}%</p>
-          </div>
-        ))}
+              <Textarea className="mt-4" rows={4} aria-label="Notas contextuais" placeholder="Notas contextuais — segredos, consequências e orientações para quem conduz..." value={point.contextualDescription ?? ''} onChange={(event) => update(point.id, { contextualDescription: event.target.value })} />
+              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="size-3" />{point.x.toFixed(1)}%, {point.y.toFixed(1)}%</p>
+            </>}
+          </section>
+        })}
       </div>
     </div>
   )

@@ -49,7 +49,7 @@ export function TaleEntityPage(props: EntityPageProps) {
         <button type="button" data-active={!codexOpen} onClick={() => setCodexOpen(false)}><BookOpenText />Modo Leitura</button>
         <button type="button" data-active={codexOpen} onClick={() => setCodexOpen(true)}><Library />Modo Codex</button>
       </div>
-      <Link href={`/entity/${entity.id}/edit`}><Pencil />Editar</Link>
+      <Link replace href={`/entity/${entity.id}/edit`}><Pencil />Editar</Link>
     </nav>
 
     <div className={styles.scrollArea}>
