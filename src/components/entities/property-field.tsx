@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ReferenceListField } from '@/components/entities/reference-list-field'
+import { ReferenceField } from '@/components/entities/reference-field'
 import type { PropertyDefinition } from '@/domain/entities/entityType'
 
 export interface ReferenceOption {
@@ -48,10 +49,13 @@ export function PropertyField({
         </select>
       )}
       {property.kind === 'reference' && (
-        <select id={fieldId} name={property.key} defaultValue={typeof defaultValue === 'string' ? defaultValue : ''} className={NATIVE_SELECT_CLASS}>
-          <option value="">Nenhuma seleção</option>
-          {referenceOptions?.map((option) => <option key={option.id} value={option.id}>{option.title}</option>)}
-        </select>
+        <ReferenceField
+          fieldId={fieldId}
+          name={property.key}
+          label={property.label}
+          options={referenceOptions ?? []}
+          initialValue={typeof defaultValue === 'string' ? defaultValue : undefined}
+        />
       )}
       {property.kind === 'referenceList' && (
         <ReferenceListField

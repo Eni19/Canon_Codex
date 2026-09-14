@@ -41,6 +41,7 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
     const candidates = await repo.listEntities(world.id, { type: property.refType })
     referenceOptionsByKey[property.key] = candidates
       .filter((candidate) => candidate.id !== entity.id)
+      .sort((left, right) => left.title.localeCompare(right.title, 'pt-BR'))
       .map((candidate) => ({ id: candidate.id, title: candidate.title }))
   }
 
