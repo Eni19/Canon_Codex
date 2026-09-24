@@ -62,8 +62,9 @@ PERSISTENCE_DRIVER=filesystem
 - [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
   [operação e privacidade](docs/operations-and-privacy.md).
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
-- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md) e
-  [relatório desta execução](docs/documentation-report.md).
+- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md),
+  [ideias de evolução](docs/ideas.md) e [registro de bugs](docs/bugs.md).
+- [Relatório desta execução](docs/documentation-report.md).
 
 ## Arquitetura em uma frase
 

@@ -13,3 +13,6 @@ inventado.
 
 Um item só deve ser marcado como concluído quando o comportamento estiver implementado e
 verificado por código/teste ou quando a decisão externa estiver registrada em fonte acessível.
+
+Ideias propostas de produto, que ainda não são lacunas confirmadas nem compromisso de
+implementação, ficam em [ideas.md](ideas.md). Bugs reproduzidos ficam em [bugs.md](bugs.md).
