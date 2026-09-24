@@ -18,6 +18,24 @@ O aplicativo cria um UUID, um slug de diretório único e o catálogo padrão. D
 o mesmo slug recebem sufixos como `-2`; renomear depois muda o nome exibido, não a identidade nem a
 pasta.
 
+## Configurar o calendário
+
+Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite editar:
+
+- os sete nomes dos dias, horas por dia e os nomes/comprimentos individuais dos meses;
+- as eras anterior e posterior, o nome da origem e sua posição em mês/dia no ano zero;
+- regras de dias intercalares, com mês de aplicação, recorrência, deslocamento e exceções de salto/inclusão.
+
+A prévia mostra a mesma posição no ano `-1`, `0` e `1`, incluindo o nome do dia e da era. Ano zero
+é um ano completo. Salvar valida nomes, meses positivos, origem válida, recorrências e regras que
+apontem para meses existentes; o formulário mantém o erro explicativo na tela quando algo é inválido.
+Cada mundo lê e grava seu próprio calendário, portanto editar um não altera outro. Datas de entidade
+já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por esta configuração.
+
+Mundos existentes recebem o calendário convencional na migração v15→v16 durante a leitura; a leitura
+normal aplica a migração em memória. A importação grava o `world.json` já migrado na cópia local, e
+uma alteração feita na tela grava o calendário validado de forma atômica.
+
 ## Importar uma pasta
 
 1. Selecione **Carregar pasta**.

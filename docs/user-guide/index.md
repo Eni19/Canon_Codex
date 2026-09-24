@@ -10,6 +10,7 @@ uma cena para apresentação.
 | --- | --- |
 | Biblioteca de Codex | `/` |
 | Início do mundo ativo | `/codex` |
+| Configuração do calendário do mundo | `/calendar` |
 | Todos os registros | `/all` |
 | Catálogo de um tipo | `/<entityType>` |
 | Nova entidade | `/<entityType>/new` |

@@ -9,7 +9,7 @@ Uma migração ausente, JSON ilegível, transformação que falha ou resultado q
 interrompe a leitura. A leitura normal não grava de volta o resultado. A exceção documentada é o
 importador de mundos, que copia a pasta e grava o `world.json` já migrado no destino.
 
-## Mundo: v1 → v15
+## Mundo: v1 → v16
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -30,8 +30,10 @@ Registry: `worldMigrations` em
 | 12 | 13 | normaliza propriedades de conceito para categoria e resumo |
 | 13 | 14 | repete a normalização de conceito, removendo definições antigas de notação/paperStyle |
 | 14 | 15 | oculta fenômeno e adiciona espécies e natureza/medicina |
+| 15 | 16 | adiciona o calendário convencional por mundo quando o campo ainda não existe |
 
-O seed atual já é v15 e define 17 tipos. Migrações de mundo preservam definições customizadas
+O seed atual já é v16, define 17 tipos e inclui o calendário convencional (meses gregorianos,
+24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
 

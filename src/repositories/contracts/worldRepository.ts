@@ -2,6 +2,7 @@ import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity, EntityPatch, NewEntityInput } from '@/domain/entities/entity'
 import type { NewRelationInput, Relation } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
+import type { Calendar } from '@/domain/worlds/calendar'
 
 export interface EntityListFilter {
   type?: string
@@ -21,6 +22,7 @@ export interface Backlink {
 export interface WorldRepository {
   listWorlds(): Promise<World[]>
   getWorld(worldId: string): Promise<World>
+  updateCalendar(worldId: string, calendar: Calendar): Promise<World>
 
   listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]>
   getEntity(worldId: string, entityId: string): Promise<Entity | null>

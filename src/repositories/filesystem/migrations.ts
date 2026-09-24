@@ -5,6 +5,7 @@ import { ENTITY_SCHEMA_VERSION } from '@/domain/entities/entity'
 import { WORLD_SCHEMA_VERSION } from '@/domain/worlds/world'
 import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
 import { ConceptBlocksSchema } from '@/domain/entities/conceptBlock'
+import { createDefaultCalendar } from '@/domain/worlds/calendar'
 import type { MigrationRegistry } from '@/lib/migrations/registry'
 
 export const worldMigrations: MigrationRegistry = {
@@ -265,6 +266,11 @@ export const worldMigrations: MigrationRegistry = {
       ]
       return { ...data, schemaVersion: 15, entityTypes: [...entityTypes, ...additions.filter((addition) => !entityTypes.some((type) => type.id === addition.id))] }
     },
+    15: (data) => ({
+      ...data,
+      schemaVersion: 16,
+      calendar: data.calendar ?? createDefaultCalendar(),
+    }),
   },
 }
 export const entityMigrations: MigrationRegistry = {

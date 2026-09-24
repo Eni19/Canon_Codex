@@ -51,6 +51,17 @@ describe('FileSystemWorldRepository', () => {
     expect(fetched).toEqual(created)
   })
 
+  it('round-trips one calendar per world without leaking changes between worlds', async () => {
+    const second = await repo.updateCalendar(worldId, {
+      ...(await repo.getWorld(worldId)).calendar,
+      hoursPerDay: 30,
+      origin: { name: 'Marco Sintético', month: 3, day: 4 },
+    })
+
+    expect(second.calendar.hoursPerDay).toBe(30)
+    expect((await repo.getWorld(worldId)).calendar.origin.name).toBe('Marco Sintético')
+  })
+
   it('persists character themes across creation and unrelated edits', async () => {
     const entity = await repo.createEntity(worldId, {
       type: 'character', title: 'Val', theme: 'green', properties: { age: 25 },

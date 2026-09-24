@@ -1,8 +1,8 @@
 # Canon Codex
 
 Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais. A versão
-atual roda como uma aplicação Next.js local, grava mundos em JSON e oferece registros de
-personagens, locais, organizações, criaturas, evidências, artefatos, cosmologia, eventos e
+atual roda como uma aplicação Next.js local, grava mundos em JSON, oferece um calendário configurável
+por mundo e registros de personagens, locais, organizações, criaturas, evidências, artefatos, cosmologia, eventos e
 narrativas, além de editor, relações, busca, quadros e cenas projetáveis.
 
 Esta documentação descreve o comportamento implementado em **23/09/2026**. Autenticação,
@@ -55,7 +55,7 @@ PERSISTENCE_DRIVER=filesystem
 
 ## Guias
 
-- [Índice do guia de uso](docs/user-guide/index.md): mundos, entidades, editor, quadros, cenas e projeção.
+- [Índice do guia de uso](docs/user-guide/index.md): mundos, calendário, entidades, editor, quadros, cenas e projeção.
 - [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
 - [Armazenamento](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
 - [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
@@ -69,7 +69,7 @@ PERSISTENCE_DRIVER=filesystem
 ## Arquitetura em uma frase
 
 O App Router e as Server Actions orquestram a aplicação; componentes React cuidam da interface;
-`domain/` define esquemas Zod sem I/O; contratos em `repositories/contracts/` isolam a persistência;
+`domain/` define esquemas Zod e o cálculo do calendário sem I/O; contratos em `repositories/contracts/` isolam a persistência;
 e a única implementação disponível é filesystem em `repositories/filesystem/`, selecionada por
 `PERSISTENCE_DRIVER`.
 

@@ -7,7 +7,7 @@ ficam nos [ADRs](.) e não são repetidas aqui.
 
 ```text
 src/app/                         entrada HTTP e navegação Next App Router
-  (wiki)/                        biblioteca, catálogos e telas de edição/leitura
+  (wiki)/                        biblioteca, calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
 src/components/                  UI client/server, Tiptap, tldraw e projeção
@@ -84,6 +84,11 @@ em colisão de diretório, mas rejeita IDs de mundo já existentes ou repetidos 
 As Server Actions selecionam o mundo por cookie HttpOnly `canon-codex-world`, SameSite `lax`,
 caminho `/` e duração de um ano. Excluir o mundo ativo escolhe outro mundo disponível ou apaga o
 cookie.
+
+O mundo também carrega seu calendário em `world.json`. A rota `/calendar` lê o mundo ativo e o
+componente client envia uma configuração JSON para `updateCalendarAction`; a action valida o schema,
+chama `WorldRepository.updateCalendar` e revalida a página. O módulo de domínio concentra cálculo
+ordinal, duração de ano, regras intercalares e formatação, sem delegar anos fictícios a `Date`.
 
 ## Quadros, cenas e projeção
 

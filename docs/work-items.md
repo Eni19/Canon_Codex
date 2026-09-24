@@ -10,6 +10,7 @@ inventado.
 | DOC-GAP-002 | Definir política de restauração e descarte permanente | não implementado | repositórios movem registros para `trash/`, mas não há ação/UI de restauração ou purge | especificar e implementar antes de prometer recuperação pela interface | 23/09/2026 |
 | DOC-GAP-003 | Confirmar uso/licenciamento de `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` | não verificado | `src/components/boards/investigation-board.tsx` e `src/components/scenes/scene-runner.tsx` leem a variável; `.env.example` não a declara | confirmar necessidade e documentar valor seguro, sem publicar segredo | 23/09/2026 |
 | DOC-GAP-004 | Definir política de operação fora de localhost | não suportado/verificado | não há autenticação, autorização, deploy ou monitoramento remoto no código/configuração | não expor a rede pública sem controle de acesso e procedimento operacional | 23/09/2026 |
+| TL-01 | Configurar calendário independente por mundo, com prévia de anos negativos, zero e positivos | implementado e verificado por testes de domínio, migração e filesystem | `src/domain/worlds/calendar.ts`, `/calendar`, `worldMigrations` 15→16 e testes correspondentes | Próximo ticket da linha do tempo, ainda não implementado neste trabalho | 23/09/2026 |
 
 Um item só deve ser marcado como concluído quando o comportamento estiver implementado e
 verificado por código/teste ou quando a decisão externa estiver registrada em fonte acessível.

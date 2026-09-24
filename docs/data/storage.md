@@ -9,7 +9,7 @@ O Canon Codex atual não usa banco relacional, ORM, SQL ou storage remoto. A fon
 <WIKI_WORKSPACE_DIR>/
 ├── worlds/
 │   └── <world-dir>/                  # hoje, o slug do mundo; não é a identidade
-│       ├── world.json                # World + EntityTypeDefinition[]
+│       ├── world.json                # World + EntityTypeDefinition[] + calendar
 │       ├── entities/
 │       │   └── <entity-id>/          # UUID da entidade
 │       │       ├── metadata.json     # Entity, inclusive relations[]
@@ -31,6 +31,20 @@ O Canon Codex atual não usa banco relacional, ORM, SQL ou storage remoto. A fon
 `src/lib/fs/paths.ts` também define `settings/app.json` e `indexes/`, mas a auditoria não encontrou
 consumidor ativo que grave esses caminhos; eles não são parte necessária da recuperação atual.
 
+### Calendário por mundo
+
+`world.json.calendar` é a configuração única usada pelas linhas do tempo daquele mundo. Ela guarda
+sete nomes de dias, uma lista ordenada de meses (`name` e `length`), horas por dia, nomes das eras,
+uma origem (`name`, mês e dia do ano zero) e regras intercalares repetíveis. Uma regra insere um dia
+após o mês indicado em anos cujo ciclo corresponde a `everyYears`/`yearOffset`; `skipEveryYears` e
+`includeEveryYears` permitem exceções. Meses e recorrências têm limites validados pelo schema, e
+comprimentos não positivos são rejeitados.
+
+Datas fictícias não usam `Date` do JavaScript. `src/domain/worlds/calendar.ts` calcula ordinais,
+duração de ano, dias da semana e formatação para anos negativos, zero e positivos. A tela
+`/calendar` altera apenas o mundo ativo por `WorldRepository.updateCalendar`; os campos de data
+existentes das entidades continuam guardando as strings ISO legadas e permanecem legíveis.
+
 ### Identidade e referências
 
 - `World.id`, `Entity.id`, `Asset.id`, `Board.id`, `Scene.id` e `Relation.id` são UUIDs e devem ser
@@ -51,7 +65,7 @@ Os schemas Zod em `src/domain/` são a referência canônica. As versões atuais
 
 | Registro | Versão | Campos/invariantes importantes | Fonte |
 | --- | ---: | --- | --- |
-| `World` | 15 | UUID, slug/nome não vazios, `entityTypes[]`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) |
+| `World` | 16 | UUID, slug/nome não vazios, `entityTypes[]`, `calendar`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) e [`calendar.ts`](../../src/domain/worlds/calendar.ts) |
 | `Entity` | 4 | UUID, `worldId`, tipo/título/slug, aliases/tags, properties, relations, timestamps; capa/galeria referenciam UUIDs | [`entity.ts`](../../src/domain/entities/entity.ts) |
 | `EntityTypeDefinition` | — | id, rótulos, ícone, propriedades, layout limitado a oito blocos e `showInSidebar` | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
 | `Relation` | — | UUIDs de source/target, tipo não vazio, label opcional, direcionalidade e metadata | [`relation.ts`](../../src/domain/relations/relation.ts) |

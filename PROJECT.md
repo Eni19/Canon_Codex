@@ -35,7 +35,7 @@ o repositório; mutações usam Server Actions ou Route Handlers e revalidam qua
 não conhecer o formato dos arquivos. **Estado atual:** a factory em `src/repositories/index.ts`
 oferece quatro contratos:
 
-- `WorldRepository`: mundos, entidades, conteúdo e relações;
+- `WorldRepository`: mundos, calendários, entidades, conteúdo e relações;
 - `AssetStore`: importação, resolução e exclusão lógica de imagens;
 - `BoardRepository`: snapshots de quadros;
 - `SceneRepository`: cenas, snapshots e grade.
@@ -84,6 +84,8 @@ do estado atual, não autorização para espalhar I/O em novos componentes.
 O arquivo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`) com
 `properties: Record<string, unknown>`, relações e conteúdo separado. `EntityTypeDefinition` em
 `world.json` declara propriedades, ícone, visibilidade e blocos de layout.
+O mesmo `world.json` guarda `calendar`, validado por `src/domain/worlds/calendar.ts`: dias da
+semana, meses com duração própria, horas por dia, eras, origem e regras intercalares.
 
 A decisão histórica pretendia que todos os tipos fossem renderizados pelo mesmo compositor. O
 estado atual é híbrido: o compositor usa os blocos declarados, mas `src/components/entities/

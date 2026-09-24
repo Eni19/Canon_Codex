@@ -126,6 +126,12 @@ createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
 ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
 
+`updateCalendarAction` recebe o calendário serializado pelo formulário de `/calendar`, valida-o com
+`CalendarSchema` e grava-o no mundo ativo via `WorldRepository.updateCalendar`. Em sucesso retorna
+estado `saved`; em JSON inválido, mês não positivo, origem inválida ou outra falha de schema retorna
+uma mensagem de erro para o formulário. Não é uma API pública e não aceita um `worldId` enviado pelo
+navegador: o mundo é selecionado pelo cookie ativo.
+
 ### Entidades e conteúdo
 
 createEntityAction resolve o tipo no mundo ativo, exige título e cria o registro.

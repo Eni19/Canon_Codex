@@ -12,6 +12,7 @@ ignorada pelo Git.
 | --- | --- |
 | `/` | `src/app/(wiki)/page.tsx` |
 | `/codex` | `src/app/(wiki)/codex/page.tsx` |
+| `/calendar` | `src/app/(wiki)/calendar/page.tsx` |
 | `/all` | `src/app/(wiki)/all/page.tsx` |
 | `/<entityType>` | `src/app/(wiki)/[entityType]/page.tsx` |
 | `/<entityType>/new` | `src/app/(wiki)/[entityType]/new/page.tsx` |
@@ -32,6 +33,7 @@ aplicação. O grupo de rota não aparece na URL.
 | Fluxo | Funções | Fonte |
 | --- | --- | --- |
 | Biblioteca de Codex | `openWorldAction`, `createWorldAction`, `importWorldAction`, `manageWorldAction` | `src/app/actions/worlds.ts` |
+| Calendário do mundo | `updateCalendarAction` | `src/app/actions/calendar.ts` |
 | Entidades e conteúdo | `createEntityAction`, `updateEntityAction`, `deleteEntityAction` | `src/app/actions/entities.ts` |
 | Imagens | `importCoverImageAction`, `importCosmologySymbolAction`, `removeCoverImageAction` | `src/app/actions/assets.ts` |
 | Relações | `addRelationAction`, `removeRelationAction` | `src/app/actions/relations.ts` |
@@ -70,7 +72,7 @@ política de compatibilidade versionada.
 | Projeção | `src/domain/projection/projection.ts` |
 | Dados específicos | `src/domain/entities/{locationPoint,evidenceFinding,organizationGroup,artifactDetail,conceptBlock}.ts` |
 
-Versões atuais verificadas: `World` 15, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
+Versões atuais verificadas: `World` 16, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
 e `Scene` 1. As fontes canônicas são os esquemas Zod, não esta tabela.
 
 ### Testes
@@ -84,6 +86,7 @@ Os testes incluídos por `vitest.config.mts` são `src/**/*.test.ts`:
 - `src/repositories/filesystem/fileSystemBoardRepository.test.ts` — snapshots e exclusão;
 - `src/repositories/filesystem/fileSystemSceneRepository.test.ts` — persistência e duplicação;
 - `src/repositories/filesystem/migrations.test.ts` e `src/lib/migrations/registry.test.ts` — migrações;
+- `src/domain/worlds/calendar.test.ts` — cálculo, validação e formatação de calendários;
 - `src/lib/fs/atomicWrite.test.ts` — escrita atômica;
 - `src/lib/projection/projection-state-builder.test.ts` — filtragem de dados ocultos na projeção;
 - `src/services/assets/isAssetReferenced.test.ts` — referências de assets;

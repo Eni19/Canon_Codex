@@ -28,6 +28,11 @@ Eles removem esses diretórios em afterEach; não apontam para o workspace priva
 - projeção: remoção de tokens/POIs ocultos do estado público;
 - schemas de referências específicas e blocos de conceito.
 
+O calendário tem testes de domínio para ordinais antes/depois do ano zero, ano zero completo,
+regras bissextas, formatação de dias/eras e rejeição de entradas inválidas. Migrações sintéticas
+verificam a inclusão do calendário em mundos v15; testes de filesystem verificam round-trip e
+isolamento entre mundos. Não há teste E2E de interação visual da tela `/calendar`.
+
 ## O que não é verificado automaticamente
 
 Não há suíte E2E, teste de navegador, teste de acessibilidade visual, teste de deploy, backup físico,

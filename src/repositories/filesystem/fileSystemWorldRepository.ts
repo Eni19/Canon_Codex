@@ -5,12 +5,15 @@ import { ContentDocumentSchema, emptyContentDocument, type ContentDocument } fro
 import { EntityPatchSchema, EntitySchema, ENTITY_SCHEMA_VERSION, NewEntityInputSchema, type Entity, type EntityPatch, type NewEntityInput } from '@/domain/entities/entity'
 import { NewRelationInputSchema, RelationSchema, type NewRelationInput, type Relation } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
+import { CalendarSchema } from '@/domain/worlds/calendar'
+import { WorldSchema } from '@/domain/worlds/world'
 import { atomicWriteJson, ensureDir, pathExists } from '@/lib/fs/atomicWrite'
 import {
   getEntitiesDir,
   getEntityContentPath,
   getEntityDir,
   getEntityMetadataPath,
+  getWorldJsonPath,
   getTrashDir,
 } from '@/lib/fs/paths'
 import { newId } from '@/lib/ids'
@@ -53,6 +56,15 @@ export class FileSystemWorldRepository implements WorldRepository {
   async getWorld(worldId: string): Promise<World> {
     const worldDir = await resolveWorldDir(worldId)
     return readWorldByDir(worldDir)
+  }
+
+  async updateCalendar(worldId: string, calendar: World['calendar']): Promise<World> {
+    const parsedCalendar = CalendarSchema.parse(calendar)
+    const worldDir = await resolveWorldDir(worldId)
+    const current = await readWorldByDir(worldDir)
+    const next = WorldSchema.parse({ ...current, calendar: parsedCalendar, updatedAt: new Date().toISOString() })
+    await atomicWriteJson(getWorldJsonPath(worldDir), next)
+    return next
   }
 
   async listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]> {

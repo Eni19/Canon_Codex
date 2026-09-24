@@ -33,6 +33,16 @@ describe('world library', () => {
     expect(created.entityTypes.some((type) => type.id === 'character')).toBe(true)
   })
 
+  it('keeps calendar settings isolated between worlds', async () => {
+    const first = (await getWorldRepository().listWorlds())[0]
+    const second = await createWorld('Segundo Mundo')
+
+    await getWorldRepository().updateCalendar(first.id, { ...first.calendar, hoursPerDay: 30 })
+
+    expect((await getWorldRepository().getWorld(first.id)).calendar.hoursPerDay).toBe(30)
+    expect((await getWorldRepository().getWorld(second.id)).calendar.hoursPerDay).toBe(24)
+  })
+
   it('renames a world without changing its identity or folder', async () => {
     const created = await createWorld('Nome Inicial')
 
