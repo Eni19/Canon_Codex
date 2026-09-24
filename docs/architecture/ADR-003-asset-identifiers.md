@@ -1,5 +1,12 @@
 # ADR-003: Assets referenciados por ID opaco, nunca por path
 
+## Estado atual em 23/09/2026
+
+IDs opacos, cópia para o workspace, variantes e resolução por Route Handler estão implementados.
+O handler escolhe o mundo pelo cookie `canon-codex-world`; isso é seleção de contexto, não
+autenticação ou autorização de usuário. Não há login nem publicação seletiva: não trate a URL como
+uma camada de segurança para exposição em rede pública.
+
 ## Contexto
 
 Imagens vêm do computador do usuário (`C:\Users\...\Amadeus.png`). Se a aplicação guardasse esse
@@ -32,8 +39,8 @@ isso e que a futura migração para S3/R2/Supabase Storage não exija reescrever
 ## Consequências
 
 - Toda leitura de imagem passa por um Route Handler (custo pequeno de uma chamada HTTP a mais por
-  imagem), o que também é o ponto único onde no futuro entra controle de acesso/publicação seletiva
-  de páginas públicas.
+  imagem). O handler é um ponto futuro possível para controle de acesso/publicação seletiva, mas
+  esse controle ainda não existe.
 - `S3AssetStore`/`R2AssetStore` implementam o mesmo contrato de `AssetStore` trocando apenas a
   resolução interna de `assetId -> localização`; a assinatura pública (`assetId`, `variant`)
   não muda.

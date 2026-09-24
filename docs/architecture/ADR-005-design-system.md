@@ -1,5 +1,12 @@
 # ADR-005: Design system com tokens semânticos, tema "dossiê editorial"
 
+## Estado atual em 23/09/2026
+
+Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
+quadros e cenas também usa componentes próprios e tldraw, mas isso não altera a decisão de tokens:
+novos estilos devem continuar referenciando o sistema semântico. A visão e as limitações de
+segurança/operação da aplicação estão em [`docs/operations-and-privacy.md`](../operations-and-privacy.md).
+
 ## Contexto
 
 O produto não deve parecer um painel administrativo genérico ou um template SaaS/Bootstrap

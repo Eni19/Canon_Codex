@@ -1,113 +1,114 @@
-# PROJECT.md — Wiki Local-First de Worldbuilding
+# PROJECT.md — Wiki local-first de worldbuilding
 
-Este documento é a memória arquitetural do projeto. Leia-o antes de fazer mudanças estruturais.
-Decisões marcadas como **[fixas]** não devem ser revertidas sem justificativa explícita registrada
-em um novo ADR (`docs/architecture/`).
+Este documento registra a memória arquitetural e separa regras desejadas do comportamento que foi
+verificado no código em **23/09/2026**. Decisões marcadas como **[fixas]** só devem mudar com
+justificativa explícita em novo ADR.
 
 ## Visão do produto
 
-Uma wiki pessoal local-first para criar e explorar universos fictícios: personagens, locais,
+Canon Codex é uma wiki local para criar e explorar universos fictícios: personagens, locais,
 organizações, casos, eventos, documentos, evidências, pistas, criaturas, fenômenos, objetos,
-conceitos e linhas do tempo. O primeiro mundo documentado é um universo de investigação e
-paranormalidade, mas a arquitetura é genérica — novos tipos de entidade (Espécie, Religião,
-Planeta, Magia, Deus, Reino...) devem ser adicionáveis via configuração de dados, não via mudanças
-no código central.
+conceitos, cosmologia, espécies, natureza/medicina, contos e linhas do tempo. A aplicação é
+single-user e local nesta versão.
 
-Visão de longo prazo: múltiplos mundos, banco de dados hospedado, autenticação e multi-usuário,
-colaboração, cloud storage, publicação pública seletiva — sem reescrever o domínio ou a UI.
+Autenticação, multiusuário, colaboração remota, banco hospedado, cloud storage e publicação pública
+são visão de longo prazo, não capacidades disponíveis. Qualquer mudança nessa fronteira exige
+revisão de segurança, operação e documentação.
 
-## Stack **[fixa]**
+## Stack e execução
 
-- Next.js (App Router) + React + TypeScript strict. pnpm como gerenciador de pacotes.
-- Tailwind CSS v4 + shadcn/ui (base Radix) + lucide-react.
-- Tiptap/ProseMirror para o editor rich-text, isolado atrás de `domain/content/ContentDocument`.
-- Zod para validação de todo dado persistido.
-- Fuse.js para busca fuzzy local.
-- Vitest para testes.
-- **Cache Components do Next.js 16 (`cacheComponents: true`) está desligado deliberadamente.**
-  Esta é uma ferramenta local-first, single-user, onde os dados mudam via mutação direta no
-  filesystem e a UI deve sempre refletir o estado mais recente — o modelo de cache/PPR pensado
-  para sites públicos de alto tráfego adicionaria complexidade (`Suspense` em toda leitura
-  dinâmica, `use cache` em toda função) sem benefício aqui. Usamos o modelo "clássico": Server
-  Components fazem leitura direta, Server Actions mutam e chamam `revalidatePath`/`redirect`.
+- Next.js `16.3.4` com App Router, React `19.2.8` e TypeScript strict;
+- pnpm declarado como `12.3.4` em `package.json`;
+- Tailwind CSS v4, componentes locais inspirados em shadcn/Radix e lucide-react;
+- Tiptap/ProseMirror para conteúdo rico, isolado por `ContentDocument`;
+- Zod para validar dados persistidos e entradas de domínio;
+- Fuse.js para busca fuzzy local;
+- Vitest para testes;
+- tldraw para quadros e cenas.
 
-## Arquitetura de persistência **[fixa]**
+O Cache Components do Next.js não foi habilitado em `next.config.ts`. Leituras dinâmicas acessam
+o repositório; mutações usam Server Actions ou Route Handlers e revalidam quando necessário.
 
-- **Local-first**: neste estágio não há banco de dados hospedado, autenticação ou storage externo.
-  Tudo vive em `workspace/` no filesystem local, versionável em Git.
-- Toda operação de leitura/escrita passa pelas interfaces em `src/repositories/contracts/`:
-  `WorldRepository` e `AssetStore`. Nenhum componente React ou Server Action deve chamar `fs`
-  diretamente — sempre através dessas interfaces, obtidas via factory (`getWorldRepository()`,
-  `getAssetStore()`) que lê `PERSISTENCE_DRIVER` (hoje só `filesystem`).
-- A implementação atual é `FileSystemWorldRepository`/`FileSystemAssetStore`
-  (`src/repositories/filesystem/`). Futuras implementações (`PostgresWorldRepository`,
-  `S3AssetStore`) implementam os mesmos contratos — ver `docs/architecture/ADR-001`.
-- **IDs são a identidade permanente.** `Entity.id` e `Asset.id` são UUIDs que nunca mudam. Título,
-  slug e nome de arquivo são metadados, não identidade. Links internos sempre referenciam
-  `entityId`. Ver `docs/architecture/ADR-002` e `ADR-003`.
-- **Nunca persistir paths absolutos do SO.** Assets são resolvidos só via `assetId` através do
-  `AssetStore`, servidos por `/api/assets/[assetId]/[variant]`.
-- Todo JSON persistido tem `schemaVersion`. Migrações vivem em `src/lib/migrations/` e são
-  aplicadas de forma lazy na leitura.
-- Escrita é sempre atômica (`src/lib/fs/atomicWriteJson.ts`: escreve `.tmp`, valida, `rename`).
-- Exclusão é sempre soft-delete (move para `trash/`); exclusão permanente é uma ação separada.
-- Dado derivado/reconstruível (índice de busca, thumbnails, backlinks calculados) nunca é fonte da
-  verdade — pode ser apagado e reconstruído a partir das entidades sem perda de conteúdo.
+## Persistência: regra e estado atual
 
-## Estrutura de pastas
+**Regra arquitetural [fixa]:** telas, componentes e Server Actions devem depender de contratos,
+não conhecer o formato dos arquivos. **Estado atual:** a factory em `src/repositories/index.ts`
+oferece quatro contratos:
 
+- `WorldRepository`: mundos, entidades, conteúdo e relações;
+- `AssetStore`: importação, resolução e exclusão lógica de imagens;
+- `BoardRepository`: snapshots de quadros;
+- `SceneRepository`: cenas, snapshots e grade.
+
+A única implementação disponível é filesystem:
+`FileSystemWorldRepository`, `FileSystemAssetStore`, `FileSystemBoardRepository` e
+`FileSystemSceneRepository`, em `src/repositories/filesystem/`. `PERSISTENCE_DRIVER` só aceita
+`filesystem` hoje; Postgres/S3 são possibilidades futuras, não implementações presentes.
+
+O diretório padrão é `workspace/`, ou o caminho absoluto em `WIKI_WORKSPACE_DIR`. Ele contém dados
+privados e está excluído por `.gitignore`; portanto não é atualmente versionável em Git, apesar de
+essa possibilidade ter aparecido em documentação histórica.
+
+IDs de mundo, entidade, relação e asset são UUIDs persistentes. Slugs e nomes de diretório são
+detalhes de armazenamento: o diretório de mundo usa hoje o slug, e `resolveWorldDir` encontra o
+slug lendo `world.json`. Nunca persistir path absoluto do sistema operacional em entidades.
+
+As escritas JSON usam `src/lib/fs/atomicWrite.ts`, não `atomicWriteJson.ts`: o arquivo é escrito
+em um temporário no mesmo diretório e renomeado. A validação Zod ocorre antes da gravação nas
+operações de domínio; leituras de mundo, entidade, conteúdo e asset aplicam migração e schema.
+Quadros e cenas leem e validam diretamente seus schemas atuais.
+
+Exclusão de mundo, entidade, asset, quadro e cena é hoje um `rename` para `trash/`. Não há ação de
+restauração nem descarte permanente implementada; a documentação não trata a lixeira como backup.
+
+## Camadas e dependências
+
+```text
+src/app/                 App Router, páginas, Server Actions e Route Handlers
+src/components/          UI, editores, catálogos, quadros, cenas e projeções
+src/services/             casos de uso como biblioteca de mundos e busca
+src/domain/               schemas/tipos Zod, sem responsabilidade de I/O
+src/repositories/        contratos e implementação filesystem
+src/lib/fs/               caminhos e escrita atômica
+src/lib/migrations/       registry de migrações lazy
 ```
-workspace/                     # dados do usuário (Git-friendly)
-  worlds/<world-slug>/
-    world.json                 # World + entityTypes
-    entities/<id>/{metadata.json, content.json}
-    assets/<id>/{asset.json, original.<ext>, thumbnail.webp}
-    trash/
-  settings/app.json
-src/
-  app/                         # rotas Next.js (App Router)
-  components/{ui,wiki,entities,editor}/
-  domain/{entities,relations,assets,content,worlds}/  # tipos + Zod schemas, sem I/O
-  repositories/{contracts,filesystem}/                # persistência
-  services/search/
-  lib/{fs,migrations,ids}/
-```
 
-Regra: `domain/` não importa nada de `repositories/` ou `app/`. `repositories/filesystem/` é o
-único lugar que importa `node:fs`. Componentes de UI não sabem que o storage é o filesystem.
+O domínio não importa repositórios nem App Router. A intenção é que a UI use os contratos; a
+implementação atual ainda tem I/O auxiliar em `src/services/worlds/worldLibrary.ts`,
+`src/repositories/filesystem/worldDirRegistry.ts`, `src/lib/fs/` e no handler que transmite o
+asset, porque esses pontos realizam descoberta, cópia, rename ou streaming. Essa é uma observação
+do estado atual, não autorização para espalhar I/O em novos componentes.
 
-## Modelo de entidade **[fixo]**
+## Modelo de entidades e apresentação
 
-Uma única interface `Entity` genérica (não uma tabela por tipo). O comportamento por tipo
-(propriedades, layout da página, ícone, cor) vem de `EntityTypeDefinition`, dado carregado do
-`world.json`, não hardcoded em componentes. Ver `docs/architecture/ADR-002`.
+O arquivo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`) com
+`properties: Record<string, unknown>`, relações e conteúdo separado. `EntityTypeDefinition` em
+`world.json` declara propriedades, ícone, visibilidade e blocos de layout.
 
-Relações (`Relation`) são cidadãs de primeira classe, embutidas no array `entity.relations`, com
-backlinks computados por varredura (dado derivado, cacheável no futuro sem mudar a API).
+A decisão histórica pretendia que todos os tipos fossem renderizados pelo mesmo compositor. O
+estado atual é híbrido: o compositor usa os blocos declarados, mas `src/components/entities/
+entity-page.tsx` seleciona páginas específicas para local, evidência, organização, criatura,
+evento, artefato, cosmologia, conto, conceito, espécie e natureza/medicina; personagem também usa
+uma composição de retrato. Os demais tipos usam o compositor genérico. Ver
+[ADR-002](docs/architecture/ADR-002-entity-model.md).
 
-## Convenções de UI
+Relações são armazenadas no array da entidade fonte; backlinks são derivados por varredura de
+`targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
+domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
 
-- Design system com tokens semânticos em `src/app/globals.css` (`--background`, `--surface`,
-  `--primary`, `--accent`, `--danger`, `--sidebar`, etc.) — nunca cor hex solta em componentes.
-  Ver `docs/architecture/ADR-005`.
-- `EntityPage` é uma composição de blocos (`header`, `hero`, `properties`, `content`, `gallery`,
-  `relations`, `backlinks`) ativados pelo `EntityTypeDefinition.layout` — não crie um layout novo
-  por tipo de entidade.
-- Componentes pequenos e focados; lógica de domínio/filesystem nunca dentro de componentes React.
+## Convenções de mudança
 
-## O que a IA não deve alterar sem justificativa
-
-- Trocar o modelo de cache do Next.js (habilitar `cacheComponents`) sem atualizar este documento e
-  registrar um novo ADR.
-- Modelar tipos de entidade como interfaces/tabelas hardcoded em vez de `EntityTypeDefinition`.
-- Fazer componentes de UI ou Server Actions acessarem `node:fs` diretamente, pulando
-  `WorldRepository`/`AssetStore`.
-- Persistir paths absolutos do sistema operacional em qualquer entidade/asset.
-- Remover `schemaVersion` de qualquer arquivo persistido ou pular a validação Zod na leitura.
-- Trocar exclusão permanente por padrão (deve continuar sendo soft-delete via `trash/`).
+- Mudanças de domínio: atualize o schema Zod, versão/migração quando necessário, repositório e
+  testes de round-trip/erro antes de alterar a UI.
+- Mudanças de persistência: preserve contratos, valide leitura e escrita e documente árvore,
+  migração, backup e rollback possível.
+- Mudanças de UI: componha a partir de tokens em `src/app/globals.css`; não introduza hex solto.
+- Mudanças de API/Server Action/configuração: atualize a referência de interfaces e exemplos.
+- Não persistir paths absolutos, remover `schemaVersion` ou transformar exclusão lógica em
+  permanente sem ADR e atualização documental.
 
 ## Testes
 
-Vitest cobre os caminhos onde perda de dados seria grave: CRUD de entidade, relations/backlinks,
-import de assets, migrações de schema, escrita atômica. Não é necessário testar trivialidades de
-apresentação.
+O escopo atual prioriza perda de dados: CRUD de entidade, relações/backlinks, assets, quadros,
+cenas, migrações, escrita atômica, biblioteca de mundos, dados derivados de projeção e schemas
+específicos. Não há teste E2E ou contrato público de API verificado.

@@ -1,30 +1,20 @@
 # Canon Codex
 
-Canon Codex é uma wiki local para criação, organização e apresentação de universos ficcionais. O projeto reúne personagens, locais, organizações, criaturas, evidências, artefatos, cosmologia, eventos e narrativas em uma interface voltada para worldbuilding e RPG.
+Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais. A versão
+atual roda como uma aplicação Next.js local, grava mundos em JSON e oferece registros de
+personagens, locais, organizações, criaturas, evidências, artefatos, cosmologia, eventos e
+narrativas, além de editor, relações, busca, quadros e cenas projetáveis.
 
-Os dados permanecem no computador do usuário. Cada Codex é armazenado como uma pasta independente e pode ser criado, importado, renomeado ou removido pela própria aplicação.
+Esta documentação descreve o comportamento implementado em **23/09/2026**. Autenticação,
+colaboração remota, banco relacional, armazenamento em nuvem e publicação pública não fazem parte
+da versão verificada.
 
-> O projeto está em desenvolvimento ativo. Estruturas de dados e interfaces ainda podem mudar.
+## Começar
 
-## Recursos
+Requisitos verificados no projeto:
 
-- Biblioteca com múltiplos Codex e importação de mundos por pasta.
-- Páginas próprias para personagens, locais, organizações, criaturas, evidências, artefatos e cosmologia.
-- Catálogos pesquisáveis com agrupamentos por nome, organização, local, hierarquia regional e natureza.
-- Editor de conteúdo em blocos com texto formatado e dados de RPG.
-- Relações e referências entre entidades.
-- Mapas de locais com pontos de interesse.
-- Quadro de investigação em canvas infinito.
-- Scene Runner para preparação, condução e projeção de cenas.
-- Temas de cor por entidade e interface responsiva.
-- Persistência local em JSON com validação e migrações de esquema.
-
-## Requisitos
-
-- Node.js 20.9 ou mais recente.
-- [pnpm](https://pnpm.io/) 12 ou compatível.
-
-## Instalação
+- Node.js `>=20.9.0` (requisito declarado pelo Next.js `16.3.4` instalado);
+- pnpm, preferencialmente a versão declarada em `package.json` (`12.3.4`).
 
 ```bash
 git clone https://github.com/Eni19/Canon_Codex.git
@@ -33,50 +23,55 @@ pnpm install
 pnpm dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) no navegador.
+Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo semente chamado
+`Canon Codex` quando ainda não existe `workspace/worlds/`. Para uma instalação isolada, veja
+[Configuração](docs/reference/configuration.md).
 
-## Dados locais e privacidade
-
-Por padrão, o Canon Codex guarda todo o conteúdo em `workspace/` dentro da pasta do projeto. Essa pasta contém mundos, textos, imagens, cenas e quadros do usuário e está inteiramente excluída do Git.
-
-Para manter os dados em outro local, copie `.env.example` para `.env.local` e defina um caminho absoluto:
-
-```env
-WIKI_WORKSPACE_DIR=C:\caminho\para\meus-codex
-```
-
-Nunca publique a pasta configurada em `WIKI_WORKSPACE_DIR`. Para fazer backup de um mundo, copie sua pasta separadamente para um local privado.
-
-## Comandos
+Comandos disponíveis:
 
 ```bash
-pnpm dev        # inicia o ambiente de desenvolvimento
-pnpm build      # gera a versão de produção
-pnpm start      # executa a versão de produção
-pnpm typecheck  # verifica os tipos TypeScript
-pnpm lint       # executa o ESLint
-pnpm test       # executa os testes com Vitest
+pnpm dev        # desenvolvimento
+pnpm build      # build de produção
+pnpm start      # servidor local de produção, depois de pnpm build
+pnpm typecheck  # TypeScript sem emissão
+pnpm lint       # ESLint
+pnpm test       # Vitest em modo run
 ```
 
-## Arquitetura
+## Dados e privacidade
 
-O projeto usa Next.js com App Router, React, TypeScript, Tailwind CSS, Tiptap, Zod, Anime.js e tldraw.
+O conteúdo fica em `WIKI_WORKSPACE_DIR` ou, por padrão, em `workspace/` na raiz do projeto. Essa
+pasta inclui mundos, entidades, conteúdo, imagens, quadros, cenas e `trash/`; está explicitamente
+ignorada pelo Git. Não publique nem versiona esse diretório sem uma política de privacidade própria.
 
-```text
-src/
-  app/                         rotas, ações de servidor e APIs
-  components/                  interface, editores, entidades e ferramentas
-  domain/                      esquemas e tipos do domínio
-  repositories/               contratos e persistência no filesystem
-  services/                    operações de aplicação
-  lib/                         utilitários, migrações e projeção
-workspace/                     dados privados do usuário, ignorados pelo Git
+O backup e a recuperação manual estão descritos em
+[Backup e restauração](docs/data/backup-and-restore.md). O caminho pode ser alterado com um
+`.env.local` privado:
+
+```env
+WIKI_WORKSPACE_DIR=C:\Dados\meus-codex
+PERSISTENCE_DRIVER=filesystem
 ```
 
-A interface acessa os dados através de contratos de repositório. A implementação atual usa o filesystem local, enquanto IDs estáveis e versões de esquema permitem evoluir a persistência sem acoplar os componentes aos arquivos.
+## Guias
 
-As decisões arquiteturais estão documentadas em [`docs/architecture`](docs/architecture).
+- [Índice do guia de uso](docs/user-guide/index.md): mundos, entidades, editor, quadros, cenas e projeção.
+- [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
+- [Armazenamento](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
+- [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
+- [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
+  [operação e privacidade](docs/operations-and-privacy.md).
+- [ADRs](docs/architecture/): decisões históricas e estado atual.
+- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md) e
+  [relatório desta execução](docs/documentation-report.md).
 
-## Estado do projeto
+## Arquitetura em uma frase
 
-Canon Codex é atualmente uma ferramenta pessoal e local. Autenticação, colaboração remota e armazenamento em nuvem ainda não fazem parte desta versão.
+O App Router e as Server Actions orquestram a aplicação; componentes React cuidam da interface;
+`domain/` define esquemas Zod sem I/O; contratos em `repositories/contracts/` isolam a persistência;
+e a única implementação disponível é filesystem em `repositories/filesystem/`, selecionada por
+`PERSISTENCE_DRIVER`.
+
+Para manter essa fronteira, toda mudança de código, dados, APIs ou configuração deve avaliar e
+atualizar a documentação afetada na mesma tarefa. Essa regra também está em
+[`AGENTS.md`](AGENTS.md).
