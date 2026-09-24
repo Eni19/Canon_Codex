@@ -3,6 +3,9 @@
 O Canon Codex atual não usa banco relacional, ORM, SQL ou storage remoto. A fonte da verdade é a
 árvore de arquivos JSON e binários sob `WIKI_WORKSPACE_DIR`.
 
+O diretório local `workspace/` é privado: permanece ignorado pelo Git e pela política de contexto da
+IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintéticos fora dele.
+
 ## Árvore persistida
 
 ```text

@@ -18,3 +18,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   resumo da tarefa ou no relatório de mudança; não presuma que mudanças de contrato são
   documentais neutras.
 - Não copie dados reais de `workspace/` para documentação, exemplos ou testes.
+
+## Privacidade do workspace
+
+- `workspace/` e todos os seus descendentes são dados privados do usuário e estão fora do escopo da IA.
+- Trate esse caminho como indisponível: não liste, pesquise, abra, leia, indexe, resuma, copie, cite
+  nem use qualquer conteúdo dele como contexto, exemplo, teste ou evidência.
+- Para testes e exemplos, use somente dados sintéticos em diretórios temporários ou arquivos fora de
+  `workspace/`. A política correspondente também está registrada em `.aiignore`.

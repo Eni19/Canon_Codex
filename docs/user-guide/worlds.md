@@ -24,7 +24,10 @@ Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite ed
 
 - os sete nomes dos dias, horas por dia e os nomes/comprimentos individuais dos meses;
 - as eras anterior e posterior, o nome da origem e sua posição em mês/dia no ano zero;
-- regras de dias intercalares, com mês de aplicação, recorrência, deslocamento e exceções de salto/inclusão.
+- regras de dias intercalares: o mês define depois de qual mês o dia entra; a recorrência define de
+  quantos em quantos anos ele aparece; o deslocamento move o primeiro ano do ciclo. As opções de
+  salto e inclusão permitem exceções, como saltar anos divisíveis por 100 e incluir novamente os
+  divisíveis por 400.
 
 A prévia mostra a mesma posição no ano `-1`, `0` e `1`, incluindo o nome do dia e da era. Ano zero
 é um ano completo. Salvar valida nomes, meses positivos, origem válida, recorrências e regras que
