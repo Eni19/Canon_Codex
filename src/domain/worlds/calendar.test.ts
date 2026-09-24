@@ -4,6 +4,7 @@ import {
   createDefaultCalendar,
   dateToOrdinal,
   formatCalendarDate,
+  formatCalendarDateForPreview,
   getCalendarDateAtOrdinal,
   getCalendarYearLength,
   validateCalendarDate,
@@ -79,5 +80,12 @@ describe('calendário do mundo', () => {
 
     expect(result.success).toBe(false)
     if (!result.success) expect(result.error.issues.some((issue) => issue.message.includes('mês'))).toBe(true)
+  })
+
+  it('mantém a prévia segura enquanto um campo numérico inválido é editado', () => {
+    const calendar = createDefaultCalendar()
+    calendar.months[0].length = Number.MAX_SAFE_INTEGER + 1
+
+    expect(formatCalendarDateForPreview(calendar, { year: 1, month: 1, day: 1 })).toContain('Prévia indisponível')
   })
 })

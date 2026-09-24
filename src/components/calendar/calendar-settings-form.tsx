@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { CalendarPlus, Check, Plus, Trash2 } from 'lucide-react'
 import { updateCalendarAction, type CalendarActionState } from '@/app/actions/calendar'
-import { formatCalendarDate, type Calendar, type IntercalaryRule } from '@/domain/worlds/calendar'
+import { formatCalendarDateForPreview, MAX_DAYS_IN_MONTH, type Calendar, type IntercalaryRule } from '@/domain/worlds/calendar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -79,7 +79,7 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
             <div className="mt-3 flex flex-col gap-2">
               {calendar.months.map((month, index) => <div key={index} className="grid grid-cols-[1fr_7rem_auto] items-end gap-2">
                 <div><Label htmlFor={`month-name-${index}`} className="text-xs text-muted-foreground">Mês {index + 1}</Label><Input id={`month-name-${index}`} className="mt-1" value={month.name} onChange={(event) => updateMonth(index, { name: event.target.value })} /></div>
-                <div><Label htmlFor={`month-length-${index}`} className="text-xs text-muted-foreground">Dias</Label><Input id={`month-length-${index}`} className="mt-1" type="number" min={1} value={month.length} onChange={(event) => updateMonth(index, { length: Number(event.target.value) })} /></div>
+                <div><Label htmlFor={`month-length-${index}`} className="text-xs text-muted-foreground">Dias</Label><Input id={`month-length-${index}`} className="mt-1" type="number" min={1} max={MAX_DAYS_IN_MONTH} value={month.length} onChange={(event) => updateMonth(index, { length: Number(event.target.value) })} /><p className="mt-1 text-xs text-muted-foreground">Máximo: {MAX_DAYS_IN_MONTH.toLocaleString('pt-BR')}.</p></div>
                 <Button type="button" variant="ghost" size="icon" aria-label={`Remover ${month.name}`} disabled={calendar.months.length === 1} onClick={() => setCalendar((current) => ({ ...current, months: current.months.filter((_, monthIndex) => monthIndex !== index), origin: current.origin.month === index + 1 ? { ...current.origin, month: 1, day: 1 } : current.origin.month > index + 1 ? { ...current.origin, month: current.origin.month - 1 } : current.origin, intercalaryRules: current.intercalaryRules.filter((rule) => rule.month !== index + 1).map((rule) => rule.month > index + 1 ? { ...rule, month: rule.month - 1 } : rule) }))}><Trash2 /></Button>
               </div>)}
             </div>
@@ -124,7 +124,7 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
       <Card>
         <CardHeader><CardTitle>Prévia de datas</CardTitle><CardDescription>O mesmo cálculo é usado por toda a aplicação e não depende de Date do JavaScript.</CardDescription></CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {previewYears.map((year) => <div key={year} className="rounded-md border border-border bg-muted/20 p-3"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ano {year}</p><p className="mt-2 text-sm">{formatCalendarDate(calendar, { year, ...previewDate })}</p></div>)}
+          {previewYears.map((year) => <div key={year} className="rounded-md border border-border bg-muted/20 p-3"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ano {year}</p><p className="mt-2 text-sm">{formatCalendarDateForPreview(calendar, { year, ...previewDate })}</p></div>)}
           <p className="sm:col-span-3 text-xs text-muted-foreground">Os campos de data já existentes continuam armazenados e exibidos como valores ISO legíveis; esta tela configura a convenção usada pelas linhas do tempo.</p>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const MAX_MONTHS = 36
-const MAX_DAYS_IN_MONTH = 1_000_000
+export const MAX_DAYS_IN_MONTH = 1_000_000
 const MAX_HOURS_PER_DAY = 1_000
 
 export const CalendarMonthSchema = z.object({
@@ -189,6 +189,15 @@ export function formatCalendarDate(calendar: Calendar, input: CalendarDate): str
   if (date.day === undefined) return `${month}, ${yearLabel}`
   const weekday = calendar.daysOfWeek[mod(dateToOrdinal(calendar, date), calendar.daysOfWeek.length)]
   return `${weekday}, ${date.day} de ${month}, ${yearLabel}`
+}
+
+export function formatCalendarDateForPreview(calendar: Calendar, input: CalendarDate): string {
+  try {
+    return formatCalendarDate(calendar, input)
+  } catch (error) {
+    if (error instanceof CalendarDateError) return `Prévia indisponível: ${error.message}`
+    return 'Prévia indisponível: corrija os valores do calendário.'
+  }
 }
 
 export class CalendarDateError extends Error {
