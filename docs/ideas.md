@@ -19,11 +19,9 @@ edição de períodos e uma decisão sobre como eventos e entidades serão relac
 
 ### Decisões necessárias
 
-- linha do tempo como entidade, tela independente ou os dois;
-- datas exatas, intervalos, datas aproximadas e eventos sem data;
-- níveis de escala e ordenação;
-- criação/edição de eventos diretamente na linha do tempo;
-- comportamento quando o evento relacionado for excluído ou movido para `trash/`.
+O planejamento foi concluído no [mapa Wayfinder](../.scratch/linha-do-tempo/map.md) e na [especificação de implementação](../.scratch/linha-do-tempo-implementacao/spec.md). Foram decididas várias linhas temáticas ou gerais, seleção de registros de qualquer tipo, inclusão e remoção por arrastar, cartões com apresentação própria, filtros de categoria temporários e vistas vertical e horizontal, além de um calendário configurável por mundo com ano zero. Essas decisões ainda não representam funcionalidade implementada.
+
+Os [tickets de implementação](../.scratch/linha-do-tempo-implementacao/issues/) tratam modelo de aparições, regras de calendário, precisão e escala, interação acessível, conversão dos dados existentes e ciclo de vida de registros na lixeira.
 
 ## IDEA-002 — Grafo de relações com edição visual
 
