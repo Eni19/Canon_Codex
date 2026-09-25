@@ -126,18 +126,23 @@ createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
 ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
 
-`updateCalendarAction` recebe o calendário serializado pelo formulário de `/calendar`, valida-o com
-`CalendarSchema` e grava-o no mundo ativo via `WorldRepository.updateCalendar`. Em sucesso retorna
+`updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
+valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de
+gravar via `WorldRepository.updateCalendar`. Em sucesso retorna
 estado `saved`; em JSON inválido, mês não positivo, origem inválida ou outra falha de schema retorna
-uma mensagem de erro para o formulário. Não é uma API pública e não aceita um `worldId` enviado pelo
-navegador: o mundo é selecionado pelo cookie ativo.
+uma mensagem de erro para o formulário. Também rejeita o envio quando o mundo ativo mudou desde a
+abertura do formulário. Não é uma API pública; o `worldId` enviado pelo navegador é conferido contra
+o mundo selecionado pelo cookie ativo.
 
 ### Entidades e conteúdo
 
-createEntityAction resolve o tipo no mundo ativo, exige título e cria o registro.
-updateEntityAction converte campos de formulário, valida estruturas específicas por tipo, grava
-metadados e, se houver content, salva as páginas Tiptap. deleteEntityAction move a pasta para a
-lixeira e redireciona ao catálogo.
+`createEntityAction` resolve o tipo no mundo ativo, exige título e cria o registro. `updateEntityAction`
+converte campos de formulário e, para toda propriedade cujo tipo seja `kind: 'date'`, aceita o objeto
+de calendário ou uma string ISO legada, validando precisão, existência de mês/dia e ordem do intervalo
+antes de gravar. O editor envia a data como JSON em um campo oculto; a leitura usa o mesmo formatador
+do domínio, inclusive na apresentação especial de Evento e Organização. Dados inválidos lançam erro
+de validação da action e não são gravados. Se houver content, a action também salva as páginas Tiptap.
+`deleteEntityAction` move a pasta para a lixeira e redireciona ao catálogo.
 
 ### Assets e relações
 

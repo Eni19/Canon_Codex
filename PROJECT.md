@@ -86,6 +86,10 @@ O arquivo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`
 `world.json` declara propriedades, ícone, visibilidade e blocos de layout.
 O mesmo `world.json` guarda `calendar`, validado por `src/domain/worlds/calendar.ts`: dias da
 semana, meses com duração própria, horas por dia, eras, origem e regras intercalares.
+Propriedades com `kind: 'date'` usam o contrato `{ start, end? }` de
+`src/domain/worlds/calendar-date.ts`, com precisão de ano/mês/dia e aproximação por limite. ISO
+legado continua aceito na leitura e edição durante a transição, mas nenhuma conversão em lote é
+implementada neste ticket; isso é planejamento do ticket 03.
 
 A decisão histórica pretendia que todos os tipos fossem renderizados pelo mesmo compositor. O
 estado atual é híbrido: o compositor usa os blocos declarados, mas `src/components/entities/

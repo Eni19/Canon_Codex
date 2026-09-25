@@ -17,6 +17,7 @@ export const IntercalaryRuleSchema = z.object({
   yearOffset: z.number().int().nonnegative().default(0),
   skipEveryYears: z.number().int().positive().optional(),
   includeEveryYears: z.number().int().positive().optional(),
+  extendsMonth: z.boolean().default(false),
 })
 
 export const CalendarOriginSchema = z.object({
@@ -27,6 +28,7 @@ export const CalendarOriginSchema = z.object({
 
 export const CalendarSchema = z.object({
   daysOfWeek: z.array(z.string().trim().min(1, 'Todo dia da semana precisa ter um nome.').max(40)).length(7, 'Informe exatamente sete dias da semana.'),
+  weekdayOffset: z.number().int().min(0).max(6).default(6),
   months: z.array(CalendarMonthSchema).min(1, 'Informe pelo menos um mês.').max(MAX_MONTHS),
   hoursPerDay: z.number().int().positive('As horas por dia devem ser positivas.').max(MAX_HOURS_PER_DAY),
   eras: z.object({
@@ -52,7 +54,7 @@ export const CalendarSchema = z.object({
 
   if (calendar.origin.month > calendar.months.length) {
     context.addIssue({ code: 'custom', path: ['origin', 'month'], message: 'A origem precisa apontar para um mês existente.' })
-  } else if (calendar.origin.day > calendar.months[calendar.origin.month - 1].length) {
+  } else if (calendar.origin.day > getMonthLength(calendar, 0, calendar.origin.month)) {
     context.addIssue({ code: 'custom', path: ['origin', 'day'], message: 'O dia da origem não existe no mês escolhido.' })
   }
 
@@ -76,11 +78,12 @@ export type Calendar = z.infer<typeof CalendarSchema>
 export type CalendarMonth = z.infer<typeof CalendarMonthSchema>
 export type IntercalaryRule = z.infer<typeof IntercalaryRuleSchema>
 
-export const CalendarDateSchema = z.object({
+export const CalendarDateFieldsSchema = z.object({
   year: z.number().int().safe(),
   month: z.number().int().positive().optional(),
   day: z.number().int().positive().optional(),
-}).superRefine((date, context) => {
+})
+export const CalendarDateSchema = CalendarDateFieldsSchema.superRefine((date, context) => {
   if (date.day !== undefined && date.month === undefined) context.addIssue({ code: 'custom', path: ['day'], message: 'O dia precisa vir acompanhado de um mês.' })
 })
 export type CalendarDate = z.infer<typeof CalendarDateSchema>
@@ -100,6 +103,7 @@ export interface CalendarDateAtOrdinal {
 export function createDefaultCalendar(): Calendar {
   return CalendarSchema.parse({
     daysOfWeek: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+    weekdayOffset: 6,
     months: [
       ['Janeiro', 31], ['Fevereiro', 28], ['Março', 31], ['Abril', 30], ['Maio', 31], ['Junho', 30],
       ['Julho', 31], ['Agosto', 31], ['Setembro', 30], ['Outubro', 31], ['Novembro', 30], ['Dezembro', 31],
@@ -115,6 +119,7 @@ export function createDefaultCalendar(): Calendar {
       yearOffset: 0,
       skipEveryYears: 100,
       includeEveryYears: 400,
+      extendsMonth: true,
     }],
   })
 }
@@ -125,7 +130,7 @@ export function validateCalendarDate(calendar: Calendar, input: unknown): Calend
   const date = parsed.data
   if (date.month === undefined) return { success: true, data: date }
   if (date.month > calendar.months.length) return { success: false, error: 'O mês informado não existe neste calendário.' }
-  if (date.day !== undefined && date.day > calendar.months[date.month - 1].length) return { success: false, error: 'O dia informado não existe no mês escolhido.' }
+  if (date.day !== undefined && date.day > getMonthLength(calendar, date.year, date.month)) return { success: false, error: 'O dia informado não existe no mês escolhido.' }
   return { success: true, data: date }
 }
 
@@ -151,7 +156,7 @@ export function dateToOrdinal(calendar: Calendar, input: CalendarDate): number {
     throw new CalendarDateError('A data precisa informar mês e dia.')
   }
 
-  const ordinal = daysBeforeYear(calendar, year) + daysBeforeMonth(calendar, year, month) + day - 1
+  const ordinal = daysBeforeYear(calendar, year) + daysBeforeMonth(calendar, month) + day - 1
     + getIntercalaryDaysBeforeMonth(calendar, year, month)
   return assertSafeInteger(ordinal, 'A data está além do limite numérico suportado.')
 }
@@ -162,12 +167,12 @@ export function getCalendarDateAtOrdinal(calendar: Calendar, ordinal: number): C
   let remaining = ordinal - daysBeforeYear(calendar, year)
 
   for (let month = 1; month <= calendar.months.length; month += 1) {
-    const monthLength = calendar.months[month - 1].length
+    const monthLength = getMonthLength(calendar, year, month)
     if (remaining < monthLength) return { year, month, day: remaining + 1 }
     remaining -= monthLength
 
     for (const rule of calendar.intercalaryRules) {
-      if (rule.month !== month || !isIntercalaryRuleActive(rule, year)) continue
+      if (rule.month !== month || rule.extendsMonth || !isIntercalaryRuleActive(rule, year)) continue
       if (remaining === 0) return { year, intercalaryRuleId: rule.id, intercalaryRuleName: rule.name }
       remaining -= 1
     }
@@ -187,7 +192,7 @@ export function formatCalendarDate(calendar: Calendar, input: CalendarDate): str
 
   const month = calendar.months[date.month - 1].name
   if (date.day === undefined) return `${month}, ${yearLabel}`
-  const weekday = calendar.daysOfWeek[mod(dateToOrdinal(calendar, date), calendar.daysOfWeek.length)]
+  const weekday = calendar.daysOfWeek[mod(dateToOrdinal(calendar, date) + calendar.weekdayOffset, calendar.daysOfWeek.length)]
   return `${weekday}, ${date.day} de ${month}, ${yearLabel}`
 }
 
@@ -209,6 +214,11 @@ export class CalendarDateError extends Error {
 
 function getBaseYearLength(calendar: Calendar): number {
   return calendar.months.reduce((total, month) => total + month.length, 0)
+}
+
+function getMonthLength(calendar: Calendar, year: number, month: number): number {
+  return calendar.months[month - 1].length + calendar.intercalaryRules.filter((rule) =>
+    rule.month === month && rule.extendsMonth && isIntercalaryRuleActive(rule, year)).length
 }
 
 function daysBeforeYear(calendar: Calendar, year: number): number {
@@ -295,7 +305,7 @@ function findYearAtOrdinal(calendar: Calendar, ordinal: number): number {
   return low
 }
 
-function daysBeforeMonth(calendar: Calendar, _year: number, month: number): number {
+function daysBeforeMonth(calendar: Calendar, month: number): number {
   return calendar.months.slice(0, month - 1).reduce((total, current) => total + current.length, 0)
 }
 

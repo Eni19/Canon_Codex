@@ -57,6 +57,7 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
       relationTargetOptions={relationTargetOptions}
       allEntities={allEntities}
       relatedScenes={relatedScenes}
+      calendar={world.calendar}
     />
   )
 }

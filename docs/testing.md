@@ -29,9 +29,16 @@ Eles removem esses diretórios em afterEach; não apontam para o workspace priva
 - schemas de referências específicas e blocos de conceito.
 
 O calendário tem testes de domínio para ordinais antes/depois do ano zero, ano zero completo,
-regras bissextas, formatação de dias/eras e rejeição de entradas inválidas. Migrações sintéticas
-verificam a inclusão do calendário em mundos v15; testes de filesystem verificam round-trip e
-isolamento entre mundos. Não há teste E2E de interação visual da tela `/calendar`.
+regras bissextas, 29 de fevereiro, dias da semana convencionais, formatação de dias/eras e rejeição
+de entradas inválidas. Migrações sintéticas verificam a inclusão do calendário em mundos v15 e a
+correção do padrão v16; testes de filesystem verificam round-trip e isolamento entre mundos. O teste
+da action confere que um formulário antigo não grava no mundo ativo após uma troca. Não há teste E2E
+de interação visual da tela `/calendar`.
+
+O ticket 02 acrescenta testes para os três níveis de precisão, aproximação, intervalos, datas
+inexistentes, lacunas e fins invertidos. Eles exercitam dois calendários sintéticos, ISO legado e o
+round-trip de datas em Evento e Organização. Ainda não há teste E2E de navegador para criar e reabrir
+um Evento nem teste visual de acessibilidade do editor; a cobertura é de domínio e filesystem.
 
 ## O que não é verificado automaticamente
 

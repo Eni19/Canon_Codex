@@ -271,6 +271,22 @@ export const worldMigrations: MigrationRegistry = {
       schemaVersion: 16,
       calendar: data.calendar ?? createDefaultCalendar(),
     }),
+    16: (data) => {
+      const calendar = data.calendar as Record<string, unknown>
+      const rules = calendar.intercalaryRules as Array<Record<string, unknown>>
+      return {
+        ...data,
+        schemaVersion: 17,
+        calendar: {
+          ...calendar,
+          weekdayOffset: calendar.weekdayOffset ?? 6,
+          intercalaryRules: rules.map((rule) => ({
+            ...rule,
+            extendsMonth: rule.extendsMonth ?? (rule.id === 'gregorian-leap-day' && rule.month === 2),
+          })),
+        },
+      }
+    },
   },
 }
 export const entityMigrations: MigrationRegistry = {

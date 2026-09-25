@@ -20,7 +20,7 @@
 - `src/domain/content/contentDocument.ts` representa conteúdo como `pages[]`; `docs/architecture/ADR-004-editor.md` descreve um único `body`.
 - `src/repositories/index.ts` fornece quatro contratos de persistência: mundos, assets, quadros e cenas. `docs/architecture/ADR-001-local-first-storage.md` e `PROJECT.md` descrevem apenas dois.
 - `PROJECT.md` cita `src/lib/fs/atomicWriteJson.ts`, mas a implementação está em `src/lib/fs/atomicWrite.ts`; afirma também que `workspace/` pode ser versionado em Git, enquanto `.gitignore` o exclui.
-- A persistência atual é por arquivos JSON. Não há banco relacional nem migrações SQL. Os esquemas atuais são `World` v16, `Entity` v4, `ContentDocument` v2 e `Asset`, `Board` e `Scene` v1, conforme `src/domain/`.
+- A persistência atual é por arquivos JSON. Não há banco relacional nem migrações SQL. Os esquemas atuais são `World` v17, `Entity` v4, `ContentDocument` v2 e `Asset`, `Board` e `Scene` v1, conforme `src/domain/`.
 - Há seis Route Handlers em `src/app/api/`. O cookie `canon-codex-world` seleciona o mundo ativo (`src/services/worlds/getCurrentWorld.ts`); o projeto não implementa autenticação de usuários.
 
 ## Tarefa DOC-01 — Inventário e matriz de evidências

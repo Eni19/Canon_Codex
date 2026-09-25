@@ -31,7 +31,7 @@ function valueAsText(value: unknown) {
 }
 
 export function TaleEntityPage(props: EntityPageProps) {
-  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions } = props
+  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar } = props
   const [codexOpen, setCodexOpen] = useState(false)
   const subtitle = valueAsText(entity.properties.subtitle)
   const period = valueAsText(entity.properties.period)
@@ -90,7 +90,7 @@ export function TaleEntityPage(props: EntityPageProps) {
         <div><dt>Palavras</dt><dd>{new Intl.NumberFormat('pt-BR').format(words)}</dd></div>
         <div><dt>Capítulos</dt><dd>{content.pages.length}</dd></div>
       </dl>
-      <section><h3>Ficha da obra</h3><PropertyDisplayList properties={metadataProperties} values={entity.properties} entityTitleById={entityTitleById} columns={1} /></section>
+      <section><h3>Ficha da obra</h3><PropertyDisplayList properties={metadataProperties} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} columns={1} /></section>
       <section><h3>Relacionado a</h3><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={relationTargetOptions} /></section>
       <section><h3>Referências ao conto</h3><BacklinksPanel backlinks={backlinks} /></section>
     </aside>

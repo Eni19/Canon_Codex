@@ -10,7 +10,7 @@ import { LocationPointsSchema } from '@/domain/entities/locationPoint'
 import type { EntityPageProps } from '@/components/entities/entity-page'
 import styles from './location-blueprint.module.css'
 
-export function LocationEntityPage({ entity, entityType, worldName, content, entityTitleById, allEntities, relatedScenes }: EntityPageProps) {
+export function LocationEntityPage({ entity, entityType, worldName, content, entityTitleById, allEntities, relatedScenes, calendar }: EntityPageProps) {
   const parsedPoints = LocationPointsSchema.safeParse(entity.properties.pointsOfInterest)
   const points = parsedPoints.success ? parsedPoints.data : []
   const childLocations = allEntities.filter((candidate) => candidate.type === 'location' && candidate.properties.parentLocation === entity.id)
@@ -31,7 +31,7 @@ export function LocationEntityPage({ entity, entityType, worldName, content, ent
 
         <div className={styles.layout}>
           <div className={styles.copy}>
-            {visibleProperties.length > 0 && <section className="mb-7"><h2 className={styles.sectionTitle}>Dados do local</h2><PropertyDisplayList properties={visibleProperties} values={entity.properties} entityTitleById={titleById} /></section>}
+            {visibleProperties.length > 0 && <section className="mb-7"><h2 className={styles.sectionTitle}>Dados do local</h2><PropertyDisplayList properties={visibleProperties} values={entity.properties} entityTitleById={titleById} calendar={calendar} /></section>}
             <section className="mb-7"><h2 className={styles.sectionTitle}>Registro</h2><ContentRenderer content={content} /></section>
             <section className="mb-7"><h2 className={styles.sectionTitle}>Sub-regiões</h2>
               {childLocations.length ? <div className={styles.cards}>{childLocations.map((child) => <Link key={child.id} href={`/entity/${child.id}`} className={styles.card}><span className="font-serif text-primary">{child.title}</span><p className="mt-1 text-xs text-muted-foreground">Abrir região filha</p></Link>)}</div> : <p className="text-sm text-muted-foreground">Nenhuma sub-região vinculada.</p>}

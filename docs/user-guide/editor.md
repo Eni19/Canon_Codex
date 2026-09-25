@@ -17,6 +17,20 @@ Na edição de uma entidade:
 O limite visual é de duas páginas para a maioria dos tipos, uma para conceitos e 50 para contos.
 Esses limites são da tela; o schema de conteúdo aceita de 1 a 50 páginas.
 
+## Datas do calendário do mundo
+
+Campos de propriedade definidos com `kind: 'date'` usam o calendário do mundo ativo. No formulário
+de edição, escolha a precisão de cada limite: somente ano, ano e mês ou dia completo. Ano zero,
+anos negativos, aproximação e fim de intervalo são aceitos; um dia exige mês e o fim não pode ficar
+antes do início. O controle é composto por campos de texto/select, não por `input type="date"`, para
+que anos fictícios não dependam do suporte do navegador.
+
+O leitor formata a mesma data com nomes de mês, dia da semana e era do mundo. Um valor novo é
+armazenado como objeto com `start` obrigatório e `end` opcional, com `year`, `month?`, `day?` e
+`approximate?` em cada limite. Strings ISO antigas (`AAAA-MM-DD`) continuam legíveis e editáveis;
+ao salvar pelo editor, são convertidas para o calendário atual quando há uma representação possível.
+A conversão em lote com prévia, relatório e backup ainda é trabalho planejado do ticket 03.
+
 ## Blocos e formatação
 
 O editor compartilha extensões com o modo de leitura. Há negrito, itálico, headings 1–3, listas

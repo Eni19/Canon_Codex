@@ -27,6 +27,7 @@ import { PageContainer } from '@/components/wiki/page-container'
 import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import type { Calendar } from '@/domain/worlds/calendar'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import type { Backlink } from '@/repositories/contracts/worldRepository'
 import type { SceneSummary } from '@/domain/scenes/scene'
@@ -41,10 +42,11 @@ export interface EntityPageProps {
   relationTargetOptions: RelationTargetOption[]
   allEntities: Entity[]
   relatedScenes: SceneSummary[]
+  calendar: Calendar
 }
 
 export function EntityPage(props: EntityPageProps) {
-  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions } = props
+  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar } = props
   const blocks = entityType.layout
 
   if (entity.type === 'location') return <LocationEntityPage {...props} />
@@ -119,7 +121,7 @@ export function EntityPage(props: EntityPageProps) {
 
       {blocks.includes('properties') && entityType.properties.length > 0 && (
         <Section title="Propriedades" className="mt-6">
-          <PropertyDisplayList properties={entityType.properties} values={entity.properties} entityTitleById={entityTitleById} />
+          <PropertyDisplayList properties={entityType.properties} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} />
         </Section>
       )}
 

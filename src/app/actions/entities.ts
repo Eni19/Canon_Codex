@@ -9,6 +9,8 @@ import { EvidenceFindingsSchema } from '@/domain/entities/evidenceFinding'
 import { OrganizationGroupsSchema } from '@/domain/entities/organizationGroup'
 import { ArtifactDetailsSchema } from '@/domain/entities/artifactDetail'
 import { ConceptBlocksSchema } from '@/domain/entities/conceptBlock'
+import { parseStoredDateValue } from '@/domain/worlds/calendar-date'
+import type { Calendar } from '@/domain/worlds/calendar'
 import type { EntityTypeDefinition, PropertyDefinition } from '@/domain/entities/entityType'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
@@ -21,7 +23,7 @@ function parseListField(value: FormDataEntryValue | null): string[] {
     .filter(Boolean)
 }
 
-function parsePropertyValue(property: PropertyDefinition, formData: FormData): unknown {
+function parsePropertyValue(property: PropertyDefinition, formData: FormData, calendar: Calendar): unknown {
   switch (property.kind) {
     case 'number': {
       const raw = formData.get(property.key)
@@ -37,8 +39,25 @@ function parsePropertyValue(property: PropertyDefinition, formData: FormData): u
     case 'gallery':
       return undefined // not supported by the form yet — no seeded entity type uses these kinds
     case 'reference':
-    case 'enum':
-    case 'date':
+    case 'enum': {
+      const raw = formData.get(property.key)
+      return typeof raw === 'string' && raw !== '' ? raw : undefined
+    }
+    case 'date': {
+      const raw = formData.get(property.key)
+      if (typeof raw !== 'string' || raw.trim() === '') return undefined
+      let input: unknown = raw
+      if (raw.trim().startsWith('{')) {
+        try {
+          input = JSON.parse(raw)
+        } catch {
+          throw new Error(`${property.label}: o valor da data não é um JSON válido.`)
+        }
+      }
+      const parsed = parseStoredDateValue(calendar, input)
+      if (!parsed.success) throw new Error(`${property.label}: ${parsed.error}`)
+      return parsed.data
+    }
     case 'textarea':
     case 'text':
     default: {
@@ -48,10 +67,10 @@ function parsePropertyValue(property: PropertyDefinition, formData: FormData): u
   }
 }
 
-function parseProperties(entityType: EntityTypeDefinition, formData: FormData): Record<string, unknown> {
+function parseProperties(entityType: EntityTypeDefinition, formData: FormData, calendar: Calendar): Record<string, unknown> {
   const properties: Record<string, unknown> = {}
   for (const property of entityType.properties) {
-    const value = parsePropertyValue(property, formData)
+    const value = parsePropertyValue(property, formData, calendar)
     if (value !== undefined) properties[property.key] = value
   }
   return properties
@@ -65,12 +84,14 @@ export async function createEntityAction(formData: FormData): Promise<void> {
 
   const title = String(formData.get('title') ?? '').trim()
   if (!title) throw new Error('O título é obrigatório')
+  const properties = parseProperties(entityType, formData, world.calendar)
 
   const entity = await getWorldRepository().createEntity(world.id, {
     type: entityType.id,
     title,
     aliases: parseListField(formData.get('aliases')),
     tags: parseListField(formData.get('tags')),
+    properties,
     ...(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' || entityType.id === 'tale' ? { theme: CharacterThemeSchema.parse(formData.get('theme') ?? 'amber') } : {}),
   })
 
@@ -91,7 +112,7 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
   const title = String(formData.get('title') ?? '').trim()
   if (!title) throw new Error('O título é obrigatório')
 
-  const properties = parseProperties(entityType, formData)
+  const properties = parseProperties(entityType, formData, world.calendar)
   if (entity.type === 'location') {
     const rawPoints = formData.get('pointsOfInterest')
     properties.pointsOfInterest = LocationPointsSchema.parse(typeof rawPoints === 'string' ? JSON.parse(rawPoints) : [])

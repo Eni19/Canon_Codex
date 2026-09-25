@@ -72,7 +72,7 @@ política de compatibilidade versionada.
 | Projeção | `src/domain/projection/projection.ts` |
 | Dados específicos | `src/domain/entities/{locationPoint,evidenceFinding,organizationGroup,artifactDetail,conceptBlock}.ts` |
 
-Versões atuais verificadas: `World` 16, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
+Versões atuais verificadas: `World` 17, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
 e `Scene` 1. As fontes canônicas são os esquemas Zod, não esta tabela.
 
 ### Testes

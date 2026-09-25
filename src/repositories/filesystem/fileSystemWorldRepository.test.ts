@@ -51,6 +51,28 @@ describe('FileSystemWorldRepository', () => {
     expect(fetched).toEqual(created)
   })
 
+  it('reopens event and organization dates stored in the world calendar format', async () => {
+    const event = await repo.createEntity(worldId, {
+      type: 'event',
+      title: 'Abertura do portal',
+      properties: { eventDate: { start: { year: 0, month: 1, day: 1, approximate: true } } },
+    })
+    const organization = await repo.createEntity(worldId, {
+      type: 'organization',
+      title: 'Ordem sintética',
+      properties: { founded: { start: { year: -1, month: 2, approximate: true } } },
+    })
+
+    expect(await repo.getEntity(worldId, event.id)).toMatchObject({
+      type: 'event',
+      properties: { eventDate: { start: { year: 0, month: 1, day: 1, approximate: true } } },
+    })
+    expect(await repo.getEntity(worldId, organization.id)).toMatchObject({
+      type: 'organization',
+      properties: { founded: { start: { year: -1, month: 2, approximate: true } } },
+    })
+  })
+
   it('round-trips one calendar per world without leaking changes between worlds', async () => {
     const second = await repo.updateCalendar(worldId, {
       ...(await repo.getWorld(worldId)).calendar,

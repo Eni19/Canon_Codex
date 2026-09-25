@@ -11,6 +11,8 @@ export type CalendarActionState = {
 }
 
 export async function updateCalendarAction(_: CalendarActionState, formData: FormData): Promise<CalendarActionState> {
+  const worldId = formData.get('worldId')
+  if (typeof worldId !== 'string' || !worldId) return { error: 'O mundo do calendário não foi identificado.' }
   const raw = formData.get('calendar')
   if (typeof raw !== 'string' || raw.trim() === '') return { error: 'A configuração do calendário está vazia.' }
 
@@ -26,6 +28,7 @@ export async function updateCalendarAction(_: CalendarActionState, formData: For
 
   try {
     const world = await getCurrentWorld()
+    if (world.id !== worldId) return { error: 'O mundo ativo mudou. Reabra o calendário do mundo que deseja editar.' }
     await getWorldRepository().updateCalendar(world.id, parsed.data)
     revalidatePath('/calendar')
     revalidatePath('/codex')

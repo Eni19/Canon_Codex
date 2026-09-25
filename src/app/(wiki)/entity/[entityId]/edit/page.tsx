@@ -107,7 +107,7 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
         </div>
         {entity.type !== 'evidence' && <div className="flex flex-col gap-1.5 sm:w-1/2 sm:pr-2"><Label htmlFor="status">Status</Label><Input id="status" name="status" defaultValue={entity.status ?? ''} /></div>}
 
-        {entityType.properties.length > 0 && <div className="mt-2 border-t border-border pt-4"><h2 className="mb-3 text-sm font-medium text-muted-foreground">Propriedades</h2><PropertyList properties={entityType.properties} values={entity.properties} referenceOptionsByKey={referenceOptionsByKey} /></div>}
+        {entityType.properties.length > 0 && <div className="mt-2 border-t border-border pt-4"><h2 className="mb-3 text-sm font-medium text-muted-foreground">Propriedades</h2><PropertyList properties={entityType.properties} values={entity.properties} referenceOptionsByKey={referenceOptionsByKey} calendar={world.calendar} /></div>}
 
         {entity.type === 'location' && <LocationPointsEditor coverAssetId={entity.coverAssetId} initialPoints={parsedPoints.success ? parsedPoints.data : []} targets={pointTargets} />}
         {entity.type === 'evidence' && <EvidenceFindingsEditor initialFindings={parsedFindings.success ? parsedFindings.data : []} />}

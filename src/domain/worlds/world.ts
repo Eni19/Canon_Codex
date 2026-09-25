@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
 import { CalendarSchema } from '@/domain/worlds/calendar'
 
-export const WORLD_SCHEMA_VERSION = 16
+export const WORLD_SCHEMA_VERSION = 17
 
 export const WorldSchema = z.object({
   id: z.uuid(),

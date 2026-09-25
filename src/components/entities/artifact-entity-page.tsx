@@ -10,19 +10,21 @@ import { RelationsPanel } from '@/components/entities/relations-panel'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { ArtifactDetailsSchema } from '@/domain/entities/artifactDetail'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import type { EntityPageProps } from './entity-page'
 import styles from './artifact-catalog.module.css'
 
 const FIELD_KEYS = ['artifactType', 'origin', 'period', 'materials', 'dimensions', 'condition', 'acquisition', 'currentLocation', 'owner']
 
-function displayValue(value: unknown, titleById: Record<string, string>) {
+function displayValue(value: unknown, titleById: Record<string, string>, kind: string, calendar: EntityPageProps['calendar']) {
+  if (kind === 'date') return formatDateFieldValue(calendar, value)
   if (typeof value === 'string') return titleById[value] ?? value
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string').map((item) => titleById[item] ?? item).join(', ')
   return '—'
 }
 
-export function ArtifactEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
+export function ArtifactEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
   const parsedDetails = ArtifactDetailsSchema.safeParse(entity.properties.artifactDetails)
   const details = parsedDetails.success ? parsedDetails.data : []
   const [activeId, setActiveId] = useState<string | null>(details[0]?.id ?? null)
@@ -33,7 +35,7 @@ export function ArtifactEntityPage({ entity, entityType, worldName, content, ent
   const fields = FIELD_KEYS.flatMap((key) => {
     const definition = entityType.properties.find((property) => property.key === key)
     if (!definition) return []
-    return [{ key, label: definition.label, value: displayValue(entity.properties[key], entityTitleById) }]
+    return [{ key, label: definition.label, value: displayValue(entity.properties[key], entityTitleById, definition.kind, calendar) }]
   })
 
   return <div className={styles.museum}>

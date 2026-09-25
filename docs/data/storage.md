@@ -36,17 +36,35 @@ consumidor ativo que grave esses caminhos; eles não são parte necessária da r
 
 ### Calendário por mundo
 
-`world.json.calendar` é a configuração única usada pelas linhas do tempo daquele mundo. Ela guarda
-sete nomes de dias, uma lista ordenada de meses (`name` e `length`), horas por dia, nomes das eras,
+`world.json.calendar` guarda a configuração do mundo para as futuras linhas do tempo. A integração
+das linhas com esse calendário ainda não foi implementada. Ele guarda sete nomes de dias, o dia da
+semana correspondente ao primeiro dia do ano zero, uma lista ordenada de meses (`name` e `length`), horas por dia, nomes das eras,
 uma origem (`name`, mês e dia do ano zero) e regras intercalares repetíveis. Uma regra insere um dia
-após o mês indicado em anos cujo ciclo corresponde a `everyYears`/`yearOffset`; `skipEveryYears` e
+após o mês indicado ou como seu último dia (`extendsMonth`) em anos cujo ciclo corresponde a `everyYears`/`yearOffset`; `skipEveryYears` e
 `includeEveryYears` permitem exceções. Meses e recorrências têm limites validados pelo schema, e
 comprimentos não positivos são rejeitados.
 
 Datas fictícias não usam `Date` do JavaScript. `src/domain/worlds/calendar.ts` calcula ordinais,
-duração de ano, dias da semana e formatação para anos negativos, zero e positivos. A tela
-`/calendar` altera apenas o mundo ativo por `WorldRepository.updateCalendar`; os campos de data
-existentes das entidades continuam guardando as strings ISO legadas e permanecem legíveis.
+duração de ano, dias da semana e formatação para anos negativos, zero e positivos. A edição e a
+leitura de propriedades `kind: 'date'` usam `src/domain/worlds/calendar-date.ts` e o calendário do
+mundo ativo. A tela `/calendar` só salva quando o mundo ativo ainda é o mesmo que abriu o formulário,
+usando `WorldRepository.updateCalendar`.
+
+O contrato atual de um novo valor de data é:
+
+```json
+{
+  "start": { "year": 0, "month": 1, "day": 1, "approximate": true },
+  "end": { "year": 1, "month": 3 }
+}
+```
+
+`start` é obrigatório; `end` opcional representa um fim ausente/duração aberta. Cada limite mantém
+somente a precisão informada (`year`, `month` e `day` progressivos). O domínio rejeita lacunas de
+precisão, mês/dia inexistente e intervalo invertido. Durante a transição, strings ISO legadas
+`AAAA-MM-DD` também são aceitas na leitura e no editor; um salvamento individual as normaliza quando
+o calendário consegue representá-las. Não existe conversão em lote silenciosa: prévia, relatório,
+backup e confirmação continuam planejados para o ticket 03.
 
 ### Identidade e referências
 
@@ -68,7 +86,7 @@ Os schemas Zod em `src/domain/` são a referência canônica. As versões atuais
 
 | Registro | Versão | Campos/invariantes importantes | Fonte |
 | --- | ---: | --- | --- |
-| `World` | 16 | UUID, slug/nome não vazios, `entityTypes[]`, `calendar`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) e [`calendar.ts`](../../src/domain/worlds/calendar.ts) |
+| `World` | 17 | UUID, slug/nome não vazios, `entityTypes[]`, `calendar`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) e [`calendar.ts`](../../src/domain/worlds/calendar.ts) |
 | `Entity` | 4 | UUID, `worldId`, tipo/título/slug, aliases/tags, properties, relations, timestamps; capa/galeria referenciam UUIDs | [`entity.ts`](../../src/domain/entities/entity.ts) |
 | `EntityTypeDefinition` | — | id, rótulos, ícone, propriedades, layout limitado a oito blocos e `showInSidebar` | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
 | `Relation` | — | UUIDs de source/target, tipo não vazio, label opcional, direcionalidade e metadata | [`relation.ts`](../../src/domain/relations/relation.ts) |

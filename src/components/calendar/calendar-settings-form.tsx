@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 const initialState: CalendarActionState = {}
 const previewYears = [-1, 0, 1]
 
-export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Calendar }) {
+export function CalendarSettingsForm({ initialCalendar, worldId }: { initialCalendar: Calendar; worldId: string }) {
   const [calendar, setCalendar] = useState(initialCalendar)
   const [state, action, pending] = useActionState(updateCalendarAction, initialState)
 
@@ -43,16 +43,17 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
         month: Math.min(1, current.months.length),
         everyYears: 4,
         yearOffset: 0,
+        extendsMonth: false,
       }],
     }))
   }
 
-  const previewMonth = calendar.months[calendar.origin.month - 1]
-  const previewDate = previewMonth ? { month: calendar.origin.month, day: Math.min(calendar.origin.day, previewMonth.length) } : { month: 1, day: 1 }
+  const previewDate = { month: calendar.origin.month, day: calendar.origin.day }
 
   return (
     <form action={action} className="flex flex-col gap-6">
       <input type="hidden" name="calendar" value={JSON.stringify(calendar)} readOnly />
+      <input type="hidden" name="worldId" value={worldId} readOnly />
 
       <Card>
         <CardHeader>
@@ -69,6 +70,13 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
             <Label htmlFor="days-of-week">Nomes dos dias da semana</Label>
             <Textarea id="days-of-week" className="mt-2 font-mono text-sm" rows={7} value={calendar.daysOfWeek.join('\n')} onChange={(event) => updateDays(event.target.value)} aria-describedby="days-help" />
             <p id="days-help" className="mt-1 text-xs text-muted-foreground">Informe exatamente sete nomes, um por linha.</p>
+          </div>
+
+          <div className="max-w-xs">
+            <Label htmlFor="weekday-offset">Dia da semana no primeiro dia do ano zero</Label>
+            <select id="weekday-offset" className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={calendar.weekdayOffset} onChange={(event) => setCalendar((current) => ({ ...current, weekdayOffset: Number(event.target.value) }))}>
+              {calendar.daysOfWeek.map((day, index) => <option key={index} value={index}>{day || `Dia ${index + 1}`}</option>)}
+            </select>
           </div>
 
           <div>
@@ -105,7 +113,7 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-3"><div><CardTitle>Dias intercalares</CardTitle><CardDescription>Adicione um dia depois de um mês em anos recorrentes. Saltos e inclusões permitem ciclos como o gregoriano.</CardDescription></div><Button type="button" variant="outline" size="sm" onClick={addRule}><CalendarPlus />Adicionar regra</Button></div>
+          <div className="flex items-start justify-between gap-3"><div><CardTitle>Dias intercalares</CardTitle><CardDescription>Adicione um dia ao fim de um mês ou depois dele em anos recorrentes. Saltos e inclusões permitem ciclos como o gregoriano.</CardDescription></div><Button type="button" variant="outline" size="sm" onClick={addRule}><CalendarPlus />Adicionar regra</Button></div>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {calendar.intercalaryRules.length === 0 && <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">Nenhuma regra intercalar configurada.</p>}
@@ -116,6 +124,7 @@ export function CalendarSettingsForm({ initialCalendar }: { initialCalendar: Cal
             <div><Label htmlFor={`rule-offset-${index}`}>Deslocamento</Label><Input id={`rule-offset-${index}`} className="mt-1" type="number" min={0} value={rule.yearOffset} onChange={(event) => updateRule(index, { yearOffset: Number(event.target.value) })} aria-describedby={`rule-offset-help-${index}`} /><p id={`rule-offset-help-${index}`} className="mt-1 text-xs text-muted-foreground">0 usa anos divisíveis pelo ciclo; 1 desloca um ano.</p></div>
             <div><Label htmlFor={`rule-skip-${index}`}>Salta a cada (opcional)</Label><Input id={`rule-skip-${index}`} className="mt-1" type="number" min={1} placeholder="Ex.: 100" value={rule.skipEveryYears ?? ''} onChange={(event) => updateRule(index, { skipEveryYears: event.target.value ? Number(event.target.value) : undefined, includeEveryYears: event.target.value ? rule.includeEveryYears : undefined })} aria-describedby={`rule-skip-help-${index}`} /><p id={`rule-skip-help-${index}`} className="mt-1 text-xs text-muted-foreground">100 pula os anos divisíveis por 100.</p></div>
             <div><Label htmlFor={`rule-include-${index}`}>Inclui a cada (opcional)</Label><Input id={`rule-include-${index}`} className="mt-1" type="number" min={1} placeholder="Ex.: 400" value={rule.includeEveryYears ?? ''} onChange={(event) => updateRule(index, { includeEveryYears: event.target.value ? Number(event.target.value) : undefined })} aria-describedby={`rule-include-help-${index}`} /><p id={`rule-include-help-${index}`} className="mt-1 text-xs text-muted-foreground">400 recoloca uma ocorrência entre os anos pulados.</p></div>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={rule.extendsMonth} onChange={(event) => updateRule(index, { extendsMonth: event.target.checked })} />Contar como último dia do mês</label>
             <Button type="button" variant="ghost" size="sm" className="justify-self-start text-destructive" onClick={() => setCalendar((current) => ({ ...current, intercalaryRules: current.intercalaryRules.filter((_, ruleIndex) => ruleIndex !== index) }))}><Trash2 />Remover regra</Button>
           </div>)}
         </CardContent>

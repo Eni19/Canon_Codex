@@ -4,7 +4,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ReferenceListField } from '@/components/entities/reference-list-field'
 import { ReferenceField } from '@/components/entities/reference-field'
+import { CalendarDateField } from '@/components/entities/calendar-date-field'
 import type { PropertyDefinition } from '@/domain/entities/entityType'
+import type { Calendar } from '@/domain/worlds/calendar'
 
 export interface ReferenceOption {
   id: string
@@ -18,10 +20,12 @@ export function PropertyField({
   property,
   defaultValue,
   referenceOptions,
+  calendar,
 }: {
   property: PropertyDefinition
   defaultValue: unknown
   referenceOptions?: ReferenceOption[]
+  calendar: Calendar
 }) {
   const fieldId = 'property-' + property.key
   const selectedReferences = new Set(Array.isArray(defaultValue) ? defaultValue.filter((value): value is string => typeof value === 'string') : [])
@@ -37,6 +41,10 @@ export function PropertyField({
 
   if (property.kind === 'image' || property.kind === 'gallery') {
     return <div className="flex flex-col gap-1.5"><Label>{property.label}</Label><p className="text-xs text-muted-foreground">Propriedades de imagem chegam em uma próxima iteração.</p></div>
+  }
+
+  if (property.kind === 'date') {
+    return <CalendarDateField propertyKey={property.key} propertyLabel={property.label} calendar={calendar} defaultValue={defaultValue} />
   }
 
   return (
@@ -68,7 +76,6 @@ export function PropertyField({
       )}
       {property.kind === 'tags' && <Input id={fieldId} name={property.key} defaultValue={Array.isArray(defaultValue) ? (defaultValue as string[]).join(', ') : ''} placeholder="separadas por vírgula" />}
       {property.kind === 'number' && <Input id={fieldId} name={property.key} type="number" defaultValue={typeof defaultValue === 'number' ? defaultValue : ''} />}
-      {property.kind === 'date' && <Input id={fieldId} name={property.key} type="date" defaultValue={typeof defaultValue === 'string' ? defaultValue : ''} />}
       {property.kind === 'text' && <Input id={fieldId} name={property.key} defaultValue={typeof defaultValue === 'string' ? defaultValue : ''} />}
       {property.kind === 'textarea' && <Textarea id={fieldId} name={property.key} rows={6} defaultValue={typeof defaultValue === 'string' ? defaultValue : ''} />}
     </div>

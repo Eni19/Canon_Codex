@@ -18,7 +18,7 @@ export default async function CalendarPage() {
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Configure nomes, durações, eras e dias intercalares. A configuração pertence somente a este mundo.</p>
         </div>
       </header>
-      <CalendarSettingsForm initialCalendar={world.calendar} />
+      <CalendarSettingsForm initialCalendar={world.calendar} worldId={world.id} />
     </PageContainer>
   )
 }

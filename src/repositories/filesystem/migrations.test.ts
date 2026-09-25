@@ -59,7 +59,7 @@ describe('tale catalog migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const tale = migrated.entityTypes.find((type) => type.id === 'tale')!
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(17)
     expect(tale.label).toBe('Conto')
     expect(tale.pluralLabel).toBe('Contos')
     expect(tale.properties.map((property) => property.key)).toEqual(expect.arrayContaining([
@@ -82,7 +82,7 @@ describe('concept reference manual migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const concept = migrated.entityTypes.find((type) => type.id === 'concept')!
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(17)
     expect(concept.properties.find((property) => property.key === 'category')?.label).toBe('Categoria personalizada')
     expect(concept.properties.map((property) => property.key)).toEqual(['category', 'summary'])
     expect(concept.properties.find((property) => property.key === 'summary')?.label).toBe('Subtítulo ou resumo')
@@ -124,7 +124,7 @@ describe('world reference areas migration', () => {
     const species = migrated.entityTypes.find((type) => type.id === 'species')
     const naturalScience = migrated.entityTypes.find((type) => type.id === 'naturalScience')
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(17)
     expect(phenomenon?.showInSidebar).toBe(false)
     expect(species?.properties.find((property) => property.key === 'recordKind')?.options).toEqual(['Espécie', 'Povo / Cultura'])
     expect(naturalScience?.properties.find((property) => property.key === 'discipline')?.options).toEqual(['Natureza', 'Medicina'])
@@ -138,7 +138,7 @@ describe('world calendar migration', () => {
 
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(17)
     expect(migrated.calendar).toEqual(createDefaultCalendar())
     expect(migrated.entityTypes).toEqual(world.entityTypes)
   })
@@ -149,5 +149,29 @@ describe('world calendar migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...world, schemaVersion: 15, calendar: customized }))
 
     expect(migrated.calendar.hoursPerDay).toBe(30)
+  })
+
+  it('upgrades the legacy Gregorian leap rule without changing custom rules', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 16,
+      calendar: {
+        ...world.calendar,
+        weekdayOffset: undefined,
+        intercalaryRules: [
+          { ...world.calendar.intercalaryRules[0], extendsMonth: undefined },
+          { id: 'custom-extra', name: 'Extra', month: 5, everyYears: 3, yearOffset: 0 },
+        ],
+      },
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+
+    expect(migrated.schemaVersion).toBe(17)
+    expect(migrated.calendar.weekdayOffset).toBe(6)
+    expect(migrated.calendar.intercalaryRules[0].extendsMonth).toBe(true)
+    expect(migrated.calendar.intercalaryRules[1].extendsMonth).toBe(false)
+    expect(migrated.calendar.intercalaryRules[1].name).toBe('Extra')
   })
 })

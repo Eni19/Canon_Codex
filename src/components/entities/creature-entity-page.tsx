@@ -11,12 +11,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
 import type { EntityPageProps } from './entity-page'
 import styles from './creature-entity-page.module.css'
 
 function value(value: unknown) { return typeof value === 'string' && value.trim() ? value : '—' }
 
-export function CreatureEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
+export function CreatureEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
   const imageStyle = entity.properties.imagePresentation === 'Retrato' ? 'Retrato' : 'Contorno'
   const fields = ['creatureKind', 'classification', 'dangerLevel', 'habitat'].flatMap((key) => {
     const property = entityType.properties.find((candidate) => candidate.key === key)
@@ -36,7 +37,7 @@ export function CreatureEntityPage({ entity, entityType, worldName, content, ent
 
       <div className={styles.composition}>
         <section className={styles.information}>
-          <dl className={styles.properties}>{fields.map((property) => { const raw = entity.properties[property.key]; const text = value(raw); return <div key={property.key}><dt>{property.label}</dt><dd>{property.kind === 'reference' && text !== '—' ? <Link href={`/entity/${text}`}>{entityTitleById[text] ?? 'Referência indisponível'}</Link> : text}</dd></div> })}</dl>
+          <dl className={styles.properties}>{fields.map((property) => { const raw = entity.properties[property.key]; const text = property.kind === 'date' ? formatDateFieldValue(calendar, raw) || '—' : value(raw); return <div key={property.key}><dt>{property.label}</dt><dd>{property.kind === 'reference' && text !== '—' ? <Link href={`/entity/${text}`}>{entityTitleById[text] ?? 'Referência indisponível'}</Link> : text}</dd></div> })}</dl>
           <div className={styles.localScroll} tabIndex={0} aria-label="Conteúdo da criatura">
             <Section title="Registro"><ContentRenderer content={content} /></Section>
             {entity.galleryAssetIds?.length ? <Section title="Galeria"><Gallery assetIds={entity.galleryAssetIds} /></Section> : null}

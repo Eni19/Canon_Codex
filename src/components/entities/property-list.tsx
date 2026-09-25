@@ -1,14 +1,17 @@
 import { PropertyField, type ReferenceOption } from '@/components/entities/property-field'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import type { Calendar } from '@/domain/worlds/calendar'
 
 export function PropertyList({
   properties,
   values,
   referenceOptionsByKey,
+  calendar,
 }: {
   properties: EntityTypeDefinition['properties']
   values: Record<string, unknown>
   referenceOptionsByKey: Record<string, ReferenceOption[]>
+  calendar: Calendar
 }) {
   if (properties.length === 0) return null
 
@@ -20,6 +23,7 @@ export function PropertyList({
           property={property}
           defaultValue={values[property.key]}
           referenceOptions={referenceOptionsByKey[property.key]}
+          calendar={calendar}
         />
       ))}
     </div>

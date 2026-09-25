@@ -30,7 +30,7 @@ function prose(value: unknown) {
   return typeof value === 'string' ? value : ''
 }
 
-export function NaturalSciencePage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
+export function NaturalSciencePage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
   const discipline = prose(entity.properties.discipline) === 'Medicina' ? 'Medicina' : 'Natureza'
   const subtype = prose(entity.properties.scienceSubtype) || 'Registro não classificado'
   const facts = selectProperties(entityType.properties, SHORT_FIELDS, entity.properties)
@@ -57,7 +57,7 @@ export function NaturalSciencePage({ entity, entityType, worldName, content, ent
         </figure>
         <aside className={styles.observations}>
           <div className={styles.sectionHeading}><span>Dados principais</span><i /></div>
-          {facts.length > 0 ? <PropertyDisplayList properties={facts} values={entity.properties} entityTitleById={entityTitleById} columns={2} /> : <p className={styles.empty}>Nenhuma propriedade específica foi registrada.</p>}
+          {facts.length > 0 ? <PropertyDisplayList properties={facts} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} columns={2} /> : <p className={styles.empty}>Nenhuma propriedade específica foi registrada.</p>}
           {entity.tags.length > 0 && <div className={styles.tags}>{entity.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
         </aside>
       </section>
@@ -69,7 +69,7 @@ export function NaturalSciencePage({ entity, entityType, worldName, content, ent
           {treatment && <section><div className={styles.sectionHeading}><span>Tratamento ou manejo</span><i /></div><p>{treatment}</p></section>}
         </div>
         <aside className={styles.references}>
-          {connections.length > 0 && <section><h2>Registros relacionados</h2><PropertyDisplayList properties={connections} values={entity.properties} entityTitleById={entityTitleById} columns={1} /></section>}
+          {connections.length > 0 && <section><h2>Registros relacionados</h2><PropertyDisplayList properties={connections} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} columns={1} /></section>}
           <section><h2>Relações</h2><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={relationTargetOptions} /></section>
           <section><h2>Referências cruzadas</h2><BacklinksPanel backlinks={backlinks} /></section>
         </aside>

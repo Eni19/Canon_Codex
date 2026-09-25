@@ -54,6 +54,12 @@ flowchart LR
    temporário irmão e faz `rename` no mesmo volume. Se a serialização ou escrita falhar, o
    temporário é removido e o arquivo anterior não é substituído.
 
+Propriedades declaradas como `kind: 'date'` são a exceção documentada ao antigo campo ISO: a action
+e o editor usam `calendar-date.ts` para validar e persistir limites de calendário com a precisão
+informada, enquanto o leitor e as páginas especiais compartilham o formatador. Strings ISO legadas
+seguem aceitas durante a transição. O adaptador não usa `Date` para anos fictícios e não faz conversão
+em lote; essa migração com prévia fica planejada para o ticket 03.
+
 Há uma verificação opcional de concorrência em `EntityPatch.expectedUpdatedAt`; se estiver
 desatualizada, `ConcurrentModificationError` impede a gravação. As ações de UI atuais não enviam
 esse campo, portanto não há resolução de conflito visual implementada.
@@ -86,8 +92,9 @@ caminho `/` e duração de um ano. Excluir o mundo ativo escolhe outro mundo dis
 cookie.
 
 O mundo também carrega seu calendário em `world.json`. A rota `/calendar` lê o mundo ativo e o
-componente client envia uma configuração JSON para `updateCalendarAction`; a action valida o schema,
-chama `WorldRepository.updateCalendar` e revalida a página. O módulo de domínio concentra cálculo
+componente client envia uma configuração JSON e o ID do mundo que abriu o formulário para
+`updateCalendarAction`; a action valida o schema e confere se esse mundo ainda está ativo antes de
+chamar `WorldRepository.updateCalendar` e revalidar a página. O módulo de domínio concentra cálculo
 ordinal, duração de ano, regras intercalares e formatação, sem delegar anos fictícios a `Date`.
 
 ## Quadros, cenas e projeção

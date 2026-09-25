@@ -9,7 +9,7 @@ Uma migração ausente, JSON ilegível, transformação que falha ou resultado q
 interrompe a leitura. A leitura normal não grava de volta o resultado. A exceção documentada é o
 importador de mundos, que copia a pasta e grava o `world.json` já migrado no destino.
 
-## Mundo: v1 → v16
+## Mundo: v1 → v17
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -31,8 +31,9 @@ Registry: `worldMigrations` em
 | 13 | 14 | repete a normalização de conceito, removendo definições antigas de notação/paperStyle |
 | 14 | 15 | oculta fenômeno e adiciona espécies e natureza/medicina |
 | 15 | 16 | adiciona o calendário convencional por mundo quando o campo ainda não existe |
+| 16 | 17 | faz o dia bissexto do calendário inicial ser 29/02, define a referência do dia da semana e preserva regras intercalares personalizadas |
 
-O seed atual já é v16, define 17 tipos e inclui o calendário convencional (meses gregorianos,
+O seed atual já é v17, define 17 tipos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
@@ -49,6 +50,20 @@ quando o código explicitamente procura uma propriedade existente, mas alteraç�
 
 Uma entidade legada convertida ainda precisa passar por `EntitySchema`. Não há migração automática
 de referências externas, snapshots de quadros ou cenas quando uma entidade muda de tipo.
+
+### Datas de propriedades durante a transição
+
+O `EntitySchema` mantém `properties` aberto e não recebe uma nova versão para esta etapa. O contrato
+de `kind: 'date'` é validado pela action e pelo domínio de calendário: o formato implementado é o
+objeto `{ start, end? }` descrito em [storage](storage.md), com precisão por limite, aproximação e
+validação contra o calendário do mundo. Strings ISO completas já persistidas continuam aceitas,
+formatadas pelo calendário do mundo e editáveis; ao salvar esse registro pela interface, o campo é
+normalizado individualmente quando a data é representável.
+
+Não há migração automática durante a leitura nem conversão em lote neste ticket. Prévia, lista de
+inválidos, backup, confirmação e retomada/reversão pertencem ao ticket 03 planejado. Uma ISO que
+corresponda a um dia intercalar sem representação `mês/dia` permanece como string legada identificada,
+em vez de ser descartada.
 
 ## Conteúdo: v1 → v2
 

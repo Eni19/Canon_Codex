@@ -22,9 +22,9 @@ pasta.
 
 Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite editar:
 
-- os sete nomes dos dias, horas por dia e os nomes/comprimentos individuais dos meses;
+- os sete nomes dos dias, o dia da semana no início do ano zero, horas por dia e os nomes/comprimentos individuais dos meses;
 - as eras anterior e posterior, o nome da origem e sua posição em mês/dia no ano zero;
-- regras de dias intercalares: o mês define depois de qual mês o dia entra; a recorrência define de
+- regras de dias intercalares: o mês define onde o dia entra, como último dia do mês ou depois dele; a recorrência define de
   quantos em quantos anos ele aparece; o deslocamento move o primeiro ano do ciclo. As opções de
   salto e inclusão permitem exceções, como saltar anos divisíveis por 100 e incluir novamente os
   divisíveis por 400.
@@ -32,10 +32,16 @@ Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite ed
 A prévia mostra a mesma posição no ano `-1`, `0` e `1`, incluindo o nome do dia e da era. Ano zero
 é um ano completo. Salvar valida nomes, meses positivos, origem válida, recorrências e regras que
 apontem para meses existentes; o formulário mantém o erro explicativo na tela quando algo é inválido.
-Cada mundo lê e grava seu próprio calendário, portanto editar um não altera outro. Datas de entidade
-já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por esta configuração.
+Cada mundo lê e grava seu próprio calendário; se o mundo ativo mudar em outra aba antes de salvar,
+o formulário pede para reabrir o calendário, evitando gravar no mundo errado. Datas de entidade
+já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por esta configuração. Ao
+editar uma entidade, campos `kind: 'date'` usam esse calendário para aceitar ano, mês, dia, ano zero,
+anos negativos, aproximação e intervalo; o formato persistido e a compatibilidade ISO estão em
+[Armazenamento e modelo de dados](../data/storage.md). A conversão em lote ainda é planejada para o
+ticket 03.
 
-Mundos existentes recebem o calendário convencional na migração v15→v16 durante a leitura; a leitura
+Mundos existentes recebem o calendário inicial na migração v15→v16. A migração v16→v17 faz o dia
+bissexto desse calendário corresponder a 29 de fevereiro e ajusta os dias da semana; a leitura
 normal aplica a migração em memória. A importação grava o `world.json` já migrado na cópia local, e
 uma alteração feita na tela grava o calendário validado de forma atômica.
 

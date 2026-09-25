@@ -28,15 +28,32 @@ describe('calendário do mundo', () => {
 
     expect(getCalendarYearLength(calendar, 0)).toBe(366)
     expect(getCalendarYearLength(calendar, 1)).toBe(365)
+    expect(validateCalendarDate(calendar, { year: 2024, month: 2, day: 29 }).success).toBe(true)
+    expect(validateCalendarDate(calendar, { year: 2023, month: 2, day: 29 }).success).toBe(false)
+    expect(dateToOrdinal(calendar, { year: 2024, month: 3, day: 1 }) - dateToOrdinal(calendar, { year: 2024, month: 2, day: 29 })).toBe(1)
     expect(getCalendarDateAtOrdinal(calendar, leapDay)).toMatchObject({
       year: 0,
-      intercalaryRuleId: 'gregorian-leap-day',
+      month: 2,
+      day: 29,
     })
+    expect(getCalendarDateAtOrdinal(calendar, dateToOrdinal(calendar, { year: 2024, month: 2, day: 29 }))).toEqual({ year: 2024, month: 2, day: 29 })
     expect(getCalendarDateAtOrdinal(calendar, dateToOrdinal(calendar, { year: 1, month: 2, day: 28 }))).toMatchObject({
       year: 1,
       month: 2,
       day: 28,
     })
+  })
+
+  it('mantém os dias da semana das datas ISO no calendário inicial', () => {
+    const calendar = createDefaultCalendar()
+    expect(formatCalendarDate(calendar, { year: 2024, month: 1, day: 1 })).toContain('Segunda-feira')
+    expect(formatCalendarDate(calendar, { year: 2024, month: 2, day: 29 })).toContain('Quinta-feira')
+    expect(formatCalendarDate(calendar, { year: 1, month: 1, day: 1 })).toContain('Segunda-feira')
+  })
+
+  it('permite origem no último dia de fevereiro do ano zero', () => {
+    const calendar = createDefaultCalendar()
+    expect(CalendarSchema.safeParse({ ...calendar, origin: { name: 'Marco', month: 2, day: 29 } }).success).toBe(true)
   })
 
   it('faz round-trip com meses irregulares e regra intercalar em anos negativos e positivos', () => {
@@ -56,6 +73,23 @@ describe('calendário do mundo', () => {
     ]) {
       expect(getCalendarDateAtOrdinal(calendar, dateToOrdinal(calendar, date))).toMatchObject(date)
     }
+  })
+
+  it('estende um mês personalizado somente nos anos da regra escolhida', () => {
+    const calendar = CalendarSchema.parse({
+      ...createDefaultCalendar(),
+      months: [{ name: 'Bruma', length: 3 }, { name: 'Sol', length: 5 }],
+      origin: { name: 'Marco', month: 1, day: 1 },
+      intercalaryRules: [{ id: 'bruma-extra', name: 'Última Bruma', month: 1, everyYears: 3, yearOffset: 0, extendsMonth: true }],
+    })
+
+    for (const year of [-3, 0, 3]) {
+      const extra = { year, month: 1, day: 4 }
+      expect(validateCalendarDate(calendar, extra).success).toBe(true)
+      expect(getCalendarDateAtOrdinal(calendar, dateToOrdinal(calendar, extra))).toEqual(extra)
+      expect(dateToOrdinal(calendar, { year, month: 2, day: 1 }) - dateToOrdinal(calendar, extra)).toBe(1)
+    }
+    expect(validateCalendarDate(calendar, { year: 1, month: 1, day: 4 }).success).toBe(false)
   })
 
   it('rejeita mês não positivo e data fora do mês com explicação', () => {

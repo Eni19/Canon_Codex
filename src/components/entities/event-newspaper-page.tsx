@@ -7,14 +7,15 @@ import { ContentRenderer } from '@/components/editor/content-renderer'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
 import type { EntityPageProps } from './entity-page'
 import styles from './event-newspaper.module.css'
 
 function text(value: unknown) { return typeof value === 'string' && value.trim() ? value : '' }
 function ids(value: unknown) { return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [] }
 
-export function EventNewspaperPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
-  const date = text(entity.properties.eventDate)
+export function EventNewspaperPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
+  const date = formatDateFieldValue(calendar, entity.properties.eventDate)
   const status = text(entity.properties.eventStatus)
   const locationIds = [...new Set([text(entity.properties.location), ...ids(entity.properties.relatedLocations)].filter(Boolean))]
   const participantIds = ids(entity.properties.participants)

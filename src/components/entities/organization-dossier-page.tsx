@@ -7,6 +7,7 @@ import { RelationsPanel } from './relations-panel'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { OrganizationGroupsSchema } from '@/domain/entities/organizationGroup'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import type { EntityPageProps } from './entity-page'
 import styles from './organization-dossier.module.css'
@@ -15,7 +16,7 @@ function textProperty(value: unknown) { return typeof value === 'string' ? value
 function idList(value: unknown) { return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [] }
 
 export function OrganizationDossierPage(props: EntityPageProps) {
-  const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions } = props
+  const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar } = props
   const memberIds = idList(entity.properties.members)
   const leaderIds = idList(entity.properties.leaders)
   const personnelIds = [...new Set([...leaderIds, ...memberIds])]
@@ -26,6 +27,7 @@ export function OrganizationDossierPage(props: EntityPageProps) {
   const relations = entity.relations.filter((relation) => organizationIds.has(relation.targetId))
   const organizationOptions = relationTargetOptions.filter((option) => organizationIds.has(option.id))
   const headquarters = textProperty(entity.properties.headquarters)
+  const founded = formatDateFieldValue(calendar, entity.properties.founded)
 
   return <div className={styles.archive}>
     <main className={styles.desk}>
@@ -39,7 +41,7 @@ export function OrganizationDossierPage(props: EntityPageProps) {
       <section className={styles.coverSheet}>
         <div className={styles.registry}>
           <span><b>TIPO</b>{textProperty(entity.properties.organizationType) || 'Não classificado'}</span>
-          <span><b>FUNDAÇÃO</b>{textProperty(entity.properties.founded) || 'Data reservada'}</span>
+          <span><b>FUNDAÇÃO</b>{founded || 'Data reservada'}</span>
           <span><b>STATUS</b>{entity.status || 'Sem registro'}</span>
           {headquarters && <span><b>SEDE</b><Link href={`/entity/${headquarters}`}><MapPin className="size-3.5" />{entityTitleById[headquarters] ?? 'Local registrado'}</Link></span>}
         </div>
