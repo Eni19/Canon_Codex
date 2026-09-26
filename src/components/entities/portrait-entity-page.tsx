@@ -45,7 +45,7 @@ export function PortraitEntityPage({
   const headerProperties = headerKeys.flatMap((key) => entityType.properties.filter((property) => property.key === key))
   const attributes: PortraitAttribute[] = [
     { key: 'aliases', label: 'Apelidos', value: entity.aliases.join(', ') || '—' },
-    ...['age', 'species', 'originLocation', 'firstAppearance'].flatMap((key) => {
+    ...['age', 'species', 'firstAppearance'].flatMap((key) => {
       const property = entityType.properties.find((candidate) => candidate.key === key)
       if (!property) return []
       const raw = entity.properties[key]

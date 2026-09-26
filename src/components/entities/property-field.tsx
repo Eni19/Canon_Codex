@@ -9,6 +9,9 @@ import type { PropertyDefinition } from '@/domain/entities/entityType'
 export interface ReferenceOption {
   id: string
   title: string
+  subtitle?: string
+  imageAssetId?: string
+  imagePosition?: 'top' | 'center'
 }
 
 const NATIVE_SELECT_CLASS =
@@ -64,6 +67,7 @@ export function PropertyField({
           label={property.label}
           options={referenceOptions ?? []}
           initialValue={[...selectedReferences]}
+          restrictToKey={property.optionsFrom}
         />
       )}
       {property.kind === 'tags' && <Input id={fieldId} name={property.key} defaultValue={Array.isArray(defaultValue) ? (defaultValue as string[]).join(', ') : ''} placeholder="separadas por vírgula" />}

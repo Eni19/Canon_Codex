@@ -11,6 +11,7 @@ import { ConceptBlocksEditor } from '@/components/entities/concept-blocks-editor
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import type { ReferenceOption } from '@/components/entities/property-field'
 import { PropertyList } from '@/components/entities/property-list'
+import { ReferenceSelectionProvider } from '@/components/entities/reference-selection-context'
 import { ContentEditor } from '@/components/editor/content-editor'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { Button } from '@/components/ui/button'
@@ -34,7 +35,9 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
   const entityType = world.entityTypes.find((type) => type.id === entity.type)
   if (!entityType) notFound()
 
+  const typeLabels = new Map(world.entityTypes.map((type) => [type.id, type.label]))
   const referenceOptionsByKey: Record<string, ReferenceOption[]> = {}
+  const initialSelections: Record<string, string[]> = {}
   for (const property of entityType.properties) {
     if (property.kind !== 'reference' && property.kind !== 'referenceList') continue
     if (!property.refType) continue
@@ -42,7 +45,12 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
     referenceOptionsByKey[property.key] = candidates
       .filter((candidate) => candidate.id !== entity.id)
       .sort((left, right) => left.title.localeCompare(right.title, 'pt-BR'))
-      .map((candidate) => ({ id: candidate.id, title: candidate.title }))
+      .map((candidate) => ({ id: candidate.id, title: candidate.title, subtitle: typeLabels.get(candidate.type), imageAssetId: candidate.coverAssetId ?? candidate.galleryAssetIds?.[0], imagePosition: candidate.type === 'character' || candidate.type === 'creature' ? 'top' as const : 'center' as const }))
+  }
+  for (const property of entityType.properties) {
+    if (property.kind !== 'referenceList') continue
+    const raw = entity.properties[property.key]
+    initialSelections[property.key] = Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : []
   }
 
   const content = await repo.getContent(world.id, entity.id)
@@ -99,6 +107,7 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
         <div className="mt-1.5"><AssetPicker currentAssetId={typeof entity.properties.symbolAssetId === 'string' ? entity.properties.symbolAssetId : undefined} importAction={boundImportSymbol} contain /></div>
       </div>}
 
+      <ReferenceSelectionProvider initial={initialSelections}>
       <form action={boundUpdate} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5"><Label htmlFor="title">Título</Label><Input id="title" name="title" required defaultValue={entity.title} /></div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -124,6 +133,7 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
 
         <div className="mt-2"><Button type="submit">Salvar</Button></div>
       </form>
+      </ReferenceSelectionProvider>
     </PageContainer>
   )
 }

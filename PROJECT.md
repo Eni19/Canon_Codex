@@ -96,6 +96,20 @@ Relações são armazenadas no array da entidade fonte; backlinks são derivados
 `targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
 domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
 
+## Componentes de UI reutilizáveis
+
+- **CardPicker** (`src/components/ui/card-picker.tsx`): seletor em modal com cartões quadrados
+  (imagem por `assetId`, título, subtítulo, descrição) e busca por nome sem distinguir acentos.
+  Use-o sempre que o usuário precisar escolher um item entre muitos, em vez de um `<select>`.
+  `CardPickerField` é a versão para formulários (botão que abre o modal e envia o id por um
+  `<input type="hidden">`). Exemplos: `ScenePicker` (trocar de cena) e o campo "Local" em
+  `SceneCreateForm`.
+  Todos os campos `reference` e `referenceList` das entidades usam `CardPickerField` /
+  `CardPickerMultiField` (via `ReferenceField` / `ReferenceListField`). Uma propriedade
+  `referenceList` com `optionsFrom: '<outra chave>'` só oferece itens já escolhidos nessa outra
+  propriedade (ex.: líderes de uma organização saem dos membros); o estado compartilhado fica em
+  `ReferenceSelectionProvider`.
+
 ## Convenções de mudança
 
 - Mudanças de domínio: atualize o schema Zod, versão/migração quando necessário, repositório e

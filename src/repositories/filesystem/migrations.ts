@@ -265,6 +265,20 @@ export const worldMigrations: MigrationRegistry = {
       ]
       return { ...data, schemaVersion: 15, entityTypes: [...entityTypes, ...additions.filter((addition) => !entityTypes.some((type) => type.id === addition.id))] }
     },
+    15: (data) => ({
+      ...data,
+      schemaVersion: 16,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => {
+        if (type.id === 'character') return { ...type, properties: type.properties.filter((property) => property.key !== 'originLocation') }
+        if (type.id === 'event') return { ...type, properties: type.properties.filter((property) => property.key !== 'relatedLocations') }
+        if (type.id !== 'organization') return type
+        // Leaders are chosen among the members, so members come first.
+        const members = type.properties.filter((property) => property.key === 'members')
+        const others = type.properties.filter((property) => property.key !== 'members').map((property) => property.key === 'leaders' ? { ...property, optionsFrom: 'members' } : property)
+        const leadersIndex = others.findIndex((property) => property.key === 'leaders')
+        return { ...type, properties: leadersIndex < 0 ? [...others, ...members] : [...others.slice(0, leadersIndex), ...members, ...others.slice(leadersIndex)] }
+      }),
+    }),
   },
 }
 export const entityMigrations: MigrationRegistry = {

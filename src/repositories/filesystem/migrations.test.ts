@@ -58,7 +58,7 @@ describe('tale catalog migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const tale = migrated.entityTypes.find((type) => type.id === 'tale')!
 
-    expect(migrated.schemaVersion).toBe(15)
+    expect(migrated.schemaVersion).toBe(16)
     expect(tale.label).toBe('Conto')
     expect(tale.pluralLabel).toBe('Contos')
     expect(tale.properties.map((property) => property.key)).toEqual(expect.arrayContaining([
@@ -81,7 +81,7 @@ describe('concept reference manual migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const concept = migrated.entityTypes.find((type) => type.id === 'concept')!
 
-    expect(migrated.schemaVersion).toBe(15)
+    expect(migrated.schemaVersion).toBe(16)
     expect(concept.properties.find((property) => property.key === 'category')?.label).toBe('Categoria personalizada')
     expect(concept.properties.map((property) => property.key)).toEqual(['category', 'summary'])
     expect(concept.properties.find((property) => property.key === 'summary')?.label).toBe('Subtítulo ou resumo')
@@ -123,9 +123,37 @@ describe('world reference areas migration', () => {
     const species = migrated.entityTypes.find((type) => type.id === 'species')
     const naturalScience = migrated.entityTypes.find((type) => type.id === 'naturalScience')
 
-    expect(migrated.schemaVersion).toBe(15)
+    expect(migrated.schemaVersion).toBe(16)
     expect(phenomenon?.showInSidebar).toBe(false)
     expect(species?.properties.find((property) => property.key === 'recordKind')?.options).toEqual(['Espécie', 'Povo / Cultura'])
     expect(naturalScience?.properties.find((property) => property.key === 'discipline')?.options).toEqual(['Natureza', 'Medicina'])
+  })
+})
+describe('card picker reference cleanup migration', () => {
+  it('drops the unused location fields and makes leaders come from members', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 15,
+      entityTypes: world.entityTypes.map((type) => {
+        if (type.id === 'character') return { ...type, properties: [...type.properties, { key: 'originLocation', label: 'Local de origem', kind: 'reference' as const, refType: 'location' }] }
+        if (type.id === 'event') return { ...type, properties: [...type.properties, { key: 'relatedLocations', label: 'Outros locais', kind: 'referenceList' as const, refType: 'location' }] }
+        if (type.id === 'organization') {
+          const leaders = { ...type.properties.find((property) => property.key === 'leaders')!, optionsFrom: undefined }
+          const members = type.properties.find((property) => property.key === 'members')!
+          return { ...type, properties: [...type.properties.filter((property) => property.key !== 'leaders' && property.key !== 'members'), leaders, members] }
+        }
+        return type
+      }),
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const keys = (id: string) => migrated.entityTypes.find((type) => type.id === id)!.properties.map((property) => property.key)
+
+    expect(migrated.schemaVersion).toBe(16)
+    expect(keys('character')).not.toContain('originLocation')
+    expect(keys('event')).not.toContain('relatedLocations')
+    expect(keys('organization').indexOf('members')).toBeLessThan(keys('organization').indexOf('leaders'))
+    expect(migrated.entityTypes.find((type) => type.id === 'organization')!.properties.find((property) => property.key === 'leaders')?.optionsFrom).toBe('members')
   })
 })
