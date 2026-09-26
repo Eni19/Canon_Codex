@@ -18,6 +18,8 @@
 .canvasStage { position: absolute; inset: 3.5rem 0 0; }
 .canvasStage :global(.tl-canvas) { background-color: var(--background); background-image: radial-gradient(circle at center, color-mix(in oklch, var(--primary) 14%, transparent) 1px, transparent 1px); background-size: 24px 24px; }
 .canvasStage :global(.tl-background) { background: transparent !important; }
+/* The minimap is disabled; its toggle would do nothing. */
+.canvasStage :global([data-testid='minimap.toggle-button']) { display: none; }
 .canvasStage :global(.tlui-layout) { --color-panel: color-mix(in oklch, var(--sidebar) 96%, transparent); --color-low: var(--surface); --color-text: var(--foreground); --color-text-1: var(--foreground); --color-text-3: var(--muted-foreground); --color-primary: var(--primary); }
 
 .worldPanel { position: absolute; z-index: 1000; top: 4.25rem; bottom: 4.5rem; left: .75rem; width: 16.5rem; border: 1px solid var(--border); background: color-mix(in oklch, var(--sidebar) 95%, transparent); box-shadow: 0 18px 50px color-mix(in oklch, black 35%, transparent); transition: transform .22s ease; }

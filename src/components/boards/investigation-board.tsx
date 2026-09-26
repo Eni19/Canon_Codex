@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import {
   AssetRecordType,
+  DefaultStylePanel,
   HTMLContainer,
   MediaHelpers,
   Rectangle2d,
@@ -29,6 +30,8 @@ import {
   createShapeId,
   getSnapshot,
   loadSnapshot,
+  useEditor,
+  useValue,
   type Editor,
   type TLBaseShape,
   type TLEditorSnapshot,
@@ -116,6 +119,15 @@ class EntityCardShapeUtil extends ShapeUtil<EntityCardShape> {
 }
 
 const shapeUtils = [EntityCardShapeUtil]
+
+// The style panel only makes sense while something styleable (arrow, drawing, text...) is selected.
+function BoardStylePanel() {
+  const editor = useEditor()
+  const hasStyleableSelection = useValue('board-styleable-selection', () => editor.getSelectedShapes().some((shape) => shape.type !== ENTITY_CARD_TYPE), [editor])
+  return hasStyleableSelection ? <DefaultStylePanel /> : null
+}
+
+const boardComponents = { PageMenu: null, Minimap: null, StylePanel: BoardStylePanel }
 
 function createEntityShape(editor: Editor, entityId: string, point?: { x: number; y: number }) {
   const center = point ?? editor.getViewportPageBounds().center
@@ -240,10 +252,10 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
           <div className={styles.saveState} data-state={saveState}>{saveState === 'saved' ? <Check /> : saveState === 'error' ? <TriangleAlert /> : <span className={styles.spinner} />}{saveState === 'saved' ? 'Salvo' : saveState === 'error' ? 'Erro ao salvar' : 'Salvando'}</div>
         </header>
 
-        <div className={styles.canvasStage} onDragOver={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE)) event.preventDefault() }} onDrop={(event) => { const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); addEntity(id, editorRef.current.screenToPage({ x: event.clientX, y: event.clientY })) }}>
+        <div className={styles.canvasStage} onDragOverCapture={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE)) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy' } }} onDropCapture={(event) => { const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); event.stopPropagation(); addEntity(id, editorRef.current.screenToPage({ x: event.clientX, y: event.clientY })) }}>
           <Tldraw
             shapeUtils={shapeUtils}
-            components={{ PageMenu: null }}
+            components={boardComponents}
             snapshot={(board.canvasSnapshot ?? undefined) as TLEditorSnapshot | undefined}
             onMount={onMount}
             autoFocus
