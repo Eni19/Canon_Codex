@@ -8,4 +8,4 @@ export interface ScenePoiSummary {
   kind: 'text' | 'evidence' | 'document'; contextualDescription?: string
   discoveries: Array<{ id: string; approach: string; condition: string; information: string }>
 }
-export interface SceneNavigationSummary { id: string; title: string }
+export interface SceneNavigationSummary { id: string; title: string; locationTitle: string; description?: string; backgroundAssetId: string }
