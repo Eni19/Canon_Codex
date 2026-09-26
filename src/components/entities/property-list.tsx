@@ -1,3 +1,5 @@
+'use client'
+
 import { PropertyField, type ReferenceOption } from '@/components/entities/property-field'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 

@@ -16,7 +16,7 @@ function ids(value: unknown) { return Array.isArray(value) ? value.filter((id): 
 export function EventNewspaperPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
   const date = text(entity.properties.eventDate)
   const status = text(entity.properties.eventStatus)
-  const locationIds = [...new Set([text(entity.properties.location), ...ids(entity.properties.relatedLocations)].filter(Boolean))]
+  const locationIds = [...new Set([text(entity.properties.location)].filter(Boolean))]
   const participantIds = ids(entity.properties.participants)
 
   return <div className={styles.newsstand}><main className={styles.paper}>

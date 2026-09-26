@@ -21,6 +21,8 @@ export const PropertyDefinitionSchema = z.object({
   kind: PropertyKindSchema,
   refType: z.string().optional(),
   options: z.array(z.string()).optional(),
+  /** For referenceList: offer only items currently selected in the sibling property with this key. */
+  optionsFrom: z.string().optional(),
 })
 export type PropertyDefinition = z.infer<typeof PropertyDefinitionSchema>
 

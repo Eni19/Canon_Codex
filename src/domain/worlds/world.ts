@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
 
-export const WORLD_SCHEMA_VERSION = 15
+export const WORLD_SCHEMA_VERSION = 16
 
 export const WorldSchema = z.object({
   id: z.uuid(),
