@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SoundtrackDock } from '@/components/soundtrack/soundtrack-dock'
 import { WikiSidebarNav } from '@/components/wiki/wiki-sidebar-nav'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
@@ -41,6 +42,7 @@ export function WikiSidebar({
       </div>
 
       <WikiSidebarNav entityTypes={entityTypes} collapsed={collapsed} />
+      <SoundtrackDock collapsed={collapsed} />
     </aside>
   )
 }

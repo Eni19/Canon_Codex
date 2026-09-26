@@ -16,6 +16,7 @@ uma cena para apresentação.
 | Leitura/edição | `/entity/<entityId>` e `/entity/<entityId>/edit` |
 | Quadros | `/boards` |
 | Cenas | `/scenes` |
+| Trilha sonora | `/soundtrack` |
 
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.
@@ -26,6 +27,7 @@ continuam acessíveis por referências ou pela URL direta quando existem.
 2. [Crie e edite entidades](entities.md), começando pelo título, tags e campos específicos.
 3. Use o [editor](editor.md) para páginas, blocos, imagens e links internos.
 4. Para investigação ou narração, siga [quadros, cenas e projeção](boards-scenes-and-projection.md).
+5. Para ambientar a mesa, monte playlists na [trilha sonora](soundtrack.md).
 
 Exemplos deste guia usam nomes sintéticos como `Arquivo de Teste`, `Biblioteca Norte` e
 `Personagem Exemplo`; nenhum conteúdo real de `workspace/` é necessário.

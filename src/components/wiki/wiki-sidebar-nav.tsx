@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useMemo, useState, useSyncExternalStore } from 'react'
-import { Clapperboard, EyeOff, Layers, LayoutDashboard, LibraryBig, FolderInput, RotateCcw, Search, Settings2 } from 'lucide-react'
+import { Clapperboard, EyeOff, Layers, LayoutDashboard, LibraryBig, FolderInput, Music, RotateCcw, Search, Settings2 } from 'lucide-react'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { useCommandPalette } from '@/components/wiki/command-palette-provider'
 import { cn } from '@/lib/utils'
@@ -95,6 +95,9 @@ export function WikiSidebarNav({
       </SidebarLink>
       <SidebarLink href="/scenes" active={pathname.startsWith('/scenes')} collapsed={collapsed} label="Cenas" onNavigate={onNavigate}>
         <Clapperboard className="size-4" />
+      </SidebarLink>
+      <SidebarLink href="/soundtrack" active={pathname.startsWith('/soundtrack')} collapsed={collapsed} label="Trilha sonora" onNavigate={onNavigate}>
+        <Music className="size-4" />
       </SidebarLink>
       {!collapsed && <div className="mt-4 border-t border-sidebar-border pt-2">
         <button type="button" onClick={() => setCustomizing((value) => !value)} className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-expanded={customizing}>

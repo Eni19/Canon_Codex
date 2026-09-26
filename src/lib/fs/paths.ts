@@ -58,6 +58,10 @@ export function getScenesDir(worldDir: string): string { return path.join(getWor
 export function getSceneDir(worldDir: string, sceneId: string): string { return path.join(getScenesDir(worldDir), sceneId) }
 export function getSceneJsonPath(worldDir: string, sceneId: string): string { return path.join(getSceneDir(worldDir, sceneId), 'scene.json') }
 
+export function getPlaylistsDir(worldDir: string): string { return path.join(getWorldDir(worldDir), 'playlists') }
+export function getPlaylistDir(worldDir: string, playlistId: string): string { return path.join(getPlaylistsDir(worldDir), playlistId) }
+export function getPlaylistJsonPath(worldDir: string, playlistId: string): string { return path.join(getPlaylistDir(worldDir, playlistId), 'playlist.json') }
+
 export function getAssetDir(worldDir: string, assetId: string): string {
   return path.join(getAssetsDir(worldDir), assetId)
 }

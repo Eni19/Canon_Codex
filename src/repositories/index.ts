@@ -1,10 +1,12 @@
 import 'server-only'
 import type { AssetStore } from '@/repositories/contracts/assetStore'
 import type { BoardRepository } from '@/repositories/contracts/boardRepository'
+import type { PlaylistRepository } from '@/repositories/contracts/playlistRepository'
 import type { SceneRepository } from '@/repositories/contracts/sceneRepository'
 import type { WorldRepository } from '@/repositories/contracts/worldRepository'
 import { FileSystemAssetStore } from '@/repositories/filesystem/fileSystemAssetStore'
 import { FileSystemBoardRepository } from '@/repositories/filesystem/fileSystemBoardRepository'
+import { FileSystemPlaylistRepository } from '@/repositories/filesystem/fileSystemPlaylistRepository'
 import { FileSystemSceneRepository } from '@/repositories/filesystem/fileSystemSceneRepository'
 import { FileSystemWorldRepository } from '@/repositories/filesystem/fileSystemWorldRepository'
 
@@ -45,4 +47,11 @@ export function getSceneRepository(): SceneRepository {
   getPersistenceDriver()
   sceneRepository ??= new FileSystemSceneRepository()
   return sceneRepository
+}
+
+let playlistRepository: PlaylistRepository | undefined
+export function getPlaylistRepository(): PlaylistRepository {
+  getPersistenceDriver()
+  playlistRepository ??= new FileSystemPlaylistRepository()
+  return playlistRepository
 }

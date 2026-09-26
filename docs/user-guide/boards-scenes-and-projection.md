@@ -46,7 +46,12 @@ Há dois fluxos:
 
 O estado enviado contém somente tokens e pontos de interesse visíveis. A projeção é local entre
 janelas do mesmo navegador/origem; não há sessão persistida ou transmissão para a rede. Se a janela
-perder uma revisão, solicita um estado completo. Fechar ou encerrar a projeção interrompe o canal.
+perder uma revisão, solicita um estado completo.
+
+A sessão de projeção pertence à janela do mestre, não à cena: **trocar de cena ou de página não a
+encerra**. A janela continua conectada e passa a mostrar a nova cena assim que ela abre. Só o botão
+**Encerrar projeção** (ou recarregar a janela do mestre) interrompe o canal. Enquanto a projeção
+está conectada, a [trilha sonora](soundtrack.md) toca por ela (ver abaixo).
 
 ## Limitações
 
