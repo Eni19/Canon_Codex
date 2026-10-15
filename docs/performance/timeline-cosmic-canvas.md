@@ -30,7 +30,9 @@ O cabeçalho ocupa 100 px; viewports do navegador 1440×1000 e 390×944 deixam a
 | Produção desktop, coleta final | 31,9 ms | 55,7 ms | 3 | nenhuma | 18 | 0 |
 | Produção mobile, coleta final | 26,5 ms | 27,3 ms | 0 | nenhuma | 12 | 0 |
 
-Todas as coletas tinham 500 pontos e uma animação contínua (brilho do fundo). JSON bruto:
+As coletas desta tabela antecedem a correção posterior do fundo animado: tinham 500 pontos e
+uma animação contínua (somente brilho). O fundo corrigido compartilha uma animação de deriva
+entre estrelas e névoa; os números abaixo não são uma medição desse novo efeito. JSON bruto:
 [antes](timeline-cosmic-dev-before.json), [depois](timeline-cosmic-dev-after.json),
 [produção desktop](timeline-cosmic-production-desktop.json) e
 [produção mobile](timeline-cosmic-production-mobile.json).
@@ -116,3 +118,37 @@ não foram alterados por esse ajuste; as capturas abaixo foram atualizadas com a
 - [Desktop](timeline-cosmic-desktop.jpg)
 - [Mobile](timeline-cosmic-mobile.jpg)
 - [Tablet](timeline-cosmic-tablet.jpg)
+
+## Correção do fundo animado — 15/10/2026
+
+O fundo anterior variava apenas a opacidade de poucas estrelas minúsculas em 14 s, parecendo
+estático. A correção aumenta a densidade/luminosidade, acrescenta névoa em tons da paleta global e
+compartilha deriva/cintilação entre os três elementos decorativos em **uma animação CSS de 22 s**.
+A camada usa transform/opacity, fica abaixo do canvas e não intercepta ponteiros. Movimento
+reduzido mantém o campo estático. Não há loop React ou nova dependência.
+
+O probe de estilos computados passou de visibleSpatialMotion=false para true; duas amostras
+registraram transform e posição diferentes do fundo, com pointer-events=none. Veja a
+[evidência de movimento](timeline-cosmic-background-motion.json) e a
+[captura atual](timeline-cosmic-background.jpg). O arraste real da versão final preservou delta 60/20 e a busca
+preservou a câmera. Build de produção/TypeScript e lint do componente passaram. Não houve novo
+teste unitário de CSS: a verificação usa o efeito renderizado na página real.
+
+A primeira variante animava as duas camadas de estrelas e a névoa separadamente. O ensaio de
+500 acontecimentos indicou custo maior; a versão final compartilha um único plano animado.
+
+| Variante | Viewport da aplicação | p95 | Máximo | Tarefas longas | Animações ativas | Layout shift |
+| --- | --- | ---: | ---: | --- | ---: | ---: |
+| Três animações separadas | 1440×900 | 61,7 ms | 138,4 ms | 68 ms | 3 | 0 |
+| Final compartilhada | 1440×900 | 39,5 ms | 74,8 ms | nenhuma | 1 | 0 |
+| Três animações separadas | 390×844 | 56,9 ms | 74,8 ms | nenhuma | 3 | 0 |
+| Final compartilhada | 390×844 | 32,2 ms | 38,4 ms | nenhuma | 1 | 0 |
+
+JSON: [primeira desktop](timeline-cosmic-background-three-layers-desktop.json),
+[primeira mobile](timeline-cosmic-background-three-layers-mobile.json),
+[final desktop](timeline-cosmic-background-desktop.json) e
+[final mobile](timeline-cosmic-background-mobile.json). Os ensaios tiveram 74 intervalos, 500 pontos
+SVG e máximos de 18/12 cartões montados. São coletas curtas, sensíveis ao ambiente e aquecimento;
+a primeira câmera desktop inicializou antes de terminar o redimensionamento do viewport.
+Não constituem isolamento do custo de GPU nem promessa de 60 FPS. Touch físico e a preferência
+de movimento reduzido continuam sem emulação visual neste ensaio.

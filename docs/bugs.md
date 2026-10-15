@@ -99,3 +99,26 @@ contratos ou instruções de operação precisam ser ajustados.
 - **Impacto:** se reproduzível em uso manual normal (não confirmado — pode ser mais raro fora de navegação automatizada), impede o Mestre de abrir a cena até recarregar a página.
 - **Próximo passo:** confirmar se ocorre em navegação manual normal (clique real, sem automação); se sim, avaliar aguardar o primeiro `ResizeObserver` do container (ou usar `requestAnimationFrame`) antes de chamar `setCameraOptions`/`zoomToBounds`, ou envolver a chamada em guarda que verifique dimensões não-nulas do container.
 - **Última verificação:** 2026-09-26
+
+### BUG-2026-10-15-01 — Fundo cósmico parece estático
+
+- **Estado:** corrigido
+- **Severidade:** visual
+- **Área:** `timeline.module.css`, camada de fundo de `TimelineInteractiveView`.
+- **Ambiente:** Windows, Chromium integrado, cenário exclusivamente sintético em localhost.
+- **Reprodução:** abrir a Linha do Tempo e observar o fundo por alguns segundos.
+- **Esperado:** estrelas e atmosfera espacial com movimento discreto, perceptível.
+- **Observado:** poucos pontos minúsculos; uma única animação de opacidade em 14 s, sem deriva.
+- **Causa:** brilho isolado e densidade baixos tornavam a animação quase imperceptível; a
+  preferência de movimento reduzido não estava ativa no ensaio.
+- **Correção:** duas camadas de estrelas e névoa CSS, em tons do aplicativo, compartilhando uma única
+  animação de transform/opacity para reduzir composição.
+  O fundo tem ordem de pintura explícita abaixo do canvas e pointer-events desativado.
+- **Verificação:** o probe DOM `visibleSpatialMotion` passou de false para true; o plano compartilhado
+  mudou transform e posição entre amostras. Arraste real manteve deltas de 60/30 e 60/20, e busca preservou a câmera.
+  [Evidência](performance/timeline-cosmic-background-motion.json). Não foi criado teste unitário
+  de CSS; o sinal de regressão exercita estilos computados na página real. Movimento reduzido
+  continua desativando as animações; a preferência do sistema não foi emulada neste ensaio.
+- **Impacto documental:** guia, PROJECT, ADR-005 e perfil atualizados. README continua válido;
+  APIs, armazenamento e migrações permanecem iguais, pois a correção é de apresentação.
+- **Última verificação:** 2026-10-15

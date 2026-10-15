@@ -66,7 +66,11 @@ A orientação muda explicitamente a distribuição; edição de data pode mudar
 Cartões reservam dimensões fixas e só montam próximos do viewport. SVG e cartões memoizados
 reduzem trabalho durante exploração. O único will-change fica no plano; não há camada GPU por
 cartão. Estados de UI usam 180 ms, controles automáticos da câmera 200 ms; gestos são diretos.
-O fundo usa um único brilho lento. Movimento reduzido desativa transições/animações, inclusive
+O fundo usa duas camadas CSS de estrelas e uma névoa, compartilhando uma única animação
+de transform/opacity, sem loops React. Sua camada explícita fica abaixo do canvas e não
+intercepta ponteiros. A animação compartilhada evita compor três planos animados separados. O ajuste
+corrige o brilho anterior, cuja opacidade isolada quase não comunicava movimento.
+Movimento reduzido desativa transições/animações, inclusive
 nos painéis, e torna os controles imediatos. DialogContent/SheetContent mantêm overlayClassName
 para aplicar essa política local. Resultados e limites estão no [perfil](../performance/timeline-cosmic-canvas.md).
 

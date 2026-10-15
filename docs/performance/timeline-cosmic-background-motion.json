@@ -1,0 +1,18 @@
+{
+  "before": {
+    "visibleSpatialMotion": false,
+    "animation": "one 14s opacity-only starlight"
+  },
+  "after": {
+    "animation": "timeline_cosmicDrift__XoaZs",
+    "opacity": "0.814623",
+    "pointerEvents": "none",
+    "position": {
+      "x": -67.15349578857422,
+      "y": 23.341611862182617
+    },
+    "transform": "matrix(1, 0, 0, 1, -19.1535, 15.3416)",
+    "visibleSpatialMotion": true
+  },
+  "motionChangesBetweenSamples": true
+}

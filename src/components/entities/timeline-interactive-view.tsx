@@ -219,7 +219,7 @@ function TimelineInteractiveBody({ worldId, timelineId, title, worldName, detail
   }
 
   return <div className={styles.experience} data-cosmic-timeline>
-    <div className={styles.starfield} aria-hidden="true" />
+    <div className={styles.starfield} data-cosmic-background aria-hidden="true"><div className={styles.nebula} data-cosmic-nebula /></div>
     <TimelineCosmicCanvas key={view.view} ref={canvas} layout={layout} calendar={calendar} visibleIds={visibleIds} selectedId={selectedId} initialId={initialId} renderCard={card} onOpen={openDetails} onSelect={setSelectedId} onRecordDrop={recordDrop} />
     <header className={styles.hero}>
       <div className={styles.heroTitle}><Link href="/timeline" className={styles.eyebrow}><span className={styles.tinyOrbit} />LINHA DO TEMPO<span>/</span>{worldName}</Link><h1>{title}</h1></div>

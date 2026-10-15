@@ -117,7 +117,9 @@ Filtros alteram visibilidade sem mover a câmera nem reconstruir o layout; detal
 painéis ficam sobrepostos. Orientação e alterações reais de datas podem redistribuir coordenadas.
 
 A câmera usa Pointer Events, wheel e requestAnimationFrame, sem nova dependência. SVG memoizado
-mantém pontos/conexões; cartões são reutilizados. Apenas o plano recebe transform e will-change.
+mantém pontos/conexões; cartões são reutilizados. A câmera transforma o plano, único elemento
+com will-change explícito. O fundo anima duas camadas de estrelas e uma névoa por CSS,
+independentemente da câmera e sem interceptar ponteiros.
 Três camadas separam estrelas, mapa e UI fixa. Tokens cósmicos centralizados aplicam preto profundo,
 texto pergaminho/cinza quente e acento âmbar/latão do aplicativo, com fundo e superfícies
 escurecidos apenas à linha/painéis, conforme a atualização do ADR-005.

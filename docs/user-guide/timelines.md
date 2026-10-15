@@ -90,7 +90,8 @@ com margem de segurança e teto de 96. Abaixo de 28% de ampliação, a visão ge
 a lista de acontecimentos permite localizar e abrir os cartões. Biblioteca e lista têm páginas
 próprias de 50 itens. Os dados completos continuam carregados; essa otimização limita o DOM.
 
-O fundo tem um brilho muito discreto; filtros/seleção usam transições de 180 ms e controles de
+O fundo tem duas camadas de estrelas em deriva e cintilação, com uma névoa lenta em tons de
+âmbar. Ele fica atrás do mapa, sem interceptar gestos. Filtros/seleção usam transições de 180 ms e controles de
 câmera 200 ms. Gestos respondem por quadro, sem tween atrasado. **Reduzir movimento** desativa
 animações/transições e torna os controles imediatos. Foco visível e alternativas por teclado
 permanecem. Medidas, ensaios e limites: [perfil do canvas](../performance/timeline-cosmic-canvas.md).
