@@ -1,0 +1,21 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "viewport": [
+    1440,
+    900
+  ],
+  "samples": 74,
+  "p95Ms": 28.7,
+  "maxMs": 51.8,
+  "over32ms": 2,
+  "longTasks": [],
+  "layoutShift": 0,
+  "maxMountedCards": 18,
+  "maxAnimations": 1,
+  "svgPoints": 500,
+  "camera": {
+    "x": -993.4597738397943,
+    "y": 310.25017037250626,
+    "scale": 0.9461439867384217
+  }
+}

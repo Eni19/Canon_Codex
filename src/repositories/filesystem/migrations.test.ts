@@ -1,11 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import { ContentDocumentSchema } from '@/domain/content/contentDocument'
-import { WorldSchema } from '@/domain/worlds/world'
+import { WORLD_SCHEMA_VERSION, WorldSchema } from '@/domain/worlds/world'
+import { createDefaultCalendar } from '@/domain/worlds/calendar'
 import { migrateToLatest } from '@/lib/migrations/registry'
 import { contentMigrations, entityMigrations, worldMigrations } from './migrations'
 
 describe('character profile migration', () => {
+  it('atribui escalas mínimas por tipo ao migrar um mundo v18', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = { ...world } as Partial<typeof world>
+    delete legacy.timelineScaleDefaults
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...legacy, schemaVersion: 18 }))
+    expect(migrated.timelineScaleDefaults).toEqual(world.timelineScaleDefaults)
+    expect(migrated.timelineScaleDefaults.event).toBe('year')
+    expect(migrated.timelineScaleDefaults.character).toBe('month')
+  })
+  it('adds the optional origin link without inventing an Event for existing worlds', () => {
+    const world = createDefaultWorldSeed()
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...world, schemaVersion: 17 }))
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+    expect(migrated.originEventId).toBeUndefined()
+    expect(migrated.calendar).toEqual(world.calendar)
+  })
   it('adds the profile field to existing worlds without changing other definitions', () => {
     const world = createDefaultWorldSeed()
     const legacy = {
@@ -58,7 +75,7 @@ describe('tale catalog migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const tale = migrated.entityTypes.find((type) => type.id === 'tale')!
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
     expect(tale.label).toBe('Conto')
     expect(tale.pluralLabel).toBe('Contos')
     expect(tale.properties.map((property) => property.key)).toEqual(expect.arrayContaining([
@@ -81,7 +98,7 @@ describe('concept reference manual migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const concept = migrated.entityTypes.find((type) => type.id === 'concept')!
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
     expect(concept.properties.find((property) => property.key === 'category')?.label).toBe('Categoria personalizada')
     expect(concept.properties.map((property) => property.key)).toEqual(['category', 'summary'])
     expect(concept.properties.find((property) => property.key === 'summary')?.label).toBe('Subtítulo ou resumo')
@@ -123,10 +140,64 @@ describe('world reference areas migration', () => {
     const species = migrated.entityTypes.find((type) => type.id === 'species')
     const naturalScience = migrated.entityTypes.find((type) => type.id === 'naturalScience')
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
     expect(phenomenon?.showInSidebar).toBe(false)
     expect(species?.properties.find((property) => property.key === 'recordKind')?.options).toEqual(['Espécie', 'Povo / Cultura'])
     expect(naturalScience?.properties.find((property) => property.key === 'discipline')?.options).toEqual(['Natureza', 'Medicina'])
+  })
+})
+
+describe('world calendar migration', () => {
+  it('adds calendar and timeline defaults to a v16 world created on main', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = { ...world, schemaVersion: 16, calendar: undefined, timelineScaleDefaults: undefined }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+
+    expect(migrated).toEqual(world)
+  })
+
+  it('adds the conventional calendar to a legacy world without changing its entity catalog', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = { ...world, schemaVersion: 15, calendar: undefined }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+    expect(migrated.calendar).toEqual(createDefaultCalendar())
+    expect(migrated.entityTypes).toEqual(world.entityTypes)
+  })
+
+  it('keeps a customized calendar when an older world is read', () => {
+    const world = createDefaultWorldSeed()
+    const customized = { ...world.calendar, hoursPerDay: 30 }
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...world, schemaVersion: 15, calendar: customized }))
+
+    expect(migrated.calendar.hoursPerDay).toBe(30)
+  })
+
+  it('upgrades the legacy Gregorian leap rule without changing custom rules', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 16,
+      calendar: {
+        ...world.calendar,
+        weekdayOffset: undefined,
+        intercalaryRules: [
+          { ...world.calendar.intercalaryRules[0], extendsMonth: undefined },
+          { id: 'custom-extra', name: 'Extra', month: 5, everyYears: 3, yearOffset: 0 },
+        ],
+      },
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+    expect(migrated.calendar.weekdayOffset).toBe(6)
+    expect(migrated.calendar.intercalaryRules[0].extendsMonth).toBe(true)
+    expect(migrated.calendar.intercalaryRules[1].extendsMonth).toBe(false)
+    expect(migrated.calendar.intercalaryRules[1].name).toBe('Extra')
   })
 })
 describe('card picker reference cleanup migration', () => {
@@ -134,7 +205,7 @@ describe('card picker reference cleanup migration', () => {
     const world = createDefaultWorldSeed()
     const legacy = {
       ...world,
-      schemaVersion: 15,
+      schemaVersion: 19,
       entityTypes: world.entityTypes.map((type) => {
         if (type.id === 'character') return { ...type, properties: [...type.properties, { key: 'originLocation', label: 'Local de origem', kind: 'reference' as const, refType: 'location' }] }
         if (type.id === 'event') return { ...type, properties: [...type.properties, { key: 'relatedLocations', label: 'Outros locais', kind: 'referenceList' as const, refType: 'location' }] }
@@ -150,7 +221,7 @@ describe('card picker reference cleanup migration', () => {
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
     const keys = (id: string) => migrated.entityTypes.find((type) => type.id === id)!.properties.map((property) => property.key)
 
-    expect(migrated.schemaVersion).toBe(16)
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
     expect(keys('character')).not.toContain('originLocation')
     expect(keys('event')).not.toContain('relatedLocations')
     expect(keys('organization').indexOf('members')).toBeLessThan(keys('organization').indexOf('leaders'))

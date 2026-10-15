@@ -9,6 +9,9 @@ Execute:
 
 O servidor de desenvolvimento fica em http://localhost:3000 por padrão. Use .env.local para
 WIKI_WORKSPACE_DIR e PERSISTENCE_DRIVER; não use o workspace privado de outra pessoa em ensaios.
+O cache local `.pnpm-store/` é ignorado pelo Git e não integra os arquivos da aplicação.
+Pacotes locais em `world-packs/` também permanecem fora do versionamento; o gerador de Tal’Dorei
+e seus requisitos estão no [guia de mundos](user-guide/worlds.md#abrir-o-atlas-de-taldorei-renascido).
 
 Comandos do package.json:
 

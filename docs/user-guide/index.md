@@ -10,6 +10,7 @@ uma cena para apresentação.
 | --- | --- |
 | Biblioteca de Codex | `/` |
 | Início do mundo ativo | `/codex` |
+| Configuração do calendário do mundo | `/calendar` |
 | Todos os registros | `/all` |
 | Catálogo de um tipo | `/<entityType>` |
 | Nova entidade | `/<entityType>/new` |
@@ -25,7 +26,9 @@ continuam acessíveis por referências ou pela URL direta quando existem.
 1. [Crie, importe ou selecione um mundo](worlds.md).
 2. [Crie e edite entidades](entities.md), começando pelo título, tags e campos específicos.
 3. Use o [editor](editor.md) para páginas, blocos, imagens e links internos.
+   Para datas ISO antigas, siga a [conversão por mundo](../data/migrations.md#datas-de-propriedades-durante-a-transição).
 4. Para investigação ou narração, siga [quadros, cenas e projeção](boards-scenes-and-projection.md).
+5. Para organizar registros por data, siga o [guia de Linhas do Tempo](timelines.md).
 
 Exemplos deste guia usam nomes sintéticos como `Arquivo de Teste`, `Biblioteca Norte` e
 `Personagem Exemplo`; nenhum conteúdo real de `workspace/` é necessário.

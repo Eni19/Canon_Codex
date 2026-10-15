@@ -13,6 +13,10 @@ O título é obrigatório. O ID é um UUID e não muda quando o título muda; o 
 do título e não deve ser usado para links. O formulário revalida campos estruturados com Zod antes
 de gravar.
 
+Na criação de um **Evento**, informe uma data exata com mês e dia para poder marcar **Evento de
+origem**. O sistema coloca essa data no ano zero do mundo. Se já houver um Evento vinculado,
+substitua-o pela prévia em **Calendário → Evento de origem**.
+
 ## Tipos iniciais
 
 O mundo semente atual define 17 tipos. `showInSidebar = false` em **Caso**, **Documento**,
@@ -37,7 +41,7 @@ persistidos e podem ser usados por referências.
 | `artifact` | Objeto / Artefato | catálogo, registro, materiais, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
-| `timeline` | Linha do Tempo | escopo, início e fim; apresentação genérica |
+| `timeline` | Linha do Tempo | escopo, início e fim; página com vistas vertical e horizontal de aparições |
 
 As propriedades são declaradas no `world.json` por `PropertyDefinition`. Os tipos de campo
 disponíveis são texto, área de texto, número, data, booleano, enum, tags, referência, lista de
@@ -56,6 +60,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 - conceitos aceitam até 40 blocos entre visão geral, operação, estrutura, regras, exemplos,
   limitações, terminologia, diagrama e notas;
 - contos podem ter no máximo 50 páginas, chamadas de capítulos no editor;
+- linhas do tempo exibem aparições datadas em ordem cronológica e itens sem data em seção própria;
 - tipos que não possuem composição específica usam o compositor de header, propriedades, conteúdo,
   relações e backlinks conforme o layout do mundo.
 
@@ -89,3 +94,8 @@ outra referência encontrada.
 **Excluir** uma entidade move sua pasta inteira, inclusive `content.json`, para `trash/`; ela some
 dos catálogos e não há botão de restaurar. Referências ou cartões de quadro que ainda guardem o ID
 podem mostrar “entidade indisponível”. Não existe exclusão permanente exposta pela aplicação.
+
+Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, nota e data, com aviso
+**Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira
+provoca a remoção das aparições na próxima consulta de linha ou origem, ou ao criar uma origem. Se o registro era o
+Evento de origem, o vínculo é limpo e o calendário preservado. Veja [linhas do tempo](timelines.md).

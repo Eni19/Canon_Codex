@@ -30,7 +30,7 @@ function prose(value: unknown) {
   return typeof value === 'string' ? value : ''
 }
 
-export function SpeciesGuidePage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions }: EntityPageProps) {
+export function SpeciesGuidePage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
   const recordKind = prose(entity.properties.recordKind) || 'Espécie'
   const facts = selectProperties(entityType.properties, FACT_KEYS, entity.properties)
   const connections = selectProperties(entityType.properties, CONNECTION_KEYS, entity.properties)
@@ -55,7 +55,7 @@ export function SpeciesGuidePage({ entity, entityType, worldName, content, entit
         </figure>
         <div className={styles.facts}>
           <div className={styles.sectionLabel}><span>01</span><p>Identificação</p></div>
-          <PropertyDisplayList properties={facts} values={entity.properties} entityTitleById={entityTitleById} columns={2} />
+          <PropertyDisplayList properties={facts} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} columns={2} />
           {entity.tags.length > 0 && <div className={styles.tags}>{entity.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
         </div>
       </section>
@@ -67,7 +67,7 @@ export function SpeciesGuidePage({ entity, entityType, worldName, content, entit
           {customs && <section><div className={styles.sectionLabel}><span>—</span><h2>Costumes e tradições</h2></div><p className={styles.prose}>{customs}</p></section>}
         </div>
         <aside className={styles.references}>
-          {connections.length > 0 && <section><h2>Associações</h2><PropertyDisplayList properties={connections} values={entity.properties} entityTitleById={entityTitleById} columns={1} /></section>}
+          {connections.length > 0 && <section><h2>Associações</h2><PropertyDisplayList properties={connections} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} columns={1} /></section>}
           <section><h2>Relações</h2><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={relationTargetOptions} /></section>
           <section><h2>Referências cruzadas</h2><BacklinksPanel backlinks={backlinks} /></section>
         </aside>

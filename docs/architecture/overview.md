@@ -1,13 +1,13 @@
 # Visão de arquitetura
 
-Esta página descreve o caminho de execução verificado em 23/09/2026. As justificativas de produto
+Esta página inclui as atualizações TL-10 e TL-11 verificadas em 14/10/2026. As justificativas de produto
 ficam nos [ADRs](.) e não são repetidas aqui.
 
 ## Mapa do código
 
 ```text
 src/app/                         entrada HTTP e navegação Next App Router
-  (wiki)/                        biblioteca, catálogos e telas de edição/leitura
+  (wiki)/                        biblioteca, calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
 src/components/                  UI client/server, Tiptap, tldraw e projeção
@@ -54,9 +54,44 @@ flowchart LR
    temporário irmão e faz `rename` no mesmo volume. Se a serialização ou escrita falhar, o
    temporário é removido e o arquivo anterior não é substituído.
 
+Propriedades declaradas como `kind: 'date'` são a exceção documentada ao antigo campo ISO: a action
+e o editor usam `calendar-date.ts` para validar e persistir limites de calendário com a precisão
+informada, enquanto o leitor e as páginas especiais compartilham o formatador. Strings ISO legadas
+seguem aceitas durante a transição. O adaptador não usa `Date` para anos fictícios nem converte
+strings ISO em salvamentos comuns. A tela `/calendar/migration` delega ao `WorldRepository` a prévia,
+conversão, retomada e restauração; o adaptador filesystem mantém manifesto recuperável com os
+metadados originais e substitui arquivos individualmente de forma atômica. O repositório ainda recusa
+mudanças estruturais do calendário se encontrar campos de data preenchidos em registros ativos ou
+na lixeira.
+
+As operações de conversão e as gravações de entidades/calendário compartilham um lock local por
+mundo. O manifesto de conversão é validado por schema na leitura; a confirmação compara um
+fingerprint que inclui entidades, calendário e definições de tipos. Antes de concluir, o adaptador
+confere o estado esperado dos arquivos convertidos.
+
 Há uma verificação opcional de concorrência em `EntityPatch.expectedUpdatedAt`; se estiver
 desatualizada, `ConcurrentModificationError` impede a gravação. As ações de UI atuais não enviam
 esse campo, portanto não há resolução de conflito visual implementada.
+
+O adaptador também reconcilia ausência definitiva de registros em consultas de linha e
+Evento de origem, além da criação de uma origem (`entityLifecycle.ts`). Sob o lock, valida registros ativos, na lixeira e
+documentos de linhas antes de limpar aparições em todas as linhas do mundo e o vínculo de origem.
+Falhas de inventário interrompem a limpeza. As escritas são atômicas por arquivo, com retomada
+idempotente; não há transação entre arquivos ou backup automático. O calendário não é deslocado.
+Veja [ciclo de vida](../data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+
+`getWorld` consulta somente os metadados do mundo e não inicia essa varredura, preservando a
+busca global quando uma linha ou registro na lixeira está inválido. A criação de origem reconcilia
+o vínculo antes de verificar se já existe um Evento, dispensando navegação intermediária.
+
+Na UI, timelineCanvas.ts calcula coordenadas fixas para todas as aparições, em ordem cronológica.
+TimelineCosmicCanvas separa SVG de pontos/conexões memoizado e cartões limitados ao viewport.
+useTimelineCamera mantém a câmera em refs, pinta um transform por requestAnimationFrame e
+notifica React somente ao cruzar faixas de visibilidade. Filtros são máscaras de IDs, sem alterar
+coordenadas/câmera. Biblioteca e navegador têm listas de 50; o mapa não é paginado. A orientação
+padrão é horizontal, com alternativa vertical. Distâncias não representam duração proporcional.
+O editor único e os demais painéis são sobrepostos. Todos os dados continuam carregados.
+Veja [guia](../user-guide/timelines.md) e [decisão visual](ADR-005-design-system.md).
 
 ## Fluxo de assets
 
@@ -80,10 +115,21 @@ exclusão. O seed padrão é criado lazily por `worldDirRegistry` quando `worksp
 existe. Criar um mundo gera slug único, mantém UUID e escreve `world.json`. Renomear muda somente o
 nome exibido e `updatedAt`; o diretório/slug não muda. Importar copia uma pasta inteira, ajusta slug
 em colisão de diretório, mas rejeita IDs de mundo já existentes ou repetidos na mesma importação.
+`openTaldoreiWorldAction` usa o mesmo importador para copiar o pacote versionado em
+`world-packs/taldorei-renascido-completo/` na primeira abertura; depois seleciona o UUID já importado.
+`normalizeTaldoreiEvents` completa datas faltantes e reúne páginas de conteúdo dos eventos desse
+pacote ao reabri-lo. A rotina mantém datas editadas pelo usuário e sincroniza aparições sem data nas
+linhas do tempo; corrige apenas a estimativa antiga de 816 P.D. para o Conclave Croma.
 
 As Server Actions selecionam o mundo por cookie HttpOnly `canon-codex-world`, SameSite `lax`,
 caminho `/` e duração de um ano. Excluir o mundo ativo escolhe outro mundo disponível ou apaga o
 cookie.
+
+O mundo também carrega seu calendário em `world.json`. A rota `/calendar` lê o mundo ativo e o
+componente client envia uma configuração JSON e o ID do mundo que abriu o formulário para
+`updateCalendarAction`; a action valida o schema e confere se esse mundo ainda está ativo antes de
+chamar `WorldRepository.updateCalendar` e revalidar a página. O módulo de domínio concentra cálculo
+ordinal, duração de ano, regras intercalares e formatação, sem delegar anos fictícios a `Date`.
 
 ## Quadros, cenas e projeção
 

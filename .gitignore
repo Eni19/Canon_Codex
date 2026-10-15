@@ -1,5 +1,6 @@
 # dependencies
 /node_modules/
+/.pnpm-store/
 /.pnp/
 .pnp.*
 .yarn/*
@@ -19,6 +20,8 @@ next-env.d.ts
 # Canon Codex user data
 # Worlds, entities, uploaded images, boards, scenes and internal trash are private local data.
 /workspace/
+# mundos sintéticos permanentes para testes manuais
+/demo-data/
 
 # local agent and editor configuration
 /.agents/
@@ -31,7 +34,7 @@ next-env.d.ts
 # environment files
 .env*
 !.env.example
-
+world-packs
 # deployment
 .vercel/
 

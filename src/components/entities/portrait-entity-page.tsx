@@ -15,6 +15,8 @@ import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
+import type { Calendar } from '@/domain/worlds/calendar'
 import type { Backlink } from '@/repositories/contracts/worldRepository'
 import styles from './portrait-entity-page.module.css'
 
@@ -31,6 +33,7 @@ export function PortraitEntityPage({
   entityTitleById,
   backlinks,
   relationTargetOptions,
+  calendar,
 }: {
   entity: Entity
   entityType: EntityTypeDefinition
@@ -39,6 +42,7 @@ export function PortraitEntityPage({
   entityTitleById: Record<string, string>
   backlinks: Backlink[]
   relationTargetOptions: RelationTargetOption[]
+  calendar: Calendar
 }) {
   const blocks = entityType.layout
   const headerKeys = ['profile', 'affiliation', 'occupation']
@@ -115,7 +119,7 @@ export function PortraitEntityPage({
           <dl className={styles.summary}>
             {headerProperties.map((property) => {
               const value = entity.properties[property.key]
-              const text = typeof value === 'string' && value.trim() ? value : '—'
+              const text = property.kind === 'date' ? formatDateFieldValue(calendar, value) || '—' : typeof value === 'string' && value.trim() ? value : '—'
               return (
                 <div key={property.key} className="min-w-0 max-w-full">
                   <dt className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">{property.label}</dt>

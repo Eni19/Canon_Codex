@@ -38,6 +38,10 @@ export function getEntityContentPath(worldDir: string, entityId: string): string
   return path.join(getEntityDir(worldDir, entityId), 'content.json')
 }
 
+export function getTimelineDataPath(worldDir: string, entityId: string): string {
+  return path.join(getEntityDir(worldDir, entityId), 'timeline.json')
+}
+
 export function getAssetsDir(worldDir: string): string {
   return path.join(getWorldDir(worldDir), 'assets')
 }

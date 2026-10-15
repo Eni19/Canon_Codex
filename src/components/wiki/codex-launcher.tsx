@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { Archive, ArrowRight, BookOpen, FolderInput, Plus, Settings, X } from 'lucide-react'
-import { createWorldAction, importWorldAction, openWorldAction, type WorldLibraryActionState } from '@/app/actions/worlds'
+import { createWorldAction, importWorldAction, openTaldoreiWorldAction, openWorldAction, type WorldLibraryActionState } from '@/app/actions/worlds'
 import type { World } from '@/domain/worlds/world'
 import { WorldManageDialog } from '@/components/wiki/world-manage-dialog'
 import styles from './codex-launcher.module.css'
@@ -44,6 +44,9 @@ export function CodexLauncher({ worlds, activeWorldId }: { worlds: World[]; acti
         </div>)}
       </div>
       <div className={styles.actions}>
+        <form action={openTaldoreiWorldAction}>
+          <button type="submit"><BookOpen/><span><small>Atlas incluído</small><strong>Abrir Tal’Dorei Renascido completo</strong></span></button>
+        </form>
         <button type="button" onClick={() => setPanel('create')}><Plus/><span><small>Novo arquivo</small><strong>Criar Codex</strong></span></button>
         <button type="button" onClick={() => setPanel('import')}><FolderInput/><span><small>Fonte externa</small><strong>Carregar pasta</strong></span></button>
       </div>

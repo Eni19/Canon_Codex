@@ -2,8 +2,10 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import path from 'node:path'
 import { getWorldRepository } from '@/repositories'
 import { createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from '@/services/worlds/worldLibrary'
+import { normalizeTaldoreiEvents, TALDOREI_COMPLETE_WORLD_ID } from '@/services/worlds/normalizeTaldoreiEvents'
 
 const ACTIVE_WORLD_COOKIE = 'canon-codex-world'
 
@@ -16,6 +18,14 @@ async function selectWorld(worldId: string) {
 
 export async function openWorldAction(formData: FormData): Promise<void> {
   await selectWorld(String(formData.get('worldId') ?? ''))
+  redirect('/codex')
+}
+
+export async function openTaldoreiWorldAction(): Promise<void> {
+  const existing = (await getWorldRepository().listWorlds()).find((world) => world.id === TALDOREI_COMPLETE_WORLD_ID)
+  const world = existing ?? (await importWorldsFromFolder(path.join(process.cwd(), 'world-packs', 'taldorei-renascido-completo')))[0]
+  await normalizeTaldoreiEvents(world.id)
+  await selectWorld(world.id)
   redirect('/codex')
 }
 

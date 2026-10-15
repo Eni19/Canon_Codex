@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createEntityAction } from '@/app/actions/entities'
 import { CharacterThemePicker } from '@/components/entities/character-theme-picker'
+import { PropertyField } from '@/components/entities/property-field'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,13 @@ export default async function NewEntityPage(props: PageProps<'/[entityType]/new'
           </Label>
           <Input id="tags" name="tags" />
         </div>
+        {entityType.properties.filter((property) => property.kind === 'date').map((property) => (
+          <PropertyField key={property.key} property={property} defaultValue={undefined} calendar={world.calendar} />
+        ))}
+        {entityType.id === 'event' && <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="isOrigin" value="yes" disabled={Boolean(world.originEventId)} />
+          <span>Marcar como Evento de origem do calendário. A data informada será colocada no ano zero.{world.originEventId ? ' Já existe uma origem; substitua-a no calendário.' : ''}</span>
+        </label>}
         <div>
           {(entityType.layout.includes('portraitHero') || entityType.id === 'location' || entityType.id === 'creature' || entityType.id === 'cosmology' || entityType.id === 'tale') && <CharacterThemePicker label={entityType.id === 'location' ? 'Cor do local' : entityType.id === 'creature' ? 'Cor da criatura' : entityType.id === 'cosmology' ? 'Paleta da entidade' : entityType.id === 'tale' ? 'Cor editorial' : 'Cor do personagem'} />}
         </div>

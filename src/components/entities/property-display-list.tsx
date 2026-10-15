@@ -1,18 +1,26 @@
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
+import type { Calendar } from '@/domain/worlds/calendar'
 
 function DisplayValue({
   value,
   kind,
   entityTitleById,
+  calendar,
 }: {
   value: unknown
   kind: string
   entityTitleById: Record<string, string>
+  calendar: Calendar
 }) {
   if (value === undefined || value === null || value === '') {
     return <span className="text-muted-foreground">—</span>
+  }
+
+  if (kind === 'date') {
+    return <span>{formatDateFieldValue(calendar, value) || '—'}</span>
   }
 
   if (kind === 'boolean') return <span>{value ? 'Sim' : 'Não'}</span>
@@ -52,11 +60,13 @@ export function PropertyDisplayList({
   properties,
   values,
   entityTitleById,
+  calendar,
   columns = 2,
 }: {
   properties: EntityTypeDefinition['properties']
   values: Record<string, unknown>
   entityTitleById: Record<string, string>
+  calendar: Calendar
   columns?: 1 | 2
 }) {
   const visible = properties.filter((property) => property.kind !== 'image' && property.kind !== 'gallery')
@@ -68,7 +78,7 @@ export function PropertyDisplayList({
         <div key={property.key}>
           <dt className="text-xs font-medium text-muted-foreground">{property.label}</dt>
           <dd className="mt-0.5 text-sm">
-            <DisplayValue value={values[property.key]} kind={property.kind} entityTitleById={entityTitleById} />
+            <DisplayValue value={values[property.key]} kind={property.kind} entityTitleById={entityTitleById} calendar={calendar} />
           </dd>
         </div>
       ))}

@@ -1,8 +1,23 @@
 # Referência HTTP e Server Actions
 
-Estas são interfaces internas da aplicação, verificadas em 23/09/2026. Elas usam o mundo ativo
+Estas são interfaces internas da aplicação, verificadas em 28/09/2026. Elas usam o mundo ativo
 selecionado pelo cookie canon-codex-world; não há autenticação, versionamento ou promessa de
 compatibilidade para consumidores externos.
+
+O contrato interno `WorldRepository.getTimeline/getOriginEvent/createOriginEvent` reconcilia referências
+a registros definitivamente ausentes antes de retornar. Isso pode gravar `world.json` e
+`timeline.json`, avançar `updatedAt` e fazer uma action com versão antiga rejeitar a alteração
+até atualizar a página. Não há endpoint novo de descarte ou restauração. Erros de inventário
+ou validação interrompem a limpeza; veja [armazenamento](../data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+
+`getWorld` continua uma leitura de metadados, sem depender da integridade das linhas ou da lixeira.
+A criação de origem faz a limpeza antes da verificação de unicidade.
+
+A vista de linha usa scale, q, type repetido e view na URL. Sem view, a interface abre horizontal.
+page=<inteiro positivo> legado localiza inicialmente o grupo correspondente de 50; o mapa atual
+não tem páginas. Busca substitui a entrada do histórico; demais filtros criam uma entrada.
+Pan e zoom espacial são estado local e não gravam URL, documentos ou payloads de actions.
+Filtros não reiniciam a câmera; trocar orientação é uma mudança explícita de layout.
 
 ## Route Handlers
 
@@ -126,12 +141,62 @@ createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
 ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
 
+`updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
+valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de
+gravar via `WorldRepository.updateCalendar`. Em sucesso retorna
+estado `saved`; em JSON inválido, mês não positivo, origem inválida ou outra falha de schema retorna
+uma mensagem de erro para o formulário. Também rejeita o envio quando o mundo ativo mudou desde a
+abertura do formulário ou quando uma alteração estrutural encontra campos de data preenchidos no
+mundo, inclusive na lixeira. Não é uma API pública; o `worldId` enviado pelo navegador é conferido contra
+o mundo selecionado pelo cookie ativo.
+
+`startDateMigrationAction` confirma a prévia de `/calendar/migration` por fingerprint dos arquivos,
+do calendário e das definições de tipos do mundo ativo. `recoverDateMigrationAction` retoma uma execução interrompida ou
+restaura o backup pelo ID. Ambas delegam ao `WorldRepository`; erros de conflito são exibidos na
+tela. A conversão não é executada na leitura normal.
+
+`replaceOriginEventAction` exige `worldId` igual ao mundo ativo, ID de Evento, fingerprint da prévia
+de `/calendar/origin` e confirmação explícita. O repositório recalcula a prévia sob bloqueio por
+mundo e recusa dados modificados. A troca grava um backup de `world.json`, dos metadados e dos arquivos de aparições afetados,
+desloca as datas e vincula o novo Evento. Uma falha durante a escrita dispara restauração; uma
+operação interrompida é restaurada antes da próxima leitura ou gravação de metadados do mundo.
+
+`addTimelineAppearanceAction` recebe mundo, linha, registro, apresentação, data opcional e token `updatedAt`.
+Exige que o mundo enviado ainda seja o ativo; o repositório valida linha e registro ativos no mesmo
+mundo, data conforme o calendário e token de concorrência antes de gravar `timeline.json`. Retorna
+erro de formulário ou estado `saved` e revalida a página da linha.
+
+`updateTimelineAppearanceAction` valida mundo ativo, ID da aparição, campos de apresentação e
+token de concorrência antes de substituir somente os campos do cartão. `createTimelineEventAction`
+exige título e data; o repositório cria o Evento e a aparição sob um bloqueio por mundo e desfaz
+o registro novo se uma escrita lançar erro. Em sucesso retorna o ID para abrir o editor completo.
+
+`addAllTimelineAppearancesAction` inclui apenas registros ativos ainda não representados; repetir
+a ação sem novos registros não grava o arquivo. `removeTimelineAppearanceAction` remove uma aparição
+por ID e devolve seus campos e posição para o botão **Desfazer**. `restoreTimelineAppearanceAction`
+valida o mundo ativo, o registro e o token de concorrência antes de recolocar o mesmo ID. Nenhuma
+dessas ações altera ou exclui o registro original.
+
+`updateTimelineScaleDefaultsAction` recebe `worldId` e uma escala válida para cada tipo do mundo
+ativo. O repositório valida o conjunto completo de tipos sob bloqueio, grava
+`world.json.timelineScaleDefaults` atomicamente e revalida a interface. Detalhe cronológico, busca, categorias e
+orientação dos cartões apenas mudam parâmetros da URL (`scale`, `q`, `type`, `view`) no navegador; não há
+gravação de `timeline.json` nessas operações. `view=horizontal` usa a mesma seleção da vista
+vertical; o mapa usa coordenadas cronológicas calculadas no cliente, sem distância proporcional.
+
 ### Entidades e conteúdo
 
-createEntityAction resolve o tipo no mundo ativo, exige título e cria o registro.
-updateEntityAction converte campos de formulário, valida estruturas específicas por tipo, grava
-metadados e, se houver content, salva as páginas Tiptap. deleteEntityAction move a pasta para a
-lixeira e redireciona ao catálogo.
+`createEntityAction` resolve o tipo no mundo ativo, exige título e cria o registro; o formulário de
+criação aceita os campos de data do tipo, inclusive a data de Evento. Ao marcar um Evento como
+origem, `createEntityAction` usa `createOriginEvent`; o repositório exige data exata de dia,
+posiciona-a no ano zero e recusa uma segunda origem. `updateEntityAction`
+converte campos de formulário e, para toda propriedade cujo tipo seja `kind: 'date'`, aceita o objeto
+de calendário ou uma string ISO legada, validando precisão, existência de mês/dia e ordem do intervalo
+antes de gravar. O editor envia valores novos como JSON e valores legados como ISO no campo oculto; a leitura usa o mesmo formatador
+do domínio, inclusive na apresentação especial de Evento e Organização. Strings ISO antigas são
+mantidas como strings quando o registro é salvo. Dados inválidos lançam erro
+de validação da action e não são gravados. Se houver content, a action também salva as páginas Tiptap.
+`deleteEntityAction` move a pasta para a lixeira e redireciona ao catálogo.
 
 ### Assets e relações
 

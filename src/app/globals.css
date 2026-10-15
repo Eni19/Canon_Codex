@@ -60,6 +60,13 @@
 
 /* Light — a valid variant, not the primary experience. Same tokens, warm-paper palette. */
 :root {
+  /* Timeline inherits the app palette; only its graphite surfaces are darkened for space. */
+  --cosmic-background: color-mix(in srgb, var(--background) 35%, black);
+  --cosmic-surface: color-mix(in srgb, var(--surface) 85%, black);
+  --cosmic-foreground: var(--foreground);
+  --cosmic-muted: var(--muted-foreground);
+  --cosmic-accent: var(--primary);
+  --cosmic-border: var(--border);
   --background: oklch(0.98 0.004 80);
   --foreground: oklch(0.2 0.012 260);
 
@@ -276,4 +283,25 @@
 }
 .tiptap-content div[data-callout][data-variant='danger'] {
   @apply border-l-danger bg-danger/10;
+}
+
+/* Keep projection available above the timeline camera controls. */
+body:has([data-cosmic-timeline]) [data-page-projection] {
+  right: 28px;
+  bottom: 84px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  gap: 0;
+  font-size: 0;
+  color: var(--cosmic-muted);
+  background: var(--cosmic-surface);
+  border-color: var(--cosmic-border);
+  box-shadow: none;
+}
+@media (max-width: 976px) {
+  body:has([data-cosmic-timeline]) [data-page-projection] {
+    right: 16px;
+    bottom: 132px;
+  }
 }

@@ -44,6 +44,32 @@ visual futura force uma reescrita de componente por componente.
 
 ## Consequências
 
+### Atualização: Cosmic Canvas na Linha do Tempo (15/10/2026)
+
+O pedido explícito de uma superfície espacial minimalista substitui a apresentação TL-12 de
+14/10. A linha e seus painéis mapeiam tokens semânticos para --cosmic-background,
+--cosmic-surface, --cosmic-foreground, --cosmic-muted, --cosmic-accent e --cosmic-border,
+centralizados em globals.css. Conforme o ajuste solicitado pelo usuário, esses tokens derivam da
+paleta do aplicativo: texto pergaminho, cinza quente, bordas e acento âmbar/latão. Somente fundo
+e superfícies recebem mistura com preto para representar o espaço; não há acento azul separado.
+Título serifado, foco visível e componentes Radix continuam. O controle de projeção é compacto
+somente nessa página e fica acima dos controles do mapa.
+
+Três camadas separam fundo de estrelas, plano transformado e UI fixa. Pan/zoom espacial usa APIs
+nativas e requestAnimationFrame; o detalhe cronológico continua sendo um filtro semântico.
+A comparação com react-zoom-pan-pinch, d3-zoom e Motion está na
+[pesquisa](../research/timeline-cosmic-canvas.md). Não foi adicionada dependência.
+Coordenadas são calculadas pela ordem da coleção inteira; filtros alteram opacidade/estado
+acessível, preservando posições e câmera. O mapa codifica sequência, sem eixo de dias proporcional.
+A orientação muda explicitamente a distribuição; edição de data pode mudar a posição cronológica.
+
+Cartões reservam dimensões fixas e só montam próximos do viewport. SVG e cartões memoizados
+reduzem trabalho durante exploração. O único will-change fica no plano; não há camada GPU por
+cartão. Estados de UI usam 180 ms, controles automáticos da câmera 200 ms; gestos são diretos.
+O fundo usa um único brilho lento. Movimento reduzido desativa transições/animações, inclusive
+nos painéis, e torna os controles imediatos. DialogContent/SheetContent mantêm overlayClassName
+para aplicar essa política local. Resultados e limites estão no [perfil](../performance/timeline-cosmic-canvas.md).
+
 - Rebrand ou tema alternativo (ex.: um segundo mundo com atmosfera diferente) é uma troca de
   valores de tokens, não uma reescrita de componentes.
 - Componentes shadcn adicionados via CLI precisam ser revisados para não introduzir cor solta fora

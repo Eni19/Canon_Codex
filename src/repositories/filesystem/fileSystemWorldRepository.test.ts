@@ -51,6 +51,56 @@ describe('FileSystemWorldRepository', () => {
     expect(fetched).toEqual(created)
   })
 
+  it('reopens event and organization dates stored in the world calendar format', async () => {
+    const event = await repo.createEntity(worldId, {
+      type: 'event',
+      title: 'Abertura do portal',
+      properties: { eventDate: { start: { year: 0, month: 1, day: 1, approximate: true } } },
+    })
+    const organization = await repo.createEntity(worldId, {
+      type: 'organization',
+      title: 'Ordem sintética',
+      properties: { founded: { start: { year: -1, month: 2, approximate: true } } },
+    })
+
+    expect(await repo.getEntity(worldId, event.id)).toMatchObject({
+      type: 'event',
+      properties: { eventDate: { start: { year: 0, month: 1, day: 1, approximate: true } } },
+    })
+    expect(await repo.getEntity(worldId, organization.id)).toMatchObject({
+      type: 'organization',
+      properties: { founded: { start: { year: -1, month: 2, approximate: true } } },
+    })
+  })
+
+  it('round-trips one calendar per world without leaking changes between worlds', async () => {
+    const second = await repo.updateCalendar(worldId, {
+      ...(await repo.getWorld(worldId)).calendar,
+      hoursPerDay: 30,
+      origin: { name: 'Marco Sintético', month: 3, day: 4 },
+    })
+
+    expect(second.calendar.hoursPerDay).toBe(30)
+    expect((await repo.getWorld(worldId)).calendar.origin.name).toBe('Marco Sintético')
+  })
+
+  it('blocks structural calendar changes while active or trashed records have dates', async () => {
+    const event = await repo.createEntity(worldId, {
+      type: 'event', title: 'Marco sintético', properties: { eventDate: { start: { year: 0, month: 1, day: 1 } } },
+    })
+    const current = (await repo.getWorld(worldId)).calendar
+    const changed = { ...current, months: current.months.map((month, index) => index === 0 ? { ...month, length: month.length + 1 } : month) }
+
+    await expect(repo.updateCalendar(worldId, changed)).rejects.toThrow('1 campo(s) de data')
+    expect((await repo.getWorld(worldId)).calendar.months[0].length).toBe(current.months[0].length)
+    await repo.deleteEntity(worldId, event.id)
+    await expect(repo.updateCalendar(worldId, changed)).rejects.toThrow('1 campo(s) de data')
+
+    await expect(repo.updateCalendar(worldId, { ...current, eras: { ...current.eras, after: 'Era Nova' } })).resolves.toMatchObject({
+      calendar: { eras: { after: 'Era Nova' } },
+    })
+  })
+
   it('persists character themes across creation and unrelated edits', async () => {
     const entity = await repo.createEntity(worldId, {
       type: 'character', title: 'Val', theme: 'green', properties: { age: 25 },
@@ -113,6 +163,7 @@ describe('FileSystemWorldRepository', () => {
     await repo.deleteEntity(worldId, entity.id)
 
     expect(await repo.getEntity(worldId, entity.id)).toBeNull()
+    expect(await repo.listTrashedEntities(worldId)).toEqual(expect.arrayContaining([expect.objectContaining({ id: entity.id, type: 'character', title: 'Doomed' })]))
     const worldDir = (await readdir(path.join(workspaceDir, 'worlds')))[0]
     const trashEntries = await readdir(getTrashDir(worldDir))
     expect(trashEntries.some((name) => name.includes(entity.id))).toBe(true)

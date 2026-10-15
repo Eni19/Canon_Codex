@@ -12,9 +12,13 @@ export async function ensureDir(dirPath: string): Promise<void> {
  * `rename` is atomic on the same volume, so readers never observe a half-written file.
  */
 export async function atomicWriteJson(filePath: string, data: unknown): Promise<void> {
+  await atomicWriteText(filePath, JSON.stringify(data, null, 2))
+}
+
+/** Replaces a text file without exposing a partially written value to readers. */
+export async function atomicWriteText(filePath: string, serialized: string): Promise<void> {
   await ensureDir(path.dirname(filePath))
   const tmpPath = path.join(path.dirname(filePath), `.${path.basename(filePath)}.${randomUUID()}.tmp`)
-  const serialized = JSON.stringify(data, null, 2)
   try {
     await writeFile(tmpPath, serialized, 'utf-8')
     await rename(tmpPath, filePath)

@@ -1,6 +1,8 @@
 import { newId } from '@/lib/ids'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { WORLD_SCHEMA_VERSION, type World } from '@/domain/worlds/world'
+import { defaultTimelineScale } from '@/domain/timelines/timelineNavigation'
+import { createDefaultCalendar } from '@/domain/worlds/calendar'
 
 const narrativeLayout: EntityTypeDefinition['layout'] = [
   'header',
@@ -368,6 +370,8 @@ export function createDefaultWorldSeed(): World {
     name: 'Canon Codex',
     description: 'Mundo semente: investigação e paranormalidade.',
     entityTypes: DEFAULT_ENTITY_TYPES,
+    timelineScaleDefaults: Object.fromEntries(DEFAULT_ENTITY_TYPES.map((type) => [type.id, defaultTimelineScale(type.id)])),
+    calendar: createDefaultCalendar(),
     schemaVersion: WORLD_SCHEMA_VERSION,
     createdAt: now,
     updatedAt: now,

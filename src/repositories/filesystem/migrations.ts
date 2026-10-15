@@ -5,6 +5,8 @@ import { ENTITY_SCHEMA_VERSION } from '@/domain/entities/entity'
 import { WORLD_SCHEMA_VERSION } from '@/domain/worlds/world'
 import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
 import { ConceptBlocksSchema } from '@/domain/entities/conceptBlock'
+import { createDefaultCalendar } from '@/domain/worlds/calendar'
+import { defaultTimelineScale } from '@/domain/timelines/timelineNavigation'
 import type { MigrationRegistry } from '@/lib/migrations/registry'
 
 export const worldMigrations: MigrationRegistry = {
@@ -268,6 +270,33 @@ export const worldMigrations: MigrationRegistry = {
     15: (data) => ({
       ...data,
       schemaVersion: 16,
+      calendar: data.calendar ?? createDefaultCalendar(),
+    }),
+    16: (data) => {
+      const calendar = (data.calendar ?? createDefaultCalendar()) as Record<string, unknown>
+      const rules = calendar.intercalaryRules as Array<Record<string, unknown>>
+      return {
+        ...data,
+        schemaVersion: 17,
+        calendar: {
+          ...calendar,
+          weekdayOffset: calendar.weekdayOffset ?? 6,
+          intercalaryRules: rules.map((rule) => ({
+            ...rule,
+            extendsMonth: rule.extendsMonth ?? (rule.id === 'gregorian-leap-day' && rule.month === 2),
+          })),
+        },
+      }
+    },
+    17: (data) => ({ ...data, schemaVersion: 18 }),
+    18: (data) => ({
+      ...data,
+      schemaVersion: 19,
+      timelineScaleDefaults: Object.fromEntries(EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => [type.id, defaultTimelineScale(type.id)])),
+    }),
+    19: (data) => ({
+      ...data,
+      schemaVersion: 20,
       entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) => {
         if (type.id === 'character') return { ...type, properties: type.properties.filter((property) => property.key !== 'originLocation') }
         if (type.id === 'event') return { ...type, properties: type.properties.filter((property) => property.key !== 'relatedLocations') }

@@ -1,0 +1,120 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "runs": [
+    {
+      "action": "Horizontal",
+      "nextFrameMs": 125,
+      "frames": 44,
+      "frameP95Ms": 17,
+      "frameMaxMs": 17,
+      "framesOver32ms": 0,
+      "maxAnimations": 5,
+      "longTasks": [
+        124
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "action": "Vertical",
+      "nextFrameMs": 212.2,
+      "frames": 41,
+      "frameP95Ms": 16.8,
+      "frameMaxMs": 50,
+      "framesOver32ms": 1,
+      "maxAnimations": 5,
+      "longTasks": [
+        210,
+        51
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "action": "Horizontal",
+      "nextFrameMs": 173.1,
+      "frames": 43,
+      "frameP95Ms": 17,
+      "frameMaxMs": 17.3,
+      "framesOver32ms": 0,
+      "maxAnimations": 5,
+      "longTasks": [
+        173
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "action": "Vertical",
+      "nextFrameMs": 191.2,
+      "frames": 44,
+      "frameP95Ms": 16.9,
+      "frameMaxMs": 17.1,
+      "framesOver32ms": 0,
+      "maxAnimations": 5,
+      "longTasks": [
+        190
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "action": "Horizontal",
+      "nextFrameMs": 183.2,
+      "frames": 43,
+      "frameP95Ms": 17,
+      "frameMaxMs": 17.2,
+      "framesOver32ms": 0,
+      "maxAnimations": 5,
+      "longTasks": [
+        183
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "action": "Vertical",
+      "nextFrameMs": 137.3,
+      "frames": 44,
+      "frameP95Ms": 16.9,
+      "frameMaxMs": 16.9,
+      "framesOver32ms": 0,
+      "maxAnimations": 5,
+      "longTasks": [
+        137
+      ],
+      "layoutShift": 0,
+      "unexpectedShift": 0,
+      "cards": 50,
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  ]
+}

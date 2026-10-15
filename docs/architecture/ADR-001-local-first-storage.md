@@ -1,6 +1,6 @@
 # ADR-001: Armazenamento local-first via filesystem, atrás de interfaces de repositório
 
-## Estado atual em 23/09/2026
+## Estado atual em 25/09/2026
 
 A decisão local-first continua implementada. O código agora possui quatro contratos, não apenas
 dois: `WorldRepository`, `AssetStore`, `BoardRepository` e `SceneRepository`. As implementações
@@ -49,6 +49,11 @@ de domínio ou os componentes de UI quando isso acontecer.
 
 ## Consequências
 
+TL-10 mantém esta decisão: a reconciliação de ausência definitiva ocorre no adaptador, sob lock,
+sem I/O na UI. Consultas de linha e origem, além da criação de origem, podem limpar referências em arquivos; cada escrita
+é atômica, e uma interrupção entre arquivos é retomada por uma nova consulta idempotente. A limpeza
+não produz backup automático. Ver [ciclo de vida](../data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+
 - Toda escrita precisa ser atômica e validada (ver `ADR-002` e `src/lib/fs/atomicWrite.ts`), já que
   não há transações de banco protegendo contra escrita parcial.
 - Buscas e relações são computadas por varredura em memória no MVP; aceitável na escala de uso
@@ -58,4 +63,7 @@ de domínio ou os componentes de UI quando isso acontecer.
   mesmos métodos, trocar a factory. Nenhuma tela ou Server Action muda.
 
 O mesmo princípio se aplica a futuros repositórios de quadros e cenas. Ainda não existe banco
-relacional, object storage, backup automático ou autenticação que proteja os dados.
+relacional, object storage, backup automático completo do workspace ou autenticação que proteja os
+dados. A conversão explícita de datas antigas cria um backup limitado aos metadados que altera;
+esse backup não substitui a cópia integral descrita em
+[`docs/data/backup-and-restore.md`](../data/backup-and-restore.md).

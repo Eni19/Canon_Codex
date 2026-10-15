@@ -13,17 +13,18 @@ cronológica e edição dos eventos relacionados.
 
 ### Estado atual
 
-O seed já possui o tipo de entidade `timeline`, mas ele usa a apresentação genérica. Isso não
-constitui uma linha do tempo funcional: ainda faltam a visualização temporal, regras de ordenação,
-edição de períodos e uma decisão sobre como eventos e entidades serão relacionados.
+O tipo `timeline` possui uma página com vistas vertical e horizontal de aparições de registros do
+mesmo mundo, ordenadas pelas datas do calendário; há uma seção para itens sem data. O calendário, as datas de
+propriedades e o Evento de origem também estão implementados. Cartões podem ser editados e Eventos
+podem ser criados rapidamente na linha. A biblioteca permite busca, filtro, arraste, inclusão em
+lote e remoção com Desfazer. Zoom, busca, filtros e as vistas vertical/horizontal estão disponíveis;
+permanecem planejados os tickets posteriores de ciclo de vida, volume e refinamento visual.
 
 ### Decisões necessárias
 
-- linha do tempo como entidade, tela independente ou os dois;
-- datas exatas, intervalos, datas aproximadas e eventos sem data;
-- níveis de escala e ordenação;
-- criação/edição de eventos diretamente na linha do tempo;
-- comportamento quando o evento relacionado for excluído ou movido para `trash/`.
+O planejamento foi concluído no [mapa Wayfinder](../.scratch/linha-do-tempo/map.md) e na [especificação de implementação](../.scratch/linha-do-tempo-implementacao/spec.md). Várias linhas, seleção de registros de qualquer tipo, edição de cartões, biblioteca, zoom, filtros e vistas vertical/horizontal estão implementados. Permanecem planejados os tickets posteriores de ciclo de vida, volume e refinamento visual.
+
+Os [tickets de implementação](../.scratch/linha-do-tempo-implementacao/issues/) tratam modelo de aparições, regras de calendário, precisão e escala, interação acessível, conversão dos dados existentes e ciclo de vida de registros na lixeira. TL-01 a TL-09 estão implementados; os tickets posteriores ainda aguardam desenvolvimento.
 
 ## IDEA-002 — Grafo de relações com edição visual
 

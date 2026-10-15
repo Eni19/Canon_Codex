@@ -20,6 +20,7 @@ export function PageProjectionButton({ entityId }: { entityId: string }) {
       className="fixed right-5 bottom-5 z-50 gap-2 border border-primary/30 bg-background/90 text-primary shadow-2xl shadow-black/40 backdrop-blur-md hover:bg-primary hover:text-primary-foreground"
       variant="outline"
       aria-label="Projetar esta página"
+      data-page-projection
     >
       <Cast className="size-4" />
       Projetar

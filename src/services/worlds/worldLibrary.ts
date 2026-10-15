@@ -5,6 +5,7 @@ import path from 'node:path'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import type { World } from '@/domain/worlds/world'
 import { atomicWriteJson, ensureDir, pathExists } from '@/lib/fs/atomicWrite'
+import { withWorldWriteLock } from '@/repositories/filesystem/worldWriteLock'
 import { getWorkspaceRoot, getWorldDir, getWorldJsonPath, getWorldsRootDir } from '@/lib/fs/paths'
 import { newId } from '@/lib/ids'
 import { readMigratedJson } from '@/lib/migrations/registry'
@@ -122,10 +123,12 @@ export async function renameWorld(worldId: string, name: string): Promise<World>
   const cleanName = name.trim()
   if (!cleanName) throw new Error('Informe um nome para o Codex.')
   const worldDir = await resolveWorldDir(worldId)
+  return withWorldWriteLock(worldDir, async () => {
   const current = await readWorldByDir(worldDir)
   const next = WorldSchema.parse({ ...current, name: cleanName, updatedAt: new Date().toISOString() })
   await atomicWriteJson(getWorldJsonPath(worldDir), next)
   return next
+  })
 }
 
 export async function deleteWorld(worldId: string): Promise<World | null> {
@@ -134,9 +137,11 @@ export async function deleteWorld(worldId: string): Promise<World | null> {
   if (!target) throw new Error('Codex não encontrado.')
   const nextWorld = worlds.find((world) => world.id !== worldId) ?? null
   const worldDir = await resolveWorldDir(worldId)
+  return withWorldWriteLock(worldDir, async () => {
   const source = getWorldDir(worldDir)
   const trash = path.join(getWorkspaceRoot(), 'trash', 'worlds')
   await ensureDir(trash)
   await rename(source, path.join(trash, worldDir + '-' + Date.now()))
   return nextWorld
+  })
 }

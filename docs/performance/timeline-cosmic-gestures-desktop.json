@@ -1,0 +1,69 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "viewport": [
+    1440,
+    900
+  ],
+  "checks": [
+    {
+      "name": "touch pan",
+      "passed": true,
+      "before": {
+        "x": 74.80000000000001,
+        "y": 293.4,
+        "scale": 0.9
+      },
+      "after": {
+        "x": 134.8,
+        "y": 333.4,
+        "scale": 0.9
+      }
+    },
+    {
+      "name": "two-pointer pinch",
+      "passed": true,
+      "error": 8.526512829121202e-14,
+      "before": {
+        "x": 134.8,
+        "y": 333.4,
+        "scale": 0.9
+      },
+      "after": {
+        "x": 51.14285714285717,
+        "y": 297.7142857142858,
+        "scale": 1.2857142857142858
+      }
+    },
+    {
+      "name": "continue with one finger",
+      "passed": true
+    },
+    {
+      "name": "pointer cancellation",
+      "passed": true
+    },
+    {
+      "name": "trackpad ctrl-wheel anchor",
+      "passed": true,
+      "error": 1.4210854715202004e-14
+    },
+    {
+      "name": "filters preserve camera",
+      "passed": true
+    },
+    {
+      "name": "filters preserve toolbar geometry",
+      "passed": true
+    },
+    {
+      "name": "filters preserve all 500 coordinates",
+      "passed": true
+    },
+    {
+      "name": "filters do not remount map children",
+      "passed": true,
+      "childChanges": 0
+    }
+  ],
+  "allPassed": true
+}

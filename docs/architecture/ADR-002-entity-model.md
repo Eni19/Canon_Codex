@@ -1,13 +1,13 @@
 # ADR-002: Entidade genérica + EntityTypeDefinition configurável, em vez de tabelas por tipo
 
-## Estado atual em 23/09/2026
+## Estado atual em 28/09/2026
 
 O modelo persistido continua genérico e o mundo semente possui **17 tipos** em
 `src/domain/worlds/defaultWorldSeed.ts`. A intenção de dirigir propriedades e blocos por
 `EntityTypeDefinition` permanece válida para o caminho genérico. A implementação, porém, evoluiu
 para um modelo híbrido: `src/components/entities/entity-page.tsx` seleciona renderizadores
 específicos para vários tipos (`location`, `evidence`, `organization`, `creature`, `event`,
-`artifact`, `cosmology`, `tale`, `concept`, `species` e `naturalScience`), e personagem usa um
+`artifact`, `cosmology`, `tale`, `concept`, `species`, `naturalScience` e `timeline`), e personagem usa um
 layout de retrato. Portanto, a afirmação histórica de “nenhum componente específico” foi
 revogada pelo código atual; a decisão original e sua motivação continuam registradas abaixo.
 

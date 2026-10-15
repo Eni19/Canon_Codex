@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><title>Verificação sintética do mapa temporal</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#05070d;color:#f1f4fa;font:11px monospace}header{height:100px;padding:8px 12px;overflow:auto}button{padding:7px 12px;margin-right:8px}pre{white-space:pre-wrap;margin:4px 0}iframe{display:block;width:100%;height:calc(100vh - 100px);border:0}</style>
+<header><button id="gestures" disabled>Testar pinch e filtros</button><button id="profile" disabled>Medir exploração</button><span>Somente a fixture sintética de 500 aparições.</span><pre id="result" aria-live="polite">Carregando…</pre></header>
+<iframe title="Linha sintética de 500 aparições" src="/entity/30000000-0000-4000-8000-000000000001?scale=day"></iframe>
+<script>
+const frame=document.querySelector('iframe'), output=document.querySelector('#result')
+frame.addEventListener('load',()=>{
+ const win=frame.contentWindow,doc=win.document
+ const ready=()=>{if(!doc.querySelector('[data-camera]'))return;observer.disconnect();document.querySelectorAll('header button').forEach(button=>button.disabled=false);output.textContent='Pronto.'}
+ const observer=new win.MutationObserver(ready);observer.observe(doc.documentElement,{subtree:true,attributes:true});ready()
+ const surface=()=>doc.querySelector('[data-camera]')
+ const camera=()=>JSON.parse(surface().getAttribute('data-camera'))
+ const raf=()=>new Promise(resolve=>win.requestAnimationFrame(resolve))
+ const settle=async()=>{await raf();await raf();await new Promise(resolve=>win.setTimeout(resolve,220))}
+ const world=(c,p)=>({x:(p.x-c.x)/c.scale,y:(p.y-c.y)/c.scale})
+ const error=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)
+ const pointer=(type,id,x,y)=>{const b=surface().getBoundingClientRect();surface().dispatchEvent(new win.PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:id===301,button:0,buttons:type==='pointerup'?0:1,clientX:b.left+x,clientY:b.top+y,bubbles:true,cancelable:true}))}
+ const input=(value)=>{const field=doc.querySelector('input[aria-label="Buscar cartões"]');Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype,'value').set.call(field,value);field.dispatchEvent(new win.Event('input',{bubbles:true}))}
+ document.querySelector('#gestures').onclick=async()=>{
+  const checks=[]
+  let before=camera()
+  pointer('pointerdown',301,200,400);pointer('pointermove',301,260,440);await settle()
+  let after=camera();checks.push({name:'touch pan',passed:Math.abs(after.x-before.x-60)<.001&&Math.abs(after.y-before.y-40)<.001,before,after})
+  pointer('pointerdown',302,400,440)
+  before=camera();const anchor=world(before,{x:330,y:440})
+  pointer('pointermove',301,230,450);pointer('pointermove',302,430,450);await settle()
+  after=camera();checks.push({name:'two-pointer pinch',passed:error(world(after,{x:330,y:450}),anchor)<.001&&Math.abs(after.scale-before.scale*200/140)<.001,error:error(world(after,{x:330,y:450}),anchor),before,after})
+  pointer('pointerup',302,430,450);before=camera();pointer('pointermove',301,250,470);await settle();after=camera()
+  checks.push({name:'continue with one finger',passed:Math.abs(after.x-before.x-20)<.001&&Math.abs(after.y-before.y-20)<.001&&after.scale===before.scale})
+  pointer('pointercancel',301,250,470);checks.push({name:'pointer cancellation',passed:!surface().hasAttribute('data-panning')})
+  before=camera();const cursor={x:Math.min(300,win.innerWidth-40),y:400},bounds=surface().getBoundingClientRect()
+  surface().dispatchEvent(new win.WheelEvent('wheel',{deltaY:-30,ctrlKey:true,clientX:bounds.left+cursor.x,clientY:bounds.top+cursor.y,bubbles:true,cancelable:true}));await settle();after=camera()
+  checks.push({name:'trackpad ctrl-wheel anchor',passed:error(world(before,cursor),world(after,cursor))<.001&&after.scale>before.scale,error:error(world(before,cursor),world(after,cursor))})
+  const originalCamera=surface().getAttribute('data-camera'),bar=doc.querySelector('[aria-label="Filtros da linha do tempo"]'),originalBar=JSON.stringify(bar.getBoundingClientRect().toJSON())
+  const coords=()=>JSON.stringify([...doc.querySelectorAll('[data-node-id]')].map(node=>[node.getAttribute('data-node-id'),node.getAttribute('cx'),node.getAttribute('cy')]))
+  const originalCoords=coords();let childChanges=0
+  const changes=new win.MutationObserver(list=>childChanges+=list.filter(record=>record.type==='childList').length)
+  changes.observe(doc.querySelector('[data-ready]'),{childList:true,subtree:true})
+  input('007');await settle()
+  checks.push({name:'filters preserve camera',passed:originalCamera===surface().getAttribute('data-camera')})
+  checks.push({name:'filters preserve toolbar geometry',passed:originalBar===JSON.stringify(bar.getBoundingClientRect().toJSON())})
+  checks.push({name:'filters preserve all 500 coordinates',passed:originalCoords===coords()})
+  checks.push({name:'filters do not remount map children',passed:childChanges===0,childChanges})
+  changes.disconnect();input('');await settle()
+  output.textContent=JSON.stringify({userAgent:win.navigator.userAgent,viewport:[win.innerWidth,win.innerHeight],checks,allPassed:checks.every(check=>check.passed)},null,2);output.dataset.done='gestures'
+ }
+ document.querySelector('#profile').onclick=async()=>{
+  const longTasks=[],shifts=[];let observer
+  if(win.PerformanceObserver){observer=new win.PerformanceObserver(list=>{for(const entry of list.getEntries()){if(entry.entryType==='longtask')longTasks.push(entry.duration);else shifts.push(entry.value)}});for(const type of ['longtask','layout-shift'])if(win.PerformanceObserver.supportedEntryTypes.includes(type))observer.observe({type})}
+  const intervals=[];let previous=win.performance.now(),maxCards=0,maxAnimations=0
+  pointer('pointerdown',301,200,350)
+  for(let i=0;i<75;i++){
+   await raf();const now=win.performance.now();if(i)intervals.push(now-previous);previous=now
+   pointer('pointermove',301,200-i*14,350-Math.sin(i/12)*180)
+   if(i%12===0){const b=surface().getBoundingClientRect();surface().dispatchEvent(new win.WheelEvent('wheel',{deltaY:i%24===0?-25:25,clientX:b.left+200,clientY:b.top+400,bubbles:true,cancelable:true}))}
+   maxCards=Math.max(maxCards,doc.querySelectorAll('[data-appearance-id]').length);maxAnimations=Math.max(maxAnimations,doc.getAnimations().filter(a=>a.playState==='running').length)
+  }
+  pointer('pointerup',301,200-74*14,350-Math.sin(74/12)*180);await settle();observer?.disconnect()
+  const sorted=intervals.sort((a,b)=>a-b),round=n=>Math.round(n*100)/100
+  output.textContent=JSON.stringify({userAgent:win.navigator.userAgent,viewport:[win.innerWidth,win.innerHeight],samples:sorted.length,p95Ms:round(sorted[Math.floor(sorted.length*.95)]),maxMs:round(sorted.at(-1)),over32ms:sorted.filter(n=>n>32).length,longTasks:longTasks.map(round),layoutShift:round(shifts.reduce((a,b)=>a+b,0)),maxMountedCards:maxCards,maxAnimations,svgPoints:doc.querySelectorAll('[data-node-id]').length,camera:camera()},null,2);output.dataset.done='profile'
+ }
+})
+</script></html>

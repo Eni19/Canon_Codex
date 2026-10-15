@@ -15,6 +15,7 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
     repo.getContent(world.id, entity.id),
     repo.getBacklinks(world.id, entity.id),
   ])
+  const timeline = entity.type === 'timeline' ? await repo.getTimeline(world.id, entity.id) : undefined
 
   const referencedIds = new Set<string>()
   for (const property of entityType.properties) {
@@ -34,7 +35,10 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
   )
 
   const typeLabelById = new Map(world.entityTypes.map((type) => [type.id, type.label]))
-  const allEntities = await repo.listEntities(world.id)
+  const [allEntities, trashedEntities] = await Promise.all([
+    repo.listEntities(world.id),
+    entity.type === 'timeline' ? repo.listTrashedEntities(world.id) : Promise.resolve([]),
+  ])
   const relationTargetOptions = allEntities
     .filter((candidate) => candidate.id !== entity.id)
     .map((candidate) => ({
@@ -56,7 +60,13 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
       backlinks={backlinks}
       relationTargetOptions={relationTargetOptions}
       allEntities={allEntities}
+      timelineRecords={[...allEntities, ...trashedEntities]}
+      typeLabels={Object.fromEntries(typeLabelById)}
+      timelineScaleDefaults={world.timelineScaleDefaults}
+      timelineTypes={world.entityTypes.map((type) => ({ id: type.id, label: type.label }))}
       relatedScenes={relatedScenes}
+      calendar={world.calendar}
+      timeline={timeline}
     />
   )
 }

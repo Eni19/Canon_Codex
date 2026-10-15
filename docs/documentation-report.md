@@ -60,3 +60,18 @@ As lacunas reais estão em [work-items.md](work-items.md): decisão sobre o mode
 restauração/purge, necessidade da chave tldraw e operação fora de localhost. Não há tracker externo
 acessível nesta execução. A atualização futura dessas decisões deve incluir o código e a
 documentação na mesma mudança.
+
+## Atualização de produto — Cosmic Canvas (15/10/2026)
+
+A documentação da Linha do Tempo foi sincronizada com o pedido de refatoração do canvas existente.
+Guia, README, PROJECT, glossário, ADR-005, arquitetura, URL/actions, testes e trabalho registrado
+foram atualizados. Especificação e perfis antigos estão identificados como históricos.
+A [pesquisa](research/timeline-cosmic-canvas.md) reúne fontes primárias e comparação de bibliotecas;
+o [perfil](performance/timeline-cosmic-canvas.md) contém medidas, capturas e limites verificáveis.
+Não houve alteração de armazenamento, migrações, backup ou contratos de actions nesta refatoração,
+portanto não há novo procedimento de migração nessas páginas. Links relativos de README, PROJECT,
+CONTEXT e docs foram conferidos, sem destinos ausentes. Todos os exemplos/ensaios usam dados sintéticos.
+
+Ajuste final de cores: tokens cósmicos agora derivam da paleta global, preservando âmbar/latão,
+texto quente e bordas. Apenas fundo/superfícies ficam mais escuros. PROJECT, ADR-005, guia e perfil
+foram atualizados; README, APIs e persistência permanecem válidos, pois o ajuste é apenas visual.

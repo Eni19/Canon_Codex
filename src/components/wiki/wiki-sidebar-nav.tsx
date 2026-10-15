@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useMemo, useState, useSyncExternalStore } from 'react'
-import { Clapperboard, EyeOff, Layers, LayoutDashboard, LibraryBig, FolderInput, RotateCcw, Search, Settings2 } from 'lucide-react'
+import { CalendarDays, Clapperboard, EyeOff, Layers, LayoutDashboard, LibraryBig, FolderInput, RotateCcw, Search, Settings2 } from 'lucide-react'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { useCommandPalette } from '@/components/wiki/command-palette-provider'
 import { cn } from '@/lib/utils'
@@ -67,6 +67,9 @@ export function WikiSidebarNav({
       </SidebarLink>
       <SidebarLink href="/all" active={pathname === '/all'} collapsed={collapsed} label="Todos os conteúdos" onNavigate={onNavigate}>
         <Layers className="size-4" />
+      </SidebarLink>
+      <SidebarLink href="/calendar" active={pathname.startsWith('/calendar')} collapsed={collapsed} label="Calendário" onNavigate={onNavigate}>
+        <CalendarDays className="size-4" />
       </SidebarLink>
 
       {!collapsed && (

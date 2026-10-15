@@ -1,11 +1,14 @@
 # Canon Codex
 
 Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais. A versão
-atual roda como uma aplicação Next.js local, grava mundos em JSON e oferece registros de
-personagens, locais, organizações, criaturas, evidências, artefatos, cosmologia, eventos e
+atual roda como uma aplicação Next.js local, grava mundos em JSON, oferece um calendário configurável
+por mundo com Evento de origem, linhas do tempo em canvas espacial com pan, zoom, cartões por viewport e criação rápida
+de Eventos, biblioteca de registros, remoção com Desfazer, detalhe cronológico e filtros da vista, além de registros de personagens, locais, organizações, criaturas, evidências,
+artefatos, cosmologia, eventos e
 narrativas, além de editor, relações, busca, quadros e cenas projetáveis.
 
-Esta documentação descreve o comportamento implementado em **23/09/2026**. Autenticação,
+Esta documentação inclui o TL-12, com apresentação editorial, movimento discreto e navegação
+acessível nas duas vistas de Linha do Tempo, verificado em **14/10/2026**. Autenticação,
 colaboração remota, banco relacional, armazenamento em nuvem e publicação pública não fazem parte
 da versão verificada.
 
@@ -27,6 +30,10 @@ Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo s
 `Canon Codex` quando ainda não existe `workspace/worlds/`. Para uma instalação isolada, veja
 [Configuração](docs/reference/configuration.md).
 
+Na biblioteca, **Abrir Tal’Dorei Renascido completo** copia e abre o atlas local preparado a partir do PDF
+fornecido pelo usuário. Veja o [guia de mundos](docs/user-guide/worlds.md#abrir-o-atlas-de-taldorei-renascido)
+para escopo e limites da extração.
+
 Comandos disponíveis:
 
 ```bash
@@ -39,6 +46,14 @@ pnpm test       # Vitest em modo run
 ```
 
 ## Dados e privacidade
+
+Linhas com centenas de aparições usam páginas de até 50 cartões e editor sob demanda. O
+[perfil com 500 aparições](docs/performance/timeline-500.md) registra medidas e verificações em
+desktop e celular, com dados sintéticos.
+
+Linhas do tempo preservam cartões de registros na lixeira com aviso de indisponibilidade.
+Após ausência definitiva, a reconciliação remove suas aparições e limpa o vínculo de origem
+sem alterar o calendário. Veja [ciclo de vida e limites de recuperação](docs/data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
 
 O conteúdo fica em `WIKI_WORKSPACE_DIR` ou, por padrão, em `workspace/` na raiz do projeto. Essa
 pasta inclui mundos, entidades, conteúdo, imagens, quadros, cenas e `trash/`; está explicitamente
@@ -55,9 +70,10 @@ PERSISTENCE_DRIVER=filesystem
 
 ## Guias
 
-- [Índice do guia de uso](docs/user-guide/index.md): mundos, entidades, editor, quadros, cenas e projeção.
+- [Índice do guia de uso](docs/user-guide/index.md): mundos, calendário, entidades, editor, quadros, cenas e projeção.
 - [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
 - [Armazenamento](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
+- [Conversão de datas antigas](docs/data/migrations.md#datas-de-propriedades-durante-a-transição): prévia, backup e recuperação por mundo.
 - [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
 - [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
   [operação e privacidade](docs/operations-and-privacy.md).
@@ -69,7 +85,7 @@ PERSISTENCE_DRIVER=filesystem
 ## Arquitetura em uma frase
 
 O App Router e as Server Actions orquestram a aplicação; componentes React cuidam da interface;
-`domain/` define esquemas Zod sem I/O; contratos em `repositories/contracts/` isolam a persistência;
+`domain/` define esquemas Zod e o cálculo do calendário sem I/O; contratos em `repositories/contracts/` isolam a persistência;
 e a única implementação disponível é filesystem em `repositories/filesystem/`, selecionada por
 `PERSISTENCE_DRIVER`.
 

@@ -1,0 +1,1000 @@
+[
+  {
+    "id": "character",
+    "label": "Personagem",
+    "pluralLabel": "Personagens",
+    "icon": "UserRound",
+    "color": "accent",
+    "layout": [
+      "header",
+      "portraitHero",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "profile",
+        "label": "Perfil",
+        "kind": "text"
+      },
+      {
+        "key": "age",
+        "label": "Idade",
+        "kind": "text"
+      },
+      {
+        "key": "species",
+        "label": "Espécie",
+        "kind": "text"
+      },
+      {
+        "key": "occupation",
+        "label": "Ocupação",
+        "kind": "text"
+      },
+      {
+        "key": "affiliation",
+        "label": "Afiliação",
+        "kind": "reference",
+        "refType": "organization"
+      },
+      {
+        "key": "personality",
+        "label": "Personalidade",
+        "kind": "textarea"
+      },
+      {
+        "key": "currentLocation",
+        "label": "Local atual",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "originLocation",
+        "label": "Local de origem",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "firstAppearance",
+        "label": "Primeira aparição",
+        "kind": "reference",
+        "refType": "document"
+      }
+    ]
+  },
+  {
+    "id": "species",
+    "label": "Espécie / Povo",
+    "pluralLabel": "Espécies / Povos",
+    "icon": "Dna",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "recordKind",
+        "label": "Tipo de registro",
+        "kind": "enum",
+        "options": [
+          "Espécie",
+          "Povo / Cultura"
+        ]
+      },
+      {
+        "key": "classification",
+        "label": "Classificação",
+        "kind": "text"
+      },
+      {
+        "key": "relatedSpecies",
+        "label": "Espécies associadas",
+        "kind": "referenceList",
+        "refType": "species"
+      },
+      {
+        "key": "originLocation",
+        "label": "Origem",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "habitats",
+        "label": "Regiões habitadas",
+        "kind": "referenceList",
+        "refType": "location"
+      },
+      {
+        "key": "languages",
+        "label": "Idiomas",
+        "kind": "tags"
+      },
+      {
+        "key": "traits",
+        "label": "Características",
+        "kind": "tags"
+      },
+      {
+        "key": "lifespan",
+        "label": "Expectativa de vida",
+        "kind": "text"
+      },
+      {
+        "key": "population",
+        "label": "População",
+        "kind": "text"
+      },
+      {
+        "key": "socialStructure",
+        "label": "Estrutura social",
+        "kind": "textarea"
+      },
+      {
+        "key": "customs",
+        "label": "Costumes e tradições",
+        "kind": "textarea"
+      },
+      {
+        "key": "relatedOrganizations",
+        "label": "Organizações relacionadas",
+        "kind": "referenceList",
+        "refType": "organization"
+      }
+    ]
+  },
+  {
+    "id": "location",
+    "label": "Local",
+    "pluralLabel": "Locais",
+    "icon": "MapPin",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "locationType",
+        "label": "Tipo de local",
+        "kind": "enum",
+        "options": [
+          "Cidade",
+          "Edifício",
+          "Região",
+          "Outro"
+        ]
+      },
+      {
+        "key": "parentLocation",
+        "label": "Região/local pai",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "notableFeatures",
+        "label": "Características notáveis",
+        "kind": "tags"
+      }
+    ]
+  },
+  {
+    "id": "organization",
+    "label": "Organização",
+    "pluralLabel": "Organizações",
+    "icon": "Building2",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "organizationType",
+        "label": "Tipo de organização",
+        "kind": "enum",
+        "options": [
+          "Governamental",
+          "Secreta",
+          "Corporativa",
+          "Religiosa",
+          "Outra"
+        ]
+      },
+      {
+        "key": "founded",
+        "label": "Fundação",
+        "kind": "date"
+      },
+      {
+        "key": "headquarters",
+        "label": "Sede",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "leaders",
+        "label": "Líderes",
+        "kind": "referenceList",
+        "refType": "character"
+      },
+      {
+        "key": "members",
+        "label": "Membros",
+        "kind": "referenceList",
+        "refType": "character"
+      },
+      {
+        "key": "objectives",
+        "label": "Objetivos",
+        "kind": "textarea"
+      },
+      {
+        "key": "ideals",
+        "label": "Ideais",
+        "kind": "textarea"
+      }
+    ]
+  },
+  {
+    "id": "case",
+    "label": "Caso",
+    "pluralLabel": "Casos",
+    "icon": "FolderSearch",
+    "color": "danger",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": false,
+    "properties": [
+      {
+        "key": "caseStatus",
+        "label": "Status do caso",
+        "kind": "enum",
+        "options": [
+          "Aberto",
+          "Fechado",
+          "Arquivado",
+          "Não resolvido"
+        ]
+      },
+      {
+        "key": "openedDate",
+        "label": "Data de abertura",
+        "kind": "date"
+      },
+      {
+        "key": "involved",
+        "label": "Envolvidos",
+        "kind": "referenceList",
+        "refType": "character"
+      },
+      {
+        "key": "relatedLocations",
+        "label": "Locais relacionados",
+        "kind": "referenceList",
+        "refType": "location"
+      }
+    ]
+  },
+  {
+    "id": "event",
+    "label": "Evento",
+    "pluralLabel": "Eventos",
+    "icon": "CalendarClock",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "eventStatus",
+        "label": "Estado do evento",
+        "kind": "enum",
+        "options": [
+          "Em andamento",
+          "Concluído",
+          "Arquivado",
+          "Não resolvido"
+        ]
+      },
+      {
+        "key": "eventDate",
+        "label": "Data do evento",
+        "kind": "date"
+      },
+      {
+        "key": "location",
+        "label": "Local",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "relatedLocations",
+        "label": "Outros locais",
+        "kind": "referenceList",
+        "refType": "location"
+      },
+      {
+        "key": "participants",
+        "label": "Participantes",
+        "kind": "referenceList",
+        "refType": "character"
+      }
+    ]
+  },
+  {
+    "id": "tale",
+    "label": "Conto",
+    "pluralLabel": "Contos",
+    "icon": "BookOpenText",
+    "color": "muted",
+    "layout": [
+      "header",
+      "properties",
+      "content",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "subtitle",
+        "label": "Subtítulo",
+        "kind": "text"
+      },
+      {
+        "key": "taleType",
+        "label": "Tipo",
+        "kind": "enum",
+        "options": [
+          "Conto",
+          "Crônica",
+          "Novela",
+          "Romance",
+          "Lenda",
+          "Mito",
+          "Fábula",
+          "Relato oral"
+        ]
+      },
+      {
+        "key": "period",
+        "label": "Período",
+        "kind": "text"
+      },
+      {
+        "key": "setting",
+        "label": "Local",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "characters",
+        "label": "Personagens",
+        "kind": "referenceList",
+        "refType": "character"
+      },
+      {
+        "key": "culture",
+        "label": "Cultura ou tradição",
+        "kind": "text"
+      },
+      {
+        "key": "narrator",
+        "label": "Narrador ou fonte",
+        "kind": "text"
+      },
+      {
+        "key": "openingLayout",
+        "label": "Layout de abertura",
+        "kind": "enum",
+        "options": [
+          "Panorâmico",
+          "Centralizado",
+          "Editorial"
+        ]
+      },
+      {
+        "key": "notes",
+        "label": "Notas opcionais",
+        "kind": "textarea"
+      }
+    ]
+  },
+  {
+    "id": "document",
+    "label": "Documento",
+    "pluralLabel": "Documentos",
+    "icon": "FileText",
+    "color": "muted",
+    "layout": [
+      "header",
+      "properties",
+      "content",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": false,
+    "properties": [
+      {
+        "key": "documentType",
+        "label": "Tipo de documento",
+        "kind": "enum",
+        "options": [
+          "Relatório",
+          "Carta",
+          "Diário",
+          "Registro",
+          "Outro"
+        ]
+      },
+      {
+        "key": "author",
+        "label": "Autor",
+        "kind": "reference",
+        "refType": "character"
+      },
+      {
+        "key": "date",
+        "label": "Data",
+        "kind": "date"
+      }
+    ]
+  },
+  {
+    "id": "evidence",
+    "label": "Evidência",
+    "pluralLabel": "Evidências",
+    "icon": "Fingerprint",
+    "color": "danger",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "evidenceFormat",
+        "label": "Formato",
+        "kind": "enum",
+        "options": [
+          "Evidência",
+          "Pista",
+          "Documento"
+        ]
+      },
+      {
+        "key": "evidenceType",
+        "label": "Tipo de evidência",
+        "kind": "enum",
+        "options": [
+          "Físico",
+          "Fotográfico",
+          "Testemunhal",
+          "Digital",
+          "Outro"
+        ]
+      },
+      {
+        "key": "relatedEvent",
+        "label": "Evento relacionado",
+        "kind": "reference",
+        "refType": "event"
+      },
+      {
+        "key": "foundAt",
+        "label": "Encontrado em",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "presentation",
+        "label": "Apresentação",
+        "kind": "textarea"
+      },
+      {
+        "key": "contextualDescription",
+        "label": "Notas contextuais",
+        "kind": "textarea"
+      },
+      {
+        "key": "relatedCharacters",
+        "label": "Personagens relacionados",
+        "kind": "referenceList",
+        "refType": "character"
+      }
+    ]
+  },
+  {
+    "id": "clue",
+    "label": "Pista",
+    "pluralLabel": "Pistas",
+    "icon": "Search",
+    "color": "danger",
+    "layout": [
+      "header",
+      "properties",
+      "content",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": false,
+    "properties": [
+      {
+        "key": "relatedEvent",
+        "label": "Evento relacionado",
+        "kind": "reference",
+        "refType": "event"
+      },
+      {
+        "key": "discoveredBy",
+        "label": "Descoberta por",
+        "kind": "reference",
+        "refType": "character"
+      }
+    ]
+  },
+  {
+    "id": "creature",
+    "label": "Criatura",
+    "pluralLabel": "Criaturas",
+    "icon": "PawPrint",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "creatureKind",
+        "label": "Natureza",
+        "kind": "enum",
+        "options": [
+          "Monstro",
+          "Animal"
+        ]
+      },
+      {
+        "key": "imagePresentation",
+        "label": "Apresentação da imagem",
+        "kind": "enum",
+        "options": [
+          "Contorno",
+          "Retrato"
+        ]
+      },
+      {
+        "key": "classification",
+        "label": "Classificação",
+        "kind": "text"
+      },
+      {
+        "key": "habitat",
+        "label": "Habitat",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "dangerLevel",
+        "label": "Nível de perigo",
+        "kind": "enum",
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Desconhecido"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "naturalScience",
+    "label": "Natureza / Medicina",
+    "pluralLabel": "Natureza / Medicina",
+    "icon": "Microscope",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "discipline",
+        "label": "Área",
+        "kind": "enum",
+        "options": [
+          "Natureza",
+          "Medicina"
+        ]
+      },
+      {
+        "key": "scienceSubtype",
+        "label": "Subtipo",
+        "kind": "enum",
+        "options": [
+          "Flora",
+          "Fauna",
+          "Fungo",
+          "Mineral",
+          "Ecossistema",
+          "Recurso natural",
+          "Doença",
+          "Condição",
+          "Ferimento",
+          "Substância",
+          "Medicamento",
+          "Veneno",
+          "Tratamento",
+          "Anatomia"
+        ]
+      },
+      {
+        "key": "scientificName",
+        "label": "Nome técnico ou científico",
+        "kind": "text"
+      },
+      {
+        "key": "habitat",
+        "label": "Habitat ou ocorrência",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "distribution",
+        "label": "Distribuição",
+        "kind": "referenceList",
+        "refType": "location"
+      },
+      {
+        "key": "notableProperties",
+        "label": "Propriedades",
+        "kind": "tags"
+      },
+      {
+        "key": "toxicity",
+        "label": "Toxicidade",
+        "kind": "enum",
+        "options": [
+          "Nenhuma",
+          "Baixa",
+          "Moderada",
+          "Alta",
+          "Letal",
+          "Desconhecida"
+        ]
+      },
+      {
+        "key": "affectedSystem",
+        "label": "Sistema afetado",
+        "kind": "text"
+      },
+      {
+        "key": "transmission",
+        "label": "Transmissão",
+        "kind": "text"
+      },
+      {
+        "key": "symptoms",
+        "label": "Sintomas",
+        "kind": "tags"
+      },
+      {
+        "key": "progression",
+        "label": "Progressão",
+        "kind": "text"
+      },
+      {
+        "key": "uses",
+        "label": "Usos e aplicações",
+        "kind": "textarea"
+      },
+      {
+        "key": "treatment",
+        "label": "Tratamento ou manejo",
+        "kind": "textarea"
+      },
+      {
+        "key": "relatedEntries",
+        "label": "Registros relacionados",
+        "kind": "referenceList",
+        "refType": "naturalScience"
+      }
+    ]
+  },
+  {
+    "id": "phenomenon",
+    "label": "Fenômeno",
+    "pluralLabel": "Fenômenos",
+    "icon": "Sparkles",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": false,
+    "properties": [
+      {
+        "key": "phenomenonType",
+        "label": "Tipo de fenômeno",
+        "kind": "text"
+      },
+      {
+        "key": "firstObserved",
+        "label": "Primeira observação",
+        "kind": "date"
+      },
+      {
+        "key": "affectedLocations",
+        "label": "Locais afetados",
+        "kind": "referenceList",
+        "refType": "location"
+      }
+    ]
+  },
+  {
+    "id": "artifact",
+    "label": "Objeto / Artefato",
+    "pluralLabel": "Objetos / Artefatos",
+    "icon": "Gem",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "registrationNumber",
+        "label": "Número de registro",
+        "kind": "text"
+      },
+      {
+        "key": "artifactType",
+        "label": "Tipo de objeto",
+        "kind": "text"
+      },
+      {
+        "key": "origin",
+        "label": "Origem",
+        "kind": "text"
+      },
+      {
+        "key": "period",
+        "label": "Época ou datação",
+        "kind": "text"
+      },
+      {
+        "key": "materials",
+        "label": "Materiais",
+        "kind": "tags"
+      },
+      {
+        "key": "dimensions",
+        "label": "Dimensões",
+        "kind": "text"
+      },
+      {
+        "key": "condition",
+        "label": "Estado de conservação",
+        "kind": "enum",
+        "options": [
+          "Íntegro",
+          "Estável",
+          "Frágil",
+          "Danificado",
+          "Em restauração",
+          "Desconhecido"
+        ]
+      },
+      {
+        "key": "acquisition",
+        "label": "Forma de aquisição",
+        "kind": "textarea"
+      },
+      {
+        "key": "currentLocation",
+        "label": "Localização atual",
+        "kind": "reference",
+        "refType": "location"
+      },
+      {
+        "key": "owner",
+        "label": "Proprietário",
+        "kind": "reference",
+        "refType": "character"
+      }
+    ]
+  },
+  {
+    "id": "concept",
+    "label": "Conceito",
+    "pluralLabel": "Conceitos",
+    "icon": "Lightbulb",
+    "color": "muted",
+    "layout": [
+      "header",
+      "properties",
+      "content",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "category",
+        "label": "Categoria",
+        "kind": "text"
+      },
+      {
+        "key": "summary",
+        "label": "Subtítulo ou resumo",
+        "kind": "textarea"
+      }
+    ]
+  },
+  {
+    "id": "cosmology",
+    "label": "Registro Cosmológico",
+    "pluralLabel": "Cosmologia",
+    "icon": "Orbit",
+    "color": "accent",
+    "layout": [
+      "header",
+      "hero",
+      "properties",
+      "content",
+      "gallery",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "cosmologyType",
+        "label": "Natureza",
+        "kind": "enum",
+        "options": [
+          "Divindade",
+          "Entidade",
+          "Plano de existência",
+          "Reino",
+          "Corpo celeste",
+          "Outro"
+        ]
+      },
+      {
+        "key": "domains",
+        "label": "Domínios",
+        "kind": "tags"
+      },
+      {
+        "key": "higherEntity",
+        "label": "Entidade superior",
+        "kind": "reference",
+        "refType": "cosmology"
+      },
+      {
+        "key": "pantheon",
+        "label": "Panteão ou tradição",
+        "kind": "text"
+      },
+      {
+        "key": "objectives",
+        "label": "Objetivos",
+        "kind": "textarea"
+      },
+      {
+        "key": "ideals",
+        "label": "Ideais",
+        "kind": "textarea"
+      },
+      {
+        "key": "worshipers",
+        "label": "Cultos e organizações",
+        "kind": "referenceList",
+        "refType": "organization"
+      },
+      {
+        "key": "associatedArtifacts",
+        "label": "Artefatos associados",
+        "kind": "referenceList",
+        "refType": "artifact"
+      }
+    ]
+  },
+  {
+    "id": "timeline",
+    "label": "Linha do Tempo",
+    "pluralLabel": "Linhas do Tempo",
+    "icon": "History",
+    "color": "muted",
+    "layout": [
+      "header",
+      "properties",
+      "content",
+      "relations",
+      "backlinks"
+    ],
+    "showInSidebar": true,
+    "properties": [
+      {
+        "key": "scope",
+        "label": "Escopo",
+        "kind": "text"
+      },
+      {
+        "key": "startDate",
+        "label": "Início",
+        "kind": "date"
+      },
+      {
+        "key": "endDate",
+        "label": "Fim",
+        "kind": "date"
+      }
+    ]
+  }
+]

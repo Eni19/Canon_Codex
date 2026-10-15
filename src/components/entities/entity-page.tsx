@@ -18,6 +18,7 @@ import { TaleEntityPage } from '@/components/entities/tale-entity-page'
 import { ConceptEntityPage } from '@/components/entities/concept-entity-page'
 import { SpeciesGuidePage } from '@/components/entities/species-guide-page'
 import { NaturalSciencePage } from '@/components/entities/natural-science-page'
+import { TimelineEntityPage } from '@/components/entities/timeline-entity-page'
 import { PropertyDisplayList } from '@/components/entities/property-display-list'
 import { RelationsPanel, type RelationTargetOption } from '@/components/entities/relations-panel'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +28,9 @@ import { PageContainer } from '@/components/wiki/page-container'
 import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import type { Calendar } from '@/domain/worlds/calendar'
+import type { TimelineData } from '@/domain/timelines/timeline'
+import type { TimelineScale } from '@/domain/timelines/timelineScale'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import type { Backlink } from '@/repositories/contracts/worldRepository'
 import type { SceneSummary } from '@/domain/scenes/scene'
@@ -40,11 +44,17 @@ export interface EntityPageProps {
   backlinks: Backlink[]
   relationTargetOptions: RelationTargetOption[]
   allEntities: Entity[]
+  timelineRecords: Entity[]
+  typeLabels: Record<string, string>
+  timelineScaleDefaults: Record<string, TimelineScale>
+  timelineTypes: { id: string; label: string }[]
   relatedScenes: SceneSummary[]
+  calendar: Calendar
+  timeline?: TimelineData
 }
 
 export function EntityPage(props: EntityPageProps) {
-  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions } = props
+  const { entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar } = props
   const blocks = entityType.layout
 
   if (entity.type === 'location') return <LocationEntityPage {...props} />
@@ -58,6 +68,7 @@ export function EntityPage(props: EntityPageProps) {
   if (entity.type === 'concept') return <ConceptEntityPage {...props} />
   if (entity.type === 'species') return <SpeciesGuidePage {...props} />
   if (entity.type === 'naturalScience') return <NaturalSciencePage {...props} />
+  if (entity.type === 'timeline' && props.timeline) return <TimelineEntityPage {...props} timeline={props.timeline} />
 
   // Portrait-driven types get a bespoke wide layout (art dominant, everything flanking it) —
   // see PortraitEntityPage and design-inspiration/style-notes.md — instead of the generic stack.
@@ -119,7 +130,7 @@ export function EntityPage(props: EntityPageProps) {
 
       {blocks.includes('properties') && entityType.properties.length > 0 && (
         <Section title="Propriedades" className="mt-6">
-          <PropertyDisplayList properties={entityType.properties} values={entity.properties} entityTitleById={entityTitleById} />
+          <PropertyDisplayList properties={entityType.properties} values={entity.properties} entityTitleById={entityTitleById} calendar={calendar} />
         </Section>
       )}
 

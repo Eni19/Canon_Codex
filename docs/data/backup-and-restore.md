@@ -6,12 +6,14 @@ O backup manual confiável é uma cópia do workspace com o servidor parado ou s
 concorrente. Copie todo o diretório configurado em `WIKI_WORKSPACE_DIR`, incluindo:
 
 - `worlds/`, com `world.json`, entidades, conteúdo, assets, quadros, cenas e `trash/` interno;
+- `worlds/<world-dir>/date-migrations/`, com backups e estados da conversão de datas antigas;
+- `worlds/<world-dir>/origin-backups/`, com backups e estados das trocas de Evento de origem;
 - `trash/worlds/`, se quiser preservar mundos removidos da biblioteca;
 - qualquer arquivo adicional que uma versão futura tenha criado.
 
 Copiar somente `world.json` recupera o catálogo do mundo, mas não suas entidades, imagens, quadros ou
 cenas. Copiar somente `entities/` também não recupera a seleção de mundos nem assets. Não há backup
-incremental, checksum, snapshot automático ou serviço remoto.
+incremental, checksum, snapshot automático integral do workspace ou serviço remoto.
 
 ## Backup seguro no Windows
 
@@ -24,6 +26,18 @@ $codexBackup = 'D:\Backups\canon-codex-2026-09-23'
 New-Item -ItemType Directory -Force -Path $codexBackup | Out-Null
 Copy-Item -LiteralPath $codexWorkspace -Destination $codexBackup -Recurse -Force
 ```
+
+O backup automático de `/calendar/migration` guarda apenas os metadados de entidades que serão
+convertidos. Ele permite retomar ou restaurar aquela conversão pela mesma tela, desde que os arquivos
+não tenham recebido outras edições. Ele não substitui uma cópia do workspace inteiro.
+
+Ao confirmar a troca de Evento de origem em `/calendar/origin`, o aplicativo grava em
+`origin-backups/` uma cópia de `world.json`, dos metadados de entidades e dos arquivos de aparições
+de Linhas do Tempo que serão deslocados. Se a
+gravação falhar, tenta restaurar esses arquivos. Se o processo for interrompido, a próxima leitura
+ou gravação de metadados daquele mundo restaura o backup antes de continuar. Backups concluídos são
+mantidos no diretório, mas não há botão para restauração manual pela interface. Essas cópias cobrem
+somente a operação de origem; não substituem o backup integral do workspace.
 
 O aplicativo não valida a integridade de uma cópia durante o backup. Depois de copiar, confira
 manualmente se o destino contém `worlds` e pelo menos um `world.json`; valide o conteúdo abrindo uma
@@ -64,7 +78,7 @@ tentativa e retorna erro. A pasta de origem permanece intocada.
 ## `trash/` e descarte
 
 Excluir um mundo, entidade, asset, quadro ou cena move o diretório para `trash/` com ID e timestamp.
-O inventário normal não lê essa pasta. Não há tela para restaurar, retenção automática ou ação de
+Os catálogos normais não exibem essa pasta; linhas do tempo consultam seus metadados. Não há tela para restaurar, retenção automática ou ação de
 descarte permanente. Portanto:
 
 - preserve um backup antes de excluir;
@@ -73,6 +87,12 @@ descarte permanente. Portanto:
   restauração de referências implementada;
 - restauração manual de entidade/asset/board/scene pode exigir recolocar exatamente o diretório no
   mundo correto e não é um procedimento suportado pela interface.
+
+Linhas do tempo consultam metadados de registros na lixeira para preservar seus cartões.
+Remover definitivamente um registro também da lixeira faz a reconciliação eliminar suas aparições
+na próxima consulta de linha ou origem, ou ao criar uma origem. Recolocar somente o registro depois dessa limpeza
+não recria os cartões: restaure também os `timeline.json` e, para o vínculo de origem, `world.json`
+de um backup coerente. A limpeza não produz backup automático; veja [ciclo de vida](storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
 
 ## Ensaio sintético verificado
 

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Perfil sintético TL-12</title>
+<style>
+  * { box-sizing: border-box; } body { margin: 0; background: #171716; color: #eee7d8; font: 12px monospace; }
+  header { height: 100px; padding: 8px 12px; overflow: auto; border-bottom: 1px solid #696355; }
+  pre { margin: 4px 0; white-space: pre-wrap; } iframe { display: block; width: 100%; height: calc(100vh - 100px); border: 0; }
+</style>
+<header>TL-12 · instrumentação local, somente dados sintéticos. Janela: 700 ms por interação.
+<pre id="result" aria-live="polite">Aguardando carregamento…</pre></header>
+<iframe title="Linha sintética com 500 aparições" src="/entity/30000000-0000-4000-8000-000000000001?scale=day"></iframe>
+<script>
+const frame = document.querySelector('iframe')
+const result = document.querySelector('#result')
+const runs = []
+frame.addEventListener('load', () => {
+  const win = frame.contentWindow
+  const doc = win.document
+  let active = null
+  let observer
+  if (win.PerformanceObserver) {
+    observer = new win.PerformanceObserver((list) => {
+      if (!active) return
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'longtask') active.longTasks.push(Math.round(entry.duration * 100) / 100)
+        if (entry.entryType === 'layout-shift') {
+          active.layoutShift += entry.value
+          if (!entry.hadRecentInput) active.unexpectedShift += entry.value
+        }
+      }
+    })
+    for (const type of ['longtask', 'layout-shift']) {
+      if (win.PerformanceObserver.supportedEntryTypes.includes(type)) observer.observe({ type })
+    }
+  }
+  function begin(event) {
+    const target = event.target.closest('button,select,input,summary')
+    if (!target || active || !target.closest('[aria-label="Navegação da linha do tempo"],[aria-label="Páginas de cartões"]')) return
+    const start = win.performance.now()
+    const state = { action: target.textContent?.trim().slice(0, 70) || target.getAttribute('aria-label') || target.tagName, frames: [], maxAnimations: 0, longTasks: [], layoutShift: 0, unexpectedShift: 0, nextFrameMs: null }
+    active = state
+    let previous = start
+    function sample(now) {
+      const delta = now - previous
+      if (delta > 0) state.frames.push(delta)
+      previous = now
+      if (state.nextFrameMs === null) state.nextFrameMs = Math.round((win.performance.now() - start) * 100) / 100
+      state.maxAnimations = Math.max(state.maxAnimations, doc.getAnimations().filter(a => a.playState === 'running').length)
+      if (win.performance.now() - start - state.nextFrameMs < 700) { win.requestAnimationFrame(sample); return }
+      const sorted = state.frames.slice(1).sort((a,b) => a-b)
+      const round = n => Math.round(n * 100) / 100
+      win.setTimeout(() => {
+        runs.push({ action: state.action, nextFrameMs: state.nextFrameMs, frames: sorted.length, frameP95Ms: round(sorted[Math.floor(sorted.length * .95)] || 0), frameMaxMs: round(sorted.at(-1) || 0), framesOver32ms: sorted.filter(n => n > 32).length, maxAnimations: state.maxAnimations, longTasks: state.longTasks, layoutShift: round(state.layoutShift), unexpectedShift: round(state.unexpectedShift), cards: doc.querySelectorAll('[data-appearance-id]').length, viewport: [win.innerWidth, win.innerHeight] })
+        active = null
+        result.textContent = JSON.stringify({ userAgent: win.navigator.userAgent, runs }, null, 2)
+        result.dataset.runs = String(runs.length)
+      }, 0)
+    }
+    win.requestAnimationFrame(sample)
+  }
+  for (const event of ['click', 'change', 'submit']) doc.addEventListener(event, begin, true)
+  result.textContent = 'Pronto. Use vista, zoom, busca ou categorias na aplicação abaixo.'
+})
+</script>
+</html>
