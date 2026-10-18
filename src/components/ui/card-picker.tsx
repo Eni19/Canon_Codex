@@ -49,7 +49,7 @@ export function CardPicker({ items, selectedIds, multiple = false, title, search
 
   return createPortal(
     <div className="fixed inset-0 z-[2100] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={onClose} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); onClose() } }}>
-      <div role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()} className="flex max-h-[calc(100%-1rem)] w-full max-w-5xl flex-col border border-primary/40 bg-popover text-popover-foreground shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()} className="flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col border border-primary/40 bg-popover text-popover-foreground shadow-2xl">
         <header className="flex items-center gap-3 border-b px-4 py-3">
           <span className="hidden text-[.65rem] font-extrabold tracking-[.16em] whitespace-nowrap text-primary uppercase sm:block">{title}</span>
           <label className="flex h-10 flex-1 items-center gap-2 border bg-card px-3"><Search className="size-4 text-muted-foreground" /><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>

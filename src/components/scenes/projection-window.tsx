@@ -1,9 +1,10 @@
 'use client'
 
 import { Maximize } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ProjectionMessage, ProjectionState } from '@/domain/projection/projection'
+import { useEffect, useRef, useState } from 'react'
+import type { ProjectionAudioState, ProjectionAudioStatus, ProjectionMessage, ProjectionState } from '@/domain/projection/projection'
 import { BroadcastChannelProjectionTransport } from '@/lib/projection/broadcast-channel-transport'
+import { ProjectionAudio } from './projection-audio'
 import { ProjectionDisplay } from './projection-display'
 import styles from './projection-window.module.css'
 
@@ -19,7 +20,7 @@ function applyMessage(current: ProjectionState, message: ProjectionMessage): Pro
 }
 
 export function ProjectionWindow({sessionId}:{sessionId:string}){
-  const transport=useMemo(()=>new BroadcastChannelProjectionTransport(),[]),stateRef=useRef<ProjectionState|null>(null),lastSeen=useRef(0),[state,setState]=useState<ProjectionState|null>(null),[connected,setConnected]=useState(false),[stopped,setStopped]=useState(false)
-  useEffect(()=>{transport.connect(sessionId);const unsubscribe=transport.subscribe((message)=>{lastSeen.current=Date.now();if(message.type==='FULL_STATE'){stateRef.current=message.state;setState(message.state);setConnected(true);setStopped(false);return}if(message.type==='PONG'){setConnected(true);return}if(message.type==='PROJECTION_STOPPED'){setStopped(true);setConnected(false);return}const current=stateRef.current;if(!current||!('revision'in message))return;if(message.revision!==current.revision+1){transport.publish({type:'REQUEST_FULL_STATE'});return}const next=applyMessage(current,message);stateRef.current=next;setState(next)});transport.publish({type:'PROJECTION_READY'});const ping=window.setInterval(()=>{transport.publish({type:'PING'});if(Date.now()-lastSeen.current>5000)setConnected(false)},2000);return()=>{window.clearInterval(ping);unsubscribe();transport.disconnect()}},[sessionId,transport])
-  return <main className={styles.window}><ProjectionDisplay state={stopped?null:state} connected={connected} zoomMultiplier={1.08}/><button className={styles.fullscreen} onClick={()=>document.documentElement.requestFullscreen()} title="Tela cheia"><Maximize/></button></main>
+  const [transport]=useState(()=>new BroadcastChannelProjectionTransport()),stateRef=useRef<ProjectionState|null>(null),lastSeen=useRef(0),[state,setState]=useState<ProjectionState|null>(null),[connected,setConnected]=useState(false),[stopped,setStopped]=useState(false),[audio,setAudio]=useState<ProjectionAudioState|null>(null),publishAudioStatus=(status:ProjectionAudioStatus)=>transport.publish({type:'AUDIO_STATUS',status})
+  useEffect(()=>{transport.connect(sessionId);const unsubscribe=transport.subscribe((message)=>{lastSeen.current=Date.now();if(message.type==='AUDIO_STATE'){setAudio(message.audio);return}if(message.type==='FULL_STATE'){stateRef.current=message.state;setState(message.state);setConnected(true);setStopped(false);return}if(message.type==='PONG'){setConnected(true);return}if(message.type==='PROJECTION_STOPPED'){setStopped(true);setConnected(false);setAudio(null);return}const current=stateRef.current;if(!current||!('revision'in message))return;if(message.revision!==current.revision+1){transport.publish({type:'REQUEST_FULL_STATE'});return}const next=applyMessage(current,message);stateRef.current=next;setState(next)});transport.publish({type:'PROJECTION_READY'});const ping=window.setInterval(()=>{transport.publish({type:'PING'});if(Date.now()-lastSeen.current>5000)setConnected(false)},2000);return()=>{window.clearInterval(ping);unsubscribe();transport.disconnect()}},[sessionId,transport])
+  return <main className={styles.window}><ProjectionDisplay state={stopped?null:state} connected={connected} zoomMultiplier={1.08}/><ProjectionAudio audio={audio} publishStatus={publishAudioStatus}/><button className={styles.fullscreen} onClick={()=>document.documentElement.requestFullscreen()} title="Tela cheia"><Maximize/></button></main>
 }

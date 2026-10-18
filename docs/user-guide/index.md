@@ -17,6 +17,7 @@ uma cena para apresentação.
 | Leitura/edição | `/entity/<entityId>` e `/entity/<entityId>/edit` |
 | Quadros | `/boards` |
 | Cenas | `/scenes` |
+| Trilha sonora | `/soundtrack` |
 
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.
@@ -29,6 +30,7 @@ continuam acessíveis por referências ou pela URL direta quando existem.
    Para datas ISO antigas, siga a [conversão por mundo](../data/migrations.md#datas-de-propriedades-durante-a-transição).
 4. Para investigação ou narração, siga [quadros, cenas e projeção](boards-scenes-and-projection.md).
 5. Para organizar registros por data, siga o [guia de Linhas do Tempo](timelines.md).
+6. Para ambientar a mesa, monte playlists na [trilha sonora](soundtrack.md).
 
 Exemplos deste guia usam nomes sintéticos como `Arquivo de Teste`, `Biblioteca Norte` e
 `Personagem Exemplo`; nenhum conteúdo real de `workspace/` é necessário.

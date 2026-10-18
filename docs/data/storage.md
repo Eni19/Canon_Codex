@@ -27,6 +27,8 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 │       │   └── <board-id>/board.json
 │       ├── scenes/
 │       │   └── <scene-id>/scene.json
+│       ├── playlists/
+│       │   └── <playlist-id>/playlist.json   # trilha sonora: só links do YouTube
 │       ├── trash/                    # exclusões lógicas do mundo
 │       ├── date-migrations/          # backups e estado das conversões explícitas
 │       └── origin-backups/           # backups das trocas de Evento de origem
@@ -122,6 +124,7 @@ Os schemas Zod em `src/domain/` são a referência canônica. As versões atuais
 | `ContentDocument` | 2 | `format = tiptap-json`, 1–50 páginas; título de página até 40; body opaco | [`contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
 | `Asset` | 1 | UUID, MIME/nome/tamanho, dimensões positivas opcionais, `hasThumbnail` | [`asset.ts`](../../src/domain/assets/asset.ts) |
 | `BoardDocument` | 1 | UUID, título, tags, snapshot nulo ou opaco, timestamps | [`board.ts`](../../src/domain/boards/board.ts) |
+| `Playlist` | 1 | UUID, título, tags, faixas (provider `youtube`, id externo, título, autor), timestamps | [`playlist.ts`](../../src/domain/playlists/playlist.ts) |
 | `Scene` | 1 | UUID, fundo com local/asset/dimensões, grade quadrada, snapshot, timestamps | [`scene.ts`](../../src/domain/scenes/scene.ts) |
 
 Schemas auxiliares impõem limites de dados específicos: pontos de local até 30, descobertas por
