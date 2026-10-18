@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
 import { getWorldDir } from '@/lib/fs/paths'
-import { recoverInterruptedOriginEvent } from './originEvent'
+import { hasInterruptedOriginEvent, recoverInterruptedOriginEvent } from './originEvent'
 
 const WAIT_MS = 50
 const MAX_WAIT_MS = 30_000
@@ -36,6 +36,16 @@ async function removeOrphan(lockDir: string): Promise<void> {
     if (current !== original) return
   } catch { if (owner) return }
   await rm(lockDir, { recursive: true, force: true })
+}
+
+/**
+ * For pure reads. Files are replaced atomically, so a read without the lock sees whole files; it
+ * only takes the lock when an origin change is applying or was interrupted, so it waits for the
+ * change or recovers it first. Taking the lock on every read made page and image requests queue.
+ */
+export async function withWorldRead<T>(worldDir: string, operation: () => Promise<T>): Promise<T> {
+  if (await hasInterruptedOriginEvent(worldDir)) return withWorldWriteLock(worldDir, operation)
+  return operation()
 }
 
 /** Serializes metadata/calendar writes across repository instances and local app processes. */

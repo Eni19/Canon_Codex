@@ -118,6 +118,23 @@ describe('conversão explícita de datas antigas', () => {
     expect((await repo.getEntity(worldId, entity.id))?.title).toBe('Editado')
   })
 
+  it('lê sem aguardar a trava de gravação', async () => {
+    const entity = await repo.createEntity(worldId, { type: 'event', title: 'Original' })
+    let enter!: () => void
+    let release!: () => void
+    const entered = new Promise<void>((resolve) => { enter = resolve })
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const held = withWorldWriteLock(worldDir, async () => { enter(); await gate })
+    await entered
+    try {
+      const [world, read, listed] = await Promise.all([repo.getWorld(worldId), repo.getEntity(worldId, entity.id), repo.listEntities(worldId)])
+      expect(world.id).toBe(worldId)
+      expect(read?.title).toBe('Original')
+      expect(listed.map((item) => item.id)).toContain(entity.id)
+    } finally { release() }
+    await held
+  })
+
   it('recusa manifesto malformado antes de restaurar metadados', async () => {
     const entity = await repo.createEntity(worldId, { type: 'event', title: 'Evento', properties: { eventDate: '2024-01-01' } })
     const preview = await repo.previewDateMigration(worldId)

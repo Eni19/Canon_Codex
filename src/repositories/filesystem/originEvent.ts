@@ -24,6 +24,22 @@ const BackupSchema = z.object({
   changes: z.array(z.object({ file: z.string(), before: z.string() })),
 })
 
+/**
+ * Lock-free check used by reads: true while an origin change is applying or was interrupted.
+ * A backup that cannot be read also returns true, so the locked path reports the problem.
+ */
+export async function hasInterruptedOriginEvent(worldDir: string): Promise<boolean> {
+  const dir = path.join(getWorldDir(worldDir), 'origin-backups')
+  if (!(await pathExists(dir))) return false
+  for (const file of await readdir(dir)) {
+    if (!/^[0-9a-f-]{36}\.json$/i.test(file)) continue
+    try {
+      if (BackupSchema.shape.state.parse(JSON.parse(await readFile(path.join(dir, file), 'utf8')).state) === 'applying') return true
+    } catch { return true }
+  }
+  return false
+}
+
 /** Called only while holding the world write lock, before any world operation. */
 export async function recoverInterruptedOriginEvent(worldDir: string): Promise<void> {
   const dir = path.join(getWorldDir(worldDir), 'origin-backups')

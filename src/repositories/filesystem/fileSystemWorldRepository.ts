@@ -24,7 +24,7 @@ import { contentMigrations, entityMigrations } from '@/repositories/filesystem/m
 import { listWorldDirs, readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
 import { previewDateMigration, recoverDateMigration, startDateMigration } from './dateMigration'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
-import { withWorldWriteLock } from './worldWriteLock'
+import { withWorldRead, withWorldWriteLock } from './worldWriteLock'
 import { previewOriginEvent, replaceOriginEvent } from './originEvent'
 import { validateCalendarDateValue } from '@/domain/worlds/calendar-date'
 import type { CalendarDateValue } from '@/domain/worlds/calendar-date'
@@ -163,12 +163,12 @@ export class FileSystemWorldRepository implements WorldRepository {
   recoverDateMigration(worldId: string, backupId: string, restore: boolean): Promise<void> { return recoverDateMigration(worldId, backupId, restore) }
   async listWorlds(): Promise<World[]> {
     const dirs = await listWorldDirs()
-    return Promise.all(dirs.map((dir) => withWorldWriteLock(dir, () => readWorldByDir(dir))))
+    return Promise.all(dirs.map((dir) => withWorldRead(dir, () => readWorldByDir(dir))))
   }
 
   async getWorld(worldId: string): Promise<World> {
     const worldDir = await resolveWorldDir(worldId)
-    return withWorldWriteLock(worldDir, () => readWorldByDir(worldDir))
+    return withWorldRead(worldDir, () => readWorldByDir(worldDir))
   }
 
   async updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World> {
@@ -234,17 +234,17 @@ export class FileSystemWorldRepository implements WorldRepository {
 
   async listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]> {
     const worldDir = await resolveWorldDir(worldId)
-    return withWorldWriteLock(worldDir, () => listEntitiesByDir(worldDir, filter))
+    return withWorldRead(worldDir, () => listEntitiesByDir(worldDir, filter))
   }
 
   async listTrashedEntities(worldId: string): Promise<Entity[]> {
     const worldDir = await resolveWorldDir(worldId)
-    return withWorldWriteLock(worldDir, () => listTrashedEntitiesByDir(worldDir, worldId))
+    return withWorldRead(worldDir, () => listTrashedEntitiesByDir(worldDir, worldId))
   }
 
   async getEntity(worldId: string, entityId: string): Promise<Entity | null> {
     const worldDir = await resolveWorldDir(worldId)
-    return withWorldWriteLock(worldDir, () => readEntityByDir(worldDir, entityId))
+    return withWorldRead(worldDir, () => readEntityByDir(worldDir, entityId))
   }
 
   async getOriginEvent(worldId: string): Promise<{ id: string; title: string; trashed: boolean } | null> {

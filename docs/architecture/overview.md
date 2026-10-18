@@ -65,7 +65,11 @@ mudanças estruturais do calendário se encontrar campos de data preenchidos em 
 na lixeira.
 
 As operações de conversão e as gravações de entidades/calendário compartilham um lock local por
-mundo. O manifesto de conversão é validado por schema na leitura; a confirmação compara um
+mundo. Leituras puras (`listWorlds`, `getWorld`, `listEntities`, `listTrashedEntities`, `getEntity`)
+usam `withWorldRead` e não tomam o lock, pois cada arquivo é substituído de forma atômica; só o
+tomam quando existe backup de origem em `applying`, para aguardar a troca em curso ou recuperá-la
+antes de ler. Consultas que reconciliam registros (Linha do Tempo, Evento de origem) continuam
+sob o lock. `getCurrentWorld` é memoizado por requisição com `cache()` do React. O manifesto de conversão é validado por schema na leitura; a confirmação compara um
 fingerprint que inclui entidades, calendário e definições de tipos. Antes de concluir, o adaptador
 confere o estado esperado dos arquivos convertidos.
 
