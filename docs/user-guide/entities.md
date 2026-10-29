@@ -98,6 +98,14 @@ Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é te
 
 As telas também agrupam ou ordenam os resultados conforme o tipo. Personagens podem ser agrupados por nome, organização ou local atual; locais, por hierarquia ou nome; criaturas, por natureza ou nome; espécies, por tipo de registro ou nome; e ciências naturais, por disciplina, subtipo ou nome. Os demais catálogos usam principalmente o nome/título.
 
+Na organização **Regiões** de Locais, cada local que tem sub-locais (pelo campo **Região/local pai**)
+forma uma divisão própria. Uma região mostra só os filhos diretos: os que não têm filhos aparecem
+como cartões e os que têm aparecem como divisões aninhadas, com seus próprios filhos dentro. Assim,
+uma sub-região de uma sub-região aparece apenas na divisão da sub-região, não na região original.
+Na busca, aparecem os locais encontrados e o caminho de regiões até eles; quando uma região é
+encontrada, ela aparece com tudo o que contém. Referências circulares (A dentro de B e B dentro de
+A) não somem da lista: o ciclo é quebrado no primeiro local em ordem alfabética.
+
 Essa busca é diferente da navegação por relações: pesquisar encontra entidades existentes, enquanto referências e backlinks mostram como elas se conectam.
 
 ## Imagens
