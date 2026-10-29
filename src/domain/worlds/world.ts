@@ -3,7 +3,7 @@ import { EntityTypeDefinitionSchema } from '@/domain/entities/entityType'
 import { CalendarSchema } from '@/domain/worlds/calendar'
 import { TimelineScaleSchema } from '@/domain/timelines/timelineScale'
 
-export const WORLD_SCHEMA_VERSION = 20
+export const WORLD_SCHEMA_VERSION = 21
 
 export const WorldSchema = z.object({
   id: z.uuid(),

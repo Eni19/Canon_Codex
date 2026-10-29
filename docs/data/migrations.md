@@ -18,7 +18,7 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
 
-## Mundo: v1 → v20
+## Mundo: v1 → v21
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -44,13 +44,17 @@ Registry: `worldMigrations` em
 | 17 | 18 | habilita o vínculo opcional `originEventId`; não atribui um Evento em mundos existentes |
 | 18 | 19 | adiciona `timelineScaleDefaults` por tipo, sem alterar aparições ou datas |
 | 19 | 20 | remove as definições `originLocation` de Personagem e `relatedLocations` de Evento; ordena membros antes dos líderes de Organização e restringe líderes com `optionsFrom: 'members'` |
+| 20 | 21 | remove as definições `profile` (Perfil) e `firstAppearance` (Primeira aparição) de Personagem |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
 da linha do tempo. Mundos v19 também recebem a limpeza das referências no passo v19→v20.
-Essa limpeza altera definições de campos, sem apagar valores dos metadados de entidades.
+Essa limpeza altera definições de campos, sem apagar valores dos metadados de entidades. O mesmo
+vale para v20→v21: valores antigos de `profile` e `firstAppearance` continuam no `metadata.json`
+do personagem até o registro ser salvo de novo; como o formulário só envia campos definidos no
+tipo, salvar o personagem descarta esses valores.
 
-O seed atual já é v20, define 17 tipos e inclui o calendário convencional (meses gregorianos,
+O seed atual já é v21, define 17 tipos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.

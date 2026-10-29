@@ -16,11 +16,6 @@
     "showInSidebar": true,
     "properties": [
       {
-        "key": "profile",
-        "label": "Perfil",
-        "kind": "text"
-      },
-      {
         "key": "age",
         "label": "Idade",
         "kind": "text"
@@ -57,12 +52,6 @@
         "label": "Local de origem",
         "kind": "reference",
         "refType": "location"
-      },
-      {
-        "key": "firstAppearance",
-        "label": "Primeira aparição",
-        "kind": "reference",
-        "refType": "document"
       }
     ]
   },

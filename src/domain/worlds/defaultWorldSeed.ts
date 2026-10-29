@@ -43,14 +43,12 @@ const DEFAULT_ENTITY_TYPES: EntityTypeDefinition[] = [
     layout: portraitLayout,
     showInSidebar: true,
     properties: [
-      { key: 'profile', label: 'Perfil', kind: 'text' },
       { key: 'age', label: 'Idade', kind: 'text' },
       { key: 'species', label: 'Espécie', kind: 'text' },
       { key: 'occupation', label: 'Ocupação', kind: 'text' },
       { key: 'affiliation', label: 'Afiliação', kind: 'reference', refType: 'organization' },
       { key: 'personality', label: 'Personalidade', kind: 'textarea' },
       { key: 'currentLocation', label: 'Local atual', kind: 'reference', refType: 'location' },
-      { key: 'firstAppearance', label: 'Primeira aparição', kind: 'reference', refType: 'document' },
     ],
   },
   {
