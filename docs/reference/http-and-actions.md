@@ -23,7 +23,9 @@ Filtros não reiniciam a câmera; trocar orientação é uma mudança explícita
 
 ### POST /api/assets
 
-Consumidores: src/components/editor/upload-image.ts e upload de mídia do quadro. Recebe
+Consumidores: src/components/editor/upload-image.ts, upload de mídia do quadro e o campo de imagem
+do formulário de entidade (src/components/entities/entity-editor/image-field.tsx), que envia a capa
+ou o símbolo antes de o registro existir. Recebe
 multipart/form-data com campo file.
 
 - 400 {"error":"No file provided"} quando o campo não é arquivo ou está vazio;
@@ -186,22 +188,31 @@ vertical; o mapa usa coordenadas cronológicas calculadas no cliente, sem distâ
 
 ### Entidades e conteúdo
 
-`createEntityAction` resolve o tipo no mundo ativo, exige título e cria o registro; o formulário de
-criação aceita os campos de data do tipo, inclusive a data de Evento. Ao marcar um Evento como
+Criação e edição usam o mesmo formulário (`EntityEditor`) e o mesmo parser
+(`src/services/entities/parseEntityForm.ts`). As duas actions recebem `FormData` e devolvem
+`{ error }` (`EntityFormState`) quando a entrada é inválida ou o repositório recusa a gravação; em
+sucesso redirecionam para `/entity/<id>`. O cliente chama a action numa transição, sem `<form
+action>`, para que o React não limpe os campos ao mostrar o erro.
+
+`createEntityAction` resolve o tipo no mundo ativo, exige título e cria o registro já com todos os
+campos: propriedades, editores estruturados, `coverAssetId`, `symbolAssetId` (cosmologia),
+`coverFraming` (personagem, JSON validado por `CoverFramingSchema`), tema e conteúdo. Ao marcar um Evento como
 origem, `createEntityAction` usa `createOriginEvent`; o repositório exige data exata de dia,
 posiciona-a no ano zero e recusa uma segunda origem. `updateEntityAction`
 converte campos de formulário e, para toda propriedade cujo tipo seja `kind: 'date'`, aceita o objeto
 de calendário ou uma string ISO legada, validando precisão, existência de mês/dia e ordem do intervalo
 antes de gravar. O editor envia valores novos como JSON e valores legados como ISO no campo oculto; a leitura usa o mesmo formatador
 do domínio, inclusive na apresentação especial de Evento e Organização. Strings ISO antigas são
-mantidas como strings quando o registro é salvo. Dados inválidos lançam erro
-de validação da action e não são gravados. Se houver content, a action também salva as páginas Tiptap.
+mantidas como strings quando o registro é salvo. Dados inválidos são devolvidos como `{ error }` e não
+são gravados. Se houver content, a action também salva as páginas Tiptap. Os campos `coverAssetId` e
+`symbolAssetId` distinguem ausente (mantém), vazio (remove) e UUID (define); quando a imagem muda,
+`updateEntityAction` apaga a anterior se nenhum registro a referencia.
 `deleteEntityAction` move a pasta para a lixeira e redireciona ao catálogo.
 
 ### Assets e relações
 
-As ações de capa e símbolo validam arquivo, importam via AssetStore e removem o asset anterior
-quando ele fica sem referências. addRelationAction exige target e tipo e cria uma relação
+Capa e símbolo não têm actions próprias: o arquivo vai para `POST /api/assets` e o ID segue no
+formulário da entidade (ver acima). addRelationAction exige target e tipo e cria uma relação
 direcional ou não; removeRelationAction remove pelo ID da relação.
 
 ### Quadros e cenas

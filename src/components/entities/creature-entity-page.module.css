@@ -20,13 +20,13 @@
 .section :global(.tiptap-content) { font-size:.92rem; line-height:1.75; }
 .visual { position:relative; z-index:1; min-width:0; height:100%; transform:translate(-2.5rem,-1.25rem); }
 .imageFrame { position:absolute; inset:0; }
-.image { object-fit:contain; object-position:right bottom; }
+.image { object-fit:contain; object-position:right bottom; transform-origin:right bottom; }
 .glow { position:absolute; z-index:-1; right:-8%; bottom:4%; width:90%; aspect-ratio:1; background:radial-gradient(circle,color-mix(in oklch,var(--primary) 18%,transparent),transparent 68%); filter:blur(10px); }
 .silhouette { transform:translate(-2.5rem,-3rem); }
 .silhouette .imageFrame { filter:drop-shadow(0 0 20px color-mix(in oklch,var(--primary) 42%,transparent)); }
 .portrait { display:flex; align-items:center; justify-content:flex-end; padding:2.5rem 0 3rem 2rem; }
-.portrait .imageFrame { position:relative; width:min(100%,34rem); height:min(70dvh,46rem); border:.8rem solid #ded8ca; border-bottom-width:3.4rem; background:#171817; box-shadow:1rem 1.3rem 2.2rem rgba(0,0,0,.55); transform:rotate(1.25deg); }
-.portrait .image { object-position:center; }
+.portrait .imageFrame { position:relative; width:min(100%,34rem); height:min(70dvh,46rem); border:.8rem solid #ded8ca; border-bottom-width:3.4rem; background:#171817; box-shadow:1rem 1.3rem 2.2rem rgba(0,0,0,.55); transform:rotate(1.25deg); overflow:hidden; }
+.portrait .image { object-position:center; transform-origin:center; }
 .portrait .imageFrame::before { content:''; position:absolute; z-index:2; inset:.35rem; border:1px solid rgba(255,255,255,.2); pointer-events:none; }
 .photoCaption { position:absolute; z-index:3; right:1.2rem; bottom:3.6rem; width:min(calc(100% - 4rem),31rem); display:flex; justify-content:space-between; gap:1rem; color:#282721; font-family:ui-monospace,SFMono-Regular,monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; transform:rotate(1.25deg); }
 .fallback { display:flex; height:100%; flex-direction:column; align-items:center; justify-content:center; gap:1rem; color:var(--muted-foreground); }

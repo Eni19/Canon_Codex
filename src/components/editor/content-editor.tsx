@@ -14,7 +14,7 @@ const emptyBody: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
 export function ContentEditor({
   content,
   theme,
-  maxPages = 2,
+  maxPages = 5,
   pageNoun = 'página',
 }: {
   content: ContentDocument

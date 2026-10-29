@@ -35,7 +35,6 @@ aplicação. O grupo de rota não aparece na URL.
 | Biblioteca de Codex | `openWorldAction`, `createWorldAction`, `importWorldAction`, `manageWorldAction` | `src/app/actions/worlds.ts` |
 | Calendário do mundo | `updateCalendarAction` | `src/app/actions/calendar.ts` |
 | Entidades e conteúdo | `createEntityAction`, `updateEntityAction`, `deleteEntityAction` | `src/app/actions/entities.ts` |
-| Imagens | `importCoverImageAction`, `importCosmologySymbolAction`, `removeCoverImageAction` | `src/app/actions/assets.ts` |
 | Relações | `addRelationAction`, `removeRelationAction` | `src/app/actions/relations.ts` |
 | Quadros | `createBoardAction`, `deleteBoardAction` | `src/app/actions/boards.ts` |
 | Cenas | `createSceneAction`, `duplicateSceneAction`, `deleteSceneAction` | `src/app/actions/scenes.ts` |
