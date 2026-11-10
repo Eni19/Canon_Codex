@@ -18,48 +18,6 @@ O aplicativo cria um UUID, um slug de diretório único e o catálogo padrão. D
 o mesmo slug recebem sufixos como `-2`; renomear depois muda o nome exibido, não a identidade nem a
 pasta.
 
-## Abrir o atlas de Tal’Dorei Renascido
-
-Na biblioteca, escolha **Abrir Tal’Dorei Renascido completo**. Na primeira abertura, o aplicativo
-importa uma cópia do pacote local em `world-packs/taldorei-renascido-completo/`; nas próximas, abre
-o mesmo mundo sem duplicá-lo. Esta edição tem um UUID diferente do primeiro pacote experimental:
-importá-la preserva as alterações feitas no teste anterior.
-
-O pacote contém 215 registros nos 17 tipos do catálogo padrão, todos visíveis na barra lateral.
-Inclui 13 regiões, 28 assentamentos,
-14 outros locais, 27 organizações ou grupos, 14 povos, 34 registros cosmológicos, 12 eventos,
-11 personagens, 16 criaturas, 11 artefatos e duas linhas do tempo, além de conceitos, contos,
-fenômenos, ciências naturais, casos, evidências e uma pista. Propriedades ligam assentamentos às
-regiões, personagens a organizações e locais, e ganchos de aventura a eventos e lugares. Cada ficha
-mostra sua página de origem. Os 12 eventos têm data e suas informações aparecem em uma única página
-de detalhe. As duas linhas do tempo têm aparições vinculadas a esses eventos. As datas antigas sem
-ano expresso no livro são estimativas para navegação, marcadas como aproximadas; o ano zero da
-Divergência e o cenário em 836 P.D. vêm da cronologia do livro. Ao abrir o atlas novamente, o botão
-preenche datas ausentes e reúne páginas de detalhe dos eventos já importados, preservando datas
-personalizadas e o texto existente.
-
-| Evento sem ano exato no livro | Ano aproximado usado para teste |
-| --- | ---: |
-| Fundação; Cisma; Era do Arcanum; Calamidade | -5000; -4000; -1200; -100 |
-| Guerra Dispersa; ascensão de Zan Tal’Dorei | 500; 510 P.D. |
-| Fim da monarquia; Conclave Croma; derrota d’O Sussurrado | 810; 810; 812 P.D. |
-| Despertar dos serpentinos Vos’skyriss | 836 P.D. |
-
-Esses anos são hipóteses de ordenação, não datas canônicas. A rotina de atualização corrige a
-estimativa anterior de 816 P.D. para o Conclave Croma, de modo que ele preceda a derrota
-d’O Sussurrado.
-
-Quinze documentos de referência guardam o texto extraído de todas as 284 páginas do PDF, em ordem.
-Eles incluem história, panteão, opções de personagem, tesouros, regras e criaturas, além da gazeta.
-A extração de texto não preserva mapas, ilustrações, diagramação e todo o significado de tabelas; o
-PDF original continua sendo a referência para esses elementos. As fichas não têm fotos, para que
-possam ser adicionadas depois. O calendário do pacote usa os 11 meses e 328 dias descritos no livro.
-
-Para reconstruir o pacote com outra cópia da mesma edição, execute
-`python scripts/build-taldorei-world.py "CAMINHO_DO_PDF"` com Python e `pypdf` disponíveis. A saída
-fica fora de `workspace/`; o aplicativo só copia o pacote quando o usuário clica para abri-lo. O
-catálogo de tipos usado pelo gerador está em `scripts/taldorei-entity-types.json`.
-
 ## Configurar o calendário
 
 Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite editar:

@@ -2,9 +2,7 @@
 
 Cosmic Canvas (15/10/2026): cinco testes novos em timelineCanvas.test.ts cobrem 500 coordenadas
 sem sobreposição, âncora de zoom nos limites, pinch com translação, enquadramento/culling e
-preservação das posições ao filtrar. Suíte completa: **137 passaram e 1 falhou**, a mesma asserção
-preexistente de Tal’Dorei (49 relações, expectativa >100). Os 36 testes relevantes de timeline
-passaram. Ensaios de navegador usam somente dados sintéticos e o harness opt-in
+preservação das posições ao filtrar. Os 36 testes relevantes de timeline passaram. Ensaios de navegador usam somente dados sintéticos e o harness opt-in
 scripts/timeline-canvas-profile.html; nove checks de gestos/filtros passaram em desktop, mobile e tablet.
 Medições, regressões manuais e limites estão no [perfil atual](performance/timeline-cosmic-canvas.md).
 Os parágrafos TL-10/TL-11/TL-12 abaixo registram verificações históricas da interface anterior.
@@ -12,8 +10,8 @@ Os parágrafos TL-10/TL-11/TL-12 abaixo registram verificações históricas da 
 TL-12 acrescenta cinco testes em `timeline-motion.test.ts` para movimento reduzido, navegação
 instantânea, ausência da API de animação, cancelamento durante saída e limpeza de listeners.
 Os 31 testes relevantes de linhas do tempo passaram. TypeScript, ESLint de `src/` e `scripts/`
-e build de produção passaram. A suíte completa em 14/10/2026 teve 132 aprovações e a mesma
-falha preexistente em `taldoreiPack.test.ts:49` (49 relações, expectativa maior que 100).
+e build de produção passaram. A suíte completa em 14/10/2026 registrou uma falha fora do escopo
+do TL-12; esse resultado é histórico e não descreve o estado atual da suíte.
 O [perfil TL-12](performance/timeline-motion-tl12.md) registra referências, dados sintéticos,
 medidas de quadros em produção e verificação visual desktop/móvel, com limites explícitos.
 O gerador visual é opt-in e usa um diretório temporário validado; não integra a suíte normal.
@@ -27,8 +25,8 @@ limpeza do vínculo de origem sem alterar o calendário, isolamento entre mundos
 e rejeição de metadados inválidos/ausentes e falhas de acesso antes de qualquer limpeza.
 Também verifica retomada de gravação interrompida entre arquivos sem regravar linhas já limpas.
 Em 14/10/2026, TypeScript e ESLint dos arquivos de código alterados passaram; suíte completa:
-127 testes passaram e 1 falhou em `taldoreiPack.test.ts:49` (pacote contém 49 relações, expectativa
-maior que 100). Essa asserção lê diretamente o pacote e não executa a reconciliação do TL-10.
+O registro histórico daquela execução inclui uma falha fora do escopo do TL-10; ele não descreve
+o estado atual da suíte.
 
 As regressões da revisão do TL-10 também verificam nova origem após descarte, sem navegação
 intermediária, e busca global/mundo acessíveis com uma linha corrompida. TL-11 acrescenta

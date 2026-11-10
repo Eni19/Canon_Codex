@@ -30,10 +30,6 @@ Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo s
 `Canon Codex` quando ainda não existe `workspace/worlds/`. Para uma instalação isolada, veja
 [Configuração](docs/reference/configuration.md).
 
-Na biblioteca, **Abrir Tal’Dorei Renascido completo** copia e abre o atlas local preparado a partir do PDF
-fornecido pelo usuário. Veja o [guia de mundos](docs/user-guide/worlds.md#abrir-o-atlas-de-taldorei-renascido)
-para escopo e limites da extração.
-
 Comandos disponíveis:
 
 ```bash

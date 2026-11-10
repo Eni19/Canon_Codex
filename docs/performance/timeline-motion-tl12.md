@@ -127,9 +127,8 @@ da entrega e não faz parte das rotas do produto.
 ## Qualidade e limites
 
 31 testes relevantes passaram, incluindo cinco novos testes de movimento. TypeScript, lint de
-`src/` e `scripts/` e build de produção passaram. A suíte completa teve **132 testes aprovados
-e uma falha preexistente** em `taldoreiPack.test.ts:49`: 49 relações no pacote, expectativa maior
-que 100. O TL-12 não altera esse pacote nem sua asserção.
+`src/` e `scripts/` e build de produção passaram. O registro histórico da suíte completa inclui
+uma falha fora do escopo do TL-12; ele não descreve o estado atual da suíte.
 
 Não houve teste em celular físico, auditoria completa WCAG, trace de GPU ou emulação visual da
 preferência de movimento do sistema: essa preferência foi verificada nos testes de cancelamento

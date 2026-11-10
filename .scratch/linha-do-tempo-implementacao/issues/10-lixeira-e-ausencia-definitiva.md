@@ -20,10 +20,8 @@ lixeira; verificação visual manual não realizada neste ticket. A limpeza é a
 idempotente, sem backup automático ou transação multi-arquivo. README, PROJECT, ADR-001 e guias
 de dados, backup, arquitetura, contratos, entidades, linhas e testes foram atualizados.
 
-**Validação:** TypeScript e ESLint dos arquivos alterados passaram. Suíte completa: 120 testes
-passaram, 1 falhou em `taldoreiPack.test.ts:49` (49 relações no pacote, expectativa >100).
-Essa asserção lê diretamente o pacote e não executa a reconciliação do TL-10. Os quatro testes
-novos passaram. Os runners foram executados diretamente por Node, pois o wrapper pnpm tentou
+**Validação:** TypeScript e ESLint dos arquivos alterados passaram. A execução histórica da suíte
+teve uma falha fora do escopo do TL-10. Os quatro testes novos passaram. Os runners foram executados diretamente por Node, pois o wrapper pnpm tentou
 reinstalar dependências e abortou por ausência de TTY.
 
 **Correções da revisão (14/10/2026):** `getWorld` volta a consultar somente metadados, para que

@@ -119,12 +119,6 @@ exclusão. O seed padrão é criado lazily por `worldDirRegistry` quando `worksp
 existe. Criar um mundo gera slug único, mantém UUID e escreve `world.json`. Renomear muda somente o
 nome exibido e `updatedAt`; o diretório/slug não muda. Importar copia uma pasta inteira, ajusta slug
 em colisão de diretório, mas rejeita IDs de mundo já existentes ou repetidos na mesma importação.
-`openTaldoreiWorldAction` usa o mesmo importador para copiar o pacote versionado em
-`world-packs/taldorei-renascido-completo/` na primeira abertura; depois seleciona o UUID já importado.
-`normalizeTaldoreiEvents` completa datas faltantes e reúne páginas de conteúdo dos eventos desse
-pacote ao reabri-lo. A rotina mantém datas editadas pelo usuário e sincroniza aparições sem data nas
-linhas do tempo; corrige apenas a estimativa antiga de 816 P.D. para o Conclave Croma.
-
 As Server Actions selecionam o mundo por cookie HttpOnly `canon-codex-world`, SameSite `lax`,
 caminho `/` e duração de um ano. Excluir o mundo ativo escolhe outro mundo disponível ou apaga o
 cookie.

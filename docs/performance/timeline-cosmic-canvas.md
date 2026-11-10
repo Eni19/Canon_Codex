@@ -99,8 +99,7 @@ ou aplicação entregue ao produto.
 
 Build Next 16.3.4 de produção e TypeScript passaram. ESLint de src/ e scripts/ passou. Os 36 testes
 de linha do tempo passaram, incluindo cinco de câmera/geometria (500 cartões, ambas as orientações).
-Suíte completa: 137 aprovações e uma falha preexistente em taldoreiPack.test.ts:49, que espera mais
-de 100 relações e encontra 49. Essa falha não exercita o canvas.
+O registro histórico da suíte completa inclui uma falha fora do escopo do canvas.
 
 Foram atualizados guia, README, PROJECT, glossário, ADR-005, arquitetura, referência de URL/actions,
 testes e trabalho registrado. Perfis/especificação antigos foram identificados como históricos.

@@ -114,8 +114,8 @@ Formulários não salvos são descartados ao fechar o editor.
 Os testes de paginação percorrem as dez páginas e verificam os 500 IDs, intervalos, ordem, filtros,
 URLs, casos vazios e limites inválidos. Os testes de regressão do TL-10 confirmam nova origem após
 descarte sem navegação intermediária e busca global disponível com linha corrompida. Suíte completa:
-127 testes passaram e 1 falhou no pacote Tal’Dorei (`taldoreiPack.test.ts:49`: 49 relações, expectativa
-maior que 100), fora deste fluxo. ESLint de `src/` e `scripts/` passou.
+O registro histórico da suíte completa inclui uma falha fora deste fluxo. ESLint de `src/` e
+`scripts/` passou.
 Na checagem final, os testes relacionados passaram, assim como TypeScript e ESLint.
 
 Não houve alteração de schema ou versão persistida, portanto nenhuma migração de dados é

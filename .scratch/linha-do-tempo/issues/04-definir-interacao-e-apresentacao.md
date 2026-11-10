@@ -13,7 +13,7 @@ Definir o trajeto completo de adicionar, remover e editar cartões, inclusive ar
 ### Esboço para discussão
 
 ```text
-Linha: A história de Tal'Dorei                 [Editar linha] [Calendário]
+Linha: História do mundo                 [Editar linha] [Calendário]
 [Vertical | Horizontal] [Século - Década - Ano - Mês - Dia] [Categorias] [Buscar]
 154 itens na linha · 38 visíveis · 116 ocultos por escala/filtro
 
