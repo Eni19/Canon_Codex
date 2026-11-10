@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { coverFramingTransform, DEFAULT_COVER_FRAMING, type CoverFraming } from '@/domain/entities/coverFraming'
 
 /**
  * Large, frameless portrait (object-cover, top-anchored so the bottom crops rather than shrinking
@@ -8,16 +9,19 @@ import { assetVariantUrl } from '@/lib/assetUrl'
  * transparent-background character art. See .agents/skills/design-inspiration/style-notes.md.
  *
  * The rim light is applied outside the image crop, so only the art is clipped and the glow
- * can fade naturally beyond the portrait column.
+ * can fade naturally beyond the portrait column. `framing` moves/zooms the art inside that crop;
+ * its default is the original top-anchored 1.4× presentation.
  */
 export function PortraitHero({
   coverAssetId,
   fallbackIcon,
   className = 'h-[28rem] sm:h-[34rem]',
+  framing = DEFAULT_COVER_FRAMING,
 }: {
   coverAssetId?: string
   fallbackIcon: string
   className?: string
+  framing?: CoverFraming
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -27,9 +31,9 @@ export function PortraitHero({
         style={{
           // The glow div has its own fixed width/height and is centered via transform, not via
           // `inset` percentages of the parent — so its size can never be read as "limited by the
-          // column width". A bare `circle` (no explicit radius) sizes itself to the div's own
-          // box (farthest-side), so it's always a perfect, fully self-contained circle.
-          background: 'radial-gradient(circle, color-mix(in oklch, var(--primary) 18%, transparent), transparent 100%)',
+          // column width". `closest-side` makes the circle end exactly at the div's edges; a bare
+          // `circle` defaults to farthest-corner and gets cut into a visible square by the box.
+          background: 'radial-gradient(circle closest-side, color-mix(in oklch, var(--primary) 18%, transparent), transparent 100%)',
         }}
       />
 
@@ -48,7 +52,10 @@ export function PortraitHero({
               fill
               sizes="100vw"
               quality={90}
-              className="relative z-10 origin-top object-cover object-top scale-[1.4]"
+              className="relative z-10 origin-top object-cover object-top"
+              style={{ transform: coverFramingTransform(framing) }}
+              data-framing-target
+              draggable={false}
               unoptimized
               priority
             />

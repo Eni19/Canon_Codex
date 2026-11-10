@@ -2,15 +2,18 @@
 
 ## Selecionar um Codex
 
-Abra `/`. A biblioteca lista os mundos encontrados em `WIKI_WORKSPACE_DIR` e marca o ativo. Clique
-no nome de um mundo para gravar o cookie `canon-codex-world` e abrir `/codex`.
+Abra `/`. A biblioteca lista os mundos encontrados em `WIKI_WORKSPACE_DIR`: o mundo ativo aparece em
+destaque, com o botão **Continuar**, e os demais ficam em **Outros mundos**, do atualizado mais
+recentemente ao mais antigo. Escolha **Continuar** ou clique no nome de um mundo para gravar o cookie
+`canon-codex-world` e abrir `/codex`. A barra lateral da biblioteca reúne as ações **Criar Codex**,
+**Carregar pasta** e os atlas incluídos.
 
 Se não houver mundo, a primeira leitura cria automaticamente o seed `Canon Codex` com 17 tipos
 iniciais.
 
 ## Criar um mundo
 
-1. Na biblioteca, escolha **Criar Codex**.
+1. Na barra lateral da biblioteca, escolha **Criar Codex**.
 2. Informe um nome não vazio e, opcionalmente, uma descrição.
 3. Escolha **Criar e abrir**.
 
@@ -70,7 +73,7 @@ uma alteração feita na tela grava o calendário validado de forma atômica.
 
 ## Importar uma pasta
 
-1. Selecione **Carregar pasta**.
+1. Na barra lateral da biblioteca, selecione **Carregar pasta**.
 2. Informe uma pasta que contenha `world.json` ou a raiz de outro Canon Codex. Também são
    reconhecidos `workspace/worlds/` e `worlds/` dentro da pasta escolhida.
 3. Use uma cópia privada ou um backup; a aplicação copia a fonte para sua biblioteca e não move a
@@ -83,7 +86,7 @@ de slug, o diretório de destino recebe um sufixo; o `World.id` permanece o mesm
 
 ## Renomear e remover
 
-1. Na linha do mundo, abra **Gerenciar**.
+1. Na linha do mundo (ou no destaque do mundo ativo), abra **Gerenciar** (ícone de ajustes).
 2. Edite o nome e salve para renomear.
 3. Para remover, confirme **Excluir**.
 

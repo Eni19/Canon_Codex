@@ -308,6 +308,17 @@ export const worldMigrations: MigrationRegistry = {
         return { ...type, properties: leadersIndex < 0 ? [...others, ...members] : [...others.slice(0, leadersIndex), ...members, ...others.slice(leadersIndex)] }
       }),
     }),
+    // Character form no longer asks for profile or first appearance. Like v19→v20, only the type
+    // changes; stored values stay in the entity files until the record is saved again.
+    20: (data) => ({
+      ...data,
+      schemaVersion: 21,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map((type) =>
+        type.id === 'character'
+          ? { ...type, properties: type.properties.filter((property) => property.key !== 'profile' && property.key !== 'firstAppearance') }
+          : type,
+      ),
+    }),
   },
 }
 export const entityMigrations: MigrationRegistry = {

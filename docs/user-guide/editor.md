@@ -14,7 +14,7 @@ Na edição de uma entidade:
 4. exclua a página ativa somente quando existir outra;
 5. salve o formulário da entidade.
 
-O limite visual é de duas páginas para a maioria dos tipos, uma para conceitos e 50 para contos.
+O limite visual é de cinco páginas para a maioria dos tipos, uma para conceitos e 50 para contos.
 Esses limites são da tela; o schema de conteúdo aceita de 1 a 50 páginas.
 
 ## Datas do calendário do mundo

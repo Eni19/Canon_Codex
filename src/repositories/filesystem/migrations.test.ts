@@ -37,12 +37,15 @@ describe('character profile migration', () => {
     expect(migrated).toEqual(world)
   })
 
-  it('preserves an existing custom profile definition', () => {
-    const world = createDefaultWorldSeed()
+  it('preserves an existing custom profile definition in the v1→v2 step', () => {
+    // A copy: the seed shares objects between calls, so mutating it would leak into other tests.
+    const world = structuredClone(createDefaultWorldSeed())
+    const custom = { key: 'profile', label: 'Perfil', kind: 'enum' as const, options: ['Analista'] }
     const character = world.entityTypes.find((type) => type.id === 'character')!
-    character.properties[0] = { key: 'profile', label: 'Perfil', kind: 'enum', options: ['Analista'] }
-    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...world, schemaVersion: 1 }))
-    expect(migrated).toEqual(world)
+    character.properties.unshift(custom)
+    const step = worldMigrations.migrations[1]({ ...world, schemaVersion: 1 }) as typeof world
+    const profiles = step.entityTypes.find((type) => type.id === 'character')!.properties.filter((property) => property.key === 'profile')
+    expect(profiles).toEqual([custom])
   })
 })
 
@@ -226,5 +229,23 @@ describe('card picker reference cleanup migration', () => {
     expect(keys('event')).not.toContain('relatedLocations')
     expect(keys('organization').indexOf('members')).toBeLessThan(keys('organization').indexOf('leaders'))
     expect(migrated.entityTypes.find((type) => type.id === 'organization')!.properties.find((property) => property.key === 'leaders')?.optionsFrom).toBe('members')
+  })
+
+  it('removes profile and first appearance from the character type', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = {
+      ...world,
+      schemaVersion: 20,
+      entityTypes: world.entityTypes.map((type) => type.id === 'character'
+        ? { ...type, properties: [{ key: 'profile', label: 'Perfil', kind: 'text' as const }, ...type.properties, { key: 'firstAppearance', label: 'Primeira aparição', kind: 'reference' as const, refType: 'document' }] }
+        : type),
+    }
+
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const character = migrated.entityTypes.find((type) => type.id === 'character')!
+
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+    expect(character.properties.map((property) => property.key)).toEqual(world.entityTypes.find((type) => type.id === 'character')!.properties.map((property) => property.key))
+    expect(migrated.entityTypes.find((type) => type.id === 'document')).toEqual(world.entityTypes.find((type) => type.id === 'document'))
   })
 })

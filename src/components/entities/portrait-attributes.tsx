@@ -76,22 +76,61 @@ export function PortraitAttributes({ children, attributes }: { children: ReactNo
         <span className={styles.attributeHint}>Atributos</span>
       </button>
       <section ref={panelRef} id={id} aria-label="Atributos do personagem" aria-hidden={!open} inert={!open} data-open={open} className={styles.attributePanel}>
-        <h2 data-attribute-item className={styles.attributeTitle}>Atributos</h2>
-        <dl className={styles.attributeList}>
-          {attributes.map((attribute) => (
-            <div key={attribute.key} data-attribute-item className={styles.attributeRow}>
-              <dt>{attribute.label}</dt>
-              <dd>
-                {attribute.href ? (
-                  <Link href={attribute.href} className={styles.attributeValue}>{attribute.value}</Link>
-                ) : (
-                  <span className={attribute.value.length <= 3 ? styles.attributeDiamond : styles.attributeValue}>{attribute.value}</span>
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <PortraitAttributeList attributes={attributes}/>
       </section>
     </div>
   )
+}
+
+/**
+ * Attributes as a sheet block in the page's side column (the character page uses this), in the
+ * same language as the summary beside the name: small labels, large serif values, an amber rule.
+ * Aliases read as a sentence-like line below the stats instead of another cell.
+ */
+export function PortraitAttributesCard({ attributes }: { attributes: PortraitAttribute[] }) {
+  const aliases = attributes.find((attribute) => attribute.key === 'aliases')
+  const stats = attributes.filter((attribute) => attribute.key !== 'aliases')
+
+  // Entrance comes from the page's StaggerReveal; items carry their place in its sequence.
+  return (
+    <section aria-label="Atributos do personagem" data-reveal-item={2} className={styles.attributeCard}>
+      <dl className={styles.attributeStats}>
+        {stats.map((attribute) => (
+          <div key={attribute.key} className={styles.attributeStat}>
+            <dt>{attribute.label}</dt>
+            <dd data-empty={attribute.value === '—'}>
+              {attribute.href ? <Link href={attribute.href}>{attribute.value}</Link> : attribute.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {aliases && aliases.value !== '—' && (
+        <p className={styles.attributeAliases}>
+          <span>Outros nomes</span>
+          {aliases.value.split(',').map((alias) => alias.trim()).filter(Boolean).join(' · ')}
+        </p>
+      )}
+    </section>
+  )
+}
+
+/** Slanted title, stepped rows and diamond chips for short values; shared by panel and card. */
+function PortraitAttributeList({ attributes }: { attributes: PortraitAttribute[] }) {
+  return <>
+    <h2 data-attribute-item className={styles.attributeTitle}>Atributos</h2>
+    <dl className={styles.attributeList}>
+      {attributes.map((attribute) => (
+        <div key={attribute.key} data-attribute-item className={styles.attributeRow}>
+          <dt>{attribute.label}</dt>
+          <dd>
+            {attribute.href ? (
+              <Link href={attribute.href} className={styles.attributeValue}>{attribute.value}</Link>
+            ) : (
+              <span className={attribute.value.length <= 3 ? styles.attributeDiamond : styles.attributeValue}>{attribute.value}</span>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </>
 }

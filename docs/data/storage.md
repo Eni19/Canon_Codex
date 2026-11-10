@@ -134,6 +134,18 @@ no schema geral; os campos estruturados desses tipos são validados pelas açõe
 `LocationPointsSchema`, `EvidenceFindingsSchema`, `OrganizationGroupsSchema`, `ArtifactDetailsSchema`
 e `ConceptBlocksSchema`.
 
+Tipos com retrato (layout `portraitHero`, hoje Personagem) e Criatura podem ter
+`properties.coverFraming` `{ x, y, scale }`, validado por `CoverFramingSchema`
+([`coverFraming.ts`](../../src/domain/entities/coverFraming.ts)): `x`/`y` deslocam a imagem em
+porcentagem da moldura (−100 a 100) e `scale` vai de 0,5 a 3, a partir do ponto em que cada página
+ancora a imagem (`transform-origin`: topo central no Personagem; canto inferior direito no
+Contorno e centro no Retrato da Criatura). A chave é opcional e só é gravada quando difere do
+padrão do tipo (`defaultCoverFraming`): `{ x: 0, y: 0, scale: 1.4 }` no Personagem e
+`{ x: 0, y: 0, scale: 1 }` na Criatura, que reproduzem a apresentação original; registros
+antigos sem a chave não precisam de migração. Na Criatura o enquadramento é um só para os dois
+modos de apresentação, e o modo Retrato recorta a imagem na moldura de foto. Trocar ou remover a
+imagem no editor volta o enquadramento ao padrão.
+
 ## Leitura, escrita e inválidos
 
 - Mundo, entidade, conteúdo e asset são lidos por `readMigratedJson`: JSON é parseado, migrações

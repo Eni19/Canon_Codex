@@ -7,6 +7,7 @@ import { ArrowRight, FolderTree, Search, SlidersHorizontal } from 'lucide-react'
 import { EntityCard } from '@/components/entities/entity-card'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import { buildLocationTree, filterLocationTree, type LocationNode } from '@/domain/entities/locationTree'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { cn } from '@/lib/utils'
 import styles from './entity-catalog.module.css'
@@ -167,57 +168,36 @@ function LocationHierarchy({
   searching: boolean
   entityType: EntityTypeDefinition
 }) {
-  const byId = new Map(entities.map((entity) => [entity.id, entity]))
-  const children = new Map<string, Entity[]>()
-  for (const entity of entities) {
-    const parentId = referenceId(entity.properties.parentLocation)
-    if (parentId && parentId !== entity.id && byId.has(parentId)) {
-      children.set(parentId, [...(children.get(parentId) ?? []), entity])
-    }
-  }
-  for (const list of children.values()) list.sort((a, b) => collator.compare(a.title, b.title))
-
-  const roots = entities
-    .filter((entity) => {
-      const parentId = referenceId(entity.properties.parentLocation)
-      return !parentId || parentId === entity.id || !byId.has(parentId)
-    })
-    .sort((a, b) => collator.compare(a.title, b.title))
-
-  function descendants(root: Entity) {
-    const result: Array<{ entity: Entity; path: string[] }> = []
-    const visited = new Set([root.id])
-    function visit(parent: Entity, path: string[]) {
-      for (const child of children.get(parent.id) ?? []) {
-        if (visited.has(child.id)) continue
-        visited.add(child.id)
-        result.push({ entity: child, path })
-        visit(child, [...path, child.title])
-      }
-    }
-    visit(root, [root.title])
-    return result
-  }
-
-  const regions = roots.map((root) => {
-    const nested = descendants(root)
-    const rootMatches = filteredIds.has(root.id)
-    const visible = searching && !rootMatches ? nested.filter(({ entity }) => filteredIds.has(entity.id)) : nested
-    return { root, nested: visible, visible: !searching || rootMatches || visible.length > 0 }
-  }).filter((region) => region.visible)
+  const tree = buildLocationTree(entities, (entity) => referenceId(entity.properties.parentLocation), (a, b) => collator.compare(a.title, b.title))
+  const regions = searching ? filterLocationTree(tree, (entity) => filteredIds.has(entity.id)) : tree
 
   return <div className={styles.regionList}>
-    {regions.map(({ root, nested }) => <section key={root.id} className={styles.region}>
-      <header className={styles.regionHeader}>
-        <span className={styles.regionCover}>
-          {root.coverAssetId ? <Image src={assetVariantUrl(root.coverAssetId, 'thumbnail')} alt="" fill sizes="112px" className="object-cover" unoptimized /> : <FolderTree />}
-        </span>
-        <span><small>Região pai</small><strong>{root.title}</strong></span>
-        <Link href={`/entity/${root.id}`}>Abrir região<ArrowRight /></Link>
-      </header>
-      {nested.length > 0 ? <div className={cn(styles.grid, styles.regionGrid)}>
-        {nested.map(({ entity, path }) => <EntityCard key={entity.id} entity={entity} entityType={entityType} contextLabel={`Sub-região · ${path.join(' › ')}`} />)}
-      </div> : <p className={styles.noChildren}>Nenhuma sub-região cadastrada.</p>}
-    </section>)}
+    {regions.map((node) => <RegionDivision key={node.item.id} node={node} entityType={entityType} />)}
   </div>
+}
+
+/**
+ * One division per location that has sublocations. Children without their own sublocations are
+ * cards; children with sublocations become nested divisions, so each level lives in its parent.
+ */
+function RegionDivision({ node, entityType, parentTitle }: { node: LocationNode<Entity>; entityType: EntityTypeDefinition; parentTitle?: string }) {
+  const { item: region, children } = node
+  const leaves = children.filter((child) => child.children.length === 0)
+  const branches = children.filter((child) => child.children.length > 0)
+  const nested = Boolean(parentTitle)
+
+  return <section className={nested ? styles.subregion : styles.region}>
+    <header className={cn(styles.regionHeader, nested && styles.subregionHeader)}>
+      <span className={styles.regionCover}>
+        {region.coverAssetId ? <Image src={assetVariantUrl(region.coverAssetId, 'thumbnail')} alt="" fill sizes="112px" className="object-cover" unoptimized /> : <FolderTree />}
+      </span>
+      <span><small>{nested ? `Sub-região de ${parentTitle}` : 'Região pai'}</small><strong>{region.title}</strong></span>
+      <Link href={`/entity/${region.id}`}>{nested ? 'Abrir sub-região' : 'Abrir região'}<ArrowRight /></Link>
+    </header>
+    {leaves.length > 0 && <div className={cn(styles.grid, styles.regionGrid)}>
+      {leaves.map(({ item }) => <EntityCard key={item.id} entity={item} entityType={entityType} contextLabel={`Sub-região · ${region.title}`} />)}
+    </div>}
+    {branches.map((branch) => <RegionDivision key={branch.item.id} node={branch} entityType={entityType} parentTitle={region.title} />)}
+    {children.length === 0 && <p className={styles.noChildren}>Nenhuma sub-região cadastrada.</p>}
+  </section>
 }
