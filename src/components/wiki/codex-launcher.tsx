@@ -2,7 +2,7 @@
 
 import { useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 import { useFormStatus } from 'react-dom'
-import { ArrowRight, FolderInput, HardDrive, Loader2, Plus, Settings2 } from 'lucide-react'
+import { ArrowRight, FolderInput, Globe, HardDrive, Loader2, Plus, Settings2, Sparkles } from 'lucide-react'
 import { openWorldAction } from '@/app/actions/worlds'
 import type { World } from '@/domain/worlds/world'
 import { Button } from '@/components/ui/button'
@@ -50,36 +50,68 @@ export function CodexLauncher({ worlds, activeWorldId }: { worlds: World[]; acti
     </aside>
 
     <main className="min-w-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-4xl px-12 py-14">
-        <header>
-          <h1 className="text-4xl font-medium tracking-tight">Seus mundos</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {worlds.length === 1 ? 'Um mundo na biblioteca.' : `${worlds.length} mundos na biblioteca.`} Escolha um para abrir.
-          </p>
-        </header>
+      {worlds.length === 0
+        ? <EmptyLibrary onCreate={() => setPanel('create')} onImport={() => setPanel('import')}/>
+        : <div className="mx-auto max-w-4xl px-12 py-14">
+            <header>
+              <h1 className="text-4xl font-medium tracking-tight">Seus mundos</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {worlds.length === 1 ? 'Um mundo na biblioteca.' : `${worlds.length} mundos na biblioteca.`} Escolha um para abrir.
+              </p>
+            </header>
 
-        {active && <ActiveWorld world={active} onManage={() => setManagedWorld(active)}/>}
+            {active && <ActiveWorld world={active} onManage={() => setManagedWorld(active)}/>}
 
-        <section className="mt-14" aria-labelledby="other-worlds">
-          <h2 id="other-worlds" className="text-xl font-medium">Outros mundos</h2>
-          {others.length > 0
-            ? <ul className="mt-4 border-t border-border">
-                {others.map((world, index) => <WorldRow key={world.id} world={world} index={index} onManage={() => setManagedWorld(world)}/>)}
-              </ul>
-            : <div className={cn('mt-4 flex items-center justify-between gap-6 rounded-lg bg-surface px-6 py-5', enter)} style={stagger(1)}>
-                <p className="text-sm text-muted-foreground">Nenhum outro mundo por enquanto. Comece um do zero ou traga uma pasta de outro Codex.</p>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="outline" onClick={() => setPanel('import')}><FolderInput/>Carregar pasta</Button>
-                  <Button onClick={() => setPanel('create')}><Plus/>Criar Codex</Button>
-                </div>
-              </div>}
-        </section>
-      </div>
+            <section className="mt-14" aria-labelledby="other-worlds">
+              <h2 id="other-worlds" className="text-xl font-medium">Outros mundos</h2>
+              {others.length > 0
+                ? <ul className="mt-4 border-t border-border">
+                    {others.map((world, index) => <WorldRow key={world.id} world={world} index={index} onManage={() => setManagedWorld(world)}/>)}
+                  </ul>
+                : <div className={cn('mt-4 flex items-center justify-between gap-6 rounded-lg bg-surface px-6 py-5', enter)} style={stagger(1)}>
+                    <p className="text-sm text-muted-foreground">Nenhum outro mundo por enquanto. Comece um do zero ou traga uma pasta de outro Codex.</p>
+                    <div className="flex shrink-0 gap-2">
+                      <Button variant="outline" onClick={() => setPanel('import')}><FolderInput/>Carregar pasta</Button>
+                      <Button onClick={() => setPanel('create')}><Plus/>Criar Codex</Button>
+                    </div>
+                  </div>}
+            </section>
+          </div>}
     </main>
 
     <CreateWorldDialog open={panel === 'create'} onOpenChange={(open) => setPanel(open ? 'create' : null)}/>
     <ImportWorldDialog open={panel === 'import'} onOpenChange={(open) => setPanel(open ? 'import' : null)}/>
     {managedWorld && <WorldManageDialog world={managedWorld} onClose={() => setManagedWorld(null)}/>}
+  </div>
+}
+
+function EmptyLibrary({ onCreate, onImport }: { onCreate: () => void; onImport: () => void }) {
+  return <div className="mx-auto flex min-h-full max-w-4xl items-center justify-center px-6 py-12 sm:px-12">
+    <section aria-labelledby="empty-library-title" className={cn('w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-surface text-center shadow-sm', enter)}>
+      <div className="relative isolate overflow-hidden px-6 py-12 sm:px-12 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_65%)]" aria-hidden/>
+        <div className="relative mx-auto mb-7 grid size-24 place-items-center rounded-full border border-primary/20 bg-primary/5 shadow-[0_0_56px_color-mix(in_oklch,var(--primary)_12%,transparent)]">
+          <Globe className="size-11 stroke-[1.25] text-primary" aria-hidden/>
+          <span className="absolute right-1 top-2 grid size-7 place-items-center rounded-full border border-border bg-surface text-primary shadow-sm">
+            <Sparkles className="size-3.5" aria-hidden/>
+          </span>
+        </div>
+
+        <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">Sua biblioteca começa aqui</p>
+        <h1 id="empty-library-title" className="mx-auto mt-4 max-w-lg font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">
+          Um universo inteiro à sua espera.
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Crie seu primeiro Codex para reunir personagens, lugares e histórias em um só lugar.
+        </p>
+
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button size="lg" onClick={onCreate} className="gap-2 px-4"><Plus/>Criar primeiro Codex</Button>
+          <Button size="lg" variant="outline" onClick={onImport} className="gap-2 px-4"><FolderInput/>Carregar pasta</Button>
+        </div>
+        <p className="mt-6 text-xs text-muted-foreground">Seus mundos ficam salvos em pastas locais no seu dispositivo.</p>
+      </div>
+    </section>
   </div>
 }
 

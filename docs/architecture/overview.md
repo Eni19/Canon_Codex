@@ -7,7 +7,8 @@ ficam nos [ADRs](.) e não são repetidas aqui.
 
 ```text
 src/app/                         entrada HTTP e navegação Next App Router
-  (wiki)/                        biblioteca, calendário, catálogos e telas de edição/leitura
+  page.tsx                       biblioteca de mundos, independente de mundo ativo
+  (wiki)/                        calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
 src/components/                  UI client/server, Tiptap, tldraw e projeção

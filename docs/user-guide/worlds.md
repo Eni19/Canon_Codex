@@ -8,7 +8,9 @@ recentemente ao mais antigo. Escolha **Continuar** ou clique no nome de um mundo
 `canon-codex-world` e abrir `/codex`. A barra lateral da biblioteca reúne as ações **Criar Codex**,
 **Carregar pasta** e os atlas incluídos.
 
-Se não houver mundo, a primeira leitura cria automaticamente o seed `Canon Codex` com 17 tipos
+Se não houver mundo, `/` ainda abre a biblioteca sem exigir um mundo ativo. Use **Criar Codex**
+ou **Carregar pasta** no estado vazio para começar. Em uma instalação na qual `workspace/worlds/`
+ainda não existe, a primeira leitura cria automaticamente o seed `Canon Codex` com 17 tipos
 iniciais.
 
 ## Criar um mundo
