@@ -38,6 +38,14 @@ isso e que a futura migração para S3/R2/Supabase Storage não exija reescrever
 
 ## Consequências
 
+### Atualização: fundos do calendário (12/11/2026)
+
+Temas personalizados guardam `backgroundAssetId` no mundo. O upload dedicado valida mundo, tipo,
+8 MB e 40 milhões de pixels, e `AssetStore` gera variantes WebP de até 768 e 1600 px, resolvidas pelo
+mesmo Route Handler. A seleção responsiva usa a largura da tela e conserva um fundo de cor se o arquivo
+não estiver disponível. A exclusão lógica de assets verifica todas as referências dos temas sob o
+mesmo lock do mundo. A cópia é criada ao escolher o arquivo; remover a referência não apaga o asset.
+
 - Toda leitura de imagem passa por um Route Handler (custo pequeno de uma chamada HTTP a mais por
   imagem). O handler é um ponto futuro possível para controle de acesso/publicação seletiva, mas
   esse controle ainda não existe.

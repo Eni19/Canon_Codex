@@ -6,6 +6,12 @@ import { EntityPatchSchema, EntitySchema, ENTITY_SCHEMA_VERSION, NewEntityInputS
 import { NewRelationInputSchema, RelationSchema, type NewRelationInput, type Relation } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
 import { CalendarSchema, changesCalendarStructure } from '@/domain/worlds/calendar'
+import { CalendarMoonsSchema, validateCalendarMoon, type CalendarMoon } from '@/domain/worlds/calendar-moon'
+import { validateCalendarSeasons, type CalendarSeason } from '@/domain/worlds/calendar-season'
+import { CalendarExactDateSchema, exactDateToOrdinal, type CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
+import { validateCalendarLandmarks, type CalendarLandmarks } from '@/domain/worlds/calendar-landmarks'
+import { validateCalendarAppearanceForSave, type CalendarAppearance } from '@/domain/worlds/calendar-appearance'
+import { AssetSchema } from '@/domain/assets/asset'
 import { WorldSchema } from '@/domain/worlds/world'
 import { atomicWriteJson, ensureDir, pathExists } from '@/lib/fs/atomicWrite'
 import {
@@ -14,13 +20,14 @@ import {
   getEntityDir,
   getEntityMetadataPath,
   getWorldJsonPath,
+  getAssetMetadataPath,
   getTrashDir,
 } from '@/lib/fs/paths'
 import { newId } from '@/lib/ids'
 import { readMigratedJson } from '@/lib/migrations/registry'
 import { slugify } from '@/lib/slugify'
 import type { Backlink, EntityListFilter, OriginEventPreview, WorldRepository } from '@/repositories/contracts/worldRepository'
-import { contentMigrations, entityMigrations } from '@/repositories/filesystem/migrations'
+import { assetMigrations, contentMigrations, entityMigrations } from '@/repositories/filesystem/migrations'
 import { listMissingWorldMetadata, listWorldDirs, readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
 import { previewDateMigration, recoverDateMigration, startDateMigration } from './dateMigration'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
@@ -33,6 +40,7 @@ import { TimelineScaleSchema, type TimelineScale } from '@/domain/timelines/time
 import { addAllAppearances, addAppearance, createQuickEvent, getTimelineData, removeAppearance, restoreAppearance, updateAppearance } from './timelineData'
 import { buildNewEntity, writeInitialEntityFiles } from './entityCreation'
 import { reconcileEntityLifecycle } from './entityLifecycle'
+import { listCalendarAgenda } from './calendarAgenda'
 
 export class ConcurrentModificationError extends Error {
   constructor(entityId: string) {
@@ -199,6 +207,9 @@ export class FileSystemWorldRepository implements WorldRepository {
       throw new Error('A posição da origem é definida pelo Evento vinculado. Substitua o Evento para alterá-la.')
     }
     if (changesCalendarStructure(current.calendar, parsedCalendar)) {
+      if (current.calendarMoons.length) throw new Error('Há luas configuradas. Remova-as antes de alterar a estrutura do calendário; a remarcação de suas datas ainda não está disponível.')
+      if (current.calendarSeasons.length || current.campaignToday) throw new Error('Há estações ou uma data de campanha configuradas. A alteração estrutural precisa aguardar a remarcação das datas.')
+      if (current.calendarLandmarks.landmarks.length) throw new Error('Há marcos configurados. A alteração estrutural precisa aguardar a remarcação das datas.')
       const active = await listEntitiesByDir(worldDir)
       const trashDir = getTrashDir(worldDir)
       const trashed = await pathExists(trashDir)
@@ -236,9 +247,92 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
   }
 
+  async updateCalendarMoons(worldId: string, moons: CalendarMoon[], expectedMoons: string, expectedCalendar: string): Promise<World> {
+    const parsed = CalendarMoonsSchema.parse(moons)
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      if (JSON.stringify(current.calendarMoons) !== expectedMoons || JSON.stringify(current.calendar) !== expectedCalendar) {
+        throw new Error('As luas ou o calendário mudaram desde a abertura. Recarregue a página antes de salvar.')
+      }
+      for (const moon of parsed) {
+        const result = validateCalendarMoon(current.calendar, moon)
+        if (!result.success) throw new Error(`Lua ${moon.name}: ${result.error}`)
+      }
+      const next = WorldSchema.parse({ ...current, calendarMoons: parsed, updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
+  }
+
+  async updateCalendarSeasons(worldId: string, seasons: CalendarSeason[], expectedSeasons: string, expectedCalendar: string): Promise<World> {
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      if (JSON.stringify(current.calendarSeasons) !== expectedSeasons || JSON.stringify(current.calendar) !== expectedCalendar) throw new Error('As estações ou o calendário mudaram desde a abertura. Recarregue a página antes de salvar.')
+      const parsed = validateCalendarSeasons(current.calendar, seasons)
+      if (!parsed.success) throw new Error(parsed.error)
+      const next = WorldSchema.parse({ ...current, calendarSeasons: parsed.data, updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
+  }
+
+  async updateCampaignToday(worldId: string, date: CalendarExactDate | null, expectedToday: string, expectedCalendar: string): Promise<World> {
+    const parsed = CalendarExactDateSchema.nullable().parse(date)
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      if (JSON.stringify(current.campaignToday) !== expectedToday || JSON.stringify(current.calendar) !== expectedCalendar) throw new Error('A data da campanha ou o calendário mudou. Recarregue a página antes de salvar.')
+      if (parsed) exactDateToOrdinal(current.calendar, parsed)
+      const next = WorldSchema.parse({ ...current, campaignToday: parsed, updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
+  }
+
+  async updateCalendarLandmarks(worldId: string, landmarks: CalendarLandmarks, expectedLandmarks: string, expectedCalendar: string): Promise<World> {
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      if (JSON.stringify(current.calendarLandmarks) !== expectedLandmarks || JSON.stringify(current.calendar) !== expectedCalendar) throw new Error('Os marcos ou o calendário mudaram. Recarregue a página antes de salvar.')
+      const parsed = validateCalendarLandmarks(current.calendar, landmarks)
+      if (!parsed.success) throw new Error(parsed.error)
+      const next = WorldSchema.parse({ ...current, calendarLandmarks: parsed.data, updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
+  }
+
+  async updateCalendarAppearance(worldId: string, appearance: CalendarAppearance, expectedAppearance: string): Promise<World> {
+    const validation = validateCalendarAppearanceForSave(appearance)
+    if (!validation.success) throw new Error(validation.error)
+    const parsed = validation.data
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      if (JSON.stringify(current.calendarAppearance) !== expectedAppearance) throw new Error('Os temas mudaram desde a abertura. Recarregue a página antes de salvar.')
+      for (const theme of parsed.customThemes) {
+        if (!theme.backgroundAssetId) continue
+        const metadataPath = getAssetMetadataPath(worldDir, theme.backgroundAssetId)
+        if (!(await pathExists(metadataPath))) throw new Error(`A imagem de fundo do tema ${theme.name} não existe neste mundo.`)
+        const asset = await readMigratedJson(metadataPath, assetMigrations, AssetSchema)
+        if (asset.worldId !== worldId || asset.id !== theme.backgroundAssetId) throw new Error(`A imagem de fundo do tema ${theme.name} pertence a outro mundo.`)
+      }
+      const next = WorldSchema.parse({ ...current, calendarAppearance: parsed, updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
+  }
+
   async listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]> {
     const worldDir = await resolveWorldDir(worldId)
     return withWorldRead(worldDir, () => listEntitiesByDir(worldDir, filter))
+  }
+
+  async listCalendarAgenda(worldId: string) {
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldRead(worldDir, () => listCalendarAgenda(worldDir, (id) => readEntityByDir(worldDir, id)))
   }
 
   async listTrashedEntities(worldId: string): Promise<Entity[]> {

@@ -20,11 +20,13 @@ export default async function EditEntityPage(props: PageProps<'/entity/[entityId
       entityType={entityType}
       entity={entity}
       worldName={world.name}
+      worldId={world.id}
       calendar={world.calendar}
+      campaignToday={world.campaignToday}
       hasOriginEvent={Boolean(world.originEventId)}
       data={data}
       action={updateEntityAction.bind(null, entity.id)}
-      deleteAction={deleteEntityAction.bind(null, entity.id, entityType.id)}
+      deleteAction={deleteEntityAction.bind(null, entity.id, entityType.id, world.id)}
     />
   )
 }

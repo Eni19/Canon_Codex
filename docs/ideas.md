@@ -77,6 +77,13 @@ somente leitura.
 Essa ideia exige revisão de privacidade e segurança antes da implementação, porque o aplicativo
 atual é local e não possui autenticação, autorização ou integração remota.
 
+## IDEA-004 — Calendário visual da campanha
+
+Proposta para consultar e editar o calendário por mundo, navegar por mês e ano, aplicar temas
+predefinidos ou personalizados e usar o dia atual da campanha ao criar registros datados.
+O [plano de implementação](calendar-visual-plan.md) cobre as etapas e os critérios de aceitação.
+As referências de produto e de engenharia estão na [pesquisa](research/calendar-visual.md).
+
 ## Relação com o trabalho atual
 
 As lacunas já comprovadas na implementação continuam em

@@ -2,7 +2,7 @@
 
 Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais. A versão
 atual roda como uma aplicação Next.js local, grava mundos em JSON, oferece um calendário configurável
-por mundo com Evento de origem, linhas do tempo em canvas espacial com pan, zoom, cartões por viewport e criação rápida
+por mundo com vistas de mês, ano e agenda, data da campanha e Evento de origem, linhas do tempo em canvas espacial com pan, zoom, cartões por viewport e criação rápida
 de Eventos, biblioteca de registros, remoção com Desfazer, detalhe cronológico e filtros da vista, além de registros de personagens, locais, organizações, criaturas, evidências,
 artefatos, cosmologia, eventos e
 narrativas, além de editor, relações, busca, quadros e cenas projetáveis.

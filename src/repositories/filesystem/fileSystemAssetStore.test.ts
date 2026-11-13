@@ -87,4 +87,31 @@ describe('FileSystemAssetStore', () => {
     const trashEntries = await readdir(getTrashDir(worldDir))
     expect(trashEntries.some((name) => name.includes(asset.id))).toBe(true)
   })
+
+  it('preserves backgrounds referenced by any saved calendar theme', async () => {
+    const repo = new FileSystemWorldRepository()
+    const world = await repo.getWorld(worldId)
+    const asset = await store.importFromBuffer(worldId, await makeTestPng(), 'synthetic.png', 'image/png')
+    const theme = { id: crypto.randomUUID(), name: 'Tema sintético', base: 'codex' as const, colors: { text: '#ffffff', accent: '#ccaa00', surface: '#111111', border: '#999999' }, backgroundAssetId: asset.id, focalPoint: { x: 0.5, y: 0.5 }, overlayOpacity: 0.5 }
+    const appearance = { activeTheme: 'codex', customThemes: [theme] }
+    await expect(repo.updateCalendarAppearance(worldId, { activeTheme: 'codex', customThemes: [{ ...theme, backgroundAssetId: crypto.randomUUID() }] }, JSON.stringify(world.calendarAppearance))).rejects.toThrow('não existe neste mundo')
+    await repo.updateCalendarAppearance(worldId, appearance, JSON.stringify(world.calendarAppearance))
+    await store.removeAsset(worldId, asset.id)
+    expect(await store.getAsset(worldId, asset.id)).not.toBeNull()
+    await expect(repo.updateCalendarAppearance(worldId, appearance, JSON.stringify(world.calendarAppearance))).rejects.toThrow('mudaram')
+    await repo.updateCalendarAppearance(worldId, { activeTheme: 'codex', customThemes: [] }, JSON.stringify(appearance))
+    await store.removeAsset(worldId, asset.id)
+    expect(await store.getAsset(worldId, asset.id)).toBeNull()
+  })
+
+  it('creates calendar background variants and keeps them scoped to their world', async () => {
+    const asset = await store.importFromBuffer(worldId, await makeTestPng(), 'synthetic.png', 'image/png')
+    await store.prepareCalendarBackground(worldId, asset.id)
+    const mobile = await store.getVariantPath(worldId, asset.id, 'calendar-mobile')
+    const desktop = await store.getVariantPath(worldId, asset.id, 'calendar-desktop')
+    expect(mobile).toMatch(/calendar-mobile\.webp$/)
+    expect(desktop).toMatch(/calendar-desktop\.webp$/)
+    expect((await sharp(await readFile(mobile!)).metadata()).format).toBe('webp')
+    await expect(store.prepareCalendarBackground(worldId, crypto.randomUUID())).rejects.toThrow('não existe neste mundo')
+  })
 })

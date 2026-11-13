@@ -5,7 +5,7 @@ import path from 'node:path'
 import { z } from 'zod'
 import { EntitySchema, type Entity } from '@/domain/entities/entity'
 import type { DateMigrationExample, DateMigrationPreview } from '@/domain/worlds/dateMigration'
-import { getCalendarDateAtOrdinal } from '@/domain/worlds/calendar'
+import { exactDateAtOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue } from '@/domain/worlds/calendar-date'
 import { atomicWriteJson, atomicWriteText, ensureDir, pathExists } from '@/lib/fs/atomicWrite'
 import { getEntitiesDir, getTrashDir, getWorldDir } from '@/lib/fs/paths'
@@ -144,15 +144,14 @@ async function build(worldId: string) {
       if (!parsed.success) { problems.push({ ...base, before: value, reason: parsed.error }); continue }
       try {
         const ordinal = legacyIsoDateToOrdinal(parsed.data)
-        const date = getCalendarDateAtOrdinal(world.calendar, ordinal)
-        if (date.month === undefined || date.day === undefined) throw new Error('O dia cai em um intercalar sem mês/dia representável.')
-        const converted = { start: { year: date.year, month: date.month, day: date.day } }
+        const date = exactDateAtOrdinal(world.calendar, ordinal)
+        const converted = { start: date }
         const validation = validateCalendarDateValue(world.calendar, converted)
         if (!validation.success) throw new Error(validation.error)
         properties[field.key] = validation.data
         convertible++
         changed = true
-        if (examples.length < 12) examples.push({ ...base, before: value, after: `${date.year}/${date.month}/${date.day}` })
+        if (examples.length < 12) examples.push({ ...base, before: value, after: 'month' in date ? `${date.year}/${date.month}/${date.day}` : `${date.year} · ${date.intercalaryRuleId}` })
       } catch (error) {
         problems.push({ ...base, before: value, reason: error instanceof Error ? error.message : 'Data não representável.' })
       }

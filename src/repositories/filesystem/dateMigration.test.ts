@@ -181,7 +181,7 @@ describe('conversão explícita de datas antigas', () => {
     expect(dateToOrdinal(calendar, two.start) - dateToOrdinal(calendar, one.start)).toBe(1)
   })
 
-  it('preserva ISO que cairia em um dia intercalar sem mês e dia', async () => {
+  it('converte ISO que cai em um dia intercalar independente', async () => {
     const world = await repo.getWorld(worldId)
     await repo.updateCalendar(worldId, {
       ...world.calendar, months: [{ name: 'Único', length: 1 }], origin: { name: 'Marco', month: 1, day: 1 },
@@ -189,9 +189,9 @@ describe('conversão explícita de datas antigas', () => {
     })
     const entity = await repo.createEntity(worldId, { type: 'event', title: 'Intercalar', properties: { eventDate: '0000-01-02' } })
     const preview = await repo.previewDateMigration(worldId)
-    expect(preview).toMatchObject({ total: 1, convertible: 0, invalid: 1 })
-    expect(preview.problems[0].reason).toContain('intercalar')
-    expect((await repo.getEntity(worldId, entity.id))?.properties.eventDate).toBe('0000-01-02')
+    expect(preview).toMatchObject({ total: 1, convertible: 1, invalid: 0 })
+    await repo.startDateMigration(worldId, preview.fingerprint)
+    expect((await repo.getEntity(worldId, entity.id))?.properties.eventDate).toEqual({ start: { year: 0, intercalaryRuleId: 'extra' } })
   })
 
   it('retoma uma execução interrompida e recusa restaurar sobre edição posterior', async () => {

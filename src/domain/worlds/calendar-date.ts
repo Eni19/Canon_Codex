@@ -11,11 +11,14 @@ import {
   type CalendarDate,
   validateCalendarDate,
 } from './calendar'
+import { exactDateToOrdinal } from './calendar-exact-date'
 
 export const CalendarDateBoundarySchema = CalendarDateFieldsSchema.extend({
   approximate: z.boolean().optional(),
+  intercalaryRuleId: z.string().trim().min(1).max(80).optional(),
 }).superRefine((date, context) => {
   if (date.day !== undefined && date.month === undefined) context.addIssue({ code: 'custom', path: ['day'], message: 'O dia precisa vir acompanhado de um mês.' })
+  if (date.intercalaryRuleId !== undefined && (date.month !== undefined || date.day !== undefined)) context.addIssue({ code: 'custom', path: ['intercalaryRuleId'], message: 'O dia intercalar não pode ter mês ou dia numérico.' })
 })
 
 export const CalendarDateValueSchema = z.object({
@@ -48,6 +51,11 @@ export function validateCalendarDateValue(calendar: Calendar, input: unknown): C
 
   for (const [label, boundary] of [['início', parsed.data.start], ['fim', parsed.data.end]] as const) {
     if (!boundary) continue
+    if (boundary.intercalaryRuleId) {
+      try { exactDateToOrdinal(calendar, { year: boundary.year, intercalaryRuleId: boundary.intercalaryRuleId }) }
+      catch { return { success: false, error: `O ${label} indica um dia intercalar inexistente.` } }
+      continue
+    }
     const validation = validateCalendarDate(calendar, toCalendarDate(boundary))
     if (!validation.success) return { success: false, error: `O ${label} é inválido: ${validation.error}` }
   }
@@ -136,7 +144,8 @@ export function parseLegacyIsoDate(input: string):
 }
 
 function formatBoundary(calendar: Calendar, boundary: CalendarDateBoundary): string {
-  const value = formatCalendarDate(calendar, toCalendarDate(boundary))
+  const rule = boundary.intercalaryRuleId && calendar.intercalaryRules.find((item) => item.id === boundary.intercalaryRuleId)
+  const value = rule ? `${rule.name}, ${formatCalendarDate(calendar, { year: boundary.year })}` : formatCalendarDate(calendar, toCalendarDate(boundary))
   return boundary.approximate ? `aprox. ${value}` : value
 }
 
@@ -149,6 +158,10 @@ function toCalendarDate(boundary: CalendarDateBoundary): CalendarDate {
 }
 
 export function getCalendarDateBoundaryOrdinalRange(calendar: Calendar, boundary: CalendarDateBoundary): CalendarDateOrdinalRange {
+  if (boundary.intercalaryRuleId) {
+    const ordinal = exactDateToOrdinal(calendar, { year: boundary.year, intercalaryRuleId: boundary.intercalaryRuleId })
+    return { first: ordinal, last: ordinal }
+  }
   const firstDate: CalendarDate = { year: boundary.year, month: boundary.month ?? 1, day: boundary.day ?? 1 }
   const first = dateToOrdinal(calendar, firstDate)
   if (boundary.month !== undefined && boundary.day !== undefined) return { first, last: first }

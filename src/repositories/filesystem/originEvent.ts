@@ -4,7 +4,8 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import { dateToOrdinal, getCalendarDateAtOrdinal, getCalendarYearLength, isIntercalaryRuleActive, type Calendar, type CalendarDate } from '@/domain/worlds/calendar'
-import { CalendarDateValueSchema, legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue, type CalendarDateBoundary } from '@/domain/worlds/calendar-date'
+import { CalendarDateValueSchema, getCalendarDateBoundaryOrdinalRange, legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue, type CalendarDateBoundary } from '@/domain/worlds/calendar-date'
+import { exactDateAtOrdinal, exactDateToOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { EntitySchema, type Entity } from '@/domain/entities/entity'
 import { TimelineDataSchema, parseTimelineData, type TimelineData } from '@/domain/timelines/timeline'
 import { WorldSchema, type World } from '@/domain/worlds/world'
@@ -86,6 +87,7 @@ async function scan(worldDir: string): Promise<Entry[]> {
 }
 
 function range(calendar: Calendar, boundary: CalendarDateBoundary): { first: number; last: number } {
+  if (boundary.intercalaryRuleId) return getCalendarDateBoundaryOrdinalRange(calendar, boundary)
   const first = dateToOrdinal(calendar, { year: boundary.year, month: boundary.month ?? 1, day: boundary.day ?? 1 })
   if (boundary.day !== undefined) return { first, last: first }
   if (boundary.month === undefined) return { first, last: first + getCalendarYearLength(calendar, boundary.year) - 1 }
@@ -94,9 +96,7 @@ function range(calendar: Calendar, boundary: CalendarDateBoundary): { first: num
 }
 
 function dateAt(calendar: Calendar, ordinal: number, approximate?: boolean): CalendarDateBoundary {
-  const date = getCalendarDateAtOrdinal(calendar, ordinal)
-  if (date.month === undefined || date.day === undefined) throw new Error('O deslocamento alcança um dia intercalar sem data editável.')
-  return { year: date.year, month: date.month, day: date.day, ...(approximate ? { approximate: true } : {}) }
+  return { ...exactDateAtOrdinal(calendar, ordinal), ...(approximate ? { approximate: true } : {}) }
 }
 
 function shiftBoundary(calendar: Calendar, boundary: CalendarDateBoundary, shift: number, edge: 'start' | 'end'): { value: CalendarDateBoundary; precisionChanged: boolean } {
@@ -105,15 +105,15 @@ function shiftBoundary(calendar: Calendar, boundary: CalendarDateBoundary, shift
   const last = original.last + shift
   const firstDate = getCalendarDateAtOrdinal(calendar, first)
   const approximate = boundary.approximate
-  if (boundary.day === undefined && firstDate.month === 1 && firstDate.day === 1
+  if (!boundary.intercalaryRuleId && boundary.day === undefined && firstDate.month === 1 && firstDate.day === 1
     && boundary.month === undefined && range(calendar, { year: firstDate.year }).last === last) {
     return { value: { year: firstDate.year, ...(approximate ? { approximate } : {}) }, precisionChanged: false }
   }
-  if (boundary.day === undefined && boundary.month !== undefined && firstDate.month !== undefined && firstDate.day === 1
+  if (!boundary.intercalaryRuleId && boundary.day === undefined && boundary.month !== undefined && firstDate.month !== undefined && firstDate.day === 1
     && range(calendar, { year: firstDate.year, month: firstDate.month }).last === last) {
     return { value: { year: firstDate.year, month: firstDate.month, ...(approximate ? { approximate } : {}) }, precisionChanged: false }
   }
-  return { value: dateAt(calendar, edge === 'start' ? first : last, approximate), precisionChanged: boundary.day === undefined }
+  return { value: dateAt(calendar, edge === 'start' ? first : last, approximate), precisionChanged: boundary.day === undefined && !boundary.intercalaryRuleId }
 }
 
 function shiftDate(calendar: Calendar, input: unknown, shift: number): { value: unknown; precisionChanged: boolean } {
@@ -142,9 +142,10 @@ function eventOrdinal(world: World, entity: Entity): number {
     return legacyIsoDateToOrdinal(legacy.data)
   }
   const parsed = CalendarDateValueSchema.safeParse(value)
-  if (!parsed.success || !validateCalendarDateValue(world.calendar, value).success || parsed.data.start.month === undefined || parsed.data.start.day === undefined || parsed.data.end || parsed.data.start.approximate) {
+  if (!parsed.success || !validateCalendarDateValue(world.calendar, value).success || (!parsed.data.start.intercalaryRuleId && (parsed.data.start.month === undefined || parsed.data.start.day === undefined)) || parsed.data.end || parsed.data.start.approximate) {
     throw new Error('O Evento de origem precisa ter uma data exata, completa e sem intervalo.')
   }
+  if (parsed.data.start.intercalaryRuleId) return exactDateToOrdinal(world.calendar, { year: parsed.data.start.year, intercalaryRuleId: parsed.data.start.intercalaryRuleId })
   return dateToOrdinal(world.calendar, parsed.data.start as CalendarDate)
 }
 
@@ -157,6 +158,7 @@ function build(worldDir: string, world: World, entries: Entry[], eventId: string
   const keys = new Map(world.entityTypes.map((type) => [type.id, type.properties.filter((property) => property.kind === 'date').map((property) => property.key)]))
   const changes: Change[] = []
   const examples: OriginEventPreview['examples'] = []
+  const worldDates: OriginEventPreview['worldDates'] = []
   let affectedDates = 0
   let precisionChanges = 0
   for (const entry of entries) {
@@ -198,9 +200,38 @@ function build(worldDir: string, world: World, entries: Entry[], eventId: string
       }
     }
   }
-  const nextWorld = WorldSchema.parse({ ...world, originEventId: eventId, updatedAt: new Date().toISOString() })
+  const calendarMoons = world.calendarMoons.map((moon) => {
+    if (shift === 0) return moon
+    let nextDate: CalendarDateBoundary
+    try {
+      nextDate = dateAt(world.calendar, dateToOrdinal(world.calendar, moon.newMoon) + shift)
+      if (nextDate.intercalaryRuleId) throw new Error('O deslocamento alcança um dia intercalar sem referência lunar editável.')
+    }
+    catch (error) { throw new Error(`Não foi possível deslocar a lua ${moon.name}: ${error instanceof Error ? error.message : String(error)}`) }
+    const newMoon = { year: nextDate.year, month: nextDate.month!, day: nextDate.day! }
+    affectedDates++
+    worldDates.push({ title: moon.name, field: 'lua nova', before: JSON.stringify(moon.newMoon), after: JSON.stringify(newMoon) })
+    return { ...moon, newMoon }
+  })
+  let campaignToday = world.campaignToday
+  if (campaignToday && shift !== 0) {
+    const before = campaignToday
+    campaignToday = exactDateAtOrdinal(world.calendar, exactDateToOrdinal(world.calendar, before) + shift)
+    affectedDates++
+    worldDates.push({ title: 'Hoje da campanha', field: 'data atual', before: JSON.stringify(before), after: JSON.stringify(campaignToday) })
+  }
+  const calendarLandmarks = { ...world.calendarLandmarks, landmarks: world.calendarLandmarks.landmarks.map((landmark) => {
+    if (landmark.kind !== 'once' || shift === 0) return landmark
+    const move = (date: typeof landmark.start) => exactDateAtOrdinal(world.calendar, exactDateToOrdinal(world.calendar, date) + shift)
+    const start = move(landmark.start)
+    const end = landmark.end ? move(landmark.end) : undefined
+    affectedDates += landmark.end ? 2 : 1
+    worldDates.push({ title: landmark.title, field: 'marco', before: JSON.stringify({ start: landmark.start, end: landmark.end }), after: JSON.stringify({ start, end }) })
+    return { ...landmark, start, ...(end ? { end } : {}) }
+  }) }
+  const nextWorld = WorldSchema.parse({ ...world, calendarMoons, campaignToday, calendarLandmarks, originEventId: eventId, updatedAt: new Date().toISOString() })
   const fingerprint = createHash('sha256').update(JSON.stringify({ world, entries: entries.map(({ file, text, timeline }) => [file, text, timeline?.text]) })).digest('hex')
-  return { preview: { fingerprint, eventId, eventTitle: target.entity.title, shiftDays: shift, affectedEntities: new Set(changes.map((change) => path.dirname(change.file))).size, affectedDates, precisionChanges, examples }, changes, nextWorld }
+  return { preview: { fingerprint, eventId, eventTitle: target.entity.title, shiftDays: shift, affectedEntities: new Set(changes.map((change) => path.dirname(change.file))).size, affectedDates, precisionChanges, examples, worldDates }, changes, nextWorld }
 }
 
 export async function previewOriginEvent(worldDir: string, eventId: string): Promise<OriginEventPreview> {

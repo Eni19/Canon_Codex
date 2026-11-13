@@ -22,7 +22,9 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 │       │   └── <asset-id>/           # UUID do asset
 │       │       ├── asset.json
 │       │       ├── original.<ext>
-│       │       └── thumbnail.webp    # opcional, se sharp conseguir gerar
+│       │       ├── thumbnail.webp    # opcional, se sharp conseguir gerar
+│       │       ├── calendar-mobile.webp   # opcional, fundo de calendário até 768 px
+│       │       └── calendar-desktop.webp  # opcional, fundo de calendário até 1600 px
 │       ├── boards/
 │       │   └── <board-id>/board.json
 │       ├── scenes/
@@ -56,6 +58,34 @@ leitura de propriedades `kind: 'date'` usam `src/domain/worlds/calendar-date.ts`
 mundo ativo. A tela `/calendar` só salva quando o mundo ativo ainda é o mesmo que abriu o formulário,
 usando `WorldRepository.updateCalendar`.
 
+`world.json.calendarMoons` guarda até cinco luas por mundo, cada uma com ID, nome, cor hexadecimal,
+duração do ciclo em dias e data comum exata de lua nova. A migração v21→v22 começa com lista vazia.
+O salvamento valida a data contra o calendário atual, detecta alterações concorrentes da lista ou do
+calendário e usa o lock e a escrita atômica do mundo. Alterações estruturais ficam bloqueadas enquanto
+houver luas. A troca de origem desloca as referências lunares e apresenta cada mudança na prévia; se o
+destino for um dia intercalar independente, a prévia recusa a troca pois a referência lunar ainda não o representa.
+
+No `World` v23, `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
+intercalar independente, `calendarLandmarks` guarda categorias e marcos únicos ou anuais, e
+`calendarAppearance` guarda o tema ativo e temas personalizados. As mutações por seção usam lock,
+escrita atômica e comparação com o valor e calendário anteriores. Imagens referenciadas por temas são
+verificadas no mesmo mundo e protegidas da remoção enquanto houver referência. As estações também têm
+formulário próprio, assim como marcos e temas. O calendário permite definir, avançar e consultar Hoje. Alterações estruturais ficam
+bloqueadas quando há estações, data de campanha ou marcos. A troca de origem desloca Hoje e datas únicas
+dos marcos; recorrências e estações conservam mês/dia. O backup inclui o mundo completo.
+
+O upload de fundo usa `/api/calendar-background`, confere o mundo ativo e aceita arquivos de até
+8 MB e 40 milhões de pixels. Após validar a imagem, grava original e variantes WebP de até 768 e
+1600 px. Falhas no processamento movem o asset importado para a lixeira quando possível. A cópia é
+criada ao escolher a imagem; removê-la de um tema não remove o asset. Se uma variante estiver ausente,
+a capa conserva seu fundo de cor.
+
+A Agenda usa uma projeção em memória dos Eventos ativos. A cada leitura, o repositório lista
+as pastas de entidades e confere identidade, tamanho e datas dos arquivos de metadados em lotes.
+Arquivos novos ou alterados são relidos e validados; arquivos ausentes saem da projeção. A projeção
+é reconstruída no primeiro acesso do processo e as datas são interpretadas com o calendário
+atual do mundo. Os arquivos de entidade são a fonte da Agenda.
+
 O contrato atual de um novo valor de data é:
 
 ```json
@@ -67,7 +97,9 @@ O contrato atual de um novo valor de data é:
 
 `start` é obrigatório; `end` opcional representa um fim ausente/duração aberta. Cada limite mantém
 somente a precisão informada (`year`, `month` e `day` progressivos). O domínio rejeita lacunas de
-precisão, mês/dia inexistente e intervalo invertido. Durante a transição, strings ISO legadas
+precisão, mês/dia inexistente e intervalo invertido. Um dia intercalar independente usa `year` e
+`intercalaryRuleId` no limite, sem `month` ou `day`; Eventos e aparições de linha do tempo aceitam essa
+forma. Durante a transição, strings ISO legadas
 `AAAA-MM-DD` também são aceitas na leitura e no editor e permanecem strings após um salvamento comum.
 Alterações estruturais de meses e recorrências são recusadas se houver campos de
 data ou aparições datadas, inclusive em registros na lixeira. Essa proteção evita deslocar datas até existir

@@ -7,6 +7,30 @@ import { migrateToLatest } from '@/lib/migrations/registry'
 import { contentMigrations, entityMigrations, worldMigrations } from './migrations'
 
 describe('character profile migration', () => {
+  it('adds an empty moon list to a v21 world without changing its calendar', () => {
+    const world = createDefaultWorldSeed()
+    const { calendarMoons: _calendarMoons, ...legacy } = world
+    expect(_calendarMoons).toEqual([])
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, { ...legacy, schemaVersion: 21 }))
+    expect(migrated.calendarMoons).toEqual([])
+    expect(migrated.calendar).toEqual(world.calendar)
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+    expect(migrated.calendarSeasons).toEqual([])
+    expect(migrated.campaignToday).toBeNull()
+    expect(migrated.calendarLandmarks).toEqual({ categories: [], landmarks: [] })
+    expect(migrated.calendarAppearance).toEqual({ activeTheme: 'codex', customThemes: [] })
+  })
+
+  it('preserves lunar data while adding the v23 calendar sections', () => {
+    const world = createDefaultWorldSeed()
+    const moon = { id: 'lua', name: 'Lua', color: '#aabbcc', cycleDays: 28, newMoon: { year: 0, month: 1, day: 1 } }
+    const legacy = { ...world, calendarMoons: [moon], schemaVersion: 22 }
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    expect(migrated.calendarMoons).toEqual([moon])
+    expect(migrated.calendar).toEqual(world.calendar)
+    expect(migrated.calendarAppearance.activeTheme).toBe('codex')
+    expect(migrated.campaignToday).toBeNull()
+  })
   it('atribui escalas mínimas por tipo ao migrar um mundo v18', () => {
     const world = createDefaultWorldSeed()
     const legacy = { ...world } as Partial<typeof world>

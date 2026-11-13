@@ -44,6 +44,18 @@ visual futura force uma reescrita de componente por componente.
 
 ## Consequências
 
+### Atualização: temas locais do calendário (12/11/2026)
+
+O calendário oferece Codex, Celeste e Pergaminho e permite paletas personalizadas por mundo. A página
+mapeia essas paletas aos tokens semânticos locais de superfície, texto, acento e borda, sem modificar
+o tema geral da aplicação. Novas paletas são validadas para contraste mínimo de 4,5:1 entre texto ou
+destaque e superfície; dados antigos continuam legíveis pelo schema. A capa pode usar uma imagem
+decorativa local, mantendo uma superfície sólida sob o texto. Celeste usa sua paleta azul-noturna
+na capa, nas vistas internas e nos formulários, com superfícies próprias para a grade mensal. Temas personalizados
+continuam a usar a própria paleta. A prévia usa o mesmo componente de capa da página, com a
+variante móvel da imagem. Chrome e Edge foram verificados com movimento reduzido.
+A verificação com leitor de tela continua pendente. [Relatório](../performance/calendar-production.md)
+
 ### Atualização: Cosmic Canvas na Linha do Tempo (15/10/2026)
 
 O pedido explícito de uma superfície espacial minimalista substitui a apresentação TL-12 de

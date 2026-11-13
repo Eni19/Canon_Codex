@@ -7,7 +7,8 @@ import {
   EntityNotFoundError,
   FileSystemWorldRepository,
 } from '@/repositories/filesystem/fileSystemWorldRepository'
-import { getTrashDir } from '@/lib/fs/paths'
+import { getEntityMetadataPath, getTrashDir } from '@/lib/fs/paths'
+import { projectAgenda } from '@/domain/worlds/calendar-agenda'
 
 describe('FileSystemWorldRepository', () => {
   let workspaceDir: string
@@ -70,6 +71,27 @@ describe('FileSystemWorldRepository', () => {
     expect(fetched).toEqual(created)
   })
 
+  it('reconciles the agenda after external edits, redating and deletion', async () => {
+    const [world] = await repo.listWorlds()
+    const initialDate = { start: { year: 0, month: 1, day: 1 } }
+    const nextDate = { start: { year: 0, month: 2, day: 2 } }
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Encontro', properties: { eventDate: initialDate } })
+    await repo.createEntity(worldId, { type: 'character', title: 'Observador' })
+    const month = async (number: number) => projectAgenda(world.calendar, 0, number, await repo.listCalendarAgenda(worldId))
+
+    expect(await month(1)).toMatchObject([{ id: event.id, title: 'Encontro' }])
+    await repo.updateEntity(worldId, event.id, { properties: { eventDate: nextDate } })
+    expect(await month(1)).toEqual([])
+    expect(await month(2)).toMatchObject([{ id: event.id }])
+
+    const worldDir = (await readdir(path.join(workspaceDir, 'worlds')))[0]
+    await writeFile(getEntityMetadataPath(worldDir, event.id), JSON.stringify({ ...event, title: 'Encontro importado', properties: { eventDate: nextDate } }))
+    expect(await month(2)).toMatchObject([{ id: event.id, title: 'Encontro importado' }])
+
+    await repo.deleteEntity(worldId, event.id)
+    expect(await month(2)).toEqual([])
+  })
+
   it('reopens event and organization dates stored in the world calendar format', async () => {
     const event = await repo.createEntity(worldId, {
       type: 'event',
@@ -92,6 +114,19 @@ describe('FileSystemWorldRepository', () => {
     })
   })
 
+  it('round-trips an independent intercalary date in an event and its timeline appearance', async () => {
+    const world = await repo.getWorld(worldId)
+    const calendar = { ...world.calendar, intercalaryRules: [...world.calendar.intercalaryRules, { id: 'festival', name: 'Festival', month: 12, everyYears: 1, yearOffset: 0, extendsMonth: false }] }
+    await repo.updateCalendar(worldId, calendar)
+    const date = { start: { year: 0, intercalaryRuleId: 'festival' } }
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Evento sintético', properties: { eventDate: date } })
+    const timeline = await repo.createEntity(worldId, { type: 'timeline', title: 'Linha sintética' })
+    const current = await repo.getTimeline(worldId, timeline.id)
+    await repo.addTimelineAppearance(worldId, timeline.id, event.id, date, current.updatedAt)
+    expect((await repo.getEntity(worldId, event.id))?.properties.eventDate).toEqual(date)
+    expect((await repo.getTimeline(worldId, timeline.id)).appearances[0].date).toEqual(date)
+  })
+
   it('round-trips one calendar per world without leaking changes between worlds', async () => {
     const second = await repo.updateCalendar(worldId, {
       ...(await repo.getWorld(worldId)).calendar,
@@ -101,6 +136,48 @@ describe('FileSystemWorldRepository', () => {
 
     expect(second.calendar.hoursPerDay).toBe(30)
     expect((await repo.getWorld(worldId)).calendar.origin.name).toBe('Marco Sintético')
+  })
+
+  it('saves moons per world, detects stale edits and protects calendar dates', async () => {
+    const world = await repo.getWorld(worldId)
+    const moon = { id: 'lua-sintetica', name: 'Lua sintética', color: '#aabbcc', cycleDays: 29.5, newMoon: { year: 0, month: 1, day: 1 } }
+    const expectedMoons = JSON.stringify(world.calendarMoons)
+    const expectedCalendar = JSON.stringify(world.calendar)
+    await repo.updateCalendarMoons(worldId, [moon], expectedMoons, expectedCalendar)
+    expect((await repo.getWorld(worldId)).calendarMoons).toEqual([moon])
+    await expect(repo.updateCalendarMoons(worldId, [], expectedMoons, expectedCalendar)).rejects.toThrow('mudaram')
+    await expect(repo.updateCalendar(worldId, { ...world.calendar, months: world.calendar.months.map((month, i) => i ? month : { ...month, length: 30 }) })).rejects.toThrow('luas configuradas')
+    await expect(repo.updateCalendarMoons(worldId, [{ ...moon, newMoon: { year: 1, month: 2, day: 30 } }], JSON.stringify([moon]), expectedCalendar)).rejects.toThrow('não existe')
+    await repo.updateCalendarMoons(worldId, [], JSON.stringify([moon]), expectedCalendar)
+    expect((await repo.getWorld(worldId)).calendarMoons).toEqual([])
+  })
+
+  it('validates and saves seasons and an intercalary campaign date with independent conflict checks', async () => {
+    const original = await repo.getWorld(worldId)
+    const calendar = { ...original.calendar, intercalaryRules: [...original.calendar.intercalaryRules, { id: 'festival', name: 'Festival', month: 12, everyYears: 1, yearOffset: 0, extendsMonth: false }] }
+    await repo.updateCalendar(worldId, calendar)
+    const expectedCalendar = JSON.stringify(calendar)
+    const seasons = [{ id: 'winter', name: 'Inverno', color: '#aabbcc', start: { month: 12, day: 1 } }]
+    await repo.updateCalendarSeasons(worldId, seasons, '[]', expectedCalendar)
+    await expect(repo.updateCalendarSeasons(worldId, [], '[]', expectedCalendar)).rejects.toThrow('mudaram')
+    const today = { year: 0, intercalaryRuleId: 'festival' }
+    await repo.updateCampaignToday(worldId, today, 'null', expectedCalendar)
+    await expect(repo.updateCampaignToday(worldId, null, 'null', expectedCalendar)).rejects.toThrow('mudou')
+    expect((await repo.getWorld(worldId))).toMatchObject({ calendarSeasons: seasons, campaignToday: today })
+    const changed = { ...calendar, months: calendar.months.map((month, i) => i ? month : { ...month, length: 30 }) }
+    await expect(repo.updateCalendar(worldId, changed)).rejects.toThrow('estações ou uma data')
+  })
+
+  it('validates and saves landmarks, detects conflicts and protects structural changes', async () => {
+    const world = await repo.getWorld(worldId)
+    const content = { categories: [{ id: 'festival', name: 'Festival', color: '#aabbcc' }], landmarks: [{ id: 'marco', title: 'Marco', description: '', categoryId: 'festival', kind: 'once' as const, start: { year: 0, month: 1, day: 1 } }] }
+    const expected = JSON.stringify(world.calendarLandmarks)
+    const calendar = JSON.stringify(world.calendar)
+    await repo.updateCalendarLandmarks(worldId, content, expected, calendar)
+    expect((await repo.getWorld(worldId)).calendarLandmarks).toEqual(content)
+    await expect(repo.updateCalendarLandmarks(worldId, content, expected, calendar)).rejects.toThrow('mudaram')
+    const changed = { ...world.calendar, months: world.calendar.months.map((month, i) => i ? month : { ...month, length: 30 }) }
+    await expect(repo.updateCalendar(worldId, changed)).rejects.toThrow('marcos configurados')
   })
 
   it('blocks structural calendar changes while active or trashed records have dates', async () => {

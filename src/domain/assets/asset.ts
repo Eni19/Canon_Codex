@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const ASSET_SCHEMA_VERSION = 1
 
-export const AssetVariantSchema = z.enum(['original', 'thumbnail'])
+export const AssetVariantSchema = z.enum(['original', 'thumbnail', 'calendar-mobile', 'calendar-desktop'])
 export type AssetVariant = z.infer<typeof AssetVariantSchema>
 
 export const AssetSchema = z.object({

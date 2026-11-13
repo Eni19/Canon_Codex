@@ -18,7 +18,7 @@ export async function GET(_request: Request, ctx: RouteContext<'/api/assets/[ass
   if (!filePath) return new NextResponse('Not found', { status: 404 })
 
   const file = await readFile(filePath)
-  const contentType = parsedVariant.data === 'thumbnail' ? 'image/webp' : asset.mimeType
+  const contentType = parsedVariant.data === 'original' ? asset.mimeType : 'image/webp'
 
   return new NextResponse(new Uint8Array(file), {
     headers: {

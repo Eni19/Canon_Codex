@@ -229,7 +229,7 @@ function getBaseYearLength(calendar: Calendar): number {
   return calendar.months.reduce((total, month) => total + month.length, 0)
 }
 
-function getMonthLength(calendar: Calendar, year: number, month: number): number {
+export function getMonthLength(calendar: Calendar, year: number, month: number): number {
   return calendar.months[month - 1].length + calendar.intercalaryRules.filter((rule) =>
     rule.month === month && rule.extendsMonth && isIntercalaryRuleActive(rule, year)).length
 }

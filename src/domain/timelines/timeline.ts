@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { CalendarDateValueSchema, legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue, type CalendarDateValue } from '@/domain/worlds/calendar-date'
-import { dateToOrdinal, getCalendarDateAtOrdinal, type Calendar } from '@/domain/worlds/calendar'
+import { CalendarDateValueSchema, getCalendarDateBoundaryOrdinalRange, legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue, type CalendarDateValue } from '@/domain/worlds/calendar-date'
+import { type Calendar } from '@/domain/worlds/calendar'
+import { exactDateAtOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { TimelineScaleSchema } from './timelineScale'
 
 export const TIMELINE_SCHEMA_VERSION = 2
@@ -64,9 +65,7 @@ export function initialEventAppearanceDate(calendar: Calendar, value: unknown): 
   if (typeof value !== 'string') return null
   const legacy = parseLegacyIsoDate(value)
   if (!legacy.success) return null
-  const day = getCalendarDateAtOrdinal(calendar, legacyIsoDateToOrdinal(legacy.data))
-  if (day.month === undefined || day.day === undefined) return null
-  return { start: { year: day.year, month: day.month, day: day.day } }
+  return { start: exactDateAtOrdinal(calendar, legacyIsoDateToOrdinal(legacy.data)) }
 }
 
 export function appearanceOrdinal(calendar: Calendar, appearance: TimelineAppearance): number | null {
@@ -74,7 +73,7 @@ export function appearanceOrdinal(calendar: Calendar, appearance: TimelineAppear
   const valid = validateCalendarDateValue(calendar, appearance.date)
   if (!valid.success) throw new Error(`A aparição ${appearance.id} possui data inválida: ${valid.error}`)
   const start = valid.data.start
-  return dateToOrdinal(calendar, { year: start.year, month: start.month ?? 1, day: start.day ?? 1 })
+  return getCalendarDateBoundaryOrdinalRange(calendar, start).first
 }
 
 export function orderTimelineAppearances(calendar: Calendar, appearances: TimelineAppearance[]): { dated: TimelineAppearance[]; undated: TimelineAppearance[] } {

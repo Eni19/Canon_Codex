@@ -10,7 +10,8 @@ import { newId } from '@/lib/ids'
 import { readMigratedJson } from '@/lib/migrations/registry'
 import type { AssetStore } from '@/repositories/contracts/assetStore'
 import { assetMigrations } from '@/repositories/filesystem/migrations'
-import { resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
+import { readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
+import { withWorldWriteLock } from './worldWriteLock'
 
 const THUMBNAIL_MAX_SIZE = 480
 
@@ -52,6 +53,7 @@ export class FileSystemAssetStore implements AssetStore {
     if (!mimeType) throw new UnsupportedImageTypeError(ext || '(no extension)')
 
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const assetId = newId()
     const assetDir = getAssetDir(worldDir, assetId)
     await ensureDir(assetDir)
@@ -76,10 +78,12 @@ export class FileSystemAssetStore implements AssetStore {
 
     await atomicWriteJson(getAssetMetadataPath(worldDir, assetId), asset)
     return asset
+    })
   }
 
   async importFromBuffer(worldId: string, buffer: Buffer, filename: string, mimeType: string): Promise<Asset> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const assetId = newId()
     const assetDir = getAssetDir(worldDir, assetId)
     await ensureDir(assetDir)
@@ -103,6 +107,7 @@ export class FileSystemAssetStore implements AssetStore {
 
     await atomicWriteJson(getAssetMetadataPath(worldDir, assetId), asset)
     return asset
+    })
   }
 
   async getAsset(worldId: string, assetId: string): Promise<Asset | null> {
@@ -110,6 +115,22 @@ export class FileSystemAssetStore implements AssetStore {
     const metadataPath = getAssetMetadataPath(worldDir, assetId)
     if (!(await pathExists(metadataPath))) return null
     return readMigratedJson(metadataPath, assetMigrations, AssetSchema)
+  }
+
+  async prepareCalendarBackground(worldId: string, assetId: string): Promise<void> {
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const metadata = getAssetMetadataPath(worldDir, assetId)
+      if (!(await pathExists(metadata))) throw new Error('A imagem não existe neste mundo.')
+      const asset = await readMigratedJson(metadata, assetMigrations, AssetSchema)
+      if (asset.worldId !== worldId || asset.id !== assetId) throw new Error('A imagem pertence a outro mundo.')
+      const assetDir = getAssetDir(worldDir, assetId)
+      const original = path.join(assetDir, originalFileName(asset.mimeType))
+      for (const [variant, width] of [['calendar-mobile', 768], ['calendar-desktop', 1600]] as const) {
+        const output = await sharp(original, { limitInputPixels: 40_000_000 }).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 75 }).toBuffer()
+        await writeFile(path.join(assetDir, `${variant}.webp`), output, { flag: 'wx' })
+      }
+    })
   }
 
   async getVariantPath(worldId: string, assetId: string, variant: AssetVariant): Promise<string | null> {
@@ -124,17 +145,26 @@ export class FileSystemAssetStore implements AssetStore {
       return path.join(assetDir, 'thumbnail.webp')
     }
 
+    if (variant === 'calendar-mobile' || variant === 'calendar-desktop') {
+      const variantPath = path.join(assetDir, `${variant}.webp`)
+      return (await pathExists(variantPath)) ? variantPath : null
+    }
+
     const originalPath = path.join(assetDir, originalFileName(asset.mimeType))
     return (await pathExists(originalPath)) ? originalPath : null
   }
 
   async removeAsset(worldId: string, assetId: string): Promise<void> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+    const world = await readWorldByDir(worldDir)
+    if (world.calendarAppearance.customThemes.some((theme) => theme.backgroundAssetId === assetId)) return
     const assetDir = getAssetDir(worldDir, assetId)
     if (!(await pathExists(assetDir))) return
 
     const trashDir = getTrashDir(worldDir)
     await ensureDir(trashDir)
     await rename(assetDir, path.join(trashDir, `asset-${assetId}-${Date.now()}`))
+    })
   }
 }

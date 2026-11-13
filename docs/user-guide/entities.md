@@ -6,8 +6,8 @@
 2. Clique em **Nova entidade**.
 3. Preencha o formulário completo, que é o mesmo da edição: nome, apelidos (quando exibidos) e tags
    no topo; **Ficha** com as propriedades curtas e referências; **Detalhes** com os textos longos;
-   o editor específico do tipo, quando existe; e **Conteúdo**. À direita ficam imagem principal,
-   símbolo (cosmologia), cor e status.
+   o editor específico do tipo, quando existe; e **Conteúdo**. Imagem principal, símbolo (cosmologia),
+   cor e status aparecem à direita em telas largas e abaixo do conteúdo em telas estreitas.
 4. Escolha **Criar registro**. Para alterar depois, use **Editar** na página e **Salvar
    alterações**. `Ctrl+S` salva nos dois casos.
 
@@ -35,6 +35,11 @@ de gravar.
 Na criação de um **Evento**, informe uma data exata com mês e dia para poder marcar **Evento de
 origem**. O sistema coloca essa data no ano zero do mundo. Se já houver um Evento vinculado,
 substitua-o pela prévia em **Calendário → Evento de origem**.
+
+Ao criar um Evento, o formulário sugere o Hoje da campanha, quando definido. Ao iniciá-lo pelo
+calendário, usa o dia selecionado. O campo pode ser alterado ou limpo, e **Usar hoje da campanha**
+preenche novamente uma data. A sugestão é a data apresentada ao abrir o formulário; avançar o Hoje
+em outra aba não altera o que já estava preenchido.
 
 ## Tipos iniciais
 

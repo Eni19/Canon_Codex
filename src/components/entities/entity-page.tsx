@@ -29,6 +29,7 @@ import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import type { Calendar } from '@/domain/worlds/calendar'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
 import type { TimelineData } from '@/domain/timelines/timeline'
 import type { TimelineScale } from '@/domain/timelines/timelineScale'
 import { assetVariantUrl } from '@/lib/assetUrl'
@@ -50,6 +51,7 @@ export interface EntityPageProps {
   timelineTypes: { id: string; label: string }[]
   relatedScenes: SceneSummary[]
   calendar: Calendar
+  campaignToday?: CalendarExactDate | null
   timeline?: TimelineData
 }
 

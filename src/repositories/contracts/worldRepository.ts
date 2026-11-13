@@ -3,6 +3,12 @@ import type { Entity, EntityPatch, NewEntityInput } from '@/domain/entities/enti
 import type { NewRelationInput, Relation } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
 import type { Calendar } from '@/domain/worlds/calendar'
+import type { CalendarMoon } from '@/domain/worlds/calendar-moon'
+import type { CalendarSeason } from '@/domain/worlds/calendar-season'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
+import type { CalendarLandmarks } from '@/domain/worlds/calendar-landmarks'
+import type { CalendarAppearance } from '@/domain/worlds/calendar-appearance'
+import type { AgendaEvent } from '@/domain/worlds/calendar-agenda'
 import type { CalendarDateValue } from '@/domain/worlds/calendar-date'
 import type { TimelineAppearance, TimelineAppearanceFields, TimelineData } from '@/domain/timelines/timeline'
 import type { TimelineScale } from '@/domain/timelines/timelineScale'
@@ -28,6 +34,11 @@ export interface WorldRepository {
   listMissingWorldMetadata(): Promise<string[]>
   getWorld(worldId: string): Promise<World>
   updateCalendar(worldId: string, calendar: Calendar): Promise<World>
+  updateCalendarMoons(worldId: string, moons: CalendarMoon[], expectedMoons: string, expectedCalendar: string): Promise<World>
+  updateCalendarSeasons(worldId: string, seasons: CalendarSeason[], expectedSeasons: string, expectedCalendar: string): Promise<World>
+  updateCampaignToday(worldId: string, date: CalendarExactDate | null, expectedToday: string, expectedCalendar: string): Promise<World>
+  updateCalendarLandmarks(worldId: string, landmarks: CalendarLandmarks, expectedLandmarks: string, expectedCalendar: string): Promise<World>
+  updateCalendarAppearance(worldId: string, appearance: CalendarAppearance, expectedAppearance: string): Promise<World>
   updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World>
   createOriginEvent(worldId: string, input: NewEntityInput): Promise<Entity>
   previewOriginEvent(worldId: string, eventId: string): Promise<OriginEventPreview>
@@ -37,6 +48,7 @@ export interface WorldRepository {
   recoverDateMigration(worldId: string, backupId: string, restore: boolean): Promise<void>
 
   listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]>
+  listCalendarAgenda(worldId: string): Promise<AgendaEvent[]>
   /** Trashed records retain metadata; failed reads reject instead of implying permanent absence. */
   listTrashedEntities(worldId: string): Promise<Entity[]>
   getEntity(worldId: string, entityId: string): Promise<Entity | null>
@@ -72,4 +84,5 @@ export interface OriginEventPreview {
   affectedDates: number
   precisionChanges: number
   examples: { title: string; field: string; before: string; after: string; precisionChanged: boolean }[]
+  worldDates: { title: string; field: string; before: string; after: string }[]
 }

@@ -19,6 +19,20 @@ const appearances: TimelineAppearance[] = [
 ]
 
 describe('navegação da linha do tempo', () => {
+  it('ordena e agrupa um dia intercalar independente após o último dia do mês', () => {
+    const custom = createDefaultCalendar()
+    custom.intercalaryRules.push({ id: 'festival', name: 'Festival', month: 12, everyYears: 1, yearOffset: 0, extendsMonth: false })
+    const items: TimelineAppearance[] = [
+      { ...appearances[0], date: { start: { year: 0, intercalaryRuleId: 'festival' } } },
+      { ...appearances[1], date: { start: { year: 0, month: 12, day: 31 } } },
+    ]
+    const result = selectTimelineAppearances(custom, items, records, {}, { scale: 'day', query: '', types: [], view: 'vertical' })
+    expect(result.periods.flatMap((period) => period.visible.map((item) => item.id))).toEqual([items[1].id, items[0].id])
+    expect(result.periods.at(-1)?.label).toContain('Festival')
+    const horizontal = buildTimelineHorizontalLayout(custom, items, 'day')
+    expect(horizontal.items[0].appearance.id).toBe(items[1].id)
+    expect(horizontal.items[1].appearance.id).toBe(items[0].id)
+  })
   it('agrupa anos negativos e zero sem alterar as aparições ao trocar escala', () => {
     const original = structuredClone(appearances)
     const state = { scale: 'century' as const, query: '', types: [], view: 'vertical' as const }

@@ -37,9 +37,10 @@ export default async function OriginEventPage(props: { searchParams: Promise<{ e
     {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
     {preview && <section className="mt-6 rounded-md border border-border p-4">
       <h2 className="font-serif text-xl">Prévia: {preview.eventTitle}</h2>
-      <p className="mt-2 text-sm">Deslocamento: {preview.shiftDays} dia(s). {preview.affectedDates} data(s) em {preview.affectedEntities} registro(s), inclusive registros na lixeira. A ordem e as distâncias entre dias completos são preservadas.</p>
+      <p className="mt-2 text-sm">Deslocamento: {preview.shiftDays} dia(s). {preview.affectedDates} data(s) em {preview.affectedEntities} registro(s) e nas configurações do mundo, inclusive registros na lixeira. A ordem e as distâncias entre dias completos são preservadas.</p>
       {preview.precisionChanges > 0 && <p role="alert" className="mt-3 rounded-md border border-border bg-muted/40 p-3 text-sm">{preview.precisionChanges} data(s) perderão precisão de ano ou mês porque o intervalo deslocado não coincide com uma unidade inteira. A duração aberta continua sem fim.</p>}
       {preview.examples.length > 0 && <ul className="mt-3 space-y-2 text-xs">{preview.examples.map((example, index) => <li key={index} className="break-all rounded bg-muted/40 p-2"><strong>{example.title} · {example.field}</strong>{example.precisionChanged && <span className="ml-2 font-medium text-destructive">Precisão alterada</span>}<br />{example.before} → {example.after}</li>)}</ul>}
+      {preview.worldDates.length > 0 && <><h3 className="mt-4 text-sm font-medium">Datas nas configurações do mundo</h3><ul className="mt-2 space-y-2 text-xs">{preview.worldDates.map((entry, index) => <li key={index} className="break-all rounded bg-muted/40 p-2"><strong>{entry.title} · {entry.field}</strong><br />{entry.before} → {entry.after}</li>)}</ul></>}
       <form action={replaceOriginEventAction} className="mt-5 space-y-3">
         <input type="hidden" name="worldId" value={world.id} />
         <input type="hidden" name="eventId" value={preview.eventId} />

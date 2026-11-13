@@ -10,6 +10,16 @@ import {
 } from './calendar-date'
 
 describe('valores de data do calendário do mundo', () => {
+  it('valida, ordena e formata dias intercalares independentes em intervalos', () => {
+    const calendar = createDefaultCalendar()
+    calendar.intercalaryRules.push({ id: 'festival', name: 'Festival', month: 12, everyYears: 2, yearOffset: 0, extendsMonth: false })
+    const date = { start: { year: 0, intercalaryRuleId: 'festival' }, end: { year: 1, month: 1, day: 1 } }
+    expect(validateCalendarDateValue(calendar, date).success).toBe(true)
+    expect(formatCalendarDateValue(calendar, date)).toContain('Festival')
+    expect(validateCalendarDateValue(calendar, { start: { year: 1, intercalaryRuleId: 'festival' } }).success).toBe(false)
+    expect(validateCalendarDateValue(calendar, { start: { year: 0, intercalaryRuleId: 'festival', month: 1 } }).success).toBe(false)
+    expect(validateCalendarDateValue(calendar, { start: date.end, end: date.start }).success).toBe(false)
+  })
   it('aceita ano, mês, dia, aproximação e intervalo sem usar Date', () => {
     const calendar = createDefaultCalendar()
     const value = {

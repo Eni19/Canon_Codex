@@ -18,7 +18,7 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
 
-## Mundo: v1 → v21
+## Mundo: v1 → v23
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -45,6 +45,8 @@ Registry: `worldMigrations` em
 | 18 | 19 | adiciona `timelineScaleDefaults` por tipo, sem alterar aparições ou datas |
 | 19 | 20 | remove as definições `originLocation` de Personagem e `relatedLocations` de Evento; ordena membros antes dos líderes de Organização e restringe líderes com `optionsFrom: 'members'` |
 | 20 | 21 | remove as definições `profile` (Perfil) e `firstAppearance` (Primeira aparição) de Personagem |
+| 21 | 22 | adiciona `calendarMoons` vazio, preservando calendário e demais dados |
+| 22 | 23 | adiciona estações e marcos vazios, Hoje em aberto e aparência padrão Codex, preservando o calendário e as luas |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
@@ -54,7 +56,7 @@ vale para v20→v21: valores antigos de `profile` e `firstAppearance` continuam 
 do personagem até o registro ser salvo de novo; como o formulário só envia campos definidos no
 tipo, salvar o personagem descarta esses valores.
 
-O seed atual já é v21, define 17 tipos e inclui o calendário convencional (meses gregorianos,
+O seed atual já é v23, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
@@ -85,12 +87,13 @@ no mundo, inclusive tipos personalizados e entidades na lixeira; mostra exemplos
 exige confirmação; e grava um backup dos metadados originais antes da primeira escrita. Cada arquivo
 é substituído de forma atômica. Uma interrupção deixa um estado recuperável para retomar ou restaurar.
 O manifesto do backup também guarda o relatório de exemplos e problemas da execução.
-Valores não representáveis, inclusive dias intercalares sem `mês/dia`, permanecem como strings para
+Valores não representáveis permanecem como strings para
 revisão. A confirmação fica vinculada ao conteúdo atual dos arquivos, do calendário e das definições
 de tipos do mundo. O manifesto possui versão e schema validados na leitura.
 
 A conversão usa o ordinal da data ISO no calendário convencional inicial e encontra a posição
-correspondente no calendário do mundo. Datas completas convertidas mantêm ordem e distância em dias;
+correspondente no calendário do mundo. Dias intercalares independentes são representados pelo ano e ID
+da regra. Datas completas convertidas mantêm ordem e distância em dias;
 uma segunda execução ignora os registros já convertidos.
 
 Para executar:

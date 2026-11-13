@@ -72,6 +72,7 @@ export async function createTimelineEventAction(_: AddTimelineAppearanceState, f
     const { entity } = await getWorldRepository().createTimelineEvent(world.id, timelineId, title, date, expectedUpdatedAt)
     revalidatePath(`/entity/${timelineId}`)
     revalidatePath('/event')
+    revalidatePath('/calendar')
     revalidatePath('/all')
     return { saved: true, entityId: entity.id }
   } catch (error) {

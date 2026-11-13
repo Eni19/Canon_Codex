@@ -30,7 +30,61 @@ pasta.
 
 ## Configurar o calendário
 
-Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite editar:
+Com um mundo aberto, escolha **Calendário** na barra lateral. As vistas **Mês** e **Ano** permitem
+consultar períodos e selecionar um dia. Use **Ir para data**, entre as setas do período, para abrir
+o seletor de ano, mês e dia. A URL conserva a consulta.
+Meses longos são divididos em páginas de até seis semanas. Dias intercalares independentes aparecem
+após o mês correspondente e podem ser selecionados; a seleção é conservada na URL ao trocar de vista.
+A grade mostra inícios de estações e marcos. Em telas estreitas, use o atalho **Detalhes** abaixo da
+grade para ler os nomes e as fases do dia selecionado. A vista anual reúne cartões com duração,
+estação inicial e data de até três marcos por mês, com legenda por categoria. A vista **Agenda** lista Eventos ativos cuja data ou intervalo alcança
+o mês consultado, com links para as entidades; datas parciais e aproximadas aparecem em seção
+própria. A lista é paginada e não inclui registros sem data válida.
+
+No teclado, use **Tab** para entrar nos dias do mês. As setas percorrem os dias do trecho,
+**Home** e **End** vão ao primeiro ou último dia da semana exibida, e **Enter** seleciona.
+
+Na vista mensal, selecione um dia e escolha **Definir como hoje** para registrar a data da campanha.
+Depois, **Avançar um dia** passa para a próxima data, inclusive em viradas e dias intercalares.
+O botão **Hoje** retorna à data registrada, e o calendário passa a abrir nela. Enquanto a data não
+for definida, a navegação começa na origem e **Definir hoje** leva ao painel do dia. **Criar Evento
+neste dia** abre o editor com o dia selecionado. Na agenda, **Criar nota de sessão** abre um Evento com título sugerido e a data
+de Hoje. A data e o título podem ser alterados antes de salvar.
+
+Para editar o calendário, escolha **Personalizar calendário** na navegação ou role até a seção
+abaixo da visão atual. As opções estão agrupadas por assunto e cada uma tem seu próprio salvamento.
+Para cadastrar estações, abra **Estações**, escolha **Adicionar
+estação**, informe nome, cor e dia/mês de início e escolha **Salvar estações**. A prévia mostra as
+datas e cores preenchidas e avisa enquanto houver alterações não salvas. As cores aparecem
+nas bordas superiores dos dias e na legenda; a data de início é marcada na grade. Cada início precisa
+ser único e existir em todos os anos. A estação vale até o início da próxima, inclusive na virada do ano.
+
+Em **Marcos e categorias**, crie primeiro uma categoria e depois um marco. Informe título,
+descrição, categoria e data; escolha **Uma vez** ou **Todos os anos** e, se desejar, acrescente um fim.
+Um intervalo anual com fim anterior ao início atravessa a virada do ano. O marco aparece na grade e
+no detalhe do dia; o painel lateral reúne os marcos do trecho exibido. A prévia mostra até cinco
+marcos com categoria, repetição e datas antes de salvar. Uma categoria em uso não pode
+ser removida antes de seus marcos serem removidos ou reclassificados.
+
+Em **Aparência**, aplique **Codex**, **Celeste** ou **Pergaminho**. O Celeste usa tons de
+azul-noturno e destaques dourados na capa, nas três vistas e nos formulários. Você pode duplicar um
+tema ou criar outro, ajustar cores, nome e imagem de fundo e salvar a escolha para o mundo. O fundo
+aceita PNG, JPEG, WebP, GIF ou AVIF de até 8 MB e 40 milhões de pixels; a imagem é copiada para o
+mundo ao ser escolhida. Removê-la do tema não apaga a cópia armazenada. Novas cores de texto e
+destaque precisam atingir contraste de 4,5:1 com a superfície.
+A prévia mostra a composição da capa e uma amostra do mês, incluindo fundo, posição e
+escurecimento. O editor avisa quando há alterações ainda não salvas.
+
+Em **Luas**, adicione até cinco luas, informando nome, cor, duração do ciclo e uma data
+exata de lua nova; depois escolha **Salvar luas**. A configuração pertence ao mundo. O formulário
+mostra uma prévia das fases no dia selecionado enquanto você edita; valores incompletos ou inválidos
+pedem correção antes de mostrar a fase. O editor avisa sobre alterações ainda não salvas. A grade mensal
+mostra os discos das luas salvas; use **Luas na grade** para escolher quais exibir e selecione um dia para ler a fase e o percentual iluminado de cada
+uma. A seleção de um dia intercalar independente também mostra suas fases. Enquanto houver luas
+salvas, alterações estruturais ficam bloqueadas. A troca de origem mostra o deslocamento das luas na
+prévia e recusa a operação se uma referência cair em um dia intercalar independente.
+
+Em **Estrutura**, a tela permite editar:
 
 - os sete nomes dos dias, o dia da semana no início do ano zero, horas por dia e os nomes/comprimentos individuais dos meses;
 - as eras anterior e posterior, o nome da origem e sua posição em mês/dia no ano zero;
@@ -39,9 +93,10 @@ Com um mundo aberto, escolha **Calendário** na barra lateral. A tela permite ed
   salto e inclusão permitem exceções, como saltar anos divisíveis por 100 e incluir novamente os
   divisíveis por 400.
 
-A prévia mostra a mesma posição no ano `-1`, `0` e `1`, incluindo o nome do dia e da era. Ano zero
-é um ano completo. Salvar valida nomes, meses positivos, origem válida, recorrências e regras que
-apontem para meses existentes; o formulário mantém o erro explicativo na tela quando algo é inválido.
+A prévia mostra a posição da origem nos anos `-1`, `0` e `1`, incluindo o nome do dia e da era.
+Informe um ano para conferir a duração de cada mês, o total de dias e as regras intercalares ativas.
+Ano zero é um ano completo. **Salvar estrutura** valida o rascunho. Em caso de erro, os campos
+continuam preenchidos. **Descartar alterações** repõe a configuração salva.
 Cada mundo lê e grava seu próprio calendário; se o mundo ativo mudar em outra aba antes de salvar,
 o formulário pede para reabrir o calendário, evitando gravar no mundo errado. Datas de entidade
 já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por esta configuração. Ao
@@ -57,8 +112,8 @@ de origem por mundo. Para trocar, abra **Ver ou substituir o Evento de origem** 
 selecione outro Evento, revise a prévia do deslocamento de dias e confirme. A troca remarca as datas
 de propriedades em registros ativos e na lixeira. A precisão de ano ou mês é preservada quando o
 intervalo deslocado ainda coincide com uma unidade inteira; caso contrário, a prévia avisa sobre a
-mudança de precisão. Uma duração sem fim permanece aberta. Datas inválidas ou que terminariam em um
-dia intercalar sem representação editável impedem a troca antes da gravação. Um backup em
+mudança de precisão. Uma duração sem fim permanece aberta. Datas inválidas ou referências lunares que
+terminariam em um dia intercalar independente impedem a troca antes da gravação. Um backup em
 `origin-backups/` restaura uma operação interrompida antes da próxima leitura ou gravação de
 metadados do mundo. A data do Evento vinculado não pode ser alterada para fora do marco;
 para isso, substitua a origem.

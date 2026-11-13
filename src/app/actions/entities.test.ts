@@ -17,10 +17,11 @@ vi.mock('next/navigation', () => ({
   redirect: () => { throw new Error('REDIRECT') },
   RedirectType: { replace: 'replace' },
 }))
-vi.mock('@/services/worlds/getCurrentWorld', () => ({ getCurrentWorld: async () => createDefaultWorldSeed() }))
+vi.mock('@/services/worlds/getCurrentWorld', () => ({ getCurrentWorld: async () => fixedWorld }))
 vi.mock('@/repositories', () => ({ getWorldRepository: () => mocks, getAssetStore: () => mocks }))
 
 import { createEntityAction, updateEntityAction } from './entities'
+const fixedWorld = createDefaultWorldSeed()
 
 describe('ações de entidade com campos de data', () => {
   beforeEach(() => {
@@ -36,6 +37,7 @@ describe('ações de entidade com campos de data', () => {
   it('cria Evento com a data informada no formulário inicial', async () => {
     const form = new FormData()
     form.set('type', 'event')
+    form.set('worldId', fixedWorld.id)
     form.set('title', 'Marco sintético')
     form.set('eventDate', JSON.stringify({ start: { year: -2, month: 3, day: 4 } }))
 
@@ -46,8 +48,28 @@ describe('ações de entidade com campos de data', () => {
     }))
   })
 
+  it('recusa a criação se o mundo ativo não corresponde ao formulário', async () => {
+    const form = new FormData()
+    form.set('worldId', 'outro-mundo')
+    form.set('type', 'event')
+    form.set('title', 'Evento sintético')
+    expect(await createEntityAction(form)).toMatchObject({ error: expect.stringContaining('mundo ativo mudou') })
+    expect(mocks.createEntity).not.toHaveBeenCalled()
+  })
+
+  it('mantém um campo de data explicitamente limpo', async () => {
+    const form = new FormData()
+    form.set('worldId', fixedWorld.id)
+    form.set('type', 'event')
+    form.set('title', 'Evento sem data')
+    form.set('eventDate', '')
+    await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
+    expect(mocks.createEntity).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ properties: expect.not.objectContaining({ eventDate: expect.anything() }) }))
+  })
+
   it('mantém a string ISO ao salvar outro campo do Evento', async () => {
     const form = new FormData()
+    form.set('worldId', fixedWorld.id)
     form.set('title', 'Título atualizado')
     form.set('eventDate', '2024-02-29')
 
@@ -74,6 +96,7 @@ describe('formulário único de entidade', () => {
   it('devolve o erro em vez de derrubar a página quando falta o título', async () => {
     const form = new FormData()
     form.set('type', 'character')
+    form.set('worldId', fixedWorld.id)
     form.set('title', '')
     await expect(createEntityAction(form)).resolves.toEqual({ error: 'O título é obrigatório.' })
     expect(mocks.createEntity).not.toHaveBeenCalled()
@@ -83,6 +106,7 @@ describe('formulário único de entidade', () => {
     const pages = [{ id: 'principal', title: 'Principal', body: { type: 'doc', content: [] } }]
     const form = new FormData()
     form.set('type', 'character')
+    form.set('worldId', fixedWorld.id)
     form.set('title', 'Ilsa')
     form.set('coverAssetId', NEW)
     form.set('theme', 'green')
@@ -95,6 +119,7 @@ describe('formulário único de entidade', () => {
 
   it('remove a imagem anterior quando trocada e não usada por outro registro', async () => {
     const form = new FormData()
+    form.set('worldId', fixedWorld.id)
     form.set('title', 'Ilsa')
     form.set('coverAssetId', NEW)
 
@@ -106,6 +131,7 @@ describe('formulário único de entidade', () => {
   it('mantém a imagem anterior se outro registro ainda a usa', async () => {
     mocks.listEntities.mockResolvedValue([{ id: 'outro', coverAssetId: OLD, properties: {} }])
     const form = new FormData()
+    form.set('worldId', fixedWorld.id)
     form.set('title', 'Ilsa')
     form.set('coverAssetId', '')
 

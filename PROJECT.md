@@ -86,6 +86,18 @@ O arquivo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`
 `world.json` declara propriedades, ícone, visibilidade e blocos de layout.
 O mesmo `world.json` guarda `calendar`, validado por `src/domain/worlds/calendar.ts`: dias da
 semana, meses com duração própria, horas por dia, eras, origem e regras intercalares.
+A rota `/calendar` apresenta consultas mensais, anuais e uma agenda de Eventos no servidor, com
+data na URL e janelas de até seis semanas para meses longos; dias intercalares independentes são
+selecionáveis após o mês. A vista mensal apresenta marcos e estações da projeção e a anual os resume.
+A agenda pagina os Eventos ativos que intersectam o mês, preservando datas
+parciais, aproximadas e intervalos. A seção de luas salva até cinco configurações por mundo; a grade
+mensal exibe seus discos, permite filtrá-los e o dia selecionado informa fases e percentuais iluminados.
+A aparência oferece três temas, personalização e fundo local. O Hoje da campanha pode ser definido,
+avançado e usado como sugestão na criação de Eventos e na linha do tempo.
+O modelo v23 também persiste estações, data de campanha, categorias e marcos, além da aparência;
+a projeção de domínio combina esses dados em janelas limitadas. Luas, estações, marcos e aparência têm
+formulários de configuração. Datas de Eventos e aparições podem identificar dias intercalares
+independentes por ano e ID da regra; a troca de origem inclui as datas do mundo na prévia e no backup.
 O campo opcional `originEventId` identifica um único Evento de origem. Criá-lo posiciona sua data
 no ano zero. A troca exige prévia com fingerprint, desloca datas de propriedades por ordinal sob
 bloqueio do mundo e guarda backup dos metadados e aparições alterados. Uma operação interrompida é restaurada
@@ -99,8 +111,16 @@ Propriedades com `kind: 'date'` usam o contrato `{ start, end? }` de
 legado continua aceito na leitura e edição durante a transição; strings ISO permanecem intactas em
 salvamentos comuns. A conversão explícita por mundo oferece prévia, relatório de inválidos, backup,
 retomada e restauração em `/calendar/migration`. Mudanças estruturais do calendário continuam
-bloqueadas enquanto houver propriedades ou aparições datadas, pois remarcá-las para outra estrutura
+bloqueadas enquanto houver propriedades, aparições datadas ou luas, pois remarcá-las para outra estrutura
 ainda requer uma operação própria.
+
+A rota `/calendar` usa a URL para conservar o período, o dia, a vista e o filtro lunar. O tema
+Celeste aplica tons de azul-noturno e destaques dourados na capa, nas vistas internas e nos
+formulários. A prévia de aparência reutiliza o componente de capa e os tokens da página. Os cinco
+editores são carregados ao abrir suas seções. Consulte o [guia de mundos](docs/user-guide/worlds.md#configurar-o-calendário).
+A Agenda usa `WorldRepository.listCalendarAgenda` para obter os Eventos ativos antes de projetar
+o mês. A implementação em filesystem mantém uma projeção em memória conferida com os metadados
+a cada consulta. Consulte [armazenamento](docs/data/storage.md#calendário-por-mundo).
 
 O ciclo de vida das aparições distingue registros ativos, na lixeira e ausentes definitivamente.
 Consultas de linha e origem, além da criação de origem, reconciliam referências sob lock: cartões na lixeira mantêm

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dateToOrdinal } from '@/domain/worlds/calendar'
+import { exactDateToOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { createWorld } from '@/services/worlds/worldLibrary'
 import { getTimelineDataPath, getWorldDir } from '@/lib/fs/paths'
 import { FileSystemWorldRepository } from './fileSystemWorldRepository'
@@ -31,6 +32,69 @@ describe('Evento de origem', () => {
     expect((await repo.getEntity(worldId, origin.id))?.properties.eventDate).toEqual({ start: { year: 0, month: 3, day: 5 } })
     await expect(repo.createOriginEvent(worldId, { type: 'event', title: 'Outro', properties: { eventDate: { start: { year: 0, month: 1, day: 1 } } } })).rejects.toThrow()
     await expect(repo.updateEntity(worldId, origin.id, { properties: { eventDate: { start: { year: 1, month: 1, day: 1 } } } })).rejects.toThrow()
+  })
+
+  it('detecta mudança nas luas após a prévia e desloca suas referências ao confirmar nova prévia', async () => {
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Marco', properties: { eventDate: { start: { year: 1, month: 1, day: 1 } } } })
+    const preview = await repo.previewOriginEvent(worldId, event.id)
+    const world = await repo.getWorld(worldId)
+    await repo.updateCalendarMoons(worldId, [{ id: 'lua', name: 'Lua', color: '#aabbcc', cycleDays: 28, newMoon: { year: 0, month: 1, day: 1 } }], JSON.stringify(world.calendarMoons), JSON.stringify(world.calendar))
+    await expect(repo.replaceOriginEvent(worldId, event.id, preview.fingerprint)).rejects.toThrow('mudou desde a prévia')
+    const updatedPreview = await repo.previewOriginEvent(worldId, event.id)
+    expect(updatedPreview.worldDates.some((example) => example.field === 'lua nova')).toBe(true)
+    const result = await repo.replaceOriginEvent(worldId, event.id, updatedPreview.fingerprint)
+    expect(dateToOrdinal(result.calendar, result.calendarMoons[0].newMoon)).toBe(updatedPreview.shiftDays)
+  })
+
+  it('desloca hoje intercalar e lua e recupera ambos se a troca for interrompida', async () => {
+    const initial = await repo.getWorld(worldId)
+    const calendar = { ...initial.calendar, intercalaryRules: [...initial.calendar.intercalaryRules, { id: 'festival', name: 'Festival', month: 12, everyYears: 1, yearOffset: 0, extendsMonth: false }] }
+    await repo.updateCalendar(worldId, calendar)
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Marco', properties: { eventDate: { start: { year: 1, month: 1, day: 1 } } } })
+    const moon = { id: 'lua', name: 'Lua', color: '#aabbcc', cycleDays: 28, newMoon: { year: 2, month: 1, day: 10 } }
+    const today = { year: 2, intercalaryRuleId: 'festival' }
+    await repo.updateCalendarMoons(worldId, [moon], '[]', JSON.stringify(calendar))
+    await repo.updateCampaignToday(worldId, today, 'null', JSON.stringify(calendar))
+    const preview = await repo.previewOriginEvent(worldId, event.id)
+    expect(preview.worldDates.some((example) => example.field === 'data atual')).toBe(true)
+    const shifted = await repo.replaceOriginEvent(worldId, event.id, preview.fingerprint)
+    expect(exactDateToOrdinal(calendar, shifted.campaignToday!)).toBe(exactDateToOrdinal(calendar, today) + preview.shiftDays)
+    expect(dateToOrdinal(calendar, shifted.calendarMoons[0].newMoon)).toBe(dateToOrdinal(calendar, moon.newMoon) + preview.shiftDays)
+    const backups = path.join(getWorldDir(shifted.slug), 'origin-backups')
+    const file = path.join(backups, (await readdir(backups))[0])
+    const backup = JSON.parse(await readFile(file, 'utf8'))
+    backup.state = 'applying'
+    await writeFile(file, JSON.stringify(backup))
+    expect(await repo.getWorld(worldId)).toMatchObject({ campaignToday: today, calendarMoons: [moon] })
+  })
+
+  it('recusa na prévia quando a referência lunar cairia em dia intercalar independente', async () => {
+    const initial = await repo.getWorld(worldId)
+    const calendar = { ...initial.calendar, intercalaryRules: [...initial.calendar.intercalaryRules, { id: 'festival', name: 'Festival', month: 12, everyYears: 1, yearOffset: 0, extendsMonth: false }] }
+    await repo.updateCalendar(worldId, calendar)
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Marco', properties: { eventDate: { start: { year: 1, month: 1, day: 1 } } } })
+    const moon = { id: 'lua', name: 'Lua', color: '#aabbcc', cycleDays: 28, newMoon: { year: 2, month: 1, day: 1 } }
+    await repo.updateCalendarMoons(worldId, [moon], '[]', JSON.stringify(calendar))
+    await expect(repo.previewOriginEvent(worldId, event.id)).rejects.toThrow('lua Lua')
+    expect((await repo.getWorld(worldId)).calendarMoons).toEqual([moon])
+  })
+
+  it('desloca marcos únicos e preserva recorrências ao trocar a origem', async () => {
+    const world = await repo.getWorld(worldId)
+    const event = await repo.createEntity(worldId, { type: 'event', title: 'Marco', properties: { eventDate: { start: { year: 1, month: 1, day: 1 } } } })
+    const uniqueStart = { year: 2, month: 2, day: 1 }
+    const content = { categories: [{ id: 'cat', name: 'Categoria', color: '#aabbcc' }], landmarks: [
+      { id: 'unique', title: 'Único', description: '', categoryId: 'cat', kind: 'once' as const, start: uniqueStart },
+      { id: 'annual', title: 'Anual', description: '', categoryId: 'cat', kind: 'annual' as const, start: { month: 2, day: 1 } },
+    ] }
+    await repo.updateCalendarLandmarks(worldId, content, JSON.stringify(world.calendarLandmarks), JSON.stringify(world.calendar))
+    const preview = await repo.previewOriginEvent(worldId, event.id)
+    expect(preview.worldDates.some((item) => item.field === 'marco')).toBe(true)
+    const result = await repo.replaceOriginEvent(worldId, event.id, preview.fingerprint)
+    const unique = result.calendarLandmarks.landmarks[0]
+    if (unique.kind !== 'once') throw new Error('Tipo inesperado')
+    expect(exactDateToOrdinal(world.calendar, unique.start)).toBe(exactDateToOrdinal(world.calendar, uniqueStart) + preview.shiftDays)
+    expect(result.calendarLandmarks.landmarks[1]).toEqual(content.landmarks[1])
   })
 
   it('desloca datas ativas e na lixeira preservando as distâncias e isola outro mundo', async () => {

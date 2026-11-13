@@ -1,5 +1,5 @@
-import { dateToOrdinal, formatCalendarDate, getCalendarDateAtOrdinal, type Calendar, type CalendarDate, type CalendarDateAtOrdinal } from '@/domain/worlds/calendar'
-import { getCalendarDateBoundaryOrdinalRange } from '@/domain/worlds/calendar-date'
+import { dateToOrdinal, formatCalendarDate, getCalendarDateAtOrdinal, getMonthLength, type Calendar, type CalendarDate, type CalendarDateAtOrdinal } from '@/domain/worlds/calendar'
+import { formatCalendarDateValue, getCalendarDateBoundaryOrdinalRange, type CalendarDateBoundary } from '@/domain/worlds/calendar-date'
 import type { Entity } from '@/domain/entities/entity'
 import { orderTimelineAppearances, type TimelineAppearance } from './timeline'
 import type { TimelineScale } from './timelineScale'
@@ -55,18 +55,19 @@ export function updateTimelineViewParams(params: string | URLSearchParams, key: 
   return next
 }
 
-function periodFor(calendar: Calendar, date: CalendarDate, scale: TimelineScale): { key: string; label: string; date: CalendarDate } {
+function periodFor(calendar: Calendar, date: CalendarDateBoundary, scale: TimelineScale): { key: string; label: string; date: CalendarDate } {
   const year = scale === 'century' ? Math.floor(date.year / 100) * 100
     : scale === 'decade' ? Math.floor(date.year / 10) * 10 : date.year
   const period: CalendarDate = { year }
+  const intercalary = date.intercalaryRuleId ? calendar.intercalaryRules.find((rule) => rule.id === date.intercalaryRuleId) : undefined
   if (scale === 'month' || scale === 'day') {
-    if (date.month !== undefined) period.month = date.month
+    if (date.month !== undefined || intercalary) period.month = date.month ?? intercalary!.month
     if (scale === 'day' && date.day !== undefined) period.day = date.day
   }
-  const key = `${scale}:${period.year}:${period.month ?? ''}:${period.day ?? ''}`
+  const key = `${scale}:${period.year}:${period.month ?? ''}:${period.day ?? ''}${scale === 'day' && intercalary ? `:${intercalary.id}` : ''}`
   const label = scale === 'century' ? `${formatCalendarDate(calendar, { year })} a ${formatCalendarDate(calendar, { year: year + 99 })}`
     : scale === 'decade' ? `${formatCalendarDate(calendar, { year })} a ${formatCalendarDate(calendar, { year: year + 9 })}`
-      : formatCalendarDate(calendar, period)
+      : scale === 'day' && intercalary ? formatCalendarDateValue(calendar, { start: date }) : formatCalendarDate(calendar, period)
   return { key, label, date: period }
 }
 
@@ -132,7 +133,7 @@ export function buildTimelineHorizontalLayout(calendar: Calendar, appearances: T
       appearance,
       startOrdinal: startRange.first,
       endOrdinal: endRange.last,
-      startUnit: horizontalUnitStart(date.start, scale),
+      startUnit: horizontalUnitStart(calendar, date.start, scale),
       endUnit: horizontalUnitEnd(calendar, date.end ?? date.start, scale),
       interval: Boolean(date.end),
       approximate: Boolean(date.start.approximate || date.end?.approximate),
@@ -178,7 +179,12 @@ export function buildTimelineHorizontalLayout(calendar: Calendar, appearances: T
   }
 }
 
-function horizontalUnitStart(boundary: { year: number; month?: number; day?: number }, scale: TimelineScale): CalendarDate {
+function horizontalUnitStart(calendar: Calendar, boundary: { year: number; month?: number; day?: number; intercalaryRuleId?: string }, scale: TimelineScale): CalendarDate {
+  if (boundary.intercalaryRuleId) {
+    const rule = calendar.intercalaryRules.find((item) => item.id === boundary.intercalaryRuleId)
+    if (!rule) throw new RangeError('Dia intercalar desconhecido.')
+    boundary = { year: boundary.year, month: rule.month, day: getMonthLength(calendar, boundary.year, rule.month) }
+  }
   if (scale === 'century') return { year: Math.floor(boundary.year / 100) * 100, month: 1, day: 1 }
   if (scale === 'decade') return { year: Math.floor(boundary.year / 10) * 10, month: 1, day: 1 }
   if (scale === 'year') return { year: boundary.year, month: 1, day: 1 }
@@ -186,9 +192,9 @@ function horizontalUnitStart(boundary: { year: number; month?: number; day?: num
   return { year: boundary.year, month: boundary.month ?? 1, day: boundary.day ?? 1 }
 }
 
-function horizontalUnitEnd(calendar: Calendar, boundary: { year: number; month?: number; day?: number }, scale: TimelineScale): CalendarDate {
-  if (scale === 'month' && boundary.month === undefined) return { year: boundary.year, month: calendar.months.length, day: 1 }
-  return horizontalUnitStart(boundary, scale)
+function horizontalUnitEnd(calendar: Calendar, boundary: { year: number; month?: number; day?: number; intercalaryRuleId?: string }, scale: TimelineScale): CalendarDate {
+  if (scale === 'month' && boundary.month === undefined && !boundary.intercalaryRuleId) return { year: boundary.year, month: calendar.months.length, day: 1 }
+  return horizontalUnitStart(calendar, boundary, scale)
 }
 
 function nextHorizontalUnit(calendar: Calendar, unit: CalendarDate, scale: TimelineScale): CalendarDate | null {
@@ -253,7 +259,7 @@ function buildHorizontalTicks(calendar: Calendar, unit: ReturnType<typeof horizo
   indices.add(unit.count - 1)
 
   if (scale !== 'day') {
-    const zero = horizontalUnitStart({ year: 0, month: 1, day: 1 }, scale)
+    const zero = horizontalUnitStart(calendar, { year: 0, month: 1, day: 1 }, scale)
     const zeroOrdinal = dateToOrdinal(calendar, zero)
     if (zeroOrdinal >= rangeStartOrdinal && zeroOrdinal <= rangeEndOrdinal) {
       const firstDate = unit.dateAt(0)

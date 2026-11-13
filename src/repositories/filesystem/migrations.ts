@@ -319,6 +319,8 @@ export const worldMigrations: MigrationRegistry = {
           : type,
       ),
     }),
+    21: (data) => ({ ...data, schemaVersion: 22, calendarMoons: [] }),
+    22: (data) => ({ ...data, schemaVersion: 23, calendarSeasons: [], campaignToday: null, calendarLandmarks: { categories: [], landmarks: [] }, calendarAppearance: { activeTheme: 'codex', customThemes: [] } }),
   },
 }
 export const entityMigrations: MigrationRegistry = {

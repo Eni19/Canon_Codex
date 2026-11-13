@@ -34,6 +34,7 @@ import { EvidenceFindingsSchema } from '@/domain/entities/evidenceFinding'
 import { LocationPointsSchema } from '@/domain/entities/locationPoint'
 import { OrganizationGroupsSchema } from '@/domain/entities/organizationGroup'
 import type { Calendar } from '@/domain/worlds/calendar'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
 import type { EntityEditorData } from '@/services/entities/getEntityEditorData'
 import { cn } from '@/lib/utils'
 
@@ -50,7 +51,11 @@ export interface EntityEditorProps {
   entityType: EntityTypeDefinition
   entity?: Entity
   worldName: string
+  worldId: string
   calendar: Calendar
+  campaignToday?: CalendarExactDate | null
+  initialEventDate?: CalendarExactDate
+  initialTitle?: string
   hasOriginEvent: boolean
   data: EntityEditorData
   action: (formData: FormData) => Promise<EntityFormState>
@@ -62,7 +67,7 @@ export interface EntityEditorProps {
  * (name, sheet, long texts, content), its visual identity on a sticky right rail (images, color,
  * status). The chosen color re-tints the whole form live.
  */
-export function EntityEditor({ mode, entityType, entity, worldName, calendar, hasOriginEvent, data, action, deleteAction }: EntityEditorProps) {
+export function EntityEditor({ mode, entityType, entity, worldName, worldId, calendar, campaignToday, initialEventDate, initialTitle, hasOriginEvent, data, action, deleteAction }: EntityEditorProps) {
   const formRef = useRef<HTMLFormElement>(null)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -155,7 +160,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, calendar, ha
 
   return (
     <div data-character-theme={themed ? theme : undefined} className="min-h-full">
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-6 border-b border-border bg-background/90 px-8 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm lg:min-h-14 lg:gap-6 lg:px-8">
         <Breadcrumbs items={[
           { label: worldName, href: '/codex' },
           { label: entityType.pluralLabel, href: `/${entityType.id}` },
@@ -169,15 +174,16 @@ export function EntityEditor({ mode, entityType, entity, worldName, calendar, ha
           <Button asChild variant="ghost">
             <Link href={cancelHref} replace onClick={(event) => { if (dirty && !window.confirm('Descartar as alterações não salvas?')) event.preventDefault() }}>Cancelar</Link>
           </Button>
-          <Button type="submit" form={FORM_ID} disabled={pending} className="min-w-32 transition-[background-color,transform] active:scale-[0.97]">
+          <Button type="submit" form={FORM_ID} disabled={pending} className="transition-[background-color,transform] active:scale-[0.97] lg:min-w-32">
             {pending ? <><Loader2 className="animate-spin"/>Salvando…</> : mode === 'create' ? 'Criar registro' : 'Salvar alterações'}
           </Button>
         </div>
       </header>
 
       <ReferenceSelectionProvider initial={data.initialSelections}>
-        <form id={FORM_ID} ref={formRef} onSubmit={handleSubmit} onInput={() => setDirty(true)} className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_19rem] items-start gap-x-14 px-8 pt-10 pb-24">
+        <form id={FORM_ID} ref={formRef} onSubmit={handleSubmit} onInput={() => setDirty(true)} className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-y-10 px-4 pt-6 pb-24 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-x-14 xl:px-8 xl:pt-10">
           <input type="hidden" name="type" value={entityType.id}/>
+          <input type="hidden" name="worldId" value={worldId}/>
 
           <div className="flex min-w-0 flex-col gap-12">
             <section aria-label="Identificação" data-reveal={0}>
@@ -188,15 +194,15 @@ export function EntityEditor({ mode, entityType, entity, worldName, calendar, ha
                   name="title"
                   required
                   autoFocus={mode === 'create'}
-                  defaultValue={entity?.title}
+                  defaultValue={entity?.title ?? initialTitle}
                   placeholder="Dê um nome a este registro"
                   autoComplete="off"
-                  className="w-full bg-transparent pb-2 font-serif text-4xl font-medium tracking-tight outline-none placeholder:text-muted-foreground/45"
+                  className="w-full bg-transparent pb-2 font-serif text-2xl font-medium tracking-tight outline-none placeholder:text-muted-foreground/45 sm:text-4xl"
                 />
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border"/>
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within/title:scale-x-100"/>
               </label>
-              <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) ? 'grid-cols-2' : 'grid-cols-1')}>
+              <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) && 'sm:grid-cols-2')}>
                 {supportsAliases(entityType) && <InlineField icon={<AtSign/>} name="aliases" label="Apelidos" placeholder="Outros nomes, separados por vírgula" defaultValue={entity?.aliases.join(', ')}/>}
                 <InlineField icon={<Tag/>} name="tags" label="Tags" placeholder="Tags, separadas por vírgula" defaultValue={entity?.tags.join(', ')}/>
               </div>
@@ -205,7 +211,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, calendar, ha
             {(shortFields.length > 0 || (mode === 'create' && entityType.id === 'event')) && <EditorSection title="Ficha" reveal={2}>
               <div className="grid grid-cols-2 gap-x-5 gap-y-5">
                 {shortFields.map((property) => <div key={property.key} className={isWideField(property) ? 'col-span-2' : undefined}>
-                  <PropertyField property={property} defaultValue={values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar}/>
+                  <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
                 </div>)}
               </div>
               {mode === 'create' && entityType.id === 'event' && <label className="mt-5 flex items-start gap-2.5 rounded-md bg-surface px-3 py-3 text-sm">
@@ -235,7 +241,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, calendar, ha
             </EditorSection>
           </div>
 
-          <aside aria-label="Identidade visual" data-reveal={1} className="sticky top-24 flex flex-col gap-8">
+          <aside aria-label="Identidade visual" data-reveal={1} className="flex min-w-0 flex-col gap-8 xl:sticky xl:top-24">
             {supportsCover(entityType) && <ImageField
               name="coverAssetId"
               label={coverLabel(entityType)}

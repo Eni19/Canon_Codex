@@ -8,6 +8,7 @@ export interface AssetStore {
   /** Copies the file at `sourcePath` into the workspace; the original is never referenced again. */
   importFromPath(worldId: string, sourcePath: string): Promise<Asset>
   importFromBuffer(worldId: string, buffer: Buffer, filename: string, mimeType: string): Promise<Asset>
+  prepareCalendarBackground(worldId: string, assetId: string): Promise<void>
   getAsset(worldId: string, assetId: string): Promise<Asset | null>
   /** Resolves an asset+variant to a local file path for a Route Handler to stream. */
   getVariantPath(worldId: string, assetId: string, variant: AssetVariant): Promise<string | null>

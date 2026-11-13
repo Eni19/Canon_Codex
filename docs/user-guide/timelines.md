@@ -72,6 +72,10 @@ Se os filtros ocultarem a aparição editada, a interface informa o motivo sem m
 
 **Criar Evento rápido** cria Evento e aparição juntos e oferece o editor completo. Nesse editor
 você altera o registro; para alterar só a aparição, use **Editar cartão**.
+Quando o Hoje da campanha estiver definido, a criação rápida sugere essa data, que pode ser ajustada
+antes da gravação. A agenda exibe o Evento pela data do registro; alterações posteriores no cartão
+não mudam essa data. Após a criação, o formulário mantém os valores preenchidos enquanto estiver
+aberto, permitindo revisá-los antes de uma nova criação.
 
 **Remover da linha** ou arrastar o cartão para a área de remoção retira somente a aparição.
 O aviso oferece **Desfazer** imediatamente, inclusive para alvo na lixeira. Se houver outra

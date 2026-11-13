@@ -37,6 +37,7 @@ async function removeAssetsWhenUnused(worldId: string, assetIds: (string | undef
 /** Creates the record with everything filled in the single form (images, content, editors). */
 export async function createEntityAction(formData: FormData): Promise<EntityFormState> {
   const world = await getCurrentWorld()
+  if (formData.get('worldId') !== world.id) return { error: 'O mundo ativo mudou. Reabra o formulário de criação.' }
   const typeId = String(formData.get('type') ?? '')
   const entityType = world.entityTypes.find((type) => type.id === typeId)
   if (!entityType) notFound()
@@ -70,6 +71,7 @@ export async function createEntityAction(formData: FormData): Promise<EntityForm
 
 export async function updateEntityAction(entityId: string, formData: FormData): Promise<EntityFormState> {
   const world = await getCurrentWorld()
+  if (formData.get('worldId') !== world.id) return { error: 'O mundo ativo mudou. Reabra o formulário de edição.' }
   const repo = getWorldRepository()
   const entity = await repo.getEntity(world.id, entityId)
   if (!entity) notFound()
@@ -109,10 +111,12 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
   redirect(`/entity/${entityId}`, RedirectType.replace)
 }
 
-export async function deleteEntityAction(entityId: string, entityTypeId: string): Promise<void> {
+export async function deleteEntityAction(entityId: string, entityTypeId: string, worldId: string): Promise<void> {
   const world = await getCurrentWorld()
+  if (world.id !== worldId) throw new Error('O mundo ativo mudou. Reabra o formulário de edição.')
   await getWorldRepository().deleteEntity(world.id, entityId)
   revalidatePath(`/${entityTypeId}`)
+  if (entityTypeId === 'event') revalidatePath('/calendar')
   revalidatePath('/boards', 'layout')
   revalidatePath('/scenes', 'layout')
   redirect(`/${entityTypeId}`, RedirectType.replace)

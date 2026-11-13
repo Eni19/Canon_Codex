@@ -7,6 +7,7 @@ import { ReferenceField } from '@/components/entities/reference-field'
 import { CalendarDateField } from '@/components/entities/calendar-date-field'
 import type { PropertyDefinition } from '@/domain/entities/entityType'
 import type { Calendar } from '@/domain/worlds/calendar'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
 
 export interface ReferenceOption {
   id: string
@@ -24,11 +25,13 @@ export function PropertyField({
   defaultValue,
   referenceOptions,
   calendar,
+  campaignToday,
 }: {
   property: PropertyDefinition
   defaultValue: unknown
   referenceOptions?: ReferenceOption[]
   calendar: Calendar
+  campaignToday?: CalendarExactDate | null
 }) {
   const fieldId = 'property-' + property.key
   const selectedReferences = new Set(Array.isArray(defaultValue) ? defaultValue.filter((value): value is string => typeof value === 'string') : [])
@@ -47,7 +50,7 @@ export function PropertyField({
   }
 
   if (property.kind === 'date') {
-    return <CalendarDateField propertyKey={property.key} propertyLabel={property.label} calendar={calendar} defaultValue={defaultValue} />
+    return <CalendarDateField propertyKey={property.key} propertyLabel={property.label} calendar={calendar} defaultValue={defaultValue} campaignToday={campaignToday} />
   }
 
   return (

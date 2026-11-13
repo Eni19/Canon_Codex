@@ -1,0 +1,171 @@
+.calendar {
+  min-height: 100%;
+  background-image: linear-gradient(150deg, color-mix(in srgb, var(--foreground) 4%, transparent), transparent 36rem);
+}
+
+.calendar :where(a, button, summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.toolbar, .periodHeader, .agendaIntro {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.toolbar {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 0.85rem 0.85rem;
+  background: var(--card);
+}
+
+.views, .shortcuts, .periodActions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.views { padding: 0.2rem; border-radius: 0.6rem; background: var(--muted); }
+.views a, .control, .primary {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.views a[aria-current], .primary { color: var(--primary-foreground); background: var(--primary); }
+.views a:not([aria-current]):hover, .control:hover { background: var(--muted); }
+.control { border-color: var(--border); }
+.control[aria-disabled] { opacity: 0.55; }
+.primary:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.sheet, .settings { padding: clamp(0.65rem, 2.4vw, 1.65rem); border: 1px solid var(--border); border-radius: 0.85rem; background: var(--background); }
+.periodHeader { position: relative; align-items: end; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border); }
+.periodHeader h2 { margin-block: 0.2rem; font: 600 clamp(1.7rem, 4vw, 3rem)/1.12 var(--font-serif); overflow-wrap: anywhere; }
+.periodHeader > div:first-child { min-width: 0; }
+.eyebrow { color: var(--primary); font-size: 0.69rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; overflow-wrap: anywhere; }
+.periodMeta { color: var(--muted-foreground); font-size: 0.78rem; }
+.jump { position: relative; }
+.jump summary { cursor: pointer; list-style: none; }
+.jump summary::-webkit-details-marker { display: none; }
+.jump[open] summary { background: var(--muted); }
+.jumpForm {
+  position: absolute;
+  inset: calc(100% + 0.5rem) -2.35rem auto auto;
+  z-index: 4;
+  display: grid;
+  width: min(17rem, 76vw);
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--background);
+  box-shadow: 0 0.5rem 1.5rem #0003;
+}
+.jumpForm label { min-width: 0; font-size: 0.8rem; }
+.jumpForm :is(input, select) { display: block; width: 100%; min-height: 2.4rem; margin-top: 0.2rem; padding-inline: 0.5rem; border: 1px solid var(--border); border-radius: 0.35rem; }
+
+.annualGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 0.8rem; }
+.monthCard { display: flex; min-width: 0; flex-direction: column; border: 1px solid var(--border); border-radius: 0.6rem; background: color-mix(in srgb, var(--background) 98%, var(--foreground)); overflow-wrap: anywhere; }
+.monthCard:hover { border-color: var(--primary); }
+.monthCardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-top: 3px solid var(--month-color, var(--primary));
+  border-radius: 0.55rem 0.55rem 0 0;
+  background: color-mix(in srgb, var(--month-color, var(--primary)) 15%, var(--background));
+}
+.monthCardHeader h3 { font: 600 1.2rem/1.15 var(--font-serif); }
+.monthCardHeader > span { font-size: 0.72rem; white-space: nowrap; }
+.monthCardBody { flex: 1; padding: 0.7rem 0.85rem 0.9rem; }
+.monthCardBody ul { display: grid; gap: 0.45rem; margin-top: 0.3rem; font-size: 0.78rem; }
+.monthCardBody li { display: flex; align-items: baseline; gap: 0.45rem; }
+.markDay { color: var(--primary); font-variant-numeric: tabular-nums; font-weight: 700; }
+.dot { display: inline-block; flex: none; width: 0.55rem; height: 0.55rem; border: 1px solid color-mix(in srgb, var(--foreground) 38%, transparent); border-radius: 50%; background: var(--primary); }
+.legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin-top: 0.8rem; padding: 0.6rem 0.75rem; border-radius: 0.45rem; background: var(--muted); font-size: 0.75rem; }
+.legend li, .moonFilter label { display: inline-flex; align-items: center; gap: 0.4rem; overflow-wrap: anywhere; }
+
+.monthLayout { display: grid; gap: 1rem; }
+.monthGridHeader, .monthGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.monthGridHeader { border-radius: 0.5rem 0.5rem 0 0; background: var(--calendar-weekdays, var(--foreground)); color: var(--calendar-weekdays-text, var(--background)); }
+.monthGridHeader > div { padding: 0.6rem 0.15rem; text-align: center; font-size: clamp(0.6rem, 1vw, 0.76rem); font-weight: 600; overflow-wrap: anywhere; }
+.weekdayShort { display: none; text-decoration: none; }
+.monthGrid { gap: 1px; padding: 0 1px 1px; background: var(--border); }
+.monthGrid > div { background: var(--muted); }
+.dayCell {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 4.9rem;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.32rem;
+  border-top: 3px solid transparent;
+  background: var(--calendar-day, var(--background));
+}
+.dayCell:hover { background: var(--calendar-day-hover, var(--muted)); }
+.dayCell[aria-current] { background: var(--calendar-day-selected, var(--muted)); }
+.dayCell[aria-current] { z-index: 1; outline: 2px solid var(--primary); outline-offset: -2px; }
+.dayCell:focus-visible { z-index: 2; outline: 2px dashed var(--primary); outline-offset: -4px; }
+.dayNumber { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; font-size: 0.87rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.todayTag { padding: 0.04rem 0.25rem; border-radius: 0.2rem; background: var(--primary); color: var(--primary-foreground); font-size: 0.58rem; }
+.cellMark { display: flex; min-width: 0; align-items: center; gap: 0.25rem; color: var(--primary); font-size: 0.66rem; line-height: 1.15; }
+.cellMark > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cellMore { font-size: 0.65rem; }
+.cellMoons { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem; margin-top: auto; padding-top: 0.25rem; font-size: 0.55rem; }
+.cellMoons svg { width: clamp(0.53rem, 1.15vw, 0.86rem); flex: none; }
+.moonFilter { margin-top: 0.7rem; font-size: 0.8rem; }
+.moonFilter summary { width: fit-content; padding-block: 0.45rem; cursor: pointer; font-weight: 600; }
+.moonFilter summary span { margin-left: 0.3rem; color: var(--muted-foreground); font-weight: 400; }
+.moonFilter form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; }
+.moonFilter fieldset { display: flex; min-width: 0; flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+.moonFilter label { padding-block: 0.3rem; }
+.detailPanel { align-self: start; min-width: 0; padding: 0.95rem; border: 1px solid var(--border); border-radius: 0.6rem; background: var(--card); overflow-wrap: anywhere; scroll-margin-top: 0.75rem; }
+.selectedTitle { margin-block: 0.25rem; font: 600 1.5rem/1.15 var(--font-serif); }
+.detailPanel .primary { width: 100%; margin-top: 0.9rem; }
+.mobileDetail { display: inline-flex; margin-top: 0.6rem; }
+.jumpForm input, .jumpForm select { background: var(--background); }
+.detailGroup { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
+.detailGroup h3 { font-size: 0.76rem; font-weight: 700; }
+.markCard { padding: 0.55rem 0.65rem; border-left: 3px solid var(--mark-color, var(--primary)); border-radius: 0.25rem; background: var(--background); }
+.markCard strong { display: block; font-family: var(--font-serif); }
+.markCard small, .detailGroup small { color: var(--muted-foreground); font-size: 0.72rem; }
+.markCard p { margin-top: 0.35rem; font-size: 0.78rem; }
+.markLink { display: flex; align-items: baseline; gap: 0.5rem; padding-block: 0.25rem; }
+.markLink:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.agendaIntro { margin-bottom: 1rem; }
+.agendaEntry { padding: 0.8rem 1rem; border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 0.45rem; background: var(--card); overflow-wrap: anywhere; }
+.agendaDate { color: var(--primary); font-size: 0.75rem; font-weight: 600; }
+.settings { margin-top: 1.25rem; scroll-margin-top: 0.75rem; }
+
+@media (min-width: 1080px) {
+  .monthLayout { grid-template-columns: minmax(0, 1fr) minmax(14rem, 25%); }
+  .mobileDetail { display: none; }
+}
+
+@media (max-width: 900px) {
+  .weekdayFull { display: none; }
+  .weekdayShort { display: inline; }
+}
+
+@media (max-width: 639px) {
+  .toolbar { gap: 0.45rem; margin-bottom: 0.8rem; padding: 0.4rem 0.55rem; }
+  .periodHeader { gap: 0.45rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
+  .jump { position: static; }
+  .jumpForm { inset: calc(100% - 0.45rem) auto auto 0; width: min(17rem, 100%); }
+  .dayCell { min-height: 3.65rem; padding: 0.22rem; }
+  .cellMark > span:last-child { display: none; }
+  .cellMark .dot { width: 0.46rem; height: 0.46rem; }
+  .todayTag { width: 0.45rem; height: 0.45rem; padding: 0; transform: rotate(45deg); border-radius: 1px; }
+  .todayTag span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .calendar :where(.control, .primary, .views a) { min-height: 2.75rem; }
+}

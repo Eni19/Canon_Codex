@@ -10,28 +10,32 @@ import {
   type CalendarDateValue,
 } from '@/domain/worlds/calendar-date'
 import type { Calendar } from '@/domain/worlds/calendar'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
 
-type Precision = 'year' | 'month' | 'day'
+type Precision = 'year' | 'month' | 'day' | 'intercalary'
 type BoundaryKey = 'start' | 'end'
 type BoundaryDraft = {
   year: string
   month: string
   day: string
+  intercalaryRuleId: string
   approximate: boolean
 }
 
-const EMPTY_BOUNDARY: BoundaryDraft = { year: '', month: '', day: '', approximate: false }
+const EMPTY_BOUNDARY: BoundaryDraft = { year: '', month: '', day: '', intercalaryRuleId: '', approximate: false }
 
 export function CalendarDateField({
   propertyKey,
   propertyLabel,
   calendar,
   defaultValue,
+  campaignToday,
 }: {
   propertyKey: string
   propertyLabel: string
   calendar: Calendar
   defaultValue: unknown
+  campaignToday?: CalendarExactDate | null
 }) {
   const initialValue = useMemo(() => getDateFieldEditorValue(calendar, defaultValue), [calendar, defaultValue])
   const initialObject = initialValue && typeof initialValue === 'object' ? initialValue : null
@@ -63,11 +67,13 @@ export function CalendarDateField({
 
   function setPrecision(key: BoundaryKey, precision: Precision) {
     const current = key === 'start' ? start : end
-    const next = precision === 'year'
-      ? { ...current, month: '', day: '' }
+    const next = precision === 'intercalary'
+      ? { ...current, month: '', day: '', intercalaryRuleId: calendar.intercalaryRules.find((rule) => !rule.extendsMonth)?.id ?? '' }
+      : precision === 'year'
+      ? { ...current, month: '', day: '', intercalaryRuleId: '' }
       : precision === 'month'
-        ? { ...current, month: current.month || '1', day: '' }
-        : { ...current, month: current.month || '1', day: current.day || '1' }
+        ? { ...current, month: current.month || '1', day: '', intercalaryRuleId: '' }
+        : { ...current, month: current.month || '1', day: current.day || '1', intercalaryRuleId: '' }
     updateBoundary(key, next)
   }
 
@@ -88,6 +94,7 @@ export function CalendarDateField({
               <option value="year">Ano</option>
               <option value="month">Ano e mês</option>
               <option value="day">Dia completo</option>
+              {calendar.intercalaryRules.some((rule) => !rule.extendsMonth) && <option value="intercalary">Dia intercalar independente</option>}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -111,7 +118,12 @@ export function CalendarDateField({
           </label>
         </div>
 
-        {precision !== 'year' && (
+        {precision === 'intercalary' && <label className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">Dia intercalar
+          <select aria-label={`Dia intercalar do ${label.toLowerCase()}`} value={draft.intercalaryRuleId} onChange={(event) => updateBoundary(key, { intercalaryRuleId: event.target.value })} className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground">
+            {calendar.intercalaryRules.filter((rule) => !rule.extendsMonth).map((rule) => <option key={rule.id} value={rule.id}>{rule.name}</option>)}
+          </select>
+        </label>}
+        {(precision === 'month' || precision === 'day') && (
           <div className="mt-2 grid grid-cols-2 gap-2">
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Mês
@@ -147,6 +159,7 @@ export function CalendarDateField({
     <div className="flex flex-col gap-2 sm:col-span-2" data-date-editor={propertyKey}>
       <Label htmlFor={`property-${propertyKey}-year`}>{propertyLabel}</Label>
       <input type="hidden" name={propertyKey} value={serializedValue ?? ''} />
+      {campaignToday && <button type="button" className="self-start rounded-md border px-3 py-1 text-xs" onClick={() => { setLegacyValue(''); setStart(boundaryToDraft(campaignToday)); setEnd(EMPTY_BOUNDARY); setHasEnd(false) }}>Usar hoje da campanha</button>}
       {legacyValue ? (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -177,6 +190,7 @@ function boundaryToDraft(boundary: CalendarDateBoundary | undefined): BoundaryDr
         year: String(boundary.year),
         month: boundary.month === undefined ? '' : String(boundary.month),
         day: boundary.day === undefined ? '' : String(boundary.day),
+        intercalaryRuleId: boundary.intercalaryRuleId ?? '',
         approximate: boundary.approximate === true,
       }
     : EMPTY_BOUNDARY
@@ -186,10 +200,11 @@ function draftToBoundary(draft: BoundaryDraft): CalendarDateBoundary {
   const year = draft.year.trim() === '' ? undefined : Number(draft.year)
   const month = draft.month.trim() === '' ? undefined : Number(draft.month)
   const day = draft.day.trim() === '' ? undefined : Number(draft.day)
-  return { year: year as number, ...(month === undefined ? {} : { month }), ...(day === undefined ? {} : { day }), approximate: draft.approximate }
+  return { year: year as number, ...(month === undefined ? {} : { month }), ...(day === undefined ? {} : { day }), ...(draft.intercalaryRuleId ? { intercalaryRuleId: draft.intercalaryRuleId } : {}), approximate: draft.approximate }
 }
 
 function getPrecision(draft: BoundaryDraft): Precision {
+  if (draft.intercalaryRuleId) return 'intercalary'
   if (draft.day !== '') return 'day'
   if (draft.month !== '') return 'month'
   return 'year'

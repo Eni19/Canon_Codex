@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { formatCalendarDate, type Calendar } from '@/domain/worlds/calendar'
+import type { CalendarExactDate } from '@/domain/worlds/calendar-exact-date'
 import { formatCalendarDateValue } from '@/domain/worlds/calendar-date'
 import { initialEventAppearanceDate, type TimelineAppearance, type TimelineData } from '@/domain/timelines/timeline'
 import { readTimelineViewState, selectTimelineAppearances, TIMELINE_SCALES, TIMELINE_SCALE_LABELS, updateTimelineViewParams } from '@/domain/timelines/timelineNavigation'
@@ -55,6 +56,7 @@ function ConfirmAdd({ worldId, timelineId, updatedAt, calendar, candidate, onAdd
 type Props = {
   worldId: string; timelineId: string; title: string; worldName: string; details: ReactNode
   timeline: TimelineData; calendar: Calendar; records: Entity[]; timelineRecords: Entity[]
+  campaignToday?: CalendarExactDate | null
   typeLabels: Record<string, string>; scaleDefaults: Record<string, TimelineScale>
 }
 
@@ -62,7 +64,7 @@ export function TimelineInteractiveView(props: Props) {
   return <Suspense fallback={<div className={styles.experience}><p className={styles.loading}>Preparando a constelação…</p></div>}><TimelineInteractiveBody {...props} /></Suspense>
 }
 
-function TimelineInteractiveBody({ worldId, timelineId, title, worldName, details, timeline, calendar, records, timelineRecords, typeLabels, scaleDefaults }: Props) {
+function TimelineInteractiveBody({ worldId, timelineId, title, worldName, details, timeline, calendar, campaignToday, records, timelineRecords, typeLabels, scaleDefaults }: Props) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const params = searchParams.toString()
@@ -254,7 +256,7 @@ function TimelineInteractiveBody({ worldId, timelineId, title, worldName, detail
     </>}</DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditingId(null) }}><DialogContent className={`${styles.cosmicPanel} ${styles.editPanel}`} overlayClassName={styles.overlay} onCloseAutoFocus={event => { event.preventDefault(); const id = lastEditingId.current; if (id && !visibleIds.has(id)) setMessage('O cartão está oculto pelos filtros ou detalhe atuais. Seus dados foram preservados.'); canvas.current?.restoreFocus(id, true) }}><DialogHeader><DialogTitle>Editar cartão</DialogTitle><DialogDescription>Altere esta aparição sem modificar o registro original.</DialogDescription></DialogHeader>{editing && <TimelineEditForm key={editing.id} worldId={worldId} timelineId={timelineId} updatedAt={timeline.updatedAt} appearance={editing} calendar={calendar} />}</DialogContent></Dialog>
     <Dialog open={candidate !== null} onOpenChange={open => { if (!open) setCandidate(null) }}><DialogContent className={`${styles.cosmicPanel} ${styles.editPanel}`} overlayClassName={styles.overlay} onCloseAutoFocus={event => { event.preventDefault(); const previous = candidateReturnFocus.current; (previous?.isConnected ? previous : libraryTrigger.current)?.focus({ preventScroll: true }) }}><DialogHeader><DialogTitle>Confirmar aparição</DialogTitle><DialogDescription>A sugestão de data só é gravada após confirmação.</DialogDescription></DialogHeader>{candidate && <ConfirmAdd key={`${candidate.record.id}:${candidate.label}`} worldId={worldId} timelineId={timelineId} updatedAt={timeline.updatedAt} calendar={calendar} candidate={candidate} onCancel={() => setCandidate(null)} onAdded={() => { setCandidate(null); setUndo(null); setMessage('Aparição incluída no mapa.') }} />}</DialogContent></Dialog>
-    <Dialog open={quickOpen} onOpenChange={setQuickOpen}><DialogContent className={`${styles.cosmicPanel} ${styles.editPanel}`} overlayClassName={styles.overlay} onCloseAutoFocus={event => { event.preventDefault(); quickTrigger.current?.focus({ preventScroll: true }) }}><DialogHeader><DialogTitle>Criar Evento rápido</DialogTitle><DialogDescription>Um novo acontecimento e sua aparição nesta linha.</DialogDescription></DialogHeader><TimelineQuickEventForm worldId={worldId} timelineId={timelineId} updatedAt={timeline.updatedAt} calendar={calendar} /></DialogContent></Dialog>
+    <Dialog open={quickOpen} onOpenChange={setQuickOpen}><DialogContent className={`${styles.cosmicPanel} ${styles.editPanel}`} overlayClassName={styles.overlay} onCloseAutoFocus={event => { event.preventDefault(); quickTrigger.current?.focus({ preventScroll: true }) }}><DialogHeader><DialogTitle>Criar Evento rápido</DialogTitle><DialogDescription>Um novo acontecimento e sua aparição nesta linha.</DialogDescription></DialogHeader><TimelineQuickEventForm worldId={worldId} timelineId={timelineId} updatedAt={timeline.updatedAt} calendar={calendar} campaignToday={campaignToday} /></DialogContent></Dialog>
     <Dialog open={aboutOpen} onOpenChange={setAboutOpen}><DialogContent className={`${styles.cosmicPanel} ${styles.aboutPanel}`} overlayClassName={styles.overlay} onCloseAutoFocus={event => { event.preventDefault(); aboutTrigger.current?.focus({ preventScroll: true }) }}><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>Conteúdo, propriedades, relações e configurações desta linha.</DialogDescription></DialogHeader><Link href={`/entity/${timelineId}/edit`} className={styles.button}><Pencil size={14} aria-hidden="true" />Editar linha e conteúdo</Link>{details}</DialogContent></Dialog>
   </div>
 }

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initialEventAppearanceDate, orderTimelineAppearances } from '@/domain/timelines/timeline'
+import { projectAgenda } from '@/domain/worlds/calendar-agenda'
 import { getTimelineDataPath } from '@/lib/fs/paths'
 import * as atomicWrite from '@/lib/fs/atomicWrite'
 import { createWorld } from '@/services/worlds/worldLibrary'
@@ -159,7 +160,11 @@ describe('aparições de Linha do Tempo', () => {
     expect(created.timeline.appearances.at(-1)?.entityId).toBe(created.entity.id)
     expect(created.timeline.appearances.at(-1)?.date).toEqual(created.entity.properties.eventDate)
     expect((await repo.getEntity(worldId, created.entity.id))?.title).toBe('Novo Evento')
+    const calendar = (await repo.getWorld(worldId)).calendar
+    const agenda = async () => projectAgenda(calendar, 2, 3, (await repo.listEntities(worldId, { type: 'event' })).map((entity) => ({ id: entity.id, title: entity.title, date: entity.properties.eventDate })))
+    expect((await agenda()).filter((entry) => entry.id === created.entity.id)).toHaveLength(1)
     await repo.updateEntity(worldId, created.entity.id, { properties: { eventDate: { start: { year: 8 } } } })
+    expect((await agenda()).some((entry) => entry.id === created.entity.id)).toBe(false)
     expect((await repo.getTimeline(worldId, timeline.id)).appearances.at(-1)?.date).toEqual({ start: { year: 2, month: 3, day: 4 } })
   })
 

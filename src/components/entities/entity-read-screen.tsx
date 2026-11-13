@@ -66,6 +66,7 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
       timelineTypes={world.entityTypes.map((type) => ({ id: type.id, label: type.label }))}
       relatedScenes={relatedScenes}
       calendar={world.calendar}
+      campaignToday={world.campaignToday}
       timeline={timeline}
     />
   )
