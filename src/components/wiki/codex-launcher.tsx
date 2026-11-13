@@ -22,7 +22,7 @@ const stagger = (index: number): CSSProperties => ({ animationDelay: `${index * 
  * World library at `/` — the one route rendered outside WikiShell, so it reproduces the shell's
  * rail (same width, tokens and link style as WikiSidebar) to read as part of the same app.
  */
-export function CodexLauncher({ worlds, activeWorldId }: { worlds: World[]; activeWorldId?: string }) {
+export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = [] }: { worlds: World[]; activeWorldId?: string; missingWorldMetadata?: string[] }) {
   const [panel, setPanel] = useState<Panel>(null)
   const [managedWorld, setManagedWorld] = useState<World | null>(null)
   const active = worlds.find((world) => world.id === activeWorldId) ?? worlds[0]
@@ -50,6 +50,11 @@ export function CodexLauncher({ worlds, activeWorldId }: { worlds: World[]; acti
     </aside>
 
     <main className="min-w-0 flex-1 overflow-y-auto">
+      {missingWorldMetadata.length > 0 && <div role="alert" className="mx-auto mt-6 max-w-4xl rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+        <p className="font-medium">Algumas pastas de mundo estão sem o arquivo world.json.</p>
+        <p className="mt-1">Os arquivos dessas pastas foram preservados. Restaure o world.json correspondente de um backup para voltar a abri-las:</p>
+        <ul className="mt-2 list-inside list-disc">{missingWorldMetadata.map((name) => <li key={name}>{name}</li>)}</ul>
+      </div>}
       {worlds.length === 0
         ? <EmptyLibrary onCreate={() => setPanel('create')} onImport={() => setPanel('import')}/>
         : <div className="mx-auto max-w-4xl px-12 py-14">

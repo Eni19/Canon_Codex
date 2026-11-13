@@ -21,7 +21,7 @@ import { readMigratedJson } from '@/lib/migrations/registry'
 import { slugify } from '@/lib/slugify'
 import type { Backlink, EntityListFilter, OriginEventPreview, WorldRepository } from '@/repositories/contracts/worldRepository'
 import { contentMigrations, entityMigrations } from '@/repositories/filesystem/migrations'
-import { listWorldDirs, readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
+import { listMissingWorldMetadata, listWorldDirs, readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
 import { previewDateMigration, recoverDateMigration, startDateMigration } from './dateMigration'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
 import { withWorldRead, withWorldWriteLock } from './worldWriteLock'
@@ -164,6 +164,10 @@ export class FileSystemWorldRepository implements WorldRepository {
   async listWorlds(): Promise<World[]> {
     const dirs = await listWorldDirs()
     return Promise.all(dirs.map((dir) => withWorldRead(dir, () => readWorldByDir(dir))))
+  }
+
+  async listMissingWorldMetadata(): Promise<string[]> {
+    return listMissingWorldMetadata()
   }
 
   async getWorld(worldId: string): Promise<World> {
@@ -333,7 +337,7 @@ export class FileSystemWorldRepository implements WorldRepository {
   async saveContent(worldId: string, entityId: string, doc: ContentDocument): Promise<void> {
     const parsed = ContentDocumentSchema.parse(doc)
     const worldDir = await resolveWorldDir(worldId)
-    await atomicWriteJson(getEntityContentPath(worldDir, entityId), parsed)
+    await withWorldWriteLock(worldDir, () => atomicWriteJson(getEntityContentPath(worldDir, entityId), parsed))
   }
 
   async addRelation(worldId: string, sourceId: string, relationInput: NewRelationInput): Promise<Relation> {

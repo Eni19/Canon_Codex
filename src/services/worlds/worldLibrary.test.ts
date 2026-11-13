@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import { getWorldRepository } from '@/repositories'
 import { createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from './worldLibrary'
+import { withWorldWriteLock } from '@/repositories/filesystem/worldWriteLock'
+import { atomicWriteJson } from '@/lib/fs/atomicWrite'
 
 describe('world library', () => {
   let workspaceDir: string
@@ -43,6 +45,21 @@ describe('world library', () => {
     expect((await getWorldRepository().getWorld(second.id)).calendar.hoursPerDay).toBe(24)
   })
 
+  it('isolates new calendar sections and rejects concurrent writes to the same section', async () => {
+    const repo = getWorldRepository()
+    const first = (await repo.listWorlds())[0]
+    const second = await createWorld('Mundo sintético')
+    const seasons = [{ id: 'winter', name: 'Inverno', color: '#aabbcc', start: { month: 1, day: 1 } }]
+    const results = await Promise.allSettled([
+      repo.updateCalendarSeasons(first.id, seasons, JSON.stringify(first.calendarSeasons), JSON.stringify(first.calendar)),
+      repo.updateCalendarSeasons(first.id, [{ ...seasons[0], name: 'Frio' }], JSON.stringify(first.calendarSeasons), JSON.stringify(first.calendar)),
+    ])
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
+    expect((await repo.getWorld(second.id)).calendarSeasons).toEqual([])
+    expect((await repo.getWorld(first.id)).calendarSeasons).toHaveLength(1)
+  })
+
   it('renames a world without changing its identity or folder', async () => {
     const created = await createWorld('Nome Inicial')
 
@@ -71,6 +88,14 @@ describe('world library', () => {
 
     expect(nextWorld).toBeNull()
     expect(await getWorldRepository().listWorlds()).toEqual([])
+  })
+
+  it('rejects a delayed write to a world after its folder has been moved to trash', async () => {
+    const world = await createWorld('Mundo Sintético')
+    await deleteWorld(world.id)
+    const file = path.join(workspaceDir, 'worlds', world.slug, 'entities', 'test', 'content.json')
+    await expect(withWorldWriteLock(world.slug, () => atomicWriteJson(file, { synthetic: true }))).rejects.toThrow()
+    expect(await getWorldRepository().listMissingWorldMetadata()).toEqual([])
   })
   it('imports every world from another Canon Codex root', async () => {
     const sourceDir = path.join(externalRoot, 'workspace', 'worlds', 'importado')

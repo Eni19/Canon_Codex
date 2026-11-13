@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -32,6 +32,25 @@ describe('FileSystemWorldRepository', () => {
     expect(worlds).toHaveLength(1)
     expect(worlds[0].entityTypes).toHaveLength(17)
     expect(worlds[0].entityTypes.map((type) => type.id)).toEqual(expect.arrayContaining(['character', 'tale', 'cosmology', 'species', 'naturalScience']))
+  })
+
+  it('reports a world folder without metadata while keeping other worlds usable and files intact', async () => {
+    const broken = path.join(workspaceDir, 'worlds', 'incompleto')
+    await mkdir(broken)
+    await writeFile(path.join(broken, 'sentinela.txt'), 'dados sintéticos')
+    expect((await repo.listWorlds()).map((world) => world.id)).toContain(worldId)
+    expect(await repo.listMissingWorldMetadata()).toEqual(['incompleto'])
+    expect(await readFile(path.join(broken, 'sentinela.txt'), 'utf8')).toBe('dados sintéticos')
+    expect(await readdir(broken)).toEqual(['sentinela.txt'])
+  })
+
+  it('keeps an incomplete only world unavailable without creating a replacement', async () => {
+    const folder = path.join(workspaceDir, 'worlds', 'paranormal')
+    await rm(path.join(folder, 'world.json'))
+    await writeFile(path.join(folder, 'sentinela.txt'), 'dados sintéticos')
+    expect(await repo.listWorlds()).toEqual([])
+    expect(await repo.listMissingWorldMetadata()).toEqual(['paranormal'])
+    expect(await readdir(folder)).toEqual(['sentinela.txt'])
   })
 
   it('creates and reads back an entity', async () => {

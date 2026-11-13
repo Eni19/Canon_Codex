@@ -7,6 +7,7 @@ import { getSceneDir, getSceneJsonPath, getScenesDir, getTrashDir } from '@/lib/
 import { newId } from '@/lib/ids'
 import type { SceneRepository } from '@/repositories/contracts/sceneRepository'
 import { resolveWorldDir } from './worldDirRegistry'
+import { withWorldWriteLock } from './worldWriteLock'
 
 export class FileSystemSceneRepository implements SceneRepository {
   async listScenes(worldId: string): Promise<SceneSummary[]> {
@@ -20,13 +21,17 @@ export class FileSystemSceneRepository implements SceneRepository {
   async createScene(worldId: string, input: CreateSceneInput) {
     const data = CreateSceneInputSchema.parse(input), now = new Date().toISOString()
     const scene = SceneSchema.parse({ schemaVersion: SCENE_SCHEMA_VERSION, id: newId(), worldId, title: data.title, description: data.description || undefined, tags: data.tags, background: { locationId: data.locationId, assetId: data.assetId, width: data.width, height: data.height }, grid: { enabled: false, type: 'square', cellSize: 70, offsetX: 0, offsetY: 0, opacity: .25, snapTokens: false }, canvasSnapshot: null, createdAt: now, updatedAt: now })
-    await atomicWriteJson(getSceneJsonPath(await resolveWorldDir(worldId), scene.id), scene); return scene
+    const worldDir = await resolveWorldDir(worldId)
+    await withWorldWriteLock(worldDir, () => atomicWriteJson(getSceneJsonPath(worldDir, scene.id), scene)); return scene
   }
   async saveScene(worldId: string, sceneId: string, patch: { canvasSnapshot?: unknown; grid?: SceneGrid }) {
-    const worldDir = await resolveWorldDir(worldId), current = await this.read(worldDir, sceneId)
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+    const current = await this.read(worldDir, sceneId)
     if (!current) throw new Error(`Scene not found: ${sceneId}`)
     const next = SceneSchema.parse({ ...current, ...(patch.canvasSnapshot !== undefined ? { canvasSnapshot: patch.canvasSnapshot } : {}), ...(patch.grid ? { grid: SceneGridSchema.parse(patch.grid) } : {}), updatedAt: new Date().toISOString() })
     await atomicWriteJson(getSceneJsonPath(worldDir, sceneId), next); return next
+    })
   }
   async duplicateScene(worldId: string, sceneId: string) {
     const current = await this.getScene(worldId, sceneId); if (!current) throw new Error(`Scene not found: ${sceneId}`)
@@ -34,8 +39,11 @@ export class FileSystemSceneRepository implements SceneRepository {
     return this.saveScene(worldId, copy.id, { canvasSnapshot: current.canvasSnapshot, grid: current.grid })
   }
   async deleteScene(worldId: string, sceneId: string) {
-    const worldDir = await resolveWorldDir(worldId), dir = getSceneDir(worldDir, sceneId); if (!(await pathExists(dir))) return
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+    const dir = getSceneDir(worldDir, sceneId); if (!(await pathExists(dir))) return
     const trash = getTrashDir(worldDir); await ensureDir(trash); await rename(dir, path.join(trash, `scene-${sceneId}-${Date.now()}`))
+    })
   }
   private async read(worldDir: string, sceneId: string): Promise<Scene | null> { const file = getSceneJsonPath(worldDir, sceneId); return (await pathExists(file)) ? SceneSchema.parse(await readJsonFile(file)) : null }
 }

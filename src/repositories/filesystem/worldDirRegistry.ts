@@ -1,5 +1,5 @@
 import 'server-only'
-import { readdir } from 'node:fs/promises'
+import { readdir, stat } from 'node:fs/promises'
 import { atomicWriteJson, pathExists } from '@/lib/fs/atomicWrite'
 import { getWorldJsonPath, getWorldsRootDir } from '@/lib/fs/paths'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
@@ -21,10 +21,29 @@ async function ensureDefaultWorldSeeded(): Promise<void> {
   await atomicWriteJson(getWorldJsonPath(seed.slug), seed)
 }
 
-export async function listWorldDirs(): Promise<string[]> {
+async function classifyWorldDirs(): Promise<{ available: string[]; missing: string[] }> {
   await ensureDefaultWorldSeeded()
   const entries = await readdir(getWorldsRootDir(), { withFileTypes: true })
-  return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+  const available: string[] = []
+  const missing: string[] = []
+  for (const entry of entries.filter((item) => item.isDirectory())) {
+    try {
+      await stat(getWorldJsonPath(entry.name))
+      available.push(entry.name)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      missing.push(entry.name)
+    }
+  }
+  return { available, missing }
+}
+
+export async function listWorldDirs(): Promise<string[]> {
+  return (await classifyWorldDirs()).available
+}
+
+export async function listMissingWorldMetadata(): Promise<string[]> {
+  return (await classifyWorldDirs()).missing
 }
 
 export async function readWorldByDir(worldDir: string): Promise<World> {

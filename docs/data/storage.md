@@ -155,7 +155,12 @@ imagem no editor volta o enquadramento ao padrão.
 - Quadros e cenas não usam `readMigratedJson`; leem JSON atual e aplicam `BoardDocumentSchema` ou
   `SceneSchema` diretamente.
 - Arquivo ausente de entidade ou asset resulta em `null`; conteúdo ausente de entidade recebe
-  `emptyContentDocument()`. Um mundo ausente falha a resolução.
+  `emptyContentDocument()`. Uma pasta de mundo sem `world.json` não entra na listagem de mundos;
+  a biblioteca informa seu nome, preservando o conteúdo. Um mundo ausente falha a resolução.
+- A exclusão de mundo move sua pasta para a lixeira interna sob o bloqueio do mundo. Gravações
+  de entidades, conteúdo, imagens, quadros, cenas e playlists usam o mesmo bloqueio; depois de
+  obtê-lo, a operação exige que `world.json` ainda exista, evitando recriar uma pasta já removida
+  por uma gravação que esperava na fila.
 - JSON inválido, versão sem migração, schema incompatível ou erro de filesystem lança exceção. Os
   listadores usam `Promise.all`, portanto um registro inválido pode fazer a leitura da coleção
   falhar; não existe quarentena automática de registros inválidos.

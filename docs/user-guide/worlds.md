@@ -13,6 +13,11 @@ ou **Carregar pasta** no estado vazio para começar. Em uma instalação na qual
 ainda não existe, a primeira leitura cria automaticamente o seed `Canon Codex` com 17 tipos
 iniciais.
 
+Se uma pasta de mundo estiver sem `world.json`, a biblioteca exibe um aviso com o nome da pasta
+e mantém os demais mundos acessíveis. A pasta não é apagada nem recriada; restaure o arquivo
+correspondente de um backup para abrir esse mundo novamente. Sem mundos disponíveis, uma rota
+interna volta para a biblioteca.
+
 ## Criar um mundo
 
 1. Na barra lateral da biblioteca, escolha **Criar Codex**.

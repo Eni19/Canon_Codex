@@ -14,6 +14,7 @@ import { getBoardDir, getBoardJsonPath, getBoardsDir, getTrashDir } from '@/lib/
 import { newId } from '@/lib/ids'
 import type { BoardRepository } from '@/repositories/contracts/boardRepository'
 import { resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
+import { withWorldWriteLock } from './worldWriteLock'
 
 export class BoardNotFoundError extends Error {
   constructor(boardId: string) {
@@ -63,26 +64,30 @@ export class FileSystemBoardRepository implements BoardRepository {
       updatedAt: now,
     })
     const worldDir = await resolveWorldDir(worldId)
-    await atomicWriteJson(getBoardJsonPath(worldDir, board.id), board)
+    await withWorldWriteLock(worldDir, () => atomicWriteJson(getBoardJsonPath(worldDir, board.id), board))
     return board
   }
 
   async saveBoard(worldId: string, boardId: string, canvasSnapshot: unknown): Promise<BoardDocument> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const current = await this.readByDir(worldDir, boardId)
     if (!current) throw new BoardNotFoundError(boardId)
     const next = BoardDocumentSchema.parse({ ...current, canvasSnapshot, updatedAt: new Date().toISOString() })
     await atomicWriteJson(getBoardJsonPath(worldDir, boardId), next)
     return next
+    })
   }
 
   async deleteBoard(worldId: string, boardId: string): Promise<void> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const boardDir = getBoardDir(worldDir, boardId)
     if (!(await pathExists(boardDir))) throw new BoardNotFoundError(boardId)
     const trashDir = getTrashDir(worldDir)
     await ensureDir(trashDir)
     await rename(boardDir, path.join(trashDir, `board-${boardId}-${Date.now()}`))
+    })
   }
 
   private async readByDir(worldDir: string, boardId: string): Promise<BoardDocument | null> {

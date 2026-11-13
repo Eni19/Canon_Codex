@@ -4,7 +4,7 @@ import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
-import { getWorldDir } from '@/lib/fs/paths'
+import { getWorldDir, getWorldJsonPath } from '@/lib/fs/paths'
 import { hasInterruptedOriginEvent, recoverInterruptedOriginEvent } from './originEvent'
 
 const WAIT_MS = 50
@@ -72,6 +72,11 @@ export async function withWorldWriteLock<T>(worldDir: string, operation: () => P
   }
   try {
     await recoverInterruptedOriginEvent(worldDir)
+    try { await stat(getWorldJsonPath(worldDir)) }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('O mundo não está mais disponível. Atualize a biblioteca.')
+      throw error
+    }
     return await operation()
   }
   finally {

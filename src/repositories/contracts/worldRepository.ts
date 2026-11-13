@@ -25,6 +25,7 @@ export interface Backlink {
  */
 export interface WorldRepository {
   listWorlds(): Promise<World[]>
+  listMissingWorldMetadata(): Promise<string[]>
   getWorld(worldId: string): Promise<World>
   updateCalendar(worldId: string, calendar: Calendar): Promise<World>
   updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World>

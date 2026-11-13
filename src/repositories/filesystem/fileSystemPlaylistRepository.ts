@@ -18,6 +18,7 @@ import { getPlaylistDir, getPlaylistJsonPath, getPlaylistsDir, getTrashDir } fro
 import { newId } from '@/lib/ids'
 import type { PlaylistRepository } from '@/repositories/contracts/playlistRepository'
 import { resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
+import { withWorldWriteLock } from './worldWriteLock'
 
 export class PlaylistNotFoundError extends Error {
   constructor(playlistId: string) {
@@ -58,7 +59,7 @@ export class FileSystemPlaylistRepository implements PlaylistRepository {
       updatedAt: now,
     })
     const worldDir = await resolveWorldDir(worldId)
-    await atomicWriteJson(getPlaylistJsonPath(worldDir, playlist.id), playlist)
+    await withWorldWriteLock(worldDir, () => atomicWriteJson(getPlaylistJsonPath(worldDir, playlist.id), playlist))
     return playlist
   }
 
@@ -95,20 +96,24 @@ export class FileSystemPlaylistRepository implements PlaylistRepository {
 
   async deletePlaylist(worldId: string, playlistId: string): Promise<void> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const playlistDir = getPlaylistDir(worldDir, playlistId)
     if (!(await pathExists(playlistDir))) throw new PlaylistNotFoundError(playlistId)
     const trashDir = getTrashDir(worldDir)
     await ensureDir(trashDir)
     await rename(playlistDir, path.join(trashDir, `playlist-${playlistId}-${Date.now()}`))
+    })
   }
 
   private async mutate(worldId: string, playlistId: string, change: (current: Playlist) => Playlist): Promise<Playlist> {
     const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
     const current = await this.readByDir(worldDir, playlistId)
     if (!current) throw new PlaylistNotFoundError(playlistId)
     const next = PlaylistSchema.parse({ ...change(current), updatedAt: new Date().toISOString() })
     await atomicWriteJson(getPlaylistJsonPath(worldDir, playlistId), next)
     return next
+    })
   }
 
   private async readByDir(worldDir: string, playlistId: string): Promise<Playlist | null> {
