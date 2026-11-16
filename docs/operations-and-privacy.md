@@ -21,6 +21,10 @@ Assets são servidos por Route Handler e o browser recebe cache immutable. O han
 selecionado pelo cookie, mas isso não constitui autenticação. Qualquer pessoa com acesso ao
 processo/host deve ser considerada capaz de acessar os dados disponíveis naquele contexto.
 
+A [trilha sonora](user-guide/soundtrack.md) usa o YouTube. O navegador prepara o player quando o
+usuário abre a área ou o seletor de trilha, ou inicia uma fila. A navegação pela wiki com a trilha
+ociosa não inicializa esse player.
+
 ## Uploads
 
 Os uploads aceitam os MIME definidos em src/domain/assets/mimeType.ts. O arquivo é copiado para o

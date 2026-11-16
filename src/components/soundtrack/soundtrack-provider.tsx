@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { projectionSession, useProjectionSession } from '@/lib/projection/projection-session'
 import { loadYouTubeApi, YT_STATE, type YTPlayer } from '@/lib/youtube/iframeApi'
@@ -112,6 +113,8 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
   const startPendingRef = useRef(false)
   const [remoteBlocked, setRemoteBlocked] = useState(false)
   const [browserOpen, setBrowserOpen] = useState(false)
+  const pathname = usePathname()
+  const needsPlayer = browserOpen || view.source !== null || pathname.startsWith('/soundtrack')
 
   const publish = useCallback(() => setView({ ...core.current }), [])
   const setStatus = useCallback((status: PlaybackStatus) => { core.current.status = status; publish() }, [publish])
@@ -168,9 +171,10 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
   }, [setStatus, step])
 
   useEffect(() => {
-    if (!hostElement) return
+    if (!hostElement || !needsPlayer) return
     const c = core.current
     let cancelled = false
+    let instance: YTPlayer | undefined
     const target = document.createElement('div')
     hostElement.appendChild(target)
 
@@ -182,6 +186,7 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
         playerVars: { playsinline: 1, rel: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
         events: {
           onReady: () => {
+            if (cancelled) return
             playerRef.current = player
             readyRef.current = true
             player.setVolume(volumeRef.current)
@@ -191,6 +196,7 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
             pending?.()
           },
           onStateChange: (event) => {
+            if (cancelled) return
             const c = core.current
             if (event.data === YT_STATE.PLAYING) { c.failures = 0; startPendingRef.current = false; setStatus('playing') }
             else if (event.data === YT_STATE.PAUSED) setStatus('paused')
@@ -200,20 +206,23 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
               else step(1, true)
             }
           },
-          onError: () => handleFailure(),
+          onError: () => { if (!cancelled) handleFailure() },
         },
       })
-    }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Não foi possível iniciar o player.'))
+      instance = player
+    }).catch((error: unknown) => {
+      if (!cancelled) toast.error(error instanceof Error ? error.message : 'Não foi possível iniciar o player.')
+    })
 
     return () => {
       cancelled = true
-      try { playerRef.current?.destroy() } catch { /* already gone */ }
+      try { instance?.destroy() } catch { /* already gone */ }
       playerRef.current = null
       readyRef.current = false
       target.remove()
       if (c.status !== 'idle') setStatus('paused')
     }
-  }, [hostElement, setStatus, step, handleFailure])
+  }, [hostElement, needsPlayer, setStatus, step, handleFailure])
 
   useEffect(() => {
     volumeRef.current = volume

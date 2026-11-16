@@ -1,36 +1,37 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
+import { Button } from '@/components/ui/button'
+import { CardPickerField, type CardPickerItem } from '@/components/ui/card-picker'
+import type { ArrowEndpoint } from '@/domain/relations/graphGeometry'
 import { FreeArrowSchema, type FreeArrow } from '@/domain/relations/graphSettings'
 
-type Point = { x: number; y: number }
-const field = 'w-24 rounded border bg-background px-2 py-1'
-
-export function FreeArrowForm({ start, end, setStart, setEnd, add }: { start: Point | null; end: Point | null; setStart: (point: Point) => void; setEnd: (point: Point) => void; add: (arrow: FreeArrow) => void }) {
-  const [color, setColor] = useState('#a64b39')
-  const [stroke, setStroke] = useState<FreeArrow['stroke']>('solid')
+export function FreeArrowForm({ start, end, items, choose, existing, save }: {
+  start: ArrowEndpoint | null; end: ArrowEndpoint | null; items: CardPickerItem[]
+  choose: (which: 'start' | 'end', id: string) => void; existing?: FreeArrow; save: (arrow: FreeArrow) => void
+}) {
+  const id = useId()
+  const [color, setColor] = useState(existing?.color ?? '#a64b39')
+  const [stroke, setStroke] = useState<FreeArrow['stroke']>(existing?.stroke ?? 'solid')
   const [error, setError] = useState('')
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const result = FreeArrowSchema.safeParse({ id: crypto.randomUUID(), start, end, color, stroke })
-    if (!result.success) { setError('Informe início e fim com coordenadas válidas.'); return }
-    add(result.data); setError('')
+    if (!start || !end) return
+    const result = FreeArrowSchema.safeParse({ id: existing?.id ?? crypto.randomUUID(), start: start.point, end: end.point, startCardId: start.cardId, endCardId: end.cardId, color, stroke })
+    if (!result.success) { setError('Não foi possível salvar a seta. Marque as pontas novamente.'); return }
+    save(result.data); setError('')
   }
-  const position = (value: Point | null, set: (point: Point) => void, coordinate: 'x' | 'y', next: string) => {
-    set({ ...(value ?? { x: 0, y: 0 }), [coordinate]: next === '' ? Number.NaN : Number(next) })
-  }
-  return <form onSubmit={submit} className="space-y-2 rounded border p-3 text-sm">
-    <h2 className="font-medium">Seta livre</h2>
-    <p>Marque início e fim clicando no fundo do canvas ou informe as coordenadas. Esta anotação não cria vínculo nas fichas.</p>
-    <div className="flex flex-wrap gap-3">
-      <label>Início X <input className={field} type="number" step="any" value={Number.isFinite(start?.x) ? start?.x : ''} onChange={(event) => position(start, setStart, 'x', event.target.value)} /></label>
-      <label>Início Y <input className={field} type="number" step="any" value={Number.isFinite(start?.y) ? start?.y : ''} onChange={(event) => position(start, setStart, 'y', event.target.value)} /></label>
-      <label>Fim X <input className={field} type="number" step="any" value={Number.isFinite(end?.x) ? end?.x : ''} onChange={(event) => position(end, setEnd, 'x', event.target.value)} /></label>
-      <label>Fim Y <input className={field} type="number" step="any" value={Number.isFinite(end?.y) ? end?.y : ''} onChange={(event) => position(end, setEnd, 'y', event.target.value)} /></label>
-      <label>Cor <input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
-      <label>Traço <select className="rounded border bg-background" value={stroke} onChange={(event) => setStroke(event.target.value as FreeArrow['stroke'])}><option value="solid">Contínuo</option><option value="dashed">Tracejado</option><option value="dotted">Pontilhado</option></select></label>
+  return <form onSubmit={submit} className="space-y-3">
+    <p className="text-muted-foreground">{existing ? 'Arraste as pontas no mapa ou escolha outro cartão abaixo.' : 'Clique nos cartões ou no mapa. Você também pode escolher os cartões pela busca abaixo.'}</p>
+    <div className="grid gap-2">
+      <div><label htmlFor={id + '-start'}>Início</label><CardPickerField id={id + '-start'} items={items} title="Escolher cartão de início" placeholder={start ? 'Ponto no mapa' : 'Escolher cartão'} value={start?.cardId ?? ''} onChange={(next) => choose('start', next)} /></div>
+      <div><label htmlFor={id + '-end'}>Fim</label><CardPickerField id={id + '-end'} items={items} title="Escolher cartão de fim" placeholder={end ? 'Ponto no mapa' : 'Escolher cartão'} value={end?.cardId ?? ''} onChange={(next) => choose('end', next)} /></div>
     </div>
-    <button type="submit" className="rounded border px-2 py-1">Adicionar seta livre</button>
+    <div className="flex flex-wrap items-center gap-4">
+      <label className="flex items-center gap-2">Cor <input type="color" className="h-8 w-11" value={color} onChange={(event) => setColor(event.target.value)} /></label>
+      <label className="flex items-center gap-2">Traço <select className="min-h-8 rounded-md border bg-background px-2" value={stroke} onChange={(event) => setStroke(event.target.value as FreeArrow['stroke'])}><option value="solid">Contínuo</option><option value="dashed">Tracejado</option><option value="dotted">Pontilhado</option></select></label>
+    </div>
+    <Button type="submit" disabled={!start || !end}>{existing ? 'Salvar estilo' : 'Adicionar seta livre'}</Button>
     {error && <p role="alert">{error}</p>}
   </form>
 }

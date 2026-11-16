@@ -9,8 +9,9 @@ describe('graph style catalog', () => {
     expect(updated.slice(0, 2)).toEqual(initial)
     expect(new Set(updated.map(styleSignature)).size).toBe(3)
   })
-  it('rejects visually identical shapes even when colors differ', () => {
+  it('permits reused shapes and preserves named types with a default direction', () => {
     const [first, second] = buildGraphCatalog(['a', 'b'], [])
-    expect(GraphStylesSchema.safeParse([first, { ...second, stroke: first.stroke, tip: first.tip, symbol: first.symbol, color: '#123456' }]).success).toBe(false)
+    expect(GraphStylesSchema.safeParse([first, { ...first, type: second.type, color: '#123456', direction: 'both' }]).success).toBe(true)
+    expect(GraphStylesSchema.safeParse([first, { ...first, direction: 'both' }]).success).toBe(false)
   })
 })

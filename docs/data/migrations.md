@@ -24,7 +24,10 @@ legada sem `timeline.json` é lida como vazia.
 automática, filtros, catálogo e anotações vazios, sem criar arquivo na leitura. As versões 1 e 2
 são validadas e convertidas em memória: a versão 1 começa com catálogo vazio e ambas começam sem
 setas livres. Revisão, posições, filtros e estilos existentes são preservados; o próximo salvamento
-modificado grava a versão 3. Versões não reconhecidas são rejeitadas.
+modificado grava a versão 3. Versões não reconhecidas são rejeitadas. A versão atual lê anotações
+v3 com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão, sem regravação na
+leitura. Builds anteriores podem recusar as configurações gravadas com esses campos. Relações
+sem o campo opcional `bidirectional` mantêm a leitura original de `directional`.
 
 ## Mundo: v1 → v23
 

@@ -66,7 +66,9 @@ PERSISTENCE_DRIVER=filesystem
 
 ## Guias
 
-- [Plano do canvas de relacionamentos](docs/relationship-graph-plan.md): redesenho planejado para ocupar toda a área útil, com controles contextuais e validação de fluidez; migração dos outros canvas ao final.
+- [Biblioteca de mundos](docs/user-guide/worlds.md): criar, importar e arquivar pastas incompletas.
+
+- [Canvas de relacionamentos](docs/user-guide/entities.md#referências-e-relações): área útil inteira, ferramentas contextuais e salvamento automático da vista. O [plano](docs/relationship-graph-plan.md) mantém a migração dos outros canvas condicionada à validação do grafo.
 - [Índice do guia de uso](docs/user-guide/index.md): mundos, calendário, entidades, editor, quadros, cenas e projeção.
 - [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
 - [Armazenamento](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.

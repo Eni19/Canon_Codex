@@ -1,5 +1,15 @@
 # Testes e qualidade
 
+Grafo de relacionamentos (16/11/2026): `graphGeometry.test.ts` verifica posições automáticas
+reproduzíveis com cartões fixos, a âncora do zoom/pinça e o centro no resize. Os testes do
+repositório preservam cobertura de relações, idempotência e conflito de revisão. O
+[relatório do grafo](performance/relationship-graph.md) registra o ensaio em Chrome de produção
+com mundos sintéticos, além do que ainda depende de hardware físico.
+
+A revisão de busca exercita ida, volta e ambos, vínculos sem direção, setas antigas e ancoradas
+e o reposicionamento das pontas. Em Chrome com dados sintéticos, foram verificados o esmaecimento
+enquanto se digita, o recorte por Enter ou pausa e a seta acompanhando o cartão após recarregar.
+
 Cosmic Canvas (15/10/2026): cinco testes novos em timelineCanvas.test.ts cobrem 500 coordenadas
 sem sobreposição, âncora de zoom nos limites, pinch com translação, enquadramento/culling e
 preservação das posições ao filtrar. Os 36 testes relevantes de timeline passaram. Ensaios de navegador usam somente dados sintéticos e o harness opt-in
@@ -56,6 +66,7 @@ conforme vitest.config.mts. Para uma área específica:
 
 Os testes de filesystem usam mkdtemp e definem WIKI_WORKSPACE_DIR para diretórios temporários.
 Eles removem esses diretórios em afterEach; não apontam para o workspace privado do projeto.
+TypeScript e ESLint excluem `workspace/` da descoberta de arquivos.
 
 ## Cobertura atual
 

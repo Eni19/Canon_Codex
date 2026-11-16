@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { RelationDirectionSchema } from './relation'
 
 export const GraphStyleSchema = z.object({
   type: z.string().min(1),
@@ -8,17 +9,15 @@ export const GraphStyleSchema = z.object({
   symbol: z.enum(['none', 'circle', 'square', 'diamond']),
   meaning: z.string().max(300),
   hidden: z.boolean(),
+  direction: RelationDirectionSchema.optional(),
 }).strict()
 export type GraphStyle = z.infer<typeof GraphStyleSchema>
 export const styleSignature = (style: GraphStyle) => `${style.stroke}/${style.tip}/${style.symbol}`
 export const GraphStylesSchema = z.array(GraphStyleSchema).superRefine((styles, context) => {
-  const types = new Set<string>(); const signatures = new Set<string>()
+  const types = new Set<string>()
   styles.forEach((style, index) => {
     if (types.has(style.type)) context.addIssue({ code: 'custom', path: [index, 'type'], message: 'Tipo repetido.' })
     types.add(style.type)
-    const signature = styleSignature(style)
-    if (signatures.has(signature)) context.addIssue({ code: 'custom', path: [index], message: 'Altere o traço, a ponta ou o símbolo para diferenciar os tipos.' })
-    signatures.add(signature)
   })
 })
 

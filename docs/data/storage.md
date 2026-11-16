@@ -47,10 +47,16 @@ consumidor ativo que grave esses caminhos; eles não são parte necessária da r
 `relationship-graph.json` é opcional e pertence ao mundo que o contém. Na ausência do arquivo,
 o grafo usa posições automáticas e filtros vazios. A versão 3 guarda UUID do mundo, revisão,
 posições fixadas por UUID de entidade, filtros e um catálogo de estilos por tipo de relação.
-O catálogo inclui cor, traço, ponta, símbolo, significado e visibilidade; a direção continua em
-cada relação. Setas livres guardam coordenadas, cor e traço, sem criar vínculos nas entidades.
-Salvar usa o lock do
-mundo e escrita atômica; uma revisão desatualizada não sobrescreve uma organização diferente.
+O catálogo inclui cor, traço, ponta, símbolo, significado, visibilidade e sentido padrão
+opcional por tipo. O sentido efetivo fica na relação do registro de origem. `directional: false`
+indica relação sem direção, `directional: true` indica ida e o campo opcional
+`bidirectional: true` acrescenta a volta. A ficha de destino deriva a referência desse mesmo
+vínculo. Setas livres guardam posições, cor e traço, além dos UUIDs opcionais
+`startCardId` e `endCardId`. Uma ponta presa segue o cartão; se o registro estiver indisponível, a
+vista usa a posição gravada. Esses IDs não criam vínculos nas entidades. Anotações v3 sem os
+novos campos continuam legíveis, sem migração.
+A tela salva mudanças concluídas da vista automaticamente. A gravação usa o lock do mundo e
+escrita atômica; uma revisão desatualizada não sobrescreve uma organização diferente.
 Reenviar o mesmo conteúdo é idempotente. Posições de registros ocultos ou indisponíveis são
 preservadas até o usuário restaurar a organização automática. O arquivo é incluído na cópia
 integral do mundo; não contém os vínculos, que continuam nos metadados das entidades.
@@ -202,7 +208,9 @@ imagem no editor volta o enquadramento ao padrão.
   `SceneSchema` diretamente.
 - Arquivo ausente de entidade ou asset resulta em `null`; conteúdo ausente de entidade recebe
   `emptyContentDocument()`. Uma pasta de mundo sem `world.json` não entra na listagem de mundos;
-  a biblioteca informa seu nome, preservando o conteúdo. Um mundo ausente falha a resolução.
+  a biblioteca informa seu nome, preservando o conteúdo. Após confirmação do usuário, a pasta
+  incompleta pode ser movida inteira para `trash/worlds/`. A ação verifica novamente a ausência
+  de `world.json` antes de mover. Um mundo ausente falha a resolução.
 - A exclusão de mundo move sua pasta para a lixeira interna sob o bloqueio do mundo. Gravações
   de entidades, conteúdo, imagens, quadros, cenas e playlists usam o mesmo bloqueio; depois de
   obtê-lo, a operação exige que `world.json` ainda exista, evitando recriar uma pasta já removida

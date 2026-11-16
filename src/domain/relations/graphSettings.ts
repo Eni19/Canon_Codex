@@ -4,7 +4,15 @@ import { GraphStylesSchema } from './graphStyles'
 const Coordinate = z.number().finite().min(-1000000).max(1000000)
 export const GraphPositionsSchema = z.record(z.uuid(), z.object({ x: Coordinate, y: Coordinate }).strict())
 export const GraphPreferencesSchema = z.object({ type: z.string().max(200), relationType: z.string().max(200) }).strict()
-export const FreeArrowSchema = z.object({ id: z.uuid(), start: z.object({ x: Coordinate, y: Coordinate }).strict(), end: z.object({ x: Coordinate, y: Coordinate }).strict(), color: z.string().regex(/^#[0-9a-fA-F]{6}$/), stroke: z.enum(['solid', 'dashed', 'dotted']) }).strict()
+export const FreeArrowSchema = z.object({
+  id: z.uuid(),
+  start: z.object({ x: Coordinate, y: Coordinate }).strict(),
+  end: z.object({ x: Coordinate, y: Coordinate }).strict(),
+  startCardId: z.uuid().optional(),
+  endCardId: z.uuid().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  stroke: z.enum(['solid', 'dashed', 'dotted']),
+}).strict()
 export type FreeArrow = z.infer<typeof FreeArrowSchema>
 export const GraphSettingsSchema = z.object({
   schemaVersion: z.literal(3),

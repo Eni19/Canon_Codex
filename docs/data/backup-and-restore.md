@@ -64,6 +64,10 @@ Outra opção é usar a interface **Carregar pasta** em `/`: informe a pasta que
 `world.json` ou a raiz de outro Canon Codex. A aplicação copia o mundo para a biblioteca, ajusta o
 slug de diretório em caso de colisão e preserva o `World.id`.
 
+Se você arquivou uma pasta incompleta pelo aviso da biblioteca, os arquivos ficam em
+`trash/worlds/<nome>-<sufixo>/` no diretório de dados. Trabalhe sobre uma cópia dessa pasta e
+restaure o `world.json` correspondente de um backup antes de importar a cópia.
+
 ## Colisões e cópias
 
 O importador rejeita uma cópia cujo `World.id` já exista na biblioteca, mesmo que o nome ou slug

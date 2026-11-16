@@ -49,10 +49,17 @@ export function CardPicker({ items, selectedIds, multiple = false, title, search
 
   return createPortal(
     <div className="fixed inset-0 z-[2100] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={onClose} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); onClose() } }}>
-      <div role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()} className="flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col border border-primary/40 bg-popover text-popover-foreground shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
+        if (event.key !== 'Tab') return
+        const focusable = event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && event.target === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && event.target === last) { event.preventDefault(); first?.focus() }
+      }} className="flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col border border-primary/40 bg-popover text-popover-foreground shadow-2xl">
         <header className="flex items-center gap-3 border-b px-4 py-3">
           <span className="hidden text-[.65rem] font-extrabold tracking-[.16em] whitespace-nowrap text-primary uppercase sm:block">{title}</span>
-          <label className="flex h-10 flex-1 items-center gap-2 border bg-card px-3"><Search className="size-4 text-muted-foreground" /><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
+          <label className="flex h-10 flex-1 items-center gap-2 border bg-card px-3"><Search className="size-4 text-muted-foreground" /><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={searchPlaceholder} placeholder={searchPlaceholder} className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
           <button type="button" onClick={onClose} aria-label="Fechar" className="grid size-10 place-items-center text-muted-foreground hover:text-primary"><X className="size-4" /></button>
         </header>
         <div className="grid grid-cols-2 gap-3.5 overflow-y-auto p-4 sm:grid-cols-[repeat(auto-fill,minmax(11.5rem,1fr))]">
@@ -85,19 +92,21 @@ const TRIGGER_CLASS = 'flex min-h-9 w-full items-center gap-2.5 rounded-md borde
 /** Form field that picks ONE item through a CardPicker. Submits the id through a hidden input named `name`. */
 export function CardPickerField({ id, name, value, onChange, placeholder = 'Escolher...', disabled, clearable = false, ...picker }: CardPickerBaseProps & { id?: string; name?: string; value: string; onChange: (id: string) => void; placeholder?: string; disabled?: boolean; clearable?: boolean }) {
   const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const close = () => { setOpen(false); trigger.current?.focus() }
   const current = picker.items.find((item) => item.id === value)
   return (
     <>
       {name && <input type="hidden" name={name} value={value} />}
       <div className="flex items-stretch gap-1.5">
-        <button id={id} type="button" disabled={disabled} onClick={() => setOpen(true)} className={TRIGGER_CLASS}>
+        <button ref={trigger} id={id} type="button" disabled={disabled} onClick={() => setOpen(true)} className={TRIGGER_CLASS}>
           {current?.imageAssetId && <Image src={assetVariantUrl(current.imageAssetId, 'thumbnail')} alt="" width={28} height={28} unoptimized className={cn('size-7 shrink-0 object-cover', current.imagePosition === 'top' && 'object-top')} />}
           <span className="min-w-0 flex-1 truncate">{value ? (current ? current.title : UNAVAILABLE) : <span className="text-muted-foreground">{placeholder}</span>}</span>
           <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </button>
         {clearable && value && <button type="button" onClick={() => onChange('')} aria-label="Limpar seleção" className="grid w-9 shrink-0 place-items-center rounded-md border text-muted-foreground hover:border-primary hover:text-primary"><X className="size-4" /></button>}
       </div>
-      {open && <CardPicker {...picker} selectedIds={value ? [value] : []} onSelect={(next) => { onChange(next); setOpen(false) }} onClose={() => setOpen(false)} />}
+      {open && <CardPicker {...picker} selectedIds={value ? [value] : []} onSelect={(next) => { onChange(next); close() }} onClose={close} />}
     </>
   )
 }

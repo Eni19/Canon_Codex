@@ -44,6 +44,13 @@ visual futura force uma reescrita de componente por componente.
 
 ## Consequências
 
+### Atualização: canvas de relacionamentos (16/11/2026)
+
+A cena Konva lê os tokens semânticos de cartões, borda, texto e seleção, e atualiza as cores
+quando muda a classe de tema. Ferramentas, estados de tela e editores permanecem em HTML.
+As cores configuráveis dos vínculos e das anotações são dados do mundo; o catálogo compartilha
+traços, pontas e símbolos com as amostras da legenda.
+
 ### Atualização: temas locais do calendário (12/11/2026)
 
 O calendário oferece Codex, Celeste e Pergaminho e permite paletas personalizadas por mundo. A página

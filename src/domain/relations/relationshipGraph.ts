@@ -1,5 +1,5 @@
 import type { Entity } from '@/domain/entities/entity'
-import type { Relation } from './relation'
+import { relationDirection, type Relation } from './relation'
 
 export type GraphEntity = Pick<Entity, 'id' | 'type' | 'title'>
 export type RelationshipGraph = {
@@ -30,22 +30,32 @@ export function buildRelationshipGraph(entities: Entity[]): RelationshipGraph {
   return { entities: nodes, relations, incoming, outgoing }
 }
 
-/** Follow either end of a relation when exploring a record's neighborhood. */
-export function relationshipNeighborhood(graph: RelationshipGraph, entityId: string, depth: number): Set<string> {
-  const visited = new Set<string>()
-  if (!graph.incoming.has(entityId)) return visited
-  visited.add(entityId)
+export type NeighborhoodDirection = 'outgoing' | 'incoming' | 'both'
+
+/** Select the records and links reached from the focus in the chosen direction. */
+export function relationshipNeighborhoodSlice(graph: RelationshipGraph, entityId: string, depth: number, direction: NeighborhoodDirection) {
+  const entityIds = new Set<string>()
+  const relationIds = new Set<string>()
+  if (!graph.incoming.has(entityId)) return { entityIds, relationIds }
+  entityIds.add(entityId)
   let frontier = [entityId]
   for (let step = 0; step < Math.max(0, Math.floor(depth)); step++) {
     const next: string[] = []
     for (const id of frontier) {
       for (const relation of [...(graph.incoming.get(id) ?? []), ...(graph.outgoing.get(id) ?? [])]) {
+        if (relationDirection(relation) === 'forward' && direction === 'outgoing' && relation.sourceId !== id) continue
+        if (relationDirection(relation) === 'forward' && direction === 'incoming' && relation.targetId !== id) continue
+        relationIds.add(relation.id)
         const neighbor = relation.sourceId === id ? relation.targetId : relation.sourceId
-        if (!visited.has(neighbor)) { visited.add(neighbor); next.push(neighbor) }
+        if (!entityIds.has(neighbor)) { entityIds.add(neighbor); next.push(neighbor) }
       }
     }
     frontier = next
     if (!frontier.length) break
   }
-  return visited
+  return { entityIds, relationIds }
+}
+
+export function relationshipNeighborhood(graph: RelationshipGraph, entityId: string, depth: number): Set<string> {
+  return relationshipNeighborhoodSlice(graph, entityId, depth, 'both').entityIds
 }

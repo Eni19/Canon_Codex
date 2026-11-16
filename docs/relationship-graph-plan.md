@@ -2,28 +2,27 @@
 
 Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo usuário e da
 [pesquisa de interface e desempenho](research/relationship-canvas-ux-performance.md).
-**Próxima etapa: REL-02 — ocupar toda a área útil.** A migração dos outros canvas fica por último,
-depois da validação visual, funcional e de fluidez do grafo.
+**Em validação: REL-02 a REL-07.** A migração dos outros canvas fica por último, depois da
+validação visual, funcional e de fluidez do grafo.
+A criação de pastas no grafo está planejada em REL-09.
 
 ## Ponto de retomada
 
-**Implementado:** prova de conceito em `/canvas-prototype`; grafo Konva em `/relationships`;
-índices de entrada/saída, busca, filtros, vizinhança, posições persistidas, catálogo de estilos,
-criação/edição de vínculos por cliques ou formulário HTML, setas livres, curvas para relações
-paralelas e detecção de conflitos na gravação. Preservar esse trabalho e os contratos existentes.
+**Implementado:** superfície integral na rota, controles HTML contextuais, duas camadas Konva,
+câmera preservada durante filtros e resize, arraste de porta, alternativa pesquisável, setas
+livres editáveis e autosave da vista após alterações concluídas. A organização inicial é estática,
+reproduzível e usa os vínculos para aproximar registros. As posições fixadas são preservadas.
+O desenho é limitado por viewport e nível de zoom; mover um cartão atualiza as arestas incidentes.
+O [guia de entidades](user-guide/entities.md#referências-e-relações) descreve a interface.
 
-**Problemas observados no código:** a rota usa `PageContainer` com largura máxima e margens;
-título, instruções, filtros e botões precedem o canvas; legenda, listas e detalhes ficam abaixo.
-`RelationshipView` cria uma Stage de 480 px de altura, observa só a largura e usa cores fixas claras.
-Seu effect destrói e recria a Stage ao mudar filtros, estilos e anotações, reaplicando fit/foco.
-O arraste recalcula todas as relações por evento. São constatações de código, não medições de custo
-nem diagnóstico dos dados da imagem.
+O grafo recebe todos os registros ativos do mundo, inclusive os que ainda não têm vínculos.
+Eventos, objetos e artefatos, personagens, locais, organizações, linhas do tempo e tipos
+personalizados podem aparecer juntos. Os filtros e a vizinhança só mudam o recorte da vista.
 
-**Não verificado:** fluidez de pan/zoom/arraste, memória, toque físico, trackpad e leitor de tela.
-A [verificação sintética anterior](performance/relationship-graph.md), com 500 itens e 1.500 relações,
-cobriu consulta e enquadramento; seus tempos HTTP não medem renderização ou interação.
-Arrastar uma conexão entre cartões ainda está pendente. O novo visual, autosave e otimizações
-abaixo são **planejados**, não entregues por esta revisão documental.
+**Em validação:** protocolo de fluidez, memória, gesto em hardware físico e leitor de tela.
+O [relatório](performance/relationship-graph.md) distingue as verificações da versão atual
+da medição HTTP histórica. As setas livres v3 aceitam IDs opcionais dos cartões nas pontas;
+as anotações sem esses campos continuam legíveis.
 
 ## Contrato visual obrigatório
 
@@ -37,9 +36,9 @@ por ação explícita e se sobrepõem à superfície, sem deslocar o grafo.
 | Fundo | Grafite quente com tokens do Canon; pontilhado estático muito discreto, opcional. Sem painel bege ou decoração animada contínua. |
 | Cartões | Superfície levemente elevada, título legível, tipo curto e borda sutil; seleção âmbar. Sem descrições, contagens ou metadados adicionais. |
 | Conexões | Curvas consistentes, pontas legíveis e destaque ao selecionar. Rótulos completos por seleção/foco ou zoom adequado. Direção e tipo não dependem só da cor. |
-| Ferramentas | Uma barra flutuante compacta: Selecionar/Mover, **Conectar** como ação principal, Seta livre e Mais. Ícones com nomes acessíveis, tooltip e estado ativo. |
+| Ferramentas | Uma barra flutuante compacta: Selecionar/Mover, **Conectar** como ação principal, Seta livre, Busca e filtros e Mais. Ícones com nomes acessíveis, tooltip e estado ativo. |
 | Câmera | Pequeno grupo de zoom e Enquadrar em um canto; sem minimapa permanente nesta entrega. |
-| Busca, filtros e legenda | Painéis sob demanda via Mais/atalho, sem campos sempre expandidos. Indicador discreto de filtro ativo e ação Limpar. |
+| Busca, filtros e legenda | Busca e filtros com atalho direto na barra; legenda sob demanda via Mais. Indicador de filtro ativo e ação Limpar. A busca esmaece os descartados antes de aplicar o recorte. |
 | Detalhes | Inspetor contextual; um painel por vez. No celular, folha sobreposta com altura limitada e rolagem interna. |
 | Listas acessíveis | Navegador HTML de itens/vínculos aberto por comando, com busca/paginação; não manter listas abaixo do canvas. |
 | Salvamento | Automático após alteração concluída, com indicador compacto durante gravação. Falha/conflito permanece visível até resolução. |
@@ -124,7 +123,7 @@ resize mantém centro. Testar essas invariantes e limpeza de Stage/listeners/obs
    opcional e prévia. Alternativa HTML com seleção pesquisável seguindo `CardPicker` do projeto.
 3. Confirmar grava pelo caminho de relações usado nas fichas. Seleção da seta abre edição e links
    aos registros; remoção exige confirmação. Prévia nunca é persistida como vínculo.
-4. Seta livre continua anotação da vista, com início/fim, edição de extremidades e remoção
+4. Seta com uma ponta no fundo continua anotação da vista, com início/fim, edição de extremidades e remoção
    contextual; não cria relação entre entidades ou backlinks.
 5. Autosave da vista após dragend/alterações confirmadas, agrupando mudanças próximas e
    serializando gravações. Nunca salvar por pointermove. Preservar edições feitas durante request,
@@ -190,6 +189,31 @@ da biblioteca ou de hardware universal. Não aprovar fluidez somente com HTTP/te
 **Portão de migração:** REL-02 a REL-07 concluídos com evidências visuais, funcionais e de desempenho.
 Até lá, Quadros, Cenas e Linha do Tempo ficam fora da execução.
 
+## REL-09 — Pastas no grafo
+
+**Planejado.** Organizar cartões de qualquer tipo em pastas diretamente em **Relacionamentos**.
+Cada pasta pertence ao mundo atual e agrupa os mesmos registros que já aparecem no grafo.
+
+1. Adicionar um painel **Pastas** para criar, renomear e abrir pastas. Permitir mover um cartão
+   pelo menu do cartão e mover vários pela lista acessível. Cada cartão fica em uma pasta ou na
+   vista principal. Uma pasta aceita tipos misturados, como um Evento, um Local e um Personagem.
+2. Permitir recolher e expandir a pasta pelo canvas e pelo painel. Recolher agrega as conexões
+   com cartões externos em um indicador que leva à lista de vínculos. Expandir restaura os
+   cartões em suas posições. Busca e filtros encontram cartões dentro das pastas e indicam a
+   pasta onde cada resultado está. **Ver no grafo** abre a pasta e focaliza o registro.
+3. Persistir a organização da vista por mundo, com IDs de pasta e de registro. Validar
+   no servidor se os registros pertencem ao mundo e manter as posições e os vínculos
+   ao mover cartões. Excluir uma pasta devolve os cartões à vista principal.
+4. Antes de alterar o armazenamento, definir compatibilidade com vistas já salvas.
+   Atualizar a documentação do formato e os testes com mundos sintéticos.
+
+**Critérios de aceite**
+
+Criar uma pasta pela tela, mover registros de tipos diferentes, recarregar e
+verificar que a organização foi preservada. Recolher, expandir, buscar um cartão de dentro
+da pasta e abrir sua ficha por teclado e toque. Excluir a pasta e confirmar que os registros,
+vínculos e posições estão disponíveis na vista principal. Verificar o isolamento entre mundos.
+
 ## REL-08 — Etapa final: migrar os outros canvas
 
 Esta é a **última etapa**. Quadros e Cenas usam tldraw/snapshots; a Linha do Tempo usa superfície
@@ -211,9 +235,8 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
    quadros/cenas/projeção; verificar produção HTTPS e runtime local sem chave, pagamento, rede
    externa ou marca-d'água em todas as superfícies migradas.
 
-## Impacto documental desta revisão
+## Impacto documental
 
-Revisão de plano/pesquisa, sem implementação do novo canvas. README e PROJECT recebem referência
-ao trabalho planejado; `docs/work-items.md` registra a retomada. Guia de entidades, ADRs e contratos
-de armazenamento/API continuam descrevendo a implementação existente e não devem antecipar
-comportamentos propostos. Alterações preexistentes no código e no guia são preservadas.
+O guia de entidades, README, PROJECT e a arquitetura descrevem a versão implementada. O
+[acompanhamento](work-items.md) registra o que falta para a migração. O arquivo da vista permanece
+na versão 3 e os fluxos de vínculo continuam usando as mesmas Server Actions.

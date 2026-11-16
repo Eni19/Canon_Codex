@@ -74,5 +74,10 @@ describe('graph settings persistence', () => {
     const saved = await repo.saveGraphSettings(worldId, { ...read, annotations: [arrow] })
     expect((await repo.getGraphSettings(worldId)).annotations).toEqual([arrow])
     expect(saved.schemaVersion).toBe(3)
+    const anchored = { ...arrow, startCardId: randomUUID(), endCardId: randomUUID() }
+    await repo.saveGraphSettings(worldId, { ...saved, annotations: [arrow, { ...anchored, id: randomUUID() }] })
+    const [legacyArrow, attachedArrow] = (await repo.getGraphSettings(worldId)).annotations
+    expect(legacyArrow).toEqual(arrow)
+    expect(attachedArrow).toMatchObject({ startCardId: anchored.startCardId, endCardId: anchored.endCardId })
   })
 })

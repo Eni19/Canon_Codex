@@ -148,6 +148,9 @@ openWorldAction valida o ID e grava o cookie antes de redirecionar para /codex.
 createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia uma ou mais
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
 ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
+`archiveIncompleteWorldAction` recebe o nome de uma pasta da biblioteca, recusa a operação se
+`world.json` já estiver presente, move a pasta para `trash/worlds/` e atualiza `/`. A seleção
+do mundo ativo permanece a mesma.
 
 `updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
 valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de
@@ -221,7 +224,8 @@ Capa e símbolo não têm actions próprias: o arquivo vai para `POST /api/asset
 formulário da entidade (ver acima). addRelationAction exige target e tipo e cria uma relação
 direcional ou não; removeRelationAction remove pelo ID da relação.
 
-`saveGraphSettingsAction` valida o mundo ativo, a versão, as posições, os filtros, os estilos e as setas livres do grafo; grava
+`saveGraphSettingsAction` valida o mundo ativo, a versão, as posições, os filtros, os tipos de seta
+com sentido padrão opcional e as anotações livres (incluindo os UUIDs opcionais dos cartões em cada ponta). Grava
 por meio do repositório com revisão para detectar conflitos e retorna sucesso ou mensagem de erro.
 Um reenvio de conteúdo já gravado é seguro. A ação não cria nem altera relações entre entidades.
 
@@ -229,6 +233,8 @@ Um reenvio de conteúdo já gravado é seguro. A ação não cria nem altera rel
 repositório das fichas e revalidam origem, destino e grafo. A criação recebe UUID da solicitação e
 reenvios idênticos não duplicam o vínculo. Alteração e remoção comparam a relação anterior para
 evitar sobrescrever outra aba. A criação e a edição exigem registros ativos do mesmo mundo.
+O campo opcional `bidirectional` habilita os dois sentidos de uma relação direcional. O vínculo
+continua gravado na ficha de origem e a ficha de destino deriva a referência de entrada.
 
 ### Quadros e cenas
 

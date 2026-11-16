@@ -97,33 +97,46 @@ Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rót
 direcional. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
 por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
 
-Em **Relacionamentos** há uma visualização inicial de consulta das relações explícitas entre
-registros ativos. Use a busca, os filtros e a seleção de vizinhança para limitar o recorte;
-**Expandir conexões** acrescenta mais um nível. O canvas permite arrastar cartões e fundo e usar
-a roda ou pinça para zoom; **Enquadrar recorte**, **Ampliar** e **Reduzir** também são operáveis
-por teclado. Selecione uma conexão no canvas ou na lista para ver tipo, direção e links para os
-registros. **Ver no grafo**, na seção de relações da ficha, abre a vizinhança do registro.
-As listas de itens e relações mostram até 50 entradas por página, com botões para navegar; filtros
-e busca retornam à primeira página.
-Arrastar um cartão fixa sua posição; **Salvar organização** grava as posições e os filtros de tipo
-do mundo. **Restaurar organização automática** remove as posições fixadas ao salvar. Mudanças não
-salvas são indicadas na tela; se ocorrer uma falha, tente novamente. Se outra aba tiver gravado uma
-organização diferente, recarregue antes de salvar. Em **Legenda e estilos**, mostre ou oculte cada
-tipo e edite sua cor, traço, ponta, símbolo e significado com prévia. A direção continua definida
-em cada relação; tipos com relações de ambas as direções mostram as duas amostras. Ao aplicar uma
-combinação já usada por outro tipo, altere traço, ponta ou símbolo. Salve a organização e os estilos
-para mantê-los após a recarga. Há 36 combinações distintas disponíveis; acima desse limite, a edição
-e a visibilidade da legenda não podem ser salvas enquanto houver combinações repetidas.
+**Relacionamentos** ocupa a área ao lado do menu ou abaixo da navegação móvel. Arraste o fundo
+para mover a câmera ou o cartão para fixar sua posição. Use a roda, pinça ou os botões de zoom;
+**Enquadrar** ajusta a câmera ao recorte atual. **Ver no grafo**, na ficha, abre a vizinhança do registro.
+Na vista do mundo inteiro, aparecem registros ativos de todos os tipos, inclusive personalizados
+e registros que ainda não têm vínculos.
+Em um grafo denso, aproxime para ver rótulos e pontas das conexões ou selecione um vínculo para
+realçá-lo.
 
-Para criar um vínculo, escolha **Conectar**, selecione origem e destino nos campos ou por cliques
-nos cartões, informe tipo, rótulo opcional e direção, e use **Criar relação**. Um tipo novo pode ser
-digitado diretamente. Selecione uma seta ou uma relação na lista para editar tipo, rótulo ou direção;
-**Remover relação** pede confirmação. Essas alterações são gravadas imediatamente nas fichas;
-os backlinks são calculados a partir da origem. Em **Seta livre**, marque início e fim no fundo do
-canvas ou informe coordenadas, escolha cor e traço e adicione uma anotação. Arraste suas extremidades
-para reposicionar ou use a lista para apagar. A seta livre só é gravada ao salvar a organização e não
-cria vínculo entre registros. Vínculos cujo alvo não esteja
-ativo ficam ocultos no grafo sem serem removidos do registro de origem.
+Abra **Busca e filtros** direto na barra do grafo. Ao buscar por nome, os cartões sem correspondência
+ficam esmaecidos enquanto você digita. Eles saem do recorte com **Enter** ou uma pausa na digitação.
+Escolha um registro de referência para filtrar **Ida** (vínculos que saem), **Volta** (que chegam)
+ou **Ambos**. Vínculos de duas direções e sem direção aparecem nos três modos. **Expandir conexões** acrescenta um
+passo no sentido escolhido. Os filtros preservam a câmera e as posições; **Enquadrar resultados**
+aproxima o recorte. **Mais → Registros e vínculos** oferece uma alternativa HTML pesquisável, com até 25
+resultados por página. Selecione um registro para ir até ele ou um vínculo para editá-lo.
+Em **Mais → Legenda e estilos → Novo tipo de seta**, escolha um nome, cor, traço contínuo,
+tracejado ou pontilhado, formato da ponta, símbolo opcional e sentido padrão. A prévia acompanha
+as mudanças. O sentido padrão se aplica aos próximos vínculos. Cada vínculo salvo guarda seu
+próprio sentido.
+
+Para criar um vínculo, ative **Conectar** e arraste da porta de um cartão até o destino ou escolha os
+dois cartões por clique/toque. Também é possível pesquisar origem e destino nos campos do painel.
+Depois de marcar a origem, digite o nome do próximo cartão. A busca esmaece os demais durante a
+digitação, mantém a origem visível e oferece os resultados no grafo e em uma lista.
+Escolha um tipo existente ou use **Novo tipo de seta** no próprio formulário. Você pode alterar
+o sentido para este vínculo e adicionar um rótulo. **Criar relação** grava o vínculo na ficha de
+origem e a referência aparece na ficha de destino. Selecione um vínculo no canvas ou na lista para editá-lo ou removê-lo;
+a remoção exige confirmação. Os backlinks vêm da ficha de origem. Fichas de Local, Evidência e
+Organização também exibem suas referências vindas de outros registros. Se o alvo deixa de estar ativo,
+o vínculo fica oculto sem ser apagado da origem.
+
+Em **Seta livre**, clique em um cartão ou no fundo para marcar cada ponta. Depois do primeiro
+clique, você também pode digitar para buscar o próximo cartão. Se as duas pontas forem cartões,
+abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotação da vista
+e acompanha o cartão a que estiver presa. Selecione-a para mover as pontas, mudar o estilo ou apagar.
+
+A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo ou anotação.
+**Mais → Restaurar organização** pede confirmação antes de descartar posições fixadas. Em caso de
+falha, use **Repetir**; se outra aba tiver salvo uma revisão mais recente, **Recarregar** descarta
+as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
 

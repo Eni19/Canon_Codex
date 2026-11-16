@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cp, readdir, rename, rm, stat } from 'node:fs/promises'
+import { cp, lstat, mkdir, readdir, rename, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import type { World } from '@/domain/worlds/world'
@@ -20,6 +20,41 @@ export class WorldImportError extends Error {
     super(message)
     this.name = 'WorldImportError'
   }
+}
+
+export class IncompleteWorldArchiveError extends Error {}
+
+async function ensureLocalDirectory(directory: string) {
+  await mkdir(directory).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EEXIST') throw error
+  })
+  if (!(await lstat(directory)).isDirectory()) {
+    throw new IncompleteWorldArchiveError('A lixeira interna não aponta para uma pasta local.')
+  }
+}
+
+/** Remove an incomplete folder from discovery without deleting or rewriting its contents. */
+export async function archiveIncompleteWorld(name: string): Promise<void> {
+  const entries = await readdir(getWorldsRootDir(), { withFileTypes: true })
+  const entry = entries.find((folder) => folder.name === name && folder.isDirectory())
+  if (!entry) throw new IncompleteWorldArchiveError('Pasta não encontrada na biblioteca. Atualize a página.')
+
+  const source = getWorldDir(entry.name)
+  const trashRoot = path.join(getWorkspaceRoot(), 'trash')
+  const trash = path.join(trashRoot, 'worlds')
+  await ensureLocalDirectory(trashRoot)
+  await ensureLocalDirectory(trash)
+
+  // Recheck after preparing the destination: a restored world must remain in the library.
+  if (!(await lstat(source)).isDirectory()) {
+    throw new IncompleteWorldArchiveError('Pasta não encontrada na biblioteca. Atualize a página.')
+  }
+  const metadata = await lstat(getWorldJsonPath(entry.name)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') return null
+    throw error
+  })
+  if (metadata) throw new IncompleteWorldArchiveError('Esta pasta não está mais sem metadados. Atualize a biblioteca.')
+  await rename(source, path.join(trash, entry.name.slice(0, 120) + '-' + newId()))
 }
 
 async function uniqueSlug(base: string): Promise<string> {

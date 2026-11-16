@@ -3,7 +3,7 @@ import { readFile, readdir, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { ContentDocumentSchema, emptyContentDocument, type ContentDocument } from '@/domain/content/contentDocument'
 import { EntityPatchSchema, EntitySchema, ENTITY_SCHEMA_VERSION, NewEntityInputSchema, type Entity, type EntityPatch, type NewEntityInput } from '@/domain/entities/entity'
-import { NewRelationInputSchema, RelationSchema, type NewRelationInput, type Relation } from '@/domain/relations/relation'
+import { NewRelationInputSchema, RelationChangesSchema, RelationSchema, type NewRelationInput, type Relation, type RelationChanges } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
 import { CalendarSchema, changesCalendarStructure } from '@/domain/worlds/calendar'
 import { CalendarMoonsSchema, validateCalendarMoon, type CalendarMoon } from '@/domain/worlds/calendar-moon'
@@ -448,7 +448,8 @@ export class FileSystemWorldRepository implements WorldRepository {
     const target = await readEntityByDir(worldDir, parsedInput.targetId)
     if (!target || target.worldId !== worldId) throw new EntityNotFoundError(parsedInput.targetId)
 
-    const relation = RelationSchema.parse({ ...parsedInput, id: relationId })
+    const bidirectional = parsedInput.directional && parsedInput.bidirectional
+    const relation = RelationSchema.parse({ ...parsedInput, bidirectional: bidirectional || undefined, id: relationId })
     if (requestId) {
       const existing = (await listEntitiesByDir(worldDir)).flatMap((item) => item.relations).find((item) => item.id === relationId)
       if (existing) {
@@ -467,10 +468,11 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
   }
 
-  async updateRelation(worldId: string, expectedInput: Relation, changes: Pick<Relation, 'type' | 'label' | 'directional'>): Promise<Relation> {
+  async updateRelation(worldId: string, expectedInput: Relation, changes: RelationChanges): Promise<Relation> {
     const expected = RelationSchema.parse(expectedInput)
-    const parsedChanges = RelationSchema.pick({ type: true, label: true, directional: true }).strict().parse(changes)
-    const updated = RelationSchema.parse({ ...expected, ...parsedChanges })
+    const parsedChanges = RelationChangesSchema.parse(changes)
+    const bidirectional = parsedChanges.directional && (parsedChanges.bidirectional ?? expected.bidirectional)
+    const updated = RelationSchema.parse({ ...expected, ...parsedChanges, bidirectional: bidirectional || undefined })
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
       const source = await readEntityByDir(worldDir, expected.sourceId)

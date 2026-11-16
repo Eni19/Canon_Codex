@@ -17,13 +17,17 @@ describe('graph relationship writes', () => {
   it('creates idempotently, updates, derives backlinks and removes idempotently', async () => {
     const a = await repo.createEntity(world, { type: 'character', title: 'A sintético' })
     const b = await repo.createEntity(world, { type: 'location', title: 'B sintético' })
-    const id = randomUUID(); const input = { sourceId: a.id, targetId: b.id, type: 'investiga', directional: true, metadata: { synthetic: true } }
+    const id = randomUUID(); const input = { sourceId: a.id, targetId: b.id, type: 'investiga', directional: true, bidirectional: true, metadata: { synthetic: true } }
     const saved = await repo.addRelation(world, a.id, input, id)
     expect(await repo.addRelation(world, a.id, input, id)).toEqual(saved)
-    expect((await repo.getEntity(world, a.id))?.relations).toHaveLength(1)
+    const freshRepo = new FileSystemWorldRepository()
+    expect((await freshRepo.getEntity(world, a.id))?.relations).toEqual([saved])
+    expect((await freshRepo.getEntity(world, b.id))?.relations).toEqual([])
+    expect((await freshRepo.getBacklinks(world, b.id))[0].relation).toEqual(saved)
     await expect(repo.addRelation(world, a.id, { ...input, type: 'protege' }, id)).rejects.toThrow('já foi usada')
     const edited = await repo.updateRelation(world, saved, { type: 'protege', label: 'guarda', directional: false })
     expect(edited.metadata).toEqual({ synthetic: true })
+    expect(edited.bidirectional).toBeUndefined()
     expect(await repo.updateRelation(world, saved, { type: 'protege', label: 'guarda', directional: false })).toEqual(edited)
     expect((await repo.getBacklinks(world, b.id))[0].relation).toEqual(edited)
     await expect(repo.removeRelation(world, a.id, id, saved)).rejects.toThrow('outra aba')

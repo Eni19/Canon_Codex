@@ -24,6 +24,19 @@ src/lib/migrations/              aplicação lazy de versões
 `src/repositories/index.ts` mantém a escolha do driver em um único lugar. No estado atual existem
 quatro contratos: `WorldRepository`, `AssetStore`, `BoardRepository` e `SceneRepository`.
 
+## Canvas de relacionamentos
+
+`/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do
+mundo. `RelationshipView` mantém filtros, ferramentas, painéis HTML e formulários; a cena Konva
+mantém câmera, alvos do ponteiro e nós por ID em duas camadas. Armazenamento e formulários
+continuam delegando às [Server Actions](../reference/http-and-actions.md).
+
+Máscaras de IDs preservam posições ao filtrar. A cena verifica limites de cartões e de curvas
+contra o viewport e atualiza apenas as conexões incidentes no arraste. Na visão geral densa,
+curvas com o mesmo estilo são desenhadas em lote; vínculos selecionados ou em movimento
+mantêm desenho individual. Edições concluídas da vista são agrupadas e gravadas em série usando
+a revisão existente.
+
 ## Leitura e gravação de entidade
 
 ```mermaid
@@ -115,8 +128,9 @@ mundo ativo e não existe autenticação.
 
 ## Mundos e seleção ativa
 
-`src/services/worlds/worldLibrary.ts` implementa criação, descoberta/importação, renomeação e
-exclusão. O seed padrão é criado lazily por `worldDirRegistry` quando `workspace/worlds/` ainda não
+`src/services/worlds/worldLibrary.ts` implementa criação, descoberta/importação, renomeação,
+exclusão e arquivamento sob demanda de pastas sem metadados. O seed padrão é criado lazily por
+`worldDirRegistry` quando `workspace/worlds/` ainda não
 existe. Criar um mundo gera slug único, mantém UUID e escreve `world.json`. Renomear muda somente o
 nome exibido e `updatedAt`; o diretório/slug não muda. Importar copia uma pasta inteira, ajusta slug
 em colisão de diretório, mas rejeita IDs de mundo já existentes ou repetidos na mesma importação.

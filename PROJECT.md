@@ -159,13 +159,16 @@ Relações são armazenadas no array da entidade fonte; backlinks são derivados
 `targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
 domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
 
-## Relacionamentos: próxima etapa planejada
+## Relacionamentos
 
-O [plano de relacionamentos](docs/relationship-graph-plan.md), revisto em 16/11/2026, retoma o grafo
-Konva existente pela ocupação integral da área útil, controles contextuais, câmera estável e
-validação de fluidez. O redesenho e o autosave da vista são planejados, ainda não implementados.
-A migração de Quadros, Cenas e Linha do Tempo é a última etapa, após a validação do grafo.
-As referências e os limites estão na [pesquisa](docs/research/relationship-canvas-ux-performance.md).
+O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
+câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos e anotações no formato
+existente. A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
+ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
+formulário de um vínculo gravado na ficha de origem.
+O [guia de entidades](docs/user-guide/entities.md) explica os fluxos. A migração de
+Quadros, Cenas e Linha do Tempo depende das verificações do
+[plano de relacionamentos](docs/relationship-graph-plan.md).
 
 ## Componentes de UI reutilizáveis
 

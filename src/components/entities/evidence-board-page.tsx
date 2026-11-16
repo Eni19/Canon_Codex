@@ -2,6 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
 import { ContentRenderer } from '@/components/editor/content-renderer'
+import { BacklinksPanel } from '@/components/entities/backlinks-panel'
+import { RelationsPanel } from '@/components/entities/relations-panel'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
 import { EvidenceFindingsSchema } from '@/domain/entities/evidenceFinding'
@@ -10,7 +12,7 @@ import { assetVariantUrl } from '@/lib/assetUrl'
 import type { EntityPageProps } from './entity-page'
 import styles from './evidence-board.module.css'
 
-export function EvidenceBoardPage({ entity, entityType, worldName, content, entityTitleById, allEntities, calendar }: EntityPageProps) {
+export function EvidenceBoardPage({ entity, entityType, worldName, content, entityTitleById, allEntities, calendar, backlinks, relationTargetOptions }: EntityPageProps) {
   const parsed = EvidenceFindingsSchema.safeParse(entity.properties.evidenceFindings)
   const findings = parsed.success ? parsed.data : []
   const characterIds = Array.isArray(entity.properties.relatedCharacters) ? entity.properties.relatedCharacters.filter((id): id is string => typeof id === 'string') : []
@@ -33,6 +35,14 @@ export function EvidenceBoardPage({ entity, entityType, worldName, content, enti
         <section className={styles.note}><h2>Apresentação</h2><p className="whitespace-pre-wrap text-sm">{presentation || 'Nenhuma descrição inicial.'}</p></section>
         {findings.length > 0 && <section className={styles.note}><h2>Informações</h2>{findings.map((finding)=><div key={finding.id} className={styles.finding}><div className={styles.findingMeta}><span>{finding.approach || 'Livre'}</span>{finding.condition && <span>· {finding.condition}</span>}</div><p className="mt-1">{finding.information}</p></div>)}</section>}
         {context && <section className={styles.note}><h2>Notas contextuais</h2><p className="whitespace-pre-wrap text-sm">{context}</p></section>}
+        {entity.relations.length > 0 && <section className={styles.note}>
+          <h2>Relações</h2>
+          <RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={relationTargetOptions} />
+        </section>}
+        {backlinks.length > 0 && <section className={styles.note}>
+          <h2>Referências de outros registros</h2>
+          <BacklinksPanel backlinks={backlinks} />
+        </section>}
       </div>
     </div>
   </main></div>

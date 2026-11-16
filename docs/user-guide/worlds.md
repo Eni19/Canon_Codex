@@ -14,9 +14,10 @@ ainda não existe, a primeira leitura cria automaticamente o seed `Canon Codex` 
 iniciais.
 
 Se uma pasta de mundo estiver sem `world.json`, a biblioteca exibe um aviso com o nome da pasta
-e mantém os demais mundos acessíveis. A pasta não é apagada nem recriada; restaure o arquivo
-correspondente de um backup para abrir esse mundo novamente. Sem mundos disponíveis, uma rota
-interna volta para a biblioteca.
+e mantém os demais mundos acessíveis. Para reabrir o mundo, restaure o `world.json` correspondente
+de um backup. Para retirar a pasta do aviso, escolha **Arquivar pasta** e confirme. A biblioteca
+move a pasta inteira para `trash/worlds/` dentro de `WIKI_WORKSPACE_DIR`, preservando seus arquivos.
+Sem mundos disponíveis, uma rota interna volta para a biblioteca.
 
 ## Criar um mundo
 

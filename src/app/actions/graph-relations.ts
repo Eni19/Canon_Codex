@@ -2,13 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { NewRelationInputSchema, RelationSchema, type Relation } from '@/domain/relations/relation'
+import { NewRelationInputSchema, RelationChangesSchema, RelationSchema, type Relation } from '@/domain/relations/relation'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
 const CreateSchema = z.object({ worldId: z.uuid(), requestId: z.uuid(), relation: NewRelationInputSchema.strict() }).strict()
-const ChangeSchema = RelationSchema.pick({ type: true, label: true, directional: true }).strict()
-const EditSchema = z.object({ worldId: z.uuid(), expected: RelationSchema, changes: ChangeSchema }).strict()
+const EditSchema = z.object({ worldId: z.uuid(), expected: RelationSchema, changes: RelationChangesSchema }).strict()
 const RemoveSchema = z.object({ worldId: z.uuid(), expected: RelationSchema }).strict()
 type Result = { relation: Relation } | { error: string }
 

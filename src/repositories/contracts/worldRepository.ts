@@ -1,6 +1,6 @@
 import type { ContentDocument } from '@/domain/content/contentDocument'
 import type { Entity, EntityPatch, NewEntityInput } from '@/domain/entities/entity'
-import type { NewRelationInput, Relation } from '@/domain/relations/relation'
+import type { NewRelationInput, Relation, RelationChanges } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
 import type { Calendar } from '@/domain/worlds/calendar'
 import type { CalendarMoon } from '@/domain/worlds/calendar-moon'
@@ -73,7 +73,7 @@ export interface WorldRepository {
   saveContent(worldId: string, entityId: string, doc: ContentDocument): Promise<void>
 
   addRelation(worldId: string, sourceId: string, relation: NewRelationInput, requestId?: string): Promise<Relation>
-  updateRelation(worldId: string, expected: Relation, changes: Pick<Relation, 'type' | 'label' | 'directional'>): Promise<Relation>
+  updateRelation(worldId: string, expected: Relation, changes: RelationChanges): Promise<Relation>
   removeRelation(worldId: string, sourceId: string, relationId: string, expected?: Relation): Promise<void>
   /** Derived data: computed by scanning every entity's `relations` array for this target. */
   getBacklinks(worldId: string, entityId: string): Promise<Backlink[]>
