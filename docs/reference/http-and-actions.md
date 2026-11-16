@@ -21,6 +21,12 @@ Filtros não reiniciam a câmera; trocar orientação é uma mudança explícita
 
 ## Route Handlers
 
+### Download do calendário
+
+`GET /api/calendar-pdf?year=<ano>&worldId=<id>` responde com um PDF para download do ano
+selecionado para o mundo ativo. Retorna 400 para ano inválido, 409 quando o ID diverge do mundo
+ativo e 422 para anos com mais de 5.000 dias. O arquivo usa `Cache-Control: private, no-store`.
+
 ### POST /api/assets
 
 Consumidores: src/components/editor/upload-image.ts, upload de mídia do quadro e o campo de imagem

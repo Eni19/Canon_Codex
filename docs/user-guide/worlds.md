@@ -33,6 +33,10 @@ pasta.
 Com um mundo aberto, escolha **Calendário** na barra lateral. As vistas **Mês** e **Ano** permitem
 consultar períodos e selecionar um dia. Use **Ir para data**, entre as setas do período, para abrir
 o seletor de ano, mês e dia. A URL conserva a consulta.
+
+**Baixar PDF** salva o ano exibido, com uma visão geral e as grades de todos os meses. O arquivo
+inclui marcos e dias intercalares e usa as cores do tema nos cabeçalhos. O ano inicial é o do
+Hoje da campanha, quando definido, ou o ano zero. A exportação aceita anos de até 5.000 dias.
 Meses longos são divididos em páginas de até seis semanas. Dias intercalares independentes aparecem
 após o mês correspondente e podem ser selecionados; a seleção é conservada na URL ao trocar de vista.
 A grade mostra inícios de estações e marcos. Em telas estreitas, use o atalho **Detalhes** abaixo da

@@ -15,7 +15,7 @@ import { seasonAtDate } from '@/domain/worlds/calendar-season'
 import { resolveCalendarTheme } from '@/domain/worlds/calendar-appearance'
 import styles from './calendar.module.css'
 import { projectAgenda } from '@/domain/worlds/calendar-agenda'
-import { adjacentMonth } from '@/domain/worlds/calendar-view'
+import { adjacentMonth, MAX_CALENDAR_EXPORT_DAYS } from '@/domain/worlds/calendar-view'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
@@ -62,6 +62,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const validYear = validIntegerInput(query.year) && Math.abs(requestedYear) <= 1000000
   const validMonth = validIntegerInput(query.month) && requestedMonth >= 1 && requestedMonth <= calendar.months.length
   const year = validYear ? requestedYear : 0
+  const yearLength = getCalendarYearLength(calendar, year)
   const month = validMonth ? requestedMonth : calendar.origin.month
   const validDay = validIntegerInput(query.day) && requestedDay >= 1 && requestedDay <= getMonthLength(calendar, year, month)
   const requestedIntercalary = typeof query.intercalary === 'string' ? query.intercalary : useToday ? todayRule?.id ?? '' : ''
@@ -105,6 +106,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       <div className={styles.shortcuts}>
         {todayUrl ? <Link scroll={false} className={styles.control} href={todayUrl}>Hoje</Link> : <Link className={styles.control} href={`${url(year, month, day, 'month', 1, intercalary?.id)}#dia-selecionado`}>Definir hoje</Link>}
         <a className={styles.control} href="#configuracoes-calendario">Personalizar calendário</a>
+        {yearLength <= MAX_CALENDAR_EXPORT_DAYS
+          ? <a className={styles.control} href={`/api/calendar-pdf?${new URLSearchParams({ worldId: world.id, year: String(year) })}`} download aria-label={`Baixar PDF do ano ${year}`}>Baixar PDF</a>
+          : <span className={styles.periodMeta}>PDF disponível para anos de até 5.000 dias</span>}
       </div>
     </nav>
     <section className={styles.sheet} aria-label={view === 'year' ? 'Visão anual' : view === 'agenda' ? 'Agenda' : 'Visão mensal'}>
@@ -112,7 +116,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <div aria-live="polite">
           <p className={styles.eyebrow}>{formatCalendarDate(calendar, { year })}</p>
           <h2>{view === 'year' ? 'O ano em um olhar' : monthName}</h2>
-          <p className={styles.periodMeta}>{view === 'year' ? `${getCalendarYearLength(calendar, year).toLocaleString('pt-BR')} dias · ${calendar.months.length} meses` : `${getMonthLength(calendar, year, month).toLocaleString('pt-BR')} dias · Mês ${month} de ${calendar.months.length}`}</p>
+          <p className={styles.periodMeta}>{view === 'year' ? `${yearLength.toLocaleString('pt-BR')} dias · ${calendar.months.length} meses` : `${getMonthLength(calendar, year, month).toLocaleString('pt-BR')} dias · Mês ${month} de ${calendar.months.length}`}</p>
         </div>
         <div className={styles.periodActions}>
           {(view !== 'year' ? previous.year >= -1000000 : year > -1000000) ? <Link scroll={false} className={styles.control} aria-label={view === 'year' ? 'Ano anterior' : 'Mês anterior'} href={view !== 'year' ? url(previous.year, previous.month, 1, view) : url(year - 1, month, 1, 'year')}>←</Link> : <span aria-disabled="true" className={styles.control}>←</span>}
