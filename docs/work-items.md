@@ -6,6 +6,7 @@ comprovadas por código/configuração.
 
 | ID | Resultado esperado | Estado | Evidência | Próximo passo ou bloqueio | Última verificação |
 | --- | --- | --- | --- | --- | --- |
+| REL-01 | Executar o [plano de relacionamentos](relationship-graph-plan.md) em etapas | iniciado; grafo, vínculos e setas livres implementados; validação e migração pendentes | `graphRelations.test.ts`, `graphSettings.test.ts` e verificação com vínculos sintéticos | Validar falhas, teclado, toque, produção e desempenho com grafo denso antes de avaliar migrações | 16/11/2026 |
 | CAL-VIS-01 | Executar o [plano do calendário visual](calendar-visual-plan.md) | build e suíte verificados; revisão e perfil de produção em Chrome e Edge | [relatório de produção](performance/calendar-production.md) e [plano visual](calendar-visual-plan.md) | Confirmar fala em leitor de tela e medir a agenda em mundos grandes; acompanhar `EPERM` intermitente no filesystem | 13/11/2026 |
 | DOC-GAP-001 | Definir se o catálogo de tipos continuará híbrido ou voltará a ser totalmente genérico | aguardando decisão externa | `src/components/entities/entity-page.tsx` contém renderizadores específicos; `EntityTypeDefinition` continua dirigindo layouts genéricos | decisão de produto/arquitetura; registrar novo ADR se a regra mudar | 23/09/2026 |
 | DOC-GAP-002 | Definir política de restauração e descarte permanente | não implementado | repositórios movem registros para `trash/`, mas não há ação/UI de restauração ou purge | especificar e implementar antes de prometer recuperação pela interface | 23/09/2026 |

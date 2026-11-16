@@ -26,10 +26,16 @@ export async function addRelationAction(entityId: string, formData: FormData): P
 
   revalidatePath(`/entity/${entityId}`)
   revalidatePath(`/entity/${targetId}`)
+  revalidatePath('/relationships')
 }
 
 export async function removeRelationAction(entityId: string, relationId: string): Promise<void> {
   const world = await getCurrentWorld()
-  await getWorldRepository().removeRelation(world.id, entityId, relationId)
+  const repo = getWorldRepository()
+  const entity = await repo.getEntity(world.id, entityId)
+  const targetId = entity?.relations.find((relation) => relation.id === relationId)?.targetId
+  await repo.removeRelation(world.id, entityId, relationId)
   revalidatePath(`/entity/${entityId}`)
+  if (targetId) revalidatePath(`/entity/${targetId}`)
+  revalidatePath('/relationships')
 }

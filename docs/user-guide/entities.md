@@ -97,6 +97,32 @@ Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rót
 direcional. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
 por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
 
+Em **Relacionamentos** há uma visualização inicial de consulta das relações explícitas entre
+registros ativos. Use a busca, os filtros e a seleção de vizinhança para limitar o recorte;
+**Expandir conexões** acrescenta mais um nível. O canvas permite arrastar cartões e fundo e usar
+a roda ou pinça para zoom; **Enquadrar recorte**, **Ampliar** e **Reduzir** também são operáveis
+por teclado. Selecione uma conexão no canvas ou na lista para ver tipo, direção e links para os
+registros. **Ver no grafo**, na seção de relações da ficha, abre a vizinhança do registro.
+Arrastar um cartão fixa sua posição; **Salvar organização** grava as posições e os filtros de tipo
+do mundo. **Restaurar organização automática** remove as posições fixadas ao salvar. Mudanças não
+salvas são indicadas na tela; se ocorrer uma falha, tente novamente. Se outra aba tiver gravado uma
+organização diferente, recarregue antes de salvar. Em **Legenda e estilos**, mostre ou oculte cada
+tipo e edite sua cor, traço, ponta, símbolo e significado com prévia. A direção continua definida
+em cada relação; tipos com relações de ambas as direções mostram as duas amostras. Ao aplicar uma
+combinação já usada por outro tipo, altere traço, ponta ou símbolo. Salve a organização e os estilos
+para mantê-los após a recarga. Há 36 combinações distintas disponíveis; acima desse limite, a edição
+e a visibilidade da legenda não podem ser salvas enquanto houver combinações repetidas.
+
+Para criar um vínculo, escolha **Conectar**, selecione origem e destino nos campos ou por cliques
+nos cartões, informe tipo, rótulo opcional e direção, e use **Criar relação**. Um tipo novo pode ser
+digitado diretamente. Selecione uma seta ou uma relação na lista para editar tipo, rótulo ou direção;
+**Remover relação** pede confirmação. Essas alterações são gravadas imediatamente nas fichas;
+os backlinks são calculados a partir da origem. Em **Seta livre**, marque início e fim no fundo do
+canvas ou informe coordenadas, escolha cor e traço e adicione uma anotação. Arraste suas extremidades
+para reposicionar ou use a lista para apagar. A seta livre só é gravada ao salvar a organização e não
+cria vínculo entre registros. Vínculos cujo alvo não esteja
+ativo ficam ocultos no grafo sem serem removidos do registro de origem.
+
 ## Buscar e organizar catálogos
 
 Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.

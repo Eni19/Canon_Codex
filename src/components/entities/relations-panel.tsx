@@ -29,6 +29,7 @@ export function RelationsPanel({
 
   return (
     <div className="flex flex-col gap-3">
+      <Link href={`/relationships?entity=${encodeURIComponent(entityId)}`} className="self-start text-sm text-primary hover:underline">Ver no grafo</Link>
       {relations.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma relação ainda.</p>
       ) : (

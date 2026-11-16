@@ -18,6 +18,14 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
 
+## Grafo de relacionamentos: v1/v2 → v3
+
+`relationship-graph.json` usa schema próprio na versão 3; sua ausência representa organização
+automática, filtros, catálogo e anotações vazios, sem criar arquivo na leitura. As versões 1 e 2
+são validadas e convertidas em memória: a versão 1 começa com catálogo vazio e ambas começam sem
+setas livres. Revisão, posições, filtros e estilos existentes são preservados; o próximo salvamento
+modificado grava a versão 3. Versões não reconhecidas são rejeitadas.
+
 ## Mundo: v1 → v23
 
 Registry: `worldMigrations` em

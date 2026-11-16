@@ -13,6 +13,7 @@ import type { CalendarDateValue } from '@/domain/worlds/calendar-date'
 import type { TimelineAppearance, TimelineAppearanceFields, TimelineData } from '@/domain/timelines/timeline'
 import type { TimelineScale } from '@/domain/timelines/timelineScale'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
+import type { GraphSettings } from '@/domain/relations/graphSettings'
 
 export interface EntityListFilter {
   type?: string
@@ -48,6 +49,8 @@ export interface WorldRepository {
   recoverDateMigration(worldId: string, backupId: string, restore: boolean): Promise<void>
 
   listEntities(worldId: string, filter?: EntityListFilter): Promise<Entity[]>
+  getGraphSettings(worldId: string): Promise<GraphSettings>
+  saveGraphSettings(worldId: string, settings: GraphSettings): Promise<GraphSettings>
   listCalendarAgenda(worldId: string): Promise<AgendaEvent[]>
   /** Trashed records retain metadata; failed reads reject instead of implying permanent absence. */
   listTrashedEntities(worldId: string): Promise<Entity[]>
@@ -69,8 +72,9 @@ export interface WorldRepository {
   getContent(worldId: string, entityId: string): Promise<ContentDocument>
   saveContent(worldId: string, entityId: string, doc: ContentDocument): Promise<void>
 
-  addRelation(worldId: string, sourceId: string, relation: NewRelationInput): Promise<Relation>
-  removeRelation(worldId: string, sourceId: string, relationId: string): Promise<void>
+  addRelation(worldId: string, sourceId: string, relation: NewRelationInput, requestId?: string): Promise<Relation>
+  updateRelation(worldId: string, expected: Relation, changes: Pick<Relation, 'type' | 'label' | 'directional'>): Promise<Relation>
+  removeRelation(worldId: string, sourceId: string, relationId: string, expected?: Relation): Promise<void>
   /** Derived data: computed by scanning every entity's `relations` array for this target. */
   getBacklinks(worldId: string, entityId: string): Promise<Backlink[]>
 }

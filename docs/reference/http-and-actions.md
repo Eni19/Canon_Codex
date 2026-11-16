@@ -221,6 +221,15 @@ Capa e símbolo não têm actions próprias: o arquivo vai para `POST /api/asset
 formulário da entidade (ver acima). addRelationAction exige target e tipo e cria uma relação
 direcional ou não; removeRelationAction remove pelo ID da relação.
 
+`saveGraphSettingsAction` valida o mundo ativo, a versão, as posições, os filtros, os estilos e as setas livres do grafo; grava
+por meio do repositório com revisão para detectar conflitos e retorna sucesso ou mensagem de erro.
+Um reenvio de conteúdo já gravado é seguro. A ação não cria nem altera relações entre entidades.
+
+`createGraphRelationAction`, `editGraphRelationAction` e `removeGraphRelationAction` operam no mesmo
+repositório das fichas e revalidam origem, destino e grafo. A criação recebe UUID da solicitação e
+reenvios idênticos não duplicam o vínculo. Alteração e remoção comparam a relação anterior para
+evitar sobrescrever outra aba. A criação e a edição exigem registros ativos do mesmo mundo.
+
 ### Quadros e cenas
 
 createBoardAction e createSceneAction validam os campos do formulário e redirecionam para o

@@ -13,6 +13,7 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 ├── worlds/
 │   └── <world-dir>/                  # hoje, o slug do mundo; não é a identidade
 │       ├── world.json                # World + tipos + calendário + escalas da linha + origem?
+│       ├── relationship-graph.json   # opcional: posições, filtros, estilos e setas livres, versão 3
 │       ├── entities/
 │       │   └── <entity-id>/          # UUID da entidade
 │       │       ├── metadata.json     # Entity, inclusive relations[]
@@ -40,6 +41,19 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 
 `src/lib/fs/paths.ts` também define `settings/app.json` e `indexes/`, mas a auditoria não encontrou
 consumidor ativo que grave esses caminhos; eles não são parte necessária da recuperação atual.
+
+### Organização do grafo de relacionamentos
+
+`relationship-graph.json` é opcional e pertence ao mundo que o contém. Na ausência do arquivo,
+o grafo usa posições automáticas e filtros vazios. A versão 3 guarda UUID do mundo, revisão,
+posições fixadas por UUID de entidade, filtros e um catálogo de estilos por tipo de relação.
+O catálogo inclui cor, traço, ponta, símbolo, significado e visibilidade; a direção continua em
+cada relação. Setas livres guardam coordenadas, cor e traço, sem criar vínculos nas entidades.
+Salvar usa o lock do
+mundo e escrita atômica; uma revisão desatualizada não sobrescreve uma organização diferente.
+Reenviar o mesmo conteúdo é idempotente. Posições de registros ocultos ou indisponíveis são
+preservadas até o usuário restaurar a organização automática. O arquivo é incluído na cópia
+integral do mundo; não contém os vínculos, que continuam nos metadados das entidades.
 
 ### Calendário por mundo
 
