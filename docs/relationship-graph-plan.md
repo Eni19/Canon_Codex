@@ -1,58 +1,219 @@
 # Plano do grafo de relacionamentos e dos novos canvas
 
-**Estado** · Há uma prova de conceito isolada em `/canvas-prototype` e uma área em `/relationships` com índices, filtros, vizinhança, legenda, organização persistida, criação e edição de vínculos e setas livres. Relações paralelas recebem curvas distintas e a gravação detecta conflitos. A conexão usa cliques nos cartões ou campos HTML; arrastar de um cartão a outro ainda não foi implementado. A validação de toque físico, acessibilidade assistiva, desempenho, a migração dos editores e a verificação de produção no navegador permanecem pendentes. O Konva é uma dependência local; seu aviso de licença MIT acompanha o pacote instalado.
+Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo usuário e da
+[pesquisa de interface e desempenho](research/relationship-canvas-ux-performance.md).
+**Próxima etapa: REL-02 — ocupar toda a área útil.** A migração dos outros canvas fica por último,
+depois da validação visual, funcional e de fluidez do grafo.
 
-## 1. Escolher e provar a base do canvas
+## Ponto de retomada
 
-Construir o editor do Canon Codex sobre **Konva**, que renderiza em `<canvas>` HTML5, tem licença MIT e funciona sem chave. A base e os recursos deste plano devem rodar localmente, sem assinatura, marca-d’água, conta, CDN ou serviço de layout hospedado. Manter os avisos de licença na distribuição. A implementação do editor, das ferramentas de edição e dos documentos será do Canon Codex. [Documentação do Konva](https://konvajs.org/docs/about.html) · [Licença MIT](https://github.com/konvajs/konva/blob/master/LICENSE)
+**Implementado:** prova de conceito em `/canvas-prototype`; grafo Konva em `/relationships`;
+índices de entrada/saída, busca, filtros, vizinhança, posições persistidas, catálogo de estilos,
+criação/edição de vínculos por cliques ou formulário HTML, setas livres, curvas para relações
+paralelas e detecção de conflitos na gravação. Preservar esse trabalho e os contratos existentes.
 
-- Fazer uma prova de conceito com arraste de nós, conexão entre cartões, setas personalizadas, pan, zoom por pinça e uma amostra de cartões, imagens e texto para antecipar a migração. Verificar o build de produção com os recursos servidos localmente. Usar apenas dados sintéticos.
-- Se a prova indicar um impedimento no Konva, implementar a superfície própria com Canvas 2D nativo. Dimensionar o trabalho de desenho, seleção, transformação, testes de acerto do ponteiro e desempenho antes de seguir. Manter a mesma experiência de uso e o mesmo formato de dados do Canon Codex.
-- Compartilhar câmera, coordenadas, gestos, seleção, arraste, redimensionamento e desenho de setas quando a implementação tiver mais de um consumidor. Carregar a superfície interativa no cliente. Manter a barra de ferramentas, a legenda e os formulários em HTML para operação por teclado e leitor de tela.
+**Problemas observados no código:** a rota usa `PageContainer` com largura máxima e margens;
+título, instruções, filtros e botões precedem o canvas; legenda, listas e detalhes ficam abaixo.
+`RelationshipView` cria uma Stage de 480 px de altura, observa só a largura e usa cores fixas claras.
+Seu effect destrói e recria a Stage ao mudar filtros, estilos e anotações, reaplicando fit/foco.
+O arraste recalcula todas as relações por evento. São constatações de código, não medições de custo
+nem diagnóstico dos dados da imagem.
 
-## 2. Implementar a área de relacionamentos
+**Não verificado:** fluidez de pan/zoom/arraste, memória, toque físico, trackpad e leitor de tela.
+A [verificação sintética anterior](performance/relationship-graph.md), com 500 itens e 1.500 relações,
+cobriu consulta e enquadramento; seus tempos HTTP não medem renderização ou interação.
+Arrastar uma conexão entre cartões ainda está pendente. O novo visual, autosave e otimizações
+abaixo são **planejados**, não entregues por esta revisão documental.
 
-- Incluir **Relacionamentos** na navegação do mundo, com proposta de rota `/relationships`. Adicionar **Ver no grafo** na ficha para abrir o mesmo canvas centrado no registro. Permitir alternar entre a visão do mundo e a vizinhança do registro selecionado, com expansão de conexões, busca, filtros por tipo de item e relação e botão para enquadrar o recorte.
-- Montar o grafo a partir das relações explícitas já gravadas nos registros. Consultar os dados do mundo uma vez por carregamento, montar os índices de entrada e saída em memória e enviar ao cliente os resumos necessários. Uma relação gera uma conexão por ID, inclusive quando aparece como backlink. Campos de referência da ficha ficam fora do primeiro recorte.
-- Gerar uma disposição inicial automática, permitir mover ou fixar cartões e restaurar a organização automática sob comando. Salvar posições fixadas e preferências do grafo localmente por mundo, em dados versionados. Mostrar os detalhes do vínculo ao selecioná-lo e oferecer um atalho para abrir os registros conectados. Curvar conexões paralelas para manter cada seta selecionável.
-- Tratar registros indisponíveis pelo estado atual do repositório. Ocultar do grafo os vínculos sem alvo ativo e preservar a relação gravada para que reapareça se o alvo voltar da lixeira.
+## Contrato visual obrigatório
 
-## 3. Definir setas e legenda editável
+Ao abrir Relacionamentos, toda a área ao lado do menu é o canvas; no celular, toda a área abaixo
+da navegação móvel. Em repouso, aparecem o grafo e ferramentas compactas. Painéis só aparecem
+por ação explícita e se sobrepõem à superfície, sem deslocar o grafo.
 
-Gerar as setas do canvas e as amostras da legenda a partir do mesmo catálogo de estilos do mundo. Cada tipo terá uma combinação visual distinta, identificável pelo traço e pela ponta ou por um símbolo, com cor complementar. A direção vem da relação gravada. Quando a relação for sem direção, usar terminais simétricos que não sugiram origem ou destino.
+| Elemento | Comportamento planejado |
+| --- | --- |
+| Superfície | 100% da largura/altura úteis, sem moldura externa, largura máxima, margens de página ou rolagem do documento. Menu preservado. Não depende da Fullscreen API. |
+| Fundo | Grafite quente com tokens do Canon; pontilhado estático muito discreto, opcional. Sem painel bege ou decoração animada contínua. |
+| Cartões | Superfície levemente elevada, título legível, tipo curto e borda sutil; seleção âmbar. Sem descrições, contagens ou metadados adicionais. |
+| Conexões | Curvas consistentes, pontas legíveis e destaque ao selecionar. Rótulos completos por seleção/foco ou zoom adequado. Direção e tipo não dependem só da cor. |
+| Ferramentas | Uma barra flutuante compacta: Selecionar/Mover, **Conectar** como ação principal, Seta livre e Mais. Ícones com nomes acessíveis, tooltip e estado ativo. |
+| Câmera | Pequeno grupo de zoom e Enquadrar em um canto; sem minimapa permanente nesta entrega. |
+| Busca, filtros e legenda | Painéis sob demanda via Mais/atalho, sem campos sempre expandidos. Indicador discreto de filtro ativo e ação Limpar. |
+| Detalhes | Inspetor contextual; um painel por vez. No celular, folha sobreposta com altura limitada e rolagem interna. |
+| Listas acessíveis | Navegador HTML de itens/vínculos aberto por comando, com busca/paginação; não manter listas abaixo do canvas. |
+| Salvamento | Automático após alteração concluída, com indicador compacto durante gravação. Falha/conflito permanece visível até resolução. |
+| Vazio | Mensagem curta e ação apropriada: criar registro, conectar existentes ou limpar filtros. Falha de carga não aparece como grafo vazio. |
 
-| Tipo de exemplo | Estilo na legenda | Leitura |
-| --- | --- | --- |
-| Pertence a | Linha contínua com triângulo preenchido | Do membro para o grupo |
-| Investiga | Linha tracejada com ponta aberta | De quem investiga para o alvo |
-| Protege | Linha dupla com uma ponta triangular | De quem protege para o protegido |
-| Aliado de | Linha pontilhada com marcas iguais nas duas extremidades | Vínculo sem direção |
+Remover do estado inicial breadcrumbs, título editorial, instruções, contagens, formulários,
+legenda e listas expandidas. Manter identificação acessível da página e navegação selecionada.
+Usar os tokens de `globals.css` conforme o [ADR-005](architecture/ADR-005-design-system.md),
+inclusive resolvendo cores para o Konva e reagindo à troca de tema. Preservar a variante clara.
+A direção visual é uma adaptação para o Canon; não copiar a decoração da Linha do Tempo.
 
-- A legenda mostra amostra, nome, significado, direção e controle para mostrar ou ocultar cada tipo. Em tela estreita, pode ser aberta como painel. Disponibilizar também uma lista navegável com origem, tipo e destino.
-- Sugerir uma combinação distinta para tipos existentes e recém-criados. Dar ao usuário um editor com prévia para ajustar cor, traço, ponta e símbolo. Quando duas combinações ficarem visualmente iguais, pedir um segundo elemento de distinção. Preservar os valores de `type`, rótulo e direção das relações antigas ao introduzir o catálogo.
+## Base técnica preservada
 
-## 4. Criar e editar setas no próprio canvas
+Manter **Konva**: os problemas observados não demonstram impedimento do motor. Comparações na
+pesquisa servem para orientar a decisão; trocar de biblioteca não resolve por si só dimensionamento,
+excesso de controles ou reconstrução da cena. Só reconsiderar o motor após impedimento reproduzível
+e perfil. Não adicionar outro renderizador ou framework de animação apenas para redesenhar esta tela.
 
-1. Clicar em **Conectar**, arrastar do item de origem para o destino ou selecionar os dois por clique, toque ou teclado.
-2. Selecionar um tipo existente ou cadastrar um tipo, escolher a direção, acrescentar um rótulo opcional e conferir a prévia da seta.
-3. Salvar a relação no mesmo repositório usado pelas fichas. Atualizar o grafo, a origem e os backlinks do destino. Ao selecionar uma seta existente, permitir editar tipo, rótulo e direção ou remover a relação com confirmação.
-4. Oferecer **Seta livre** para desenhar uma anotação visual com estilo configurável. Permitir reposicionar e apagar a anotação. Gravar essa seta com a vista do grafo. A ferramenta **Conectar** é a que cria vínculos nas fichas.
+Preservar operação local sem conta, assinatura, chave, CDN, serviço de layout remoto ou marca-d'água
+do motor e manter os avisos MIT do Konva. Ferramentas, formulários e alternativa acessível ficam em
+HTML. Separar superfície/ciclo de vida, câmera/gestos, reconciliação de objetos, layout, ferramentas
+e persistência. Extrair uma base compartilhada somente quando houver um segundo consumidor real.
+Antes de escrever código, ler os guias pertinentes em `node_modules/next/dist/docs/`.
 
-Reusar o caminho de gravação de relações tanto no grafo quanto nas fichas. Validar no servidor a origem, o destino e o mundo e tornar a gravação segura para reenvio. Manter a escrita atômica no repositório local. Persistir posições, estilos e anotações como estado do grafo, com indicação de falha e opção de tentar salvar de novo.
+## REL-02 — Ocupar toda a área útil
 
-## 5. Validar o grafo antes de migrar os editores existentes
+1. Retirar `PageContainer`, breadcrumbs e título visível de `/relationships`. Dar à rota um modo
+   de superfície no `WikiShell`, com cadeia de altura definida, `min-height: 0`, `min-width: 0`
+   e overflow controlado. Não alterar o layout das outras páginas.
+2. Usar a área calculada pelo layout, sem subtrair largura fixa do menu ou cobri-lo com um elemento
+   fixed. Considerar altura dinâmica da janela e navegação móvel.
+3. Observar largura **e altura** do host com `ResizeObserver`. O backing canvas tem o tamanho do
+   viewport; o mundo é virtual. Resize preserva centro do mundo e zoom, sem fit automático.
+4. Sobrepor ferramentas/painéis em HTML; áreas vazias do overlay não interceptam ponteiros.
 
-- Conferir com dados sintéticos que relações antigas aparecem, dois tipos entre o mesmo par continuam legíveis, o sentido respeita os dados, filtros acompanham a legenda e as alterações feitas por qualquer uma das telas aparecem na outra. Conferir também recarga, falha de salvamento, repetição de envio, isolamento entre mundos e comportamento com lixeira e restauração.
-- Testar teclado, leitor de tela, mouse e toque. Medir abertura, pan, zoom e seleção com um grafo denso, incluindo um cenário sintético de 500 itens e 1.500 relações. Ajustar nível de detalhe e desenho por área visível conforme o perfil medido.
-- Rodar lint, checagem de tipos, testes e build. Conferir em navegador de produção que o grafo e qualquer exportação oferecida funcionam sem rede externa, chave ou marca-d’água.
-- Documentar a navegação e a edição no guia de entidades. Atualizar README, PROJECT.md, documentação de arquitetura, ADRs de armazenamento e design e guias de dados conforme os contratos efetivamente implementados.
+**Aceite:** retângulo do canvas igual ao da área útil, com tolerância de 1 CSS px, em 1440×900,
+1280×720 e 390×844. Verificar resize, orientação e zoom do navegador, sem scrollbar de documento,
+margem externa, conteúdo abaixo ou sobreposição ao menu.
 
-## 6. Etapa final — migrar os canvas do aplicativo
+## REL-03 — Refinar visual e reduzir controles
 
-Quadros de investigação e Cenas usam tldraw e persistem snapshots desse editor. A licença hobby mantém a marca-d’água em produção. A Linha do Tempo usa uma superfície própria, com SVG e cartões HTML. Migrar primeiro os editores dependentes do tldraw e portar a superfície da Linha do Tempo ao final, preservando os resultados medidos do canvas atual. [Licença do tldraw](https://tldraw.dev/community/license) · [Guia de quadros, cenas e projeção](user-guide/boards-scenes-and-projection.md) · [Perfil da Linha do Tempo](performance/timeline-cosmic-canvas.md)
+1. Implementar o contrato visual com tokens e componentes existentes; foco visível, contraste,
+   nomes acessíveis e alvos confortáveis para toque.
+2. Mover busca, tipos, vizinhança, legenda, lista acessível e restauração de organização para
+   painéis sob demanda. Abrir/fechar painel não altera geometria/câmera. Restaurar organização
+   requer ação explícita e confirmação quando descartar posições fixadas.
+3. Refazer cartões e seleção. Portas de conexão aparecem ao selecionar ou ativar Conectar,
+   inclusive no toque/teclado, sem depender de hover.
+4. Gerar conexões e amostras pelo mesmo catálogo de estilos: cor complementar a traço/ponta/símbolo.
+   Preservar tipo, rótulo e direção antigos; sem direção usa terminais simétricos. Manter paralelas,
+   direções opostas e auto-relações legíveis e selecionáveis.
+5. Tratar carregamento, vazio, filtro sem resultado e falha sem adicionar explicações permanentes.
 
-1. **Inventariar e converter.** Mapear os tipos de objetos e vínculos suportados nos snapshots, inclusive anotações, desenhos, textos, imagens, grupos e setas ligadas a objetos. Criar um formato versionado do Canon Codex e um conversor com prévia, backup, relatório de itens incompatíveis e restauração. Testar a conversão com snapshots sintéticos. Uma execução repetida deve produzir o mesmo resultado. Preservar o original até a validação da cópia e bloquear a troca automática se a conversão detectar perda.
-2. **Migrar Quadros de investigação.** Preservar cartões e suas variações, imagens, setas, posições, camadas, referências por ID, ferramentas de anotação, autosave e recuperação da sessão. Validar reabertura de documentos convertidos e edição dos novos antes de substituir o editor.
-3. **Migrar Cenas.** Preservar mapa, grade e encaixe, tokens e suas transformações, camadas, bloqueio, pontos de interesse, revelações e duplicação. Validar os modos Preparar e Mestrar e a projeção ao vivo, incluindo a câmera e a garantia de que itens ocultos não chegam à janela do jogador.
-4. **Portar a Linha do Tempo.** Reusar a base de câmera e gestos e desenhar a camada gráfica no novo canvas, mantendo os cartões interativos e acessíveis em HTML. Preservar as coordenadas cronológicas, os filtros e a criação rápida. Comparar a fluidez e a navegação com o perfil atual antes de trocar a superfície.
-5. **Retirar o tldraw.** Após a validação da conversão, da recuperação e da paridade dos fluxos, remover o pacote e as referências a `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`. Atualizar README, PROJECT.md, ADRs, guias de migração, backup, quadros, cenas e projeção. Verificar o build em HTTPS de produção e o funcionamento local sem chave, pagamento, rede externa ou marca-d’água em todas as superfícies migradas.
+**Aceite:** capturas sintéticas pequeno/denso/vazio/filtrado/selecionado nos dois temas e tamanhos
+desktop/móvel. Em repouso, somente menu, canvas, grafo e controles compactos. Inspeção visual em
+navegador é obrigatória; build não comprova qualidade visual.
+
+## REL-04 — Estabilizar câmera e gestos
+
+1. Criar Stage uma vez por montagem/mundo e destruir no unmount. Reconciliar nós/arestas por IDs;
+   atualizar atributos/visibilidade sem recriar Stage. Não atualizar a árvore React inteira por
+   movimento do ponteiro; câmera corrente em estado imperativo isolado.
+2. Preservar câmera/seleção/posições ao filtrar, salvar, editar estilos, abrir painel ou criar relação.
+   Fit só na abertura inicial sem câmera ou por Enquadrar; **Ver no grafo** centraliza uma vez.
+3. Pan pelo fundo/ferramenta Mover e Espaço+arraste fora de campos editáveis. Wheel com zoom ancorado
+   no ponteiro; trackpad com pan de dois dedos e pinch tratado como zoom. Normalizar deltas/limites
+   e verificar as distinções de eventos em hardware real.
+4. Toque: um dedo move cartão ou fundo conforme alvo; dois dedos fazem pinch/pan e cancelam drag
+   anterior. Tratar cancelamento, saída da janela e liberação sem modo preso. Formulários não
+   movimentam o canvas.
+5. Gestos diretos, sem easing/fila de animações; aproveitar redraw automático do Konva. Transições
+   breves de painéis/enquadramento respeitam movimento reduzido. Nenhum loop ocioso contínuo.
+
+**Aceite:** filtros, edição e salvamento mantêm transformação; zoom mantém ponto sob cursor e
+resize mantém centro. Testar essas invariantes e limpeza de Stage/listeners/observers/frames ao sair.
+
+## REL-05 — Criar relacionamentos no canvas
+
+1. Conectar por arraste de porta ou dois cliques/toques: origem → destino, seta em prévia,
+   destaque de alvo, Escape e cancelamento visível. Pan ou soltar no vazio não grava relação.
+2. Após escolher o par, formulário compacto sobreposto: tipo existente/novo, direção, rótulo
+   opcional e prévia. Alternativa HTML com seleção pesquisável seguindo `CardPicker` do projeto.
+3. Confirmar grava pelo caminho de relações usado nas fichas. Seleção da seta abre edição e links
+   aos registros; remoção exige confirmação. Prévia nunca é persistida como vínculo.
+4. Seta livre continua anotação da vista, com início/fim, edição de extremidades e remoção
+   contextual; não cria relação entre entidades ou backlinks.
+5. Autosave da vista após dragend/alterações confirmadas, agrupando mudanças próximas e
+   serializando gravações. Nunca salvar por pointermove. Preservar edições feitas durante request,
+   usar revisão/conflito existente e oferecer repetir ou recarregar com aviso de alterações locais.
+   Só indicar salvo após resposta; proteger saída com pendências. Relações mantêm confirmação
+   explícita no formulário, independentemente do autosave da vista.
+6. Preservar validação de origem/destino/mundo no servidor, reenvio idempotente, escrita atômica,
+   posições versionadas e catálogo. Backlinks derivados da origem; alvos inativos ocultam vínculos
+   sem apagar a relação persistida. Referências de propriedades continuam fora deste recorte.
+
+**Aceite:** criar/editar/remover/recarregar e testar falha, reenvio e conflito com dados sintéticos.
+Teclado/leitor de tela operam os mesmos fluxos em HTML; foco retorna ao acionador. Nenhuma mudança
+de schema é pressuposta; se necessária, justificar e documentar antes de alterar persistência.
+
+## REL-06 — Organizar o grafo e comprovar fluidez
+
+1. Comparar a grade atual com layout estático orientado às conexões, componentes separados e
+   prevenção de sobreposição. Preservar posições fixadas, IDs e resultado estável. Escolher por
+   legibilidade/medição. Se usar forças, cálculo finito fora da interação, em worker quando o custo
+   justificar; sem simulação contínua durante navegação. Descartar resultados de mundo/versão antigos.
+2. Layout inicial ou por comando; filtros não redistribuem itens. Novos cartões não deslocam os
+   fixados. Persistir o resultado final e permitir restaurar organização explicitamente.
+3. Manter poucas camadas e desligar hit-testing de decoração/textos/pontas sem ações. Camada
+   temporária de drag e caches só quando perfil justificar; não criar camada/cache por cartão.
+4. Indexar arestas por nó e recalcular somente incidentes ao cartão arrastado. Reconciliar objetos
+   alterados em vez de reconstruir toda a cena.
+5. Desenhar por área visível com margem e índice espacial quando necessário. Considerar o trajeto
+   das arestas: conexões cruzando o viewport continuam visíveis mesmo com pontas fora dele.
+   Objetos em interação não desaparecem. Culling não remove itens da alternativa HTML.
+6. Nível de detalhe por zoom: formas/linhas simples ao longe, títulos quando legíveis, rótulos por
+   seleção/foco. Ajustar limiares visualmente, mantendo direção e distinção entre vínculos.
+7. Medir antes/depois no mesmo dispositivo, navegador, viewport e DPR em build de produção.
+   Reutilizar fixture de **500 itens/1.500 relações** e cenários pequeno/denso, paralelas e loops.
+   Dados exclusivamente sintéticos em diretório temporário isolado.
+
+### Metas propostas — ainda não medidas
+
+| Medida | Critério |
+| --- | --- |
+| Fluidez em desktop de referência, 60 Hz | Três execuções de 10 s para cada gesto: pan, zoom e drag. Mediana próxima de 16,7 ms e p95 dos intervalos de frame ≤ 20 ms no cenário 500/1.500; registrar frames perdidos e traces. Não inferir FPS por HTTP ou só por callbacks rAF. |
+| Resposta visual | p95 ≤ 50 ms da entrada ao frame que mostra seleção/movimento, medido por trace/instrumentação. Investigar stalls acima de 50 ms atribuíveis ao grafo. |
+| Abertura | Separar HTTP, hidratação/import e primeira cena interativa. Alvo inicial ≤ 1 s entre dados disponíveis no cliente e cena utilizável; registrar cold/warm e ambiente. |
+| Ociosidade/memória | Sem redraw contínuo. Após 20 ciclos de abrir/fechar e usar filtros/painéis, sem Stages/listeners acumulados; comparar heap após GC. |
+| Estabilidade | Sem branco ou salto da câmera ao filtrar, salvar, redimensionar ou abrir painel. |
+
+**Aceite:** atualizar [perfil do grafo](performance/relationship-graph.md) com hardware, navegador,
+build, dataset, DPR, protocolo, resultados e limites. Metas são orçamento de projeto, não garantia
+da biblioteca ou de hardware universal. Não aprovar fluidez somente com HTTP/testes de domínio.
+
+## REL-07 — Validar antes de migrar
+
+- Revisão visual dos temas, resoluções, painéis, conexões e estados. Nenhum controle cobre
+  permanentemente o registro focado.
+- Mouse, teclado, leitor de tela, trackpad e toque físico; foco, anúncios de resultado/erro,
+  alternativa HTML e retorno ao canvas. O que não for testado permanece não verificado.
+- Relações antigas, direção, paralelas, loops, filtros/legenda, recarga, falha, reenvio, conflito,
+  isolamento entre mundos e lixeira/restauração via fixtures sintéticas.
+- Lint, tipos, testes pertinentes e build; inspeção em produção local com runtime sem rede externa,
+  chave ou marca-d'água. Ler o guia de testes e **nunca acessar `workspace/`**.
+- Atualizar guia de entidades para o comportamento entregue e README, PROJECT, arquitetura/ADRs,
+  dados e interfaces conforme mudanças reais.
+
+**Portão de migração:** REL-02 a REL-07 concluídos com evidências visuais, funcionais e de desempenho.
+Até lá, Quadros, Cenas e Linha do Tempo ficam fora da execução.
+
+## REL-08 — Etapa final: migrar os outros canvas
+
+Esta é a **última etapa**. Quadros e Cenas usam tldraw/snapshots; a Linha do Tempo usa superfície
+própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de grafo aos outros editores.
+
+1. **Inventariar/converter:** cartões, desenhos, anotações, texto, imagens, grupos e setas vinculadas.
+   Formato Canon versionado; conversor idempotente com prévia, backup, incompatibilidades e restauração.
+   Testar snapshots sintéticos; preservar original e bloquear troca automática diante de perda.
+2. **Quadros de investigação:** preservar variações de cartões, imagens, setas, posições, camadas,
+   referências por ID, anotação, autosave e recuperação. Validar reabertura das cópias antes da troca.
+3. **Cenas:** preservar mapa, grade/encaixe, tokens/transformações, camadas, bloqueio, pontos de
+   interesse, revelações e duplicação. Validar Preparar/Mestrar/projeção, câmera e a garantia de
+   que itens ocultos não chegam à janela do jogador.
+4. **Linha do Tempo, por último entre as superfícies:** preservar coordenadas cronológicas, cartões
+   acessíveis, filtros, criação rápida e câmera. Comparar com o
+   [perfil atual](performance/timeline-cosmic-canvas.md); não aceitar regressão para uniformizar motor.
+5. **Retirar tldraw:** após conversão, recuperação e paridade validadas, remover pacote e referências
+   a `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`. Atualizar README, PROJECT, ADRs e guias de migração, backup,
+   quadros/cenas/projeção; verificar produção HTTPS e runtime local sem chave, pagamento, rede
+   externa ou marca-d'água em todas as superfícies migradas.
+
+## Impacto documental desta revisão
+
+Revisão de plano/pesquisa, sem implementação do novo canvas. README e PROJECT recebem referência
+ao trabalho planejado; `docs/work-items.md` registra a retomada. Guia de entidades, ADRs e contratos
+de armazenamento/API continuam descrevendo a implementação existente e não devem antecipar
+comportamentos propostos. Alterações preexistentes no código e no guia são preservadas.

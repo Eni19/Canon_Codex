@@ -159,6 +159,14 @@ Relações são armazenadas no array da entidade fonte; backlinks são derivados
 `targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
 domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
 
+## Relacionamentos: próxima etapa planejada
+
+O [plano de relacionamentos](docs/relationship-graph-plan.md), revisto em 16/11/2026, retoma o grafo
+Konva existente pela ocupação integral da área útil, controles contextuais, câmera estável e
+validação de fluidez. O redesenho e o autosave da vista são planejados, ainda não implementados.
+A migração de Quadros, Cenas e Linha do Tempo é a última etapa, após a validação do grafo.
+As referências e os limites estão na [pesquisa](docs/research/relationship-canvas-ux-performance.md).
+
 ## Componentes de UI reutilizáveis
 
 - **CardPicker** (`src/components/ui/card-picker.tsx`): seletor em modal com cartões quadrados

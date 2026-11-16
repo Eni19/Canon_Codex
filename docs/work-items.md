@@ -1,12 +1,19 @@
 # Trabalho em andamento e lacunas verificáveis
 
-Última verificação: **15/10/2026** (Cosmic Canvas; TL-10/TL-11/TL-12 preservados como histórico). Tickets de implementação da linha do tempo ficam em
+Última revisão: **16/11/2026** (replanejamento do grafo; datas de verificação por item preservadas). Tickets de implementação da linha do tempo ficam em
 `.scratch/linha-do-tempo-implementacao/issues/`; os demais itens abaixo registram lacunas
 comprovadas por código/configuração.
 
 | ID | Resultado esperado | Estado | Evidência | Próximo passo ou bloqueio | Última verificação |
 | --- | --- | --- | --- | --- | --- |
-| REL-01 | Executar o [plano de relacionamentos](relationship-graph-plan.md) em etapas | iniciado; grafo, vínculos e setas livres implementados; validação e migração pendentes | `graphRelations.test.ts`, `graphSettings.test.ts` e verificação com vínculos sintéticos | Validar falhas, teclado, toque, produção e desempenho com grafo denso antes de avaliar migrações | 16/11/2026 |
+| REL-01 | Executar o [plano de relacionamentos](relationship-graph-plan.md) em etapas | iniciado; base funcional preservada; apresentação e fluidez pendentes | `graphRelations.test.ts`, `graphSettings.test.ts` e [primeira verificação densa](performance/relationship-graph.md) | Retomar por REL-02; não iniciar migrações antes de REL-07 | 16/11/2026 |
+| REL-02 | Ocupar toda a área útil ao lado do menu | planejado; próxima etapa | PageContainer, WikiShell e altura fixa em RelationshipView; [plano](relationship-graph-plan.md#rel-02--ocupar-toda-a-área-útil) | Retirar limites da página e medir largura/altura reais do host | 16/11/2026 |
+| REL-03 | Refinar visual e mostrar controles sob demanda | planejado | [contrato visual](relationship-graph-plan.md#contrato-visual-obrigatório) e [pesquisa](research/relationship-canvas-ux-performance.md) | Cartões/conexões com tokens e ferramentas/painéis contextuais | 16/11/2026 |
+| REL-04 | Preservar câmera e estabilizar gestos | planejado | Effect atual recria Stage por filtros/estilos/anotações | Separar montagem da cena, reconciliação e câmera; verificar entradas reais | 16/11/2026 |
+| REL-05 | Criar relações no canvas e salvar vista automaticamente | planejado; cliques/formulários já existem | `graph-relation-forms.tsx` e gravação manual atual | Arraste entre portas, edição contextual e autosave com revisão/conflito | 16/11/2026 |
+| REL-06 | Organizar grafo e comprovar fluidez | planejado; desempenho de interação não medido | [perfil atual](performance/relationship-graph.md) | Layout estável, atualização incremental, culling/LOD e perfil 500/1.500 | 16/11/2026 |
+| REL-07 | Validar visual, fluxos e acessibilidade antes da migração | pendente; depende de REL-02 a REL-06 | [critérios do plano](relationship-graph-plan.md#rel-07--validar-antes-de-migrar) | Registrar evidências desktop/móvel, teclado, leitor de tela, toque e falhas | 16/11/2026 |
+| REL-08 | Migrar outros canvas somente ao final | planejado; fora da execução até REL-07 | [etapa final](relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas) | Conversor/backup → Quadros → Cenas → Linha do Tempo → retirada de tldraw | 16/11/2026 |
 | CAL-VIS-01 | Executar o [plano do calendário visual](calendar-visual-plan.md) | build e suíte verificados; revisão e perfil de produção em Chrome e Edge | [relatório de produção](performance/calendar-production.md) e [plano visual](calendar-visual-plan.md) | Confirmar fala em leitor de tela e medir a agenda em mundos grandes; acompanhar `EPERM` intermitente no filesystem | 13/11/2026 |
 | DOC-GAP-001 | Definir se o catálogo de tipos continuará híbrido ou voltará a ser totalmente genérico | aguardando decisão externa | `src/components/entities/entity-page.tsx` contém renderizadores específicos; `EntityTypeDefinition` continua dirigindo layouts genéricos | decisão de produto/arquitetura; registrar novo ADR se a regra mudar | 23/09/2026 |
 | DOC-GAP-002 | Definir política de restauração e descarte permanente | não implementado | repositórios movem registros para `trash/`, mas não há ação/UI de restauração ou purge | especificar e implementar antes de prometer recuperação pela interface | 23/09/2026 |

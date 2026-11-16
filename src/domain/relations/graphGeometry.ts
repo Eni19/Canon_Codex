@@ -4,6 +4,12 @@ type Point = { x: number; y: number }
 const CARD_WIDTH = 180
 const CARD_HEIGHT = 70
 
+/** Spread large worlds across a wider grid while keeping small worlds familiar. */
+export function initialGraphPosition(index: number, count: number): Point {
+  const columns = Math.max(4, Math.ceil(Math.sqrt(count * 1.4)))
+  return { x: 45 + (index % columns) * 300, y: 45 + Math.floor(index / columns) * 170 }
+}
+
 /** Stable lanes for all edges sharing an unordered pair, including reverse directions. */
 export function relationshipLanes(relations: Relation[]): Map<string, number> {
   const pairs = new Map<string, Relation[]>()

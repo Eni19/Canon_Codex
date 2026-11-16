@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Relation } from './relation'
-import { fitGraph, relationshipLanes, relationshipPoints } from './graphGeometry'
+import { fitGraph, initialGraphPosition, relationshipLanes, relationshipPoints } from './graphGeometry'
 
 const edge = (id: string, sourceId: string, targetId: string): Relation => ({ id, sourceId, targetId, type: 'tipo', directional: true })
 
@@ -21,5 +21,12 @@ describe('graph geometry', () => {
     expect(fit.scale).toBeLessThan(1)
     expect(fit.x).toBeGreaterThanOrEqual(0)
     expect(fit.y).toBeGreaterThanOrEqual(0)
+  })
+  it('spreads a dense initial graph into a grid that fits the canvas', () => {
+    const points = Array.from({ length: 500 }, (_, index) => initialGraphPosition(index, 500))
+    const fit = fitGraph(points, 900, 480)
+    expect(fit.scale).toBeGreaterThan(0.05)
+    expect(Math.min(...points.map((point) => point.y)) * fit.scale + fit.y).toBeGreaterThanOrEqual(0)
+    expect(Math.max(...points.map((point) => point.y + 70)) * fit.scale + fit.y).toBeLessThanOrEqual(480)
   })
 })

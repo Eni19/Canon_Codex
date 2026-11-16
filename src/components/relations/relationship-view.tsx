@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { saveGraphSettingsAction } from '@/app/actions/relationship-graph'
-import { fitGraph, relationshipLanes, relationshipPoints } from '@/domain/relations/graphGeometry'
+import { fitGraph, initialGraphPosition, relationshipLanes, relationshipPoints } from '@/domain/relations/graphGeometry'
 import { buildGraphCatalog, GraphStylesSchema, strokeDash, type GraphStyle } from '@/domain/relations/graphStyles'
 import { GraphStyleLegend } from './graph-style-legend'
 import { CreateGraphRelation, EditGraphRelation } from './graph-relation-forms'
 import { FreeArrowForm } from './graph-free-arrows'
 import type { FreeArrow, GraphSettings } from '@/domain/relations/graphSettings'
 import type { GraphEntity } from '@/domain/relations/relationshipGraph'
+import { relationshipNeighborhood } from '@/domain/relations/relationshipGraph'
 import type { Relation } from '@/domain/relations/relation'
 
 export function RelationshipView({ entities, relations: initialRelations, initialFocus, initialSettings }: { entities: GraphEntity[]; relations: Relation[]; initialFocus?: string; initialSettings: GraphSettings }) {
@@ -19,6 +20,8 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const [relationType, setRelationType] = useState(() => relations.some((item) => item.type === initialSettings.preferences.relationType) ? initialSettings.preferences.relationType : '')
   const [focus, setFocus] = useState(() => entities.some((item) => item.id === initialFocus) ? initialFocus ?? '' : '')
   const [depth, setDepth] = useState(1)
+  const [itemPage, setItemPage] = useState(0)
+  const [relationPage, setRelationPage] = useState(0)
   const [selectedId, setSelectedId] = useState('')
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -40,17 +43,16 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const camera = useRef<{ fit: () => void; zoom: (factor: number) => void } | null>(null)
   const types = [...new Set(entities.map((item) => item.type))].sort()
   const relationTypes = [...new Set(relations.map((item) => item.type))].sort()
+  const graph = useMemo(() => {
+    const incoming = new Map(entities.map((entity) => [entity.id, [] as Relation[]]))
+    const outgoing = new Map(entities.map((entity) => [entity.id, [] as Relation[]]))
+    for (const relation of relations) { outgoing.get(relation.sourceId)?.push(relation); incoming.get(relation.targetId)?.push(relation) }
+    return { entities, relations, incoming, outgoing }
+  }, [entities, relations])
   const visible = useMemo(() => {
-    let neighbors: Set<string> | undefined
-    if (focus) {
-      neighbors = new Set([focus])
-      for (let i = 0; i < depth; i++) {
-        const previous = new Set(neighbors)
-        for (const edge of relations) if (previous.has(edge.sourceId) || previous.has(edge.targetId)) { neighbors.add(edge.sourceId); neighbors.add(edge.targetId) }
-      }
-    }
+    const neighbors = focus ? relationshipNeighborhood(graph, focus, depth) : undefined
     return entities.filter((item) => (!neighbors || neighbors.has(item.id)) && (!type || item.type === type) && item.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
-  }, [entities, relations, query, type, focus, depth])
+  }, [entities, graph, query, type, focus, depth])
   const visibleRelations = useMemo(() => {
     const ids = new Set(visible.map((item) => item.id))
     const hidden = new Set(styles.filter((item) => item.hidden).map((item) => item.type))
@@ -58,6 +60,8 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   }, [relations, visible, relationType, styles])
   const titles = useMemo(() => new Map(entities.map((item) => [item.id, item.title])), [entities])
   const selected = visibleRelations.find((edge) => edge.id === selectedId)
+  const itemPages = Math.max(1, Math.ceil(visible.length / 50)); const currentItemPage = Math.min(itemPage, itemPages - 1)
+  const relationPages = Math.max(1, Math.ceil(visibleRelations.length / 50)); const currentRelationPage = Math.min(relationPage, relationPages - 1)
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault() }
@@ -65,6 +69,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
   const markDirty = () => { editVersion.current++; setDirty(true); setSaveMessage('') }
+  const resetPages = () => { setItemPage(0); setRelationPage(0) }
   const setSource = (value: string) => { connection.current.source = value; setSourceId(value) }
   const setTarget = (value: string) => { connection.current.target = value; setTargetId(value) }
   const setFreeStart = (point: { x: number; y: number } | null) => { free.current.start = point; setFreeStartState(point) }
@@ -78,7 +83,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const updateStyle = (style: GraphStyle) => {
     const next = styles.map((item) => item.type === style.type ? style : item)
     if (!GraphStylesSchema.safeParse(next).success) { setSaveMessage('Há tipos com estilos iguais. Altere o traço, a ponta ou o símbolo antes de salvar a legenda.'); return }
-    settings.current.styles = next; setStyles(next); markDirty()
+    settings.current.styles = next; setStyles(next); resetPages(); markDirty()
   }
   const save = async () => {
     if (savingRef.current) return
@@ -122,7 +127,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
       const entityIndex = new Map(entities.map((item, index) => [item.id, index]))
       visible.forEach((item) => {
         const index = entityIndex.get(item.id) ?? 0
-        const position = settings.current.positions[item.id] ?? { x: 45 + (index % 4) * 300, y: 45 + Math.floor(index / 4) * 170 }
+        const position = settings.current.positions[item.id] ?? initialGraphPosition(index, entities.length)
         const group = new K.Group({ ...position, draggable: true })
         group.add(new K.Rect({ width: 180, height: 70, cornerRadius: 9, fill: '#f4eee5', stroke: '#806e5f', strokeWidth: 2 }))
         group.add(new K.Text({ x: 10, y: 12, width: 160, text: item.title, fontSize: 15, fill: '#251f1b', ellipsis: true, wrap: 'none' }))
@@ -221,11 +226,11 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   return <section className="mt-5 space-y-4">
     <p className="text-sm text-muted-foreground">Arraste os cartões para fixar posições; salve a organização e os estilos.</p>
     <div className="flex flex-wrap gap-3 text-sm">
-      <label>Buscar <input className="ml-1 rounded border px-2 py-1" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-      <label>Tipo de item <select className="ml-1 rounded border bg-background px-2 py-1" value={type} onChange={(event) => { const value = event.target.value; setType(value); settings.current.preferences = { ...settings.current.preferences, type: value }; markDirty() }}><option value="">Todos</option>{types.map((item) => <option key={item}>{item}</option>)}</select></label>
-      <label>Tipo de relação <select className="ml-1 rounded border bg-background px-2 py-1" value={relationType} onChange={(event) => { const value = event.target.value; setRelationType(value); settings.current.preferences = { ...settings.current.preferences, relationType: value }; markDirty() }}><option value="">Todos</option>{relationTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
-      <label>Vizinhança <select className="ml-1 rounded border bg-background px-2 py-1" value={focus} onChange={(event) => { setFocus(event.target.value); setDepth(1) }}><option value="">Mundo inteiro</option>{entities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-      {focus && <button className="rounded border px-2" onClick={() => setDepth((value) => value + 1)}>Expandir conexões</button>}
+      <label>Buscar <input className="ml-1 rounded border px-2 py-1" value={query} onChange={(event) => { setQuery(event.target.value); resetPages() }} /></label>
+      <label>Tipo de item <select className="ml-1 rounded border bg-background px-2 py-1" value={type} onChange={(event) => { const value = event.target.value; setType(value); settings.current.preferences = { ...settings.current.preferences, type: value }; resetPages(); markDirty() }}><option value="">Todos</option>{types.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>Tipo de relação <select className="ml-1 rounded border bg-background px-2 py-1" value={relationType} onChange={(event) => { const value = event.target.value; setRelationType(value); settings.current.preferences = { ...settings.current.preferences, relationType: value }; resetPages(); markDirty() }}><option value="">Todos</option>{relationTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>Vizinhança <select className="ml-1 rounded border bg-background px-2 py-1" value={focus} onChange={(event) => { setFocus(event.target.value); setDepth(1); resetPages() }}><option value="">Mundo inteiro</option>{entities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+      {focus && <button className="rounded border px-2" onClick={() => { setDepth((value) => value + 1); resetPages() }}>Expandir conexões</button>}
     </div>
     <p className="text-sm">{visible.length} itens e {visibleRelations.length} relações. Arraste cartões ou o fundo; use a roda ou pinça para ampliar.</p>
     <div className="flex flex-wrap gap-2 text-sm" aria-label="Controles do grafo">
@@ -244,8 +249,12 @@ export function RelationshipView({ entities, relations: initialRelations, initia
     <GraphStyleLegend styles={styles} relations={relations} update={updateStyle} />
     {annotations.length > 0 && <section className="rounded border p-3 text-sm"><h2 className="font-medium">Setas livres</h2><ul className="mt-2 space-y-2">{annotations.map((arrow, index) => <li key={arrow.id}>Seta {index + 1}: ({Math.round(arrow.start.x)}, {Math.round(arrow.start.y)}) → ({Math.round(arrow.end.x)}, {Math.round(arrow.end.y)}) <button type="button" className="rounded border px-2" onClick={() => updateAnnotations(annotations.filter((item) => item.id !== arrow.id))}>Apagar seta {index + 1}</button></li>)}</ul><p>Arraste as extremidades no canvas para reposicionar.</p></section>}
     <h2 className="font-serif text-lg">Itens e relações visíveis</h2>
-    <ul className="space-y-1 text-sm">{visible.map((item) => <li key={item.id}><Link className="text-primary underline" href={`/entity/${item.id}`}>{item.title}</Link> <span className="text-muted-foreground">({item.type})</span></li>)}</ul>
-    <ul className="space-y-1 text-sm">{visibleRelations.map((edge) => <li key={edge.id}><button type="button" className="text-left underline" aria-pressed={selectedId === edge.id} onClick={() => setSelectedId(edge.id)}>{titles.get(edge.sourceId)} {edge.directional ? '→' : '—'} {edge.label || edge.type} {edge.directional ? '→' : '—'} {titles.get(edge.targetId)}</button></li>)}</ul>
+    <h3 className="font-medium">Itens</h3>
+    <ul className="space-y-1 text-sm">{visible.slice(currentItemPage * 50, (currentItemPage + 1) * 50).map((item) => <li key={item.id}><Link className="text-primary underline" href={`/entity/${item.id}`}>{item.title}</Link> <span className="text-muted-foreground">({item.type})</span></li>)}</ul>
+    {itemPages > 1 && <div className="flex items-center gap-2 text-sm"><button type="button" disabled={currentItemPage === 0} onClick={() => setItemPage(currentItemPage - 1)} className="rounded border px-2 disabled:opacity-50">Itens anteriores</button><span>Página {currentItemPage + 1} de {itemPages}</span><button type="button" disabled={currentItemPage === itemPages - 1} onClick={() => setItemPage(currentItemPage + 1)} className="rounded border px-2 disabled:opacity-50">Próximos itens</button></div>}
+    <h3 className="font-medium">Relações</h3>
+    <ul className="space-y-1 text-sm">{visibleRelations.slice(currentRelationPage * 50, (currentRelationPage + 1) * 50).map((edge) => <li key={edge.id}><button type="button" className="text-left underline" aria-pressed={selectedId === edge.id} onClick={() => setSelectedId(edge.id)}>{titles.get(edge.sourceId)} {edge.directional ? '→' : '—'} {edge.label || edge.type} {edge.directional ? '→' : '—'} {titles.get(edge.targetId)}</button></li>)}</ul>
+    {relationPages > 1 && <div className="flex items-center gap-2 text-sm"><button type="button" disabled={currentRelationPage === 0} onClick={() => setRelationPage(currentRelationPage - 1)} className="rounded border px-2 disabled:opacity-50">Relações anteriores</button><span>Página {currentRelationPage + 1} de {relationPages}</span><button type="button" disabled={currentRelationPage === relationPages - 1} onClick={() => setRelationPage(currentRelationPage + 1)} className="rounded border px-2 disabled:opacity-50">Próximas relações</button></div>}
     {selected && <section aria-label="Detalhes da relação" className="rounded border p-3 text-sm">
       <h3 className="font-medium">Detalhes da relação</h3>
       <p>Tipo: {selected.type}{selected.label ? ` · Rótulo: ${selected.label}` : ''} · {selected.directional ? 'Direcional' : 'Sem direção'}</p>

@@ -103,6 +103,8 @@ registros ativos. Use a busca, os filtros e a seleção de vizinhança para limi
 a roda ou pinça para zoom; **Enquadrar recorte**, **Ampliar** e **Reduzir** também são operáveis
 por teclado. Selecione uma conexão no canvas ou na lista para ver tipo, direção e links para os
 registros. **Ver no grafo**, na seção de relações da ficha, abre a vizinhança do registro.
+As listas de itens e relações mostram até 50 entradas por página, com botões para navegar; filtros
+e busca retornam à primeira página.
 Arrastar um cartão fixa sua posição; **Salvar organização** grava as posições e os filtros de tipo
 do mundo. **Restaurar organização automática** remove as posições fixadas ao salvar. Mudanças não
 salvas são indicadas na tela; se ocorrer uma falha, tente novamente. Se outra aba tiver gravado uma
