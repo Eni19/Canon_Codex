@@ -133,7 +133,18 @@ clique, você também pode digitar para buscar o próximo cartão. Se as duas po
 abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotação da vista
 e acompanha o cartão a que estiver presa. Selecione-a para mover as pontas, mudar o estilo ou apagar.
 
-A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo ou anotação.
+Use **Pastas** na barra do grafo para criar, renomear e abrir pastas. Uma pasta pode reunir eventos,
+personagens, locais, itens e registros personalizados. Para mover um só registro, clique no cartão
+e use **Mover para**. Para mover vários, abra **Mais → Registros e vínculos → Selecionar para mover**,
+marque os registros e escolha o destino. Selecione **Vista principal** para tirar registros da pasta.
+
+Clique na pasta no grafo ou use **Recolher pasta** no painel para esconder seus cartões. O indicador
+de vínculos externos abre a lista de vínculos que cruzam os limites da pasta no recorte atual.
+A busca ainda encontra cartões em pastas recolhidas. Na lista, o nome da pasta aparece junto ao
+registro; **Ver no grafo** expande a pasta e centraliza o cartão. Ao excluir a pasta, os registros
+voltam à vista principal nas mesmas posições e conservam seus vínculos.
+
+A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo, anotação ou pasta.
 **Mais → Restaurar organização** pede confirmação antes de descartar posições fixadas. Em caso de
 falha, use **Repetir**; se outra aba tiver salvo uma revisão mais recente, **Recarregar** descarta
 as alterações locais após aviso.

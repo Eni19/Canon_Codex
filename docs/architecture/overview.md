@@ -31,7 +31,9 @@ mundo. `RelationshipView` mantém filtros, ferramentas, painéis HTML e formulá
 mantém câmera, alvos do ponteiro e nós por ID em duas camadas. Armazenamento e formulários
 continuam delegando às [Server Actions](../reference/http-and-actions.md).
 
-Máscaras de IDs preservam posições ao filtrar. A cena verifica limites de cartões e de curvas
+Máscaras de IDs preservam posições ao filtrar ou recolher pastas. O estado das pastas pertence à
+vista do mundo; `RelationshipView` deriva seu indicador externo dos vínculos do recorte atual.
+A cena verifica limites de cartões e de curvas
 contra o viewport e atualiza apenas as conexões incidentes no arraste. Na visão geral densa,
 curvas com o mesmo estilo são desenhadas em lote; vínculos selecionados ou em movimento
 mantêm desenho individual. Edições concluídas da vista são agrupadas e gravadas em série usando

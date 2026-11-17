@@ -5,14 +5,18 @@ import {
   type ArrowEndpoint, type Camera, type Point,
 } from '@/domain/relations/graphGeometry'
 import type { FreeArrow } from '@/domain/relations/graphSettings'
+import type { GraphFolder } from '@/domain/relations/graphFolders'
 import { strokeDash, type GraphStyle } from '@/domain/relations/graphStyles'
 import { relationDirection, type Relation } from '@/domain/relations/relation'
 import type { GraphEntity } from '@/domain/relations/relationshipGraph'
 
-type Hit = { kind: 'card' | 'port' | 'edge' | 'arrow' | 'start' | 'end'; id: string }
+type Hit = { kind: 'card' | 'port' | 'edge' | 'arrow' | 'start' | 'end' | 'folder' | 'folder-links'; id: string }
 export type GraphTool = 'move' | 'connect' | 'arrow'
+type SceneFolder = { id: string; name: string; position: Point; collapsed: boolean; members: number; links: number }
 export type SceneState = {
   entities: GraphEntity[]; relations: Relation[]; styles: GraphStyle[]; annotations: FreeArrow[]
+  folders: SceneFolder[]
+  membership: ReadonlyMap<string, GraphFolder>
   visibleIds: Set<string>; visibleRelationIds: Set<string>; positions: Record<string, Point>
   dimmedIds: Set<string>; dimmedRelationIds: Set<string>
   typeLabels: Record<string, string>
@@ -71,6 +75,21 @@ function createCard(item: GraphEntity, point: Point) {
   group.add(box, title, type, port)
   return { group, box, title, type, port }
 }
+function createFolder(id: string) {
+  const group = new K.Group()
+  const body = new K.Rect({ y: 8, width: CARD_WIDTH, height: CARD_HEIGHT - 8, cornerRadius: 8, strokeWidth: 1.5, perfectDrawEnabled: false })
+  const tab = new K.Rect({ x: 1, y: 1, width: 54, height: 13, cornerRadius: [5, 5, 0, 0], listening: false })
+  const title = new K.Text({ x: 11, y: 21, width: 154, fontSize: 15, fontStyle: 'bold', fontFamily: 'system-ui', wrap: 'none', ellipsis: true, listening: false })
+  const subtitle = new K.Text({ x: 11, y: 48, width: 153, fontSize: 11, fontFamily: 'system-ui', wrap: 'none', listening: false })
+  const indicator = new K.Group()
+  const indicatorBox = new K.Rect({ x: 5, y: 41, width: CARD_WIDTH - 10, height: 25, cornerRadius: 4 })
+  const indicatorText = new K.Text({ x: 11, y: 48, width: 153, fontSize: 11, fontFamily: 'system-ui', listening: false })
+  group.setAttr('graphHit', { kind: 'folder', id } satisfies Hit)
+  indicator.setAttr('graphHit', { kind: 'folder-links', id } satisfies Hit)
+  indicator.add(indicatorBox, indicatorText)
+  group.add(tab, body, title, subtitle, indicator)
+  return { group, body, tab, title, subtitle, indicator, indicatorBox, indicatorText }
+}
 function createEdge(id: string) {
   const group = new K.Group()
   const line = new K.Shape<CurveConfig>({ points: [], sceneFunc: traceCurve, hitStrokeWidth: 16, perfectDrawEnabled: false })
@@ -112,6 +131,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   cardsLayer.add(targetRing, preview)
   stage.add(edgesLayer, cardsLayer)
   const cards = new Map<string, ReturnType<typeof createCard>>()
+  const folders = new Map<string, ReturnType<typeof createFolder>>()
   const edges = new Map<string, ReturnType<typeof createEdge>>()
   const arrows = new Map<string, ReturnType<typeof createArrow>>()
   let arrowsByCard = new Map<string, FreeArrow[]>()
@@ -255,6 +275,13 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
         port.visible((camera.scale >= 0.23 && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
       }
     }
+    for (const { group, title, subtitle, indicator } of folders.values()) {
+      const { x, y } = group.position()
+      group.visible(x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y)
+      title.visible(camera.scale >= 0.32)
+      subtitle.visible(camera.scale >= 0.56)
+      indicator.visible(camera.scale >= 0.38 && indicator.getAttr('hasLinks') === true)
+    }
     for (const [id, edge] of edges) {
       const selected = id === state.selectedEdge
       const visible = state.visibleRelationIds.has(id) && (selected || (lowDetail ? movingEdges.has(id) : intersects(edge.bounds, viewport)))
@@ -285,6 +312,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       const node = cards.get(id)
       return node ? [node.group.position()] : []
     })
+    for (const folder of folders.values()) points.push(folder.group.position())
     for (const relation of state.relations) {
       if (!state.visibleRelationIds.has(relation.id)) continue
       const edge = edges.get(relation.id)
@@ -298,8 +326,8 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     }
     setCamera(fitGraph(points, stage.width(), stage.height(), stage.height() < 760 ? 112 : 136))
   }
-  function focus(id: string) {
-    const group = cards.get(id)?.group
+  function focus(id: string, folder = false) {
+    const group = (folder ? folders.get(id) : cards.get(id))?.group
     if (!group) return
     const point = cardCenter(group.position())
     const center = midpoint()
@@ -347,6 +375,27 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     const old = state
     state = next
     overviewPaths = null
+    if (old?.folders !== next.folders) {
+      const ids = new Set(next.folders.map((item) => item.id))
+      for (const [id, node] of folders) if (!ids.has(id)) { node.group.destroy(); folders.delete(id) }
+    }
+    for (const item of next.folders) {
+      let node = folders.get(item.id)
+      if (!node) {
+        node = createFolder(item.id)
+        folders.set(item.id, node)
+        cardsLayer.add(node.group)
+      }
+      node.group.position(item.position)
+      node.body.setAttrs({ fill: palette.card, stroke: item.collapsed ? palette.accent : palette.border })
+      node.tab.fill(item.collapsed ? palette.accent : palette.border)
+      node.title.setAttrs({ text: item.name, fill: palette.text })
+      const hasLinks = item.collapsed && item.links > 0
+      node.subtitle.setAttrs({ text: hasLinks ? '' : `${item.members} ${item.members === 1 ? 'registro' : 'registros'} · ${item.collapsed ? 'Recolhida' : 'Aberta'}`, fill: palette.muted })
+      node.indicator.setAttr('hasLinks', hasLinks)
+      node.indicatorBox.fill(palette.border)
+      node.indicatorText.setAttrs({ text: `${item.links} ${item.links === 1 ? 'vínculo externo' : 'vínculos externos'} ›`, fill: palette.accent })
+    }
     if (old?.entities !== next.entities) {
       const ids = new Set(next.entities.map((item) => item.id))
       for (const [id, node] of cards) if (!ids.has(id)) { node.group.destroy(); cards.delete(id) }
@@ -360,7 +409,9 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       node.group.opacity(next.dimmedIds.has(item.id) ? 0.22 : 1)
       node.box.setAttrs({ fill: palette.card, stroke: active ? palette.accent : palette.border, strokeWidth: active ? 2.5 : 1.5 })
       node.title.setAttrs({ text: item.title, fill: palette.text })
-      node.type.setAttrs({ text: next.typeLabels[item.type] ?? item.type, fill: palette.muted })
+      const folderName = next.membership.get(item.id)?.name
+      const typeLabel = next.typeLabels[item.type] ?? item.type
+      node.type.setAttrs({ text: folderName ? `${typeLabel} · ${folderName}` : typeLabel, fill: palette.muted })
       node.port.setAttrs({ fill: palette.accent, stroke: palette.card })
     }
     if (old?.relations !== next.relations) {

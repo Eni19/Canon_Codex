@@ -225,8 +225,9 @@ formulário da entidade (ver acima). addRelationAction exige target e tipo e cri
 direcional ou não; removeRelationAction remove pelo ID da relação.
 
 `saveGraphSettingsAction` valida o mundo ativo, a versão, as posições, os filtros, os tipos de seta
-com sentido padrão opcional e as anotações livres (incluindo os UUIDs opcionais dos cartões em cada ponta). Grava
-por meio do repositório com revisão para detectar conflitos e retorna sucesso ou mensagem de erro.
+com sentido padrão opcional, as anotações livres e as pastas. O repositório valida se cada registro
+adicionado ou movido está ativo no mundo antes de gravar a vista, com revisão para detectar conflitos.
+A ação retorna sucesso ou mensagem de erro.
 Um reenvio de conteúdo já gravado é seguro. A ação não cria nem altera relações entre entidades.
 
 `createGraphRelationAction`, `editGraphRelationAction` e `removeGraphRelationAction` operam no mesmo

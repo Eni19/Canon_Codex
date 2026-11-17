@@ -4,7 +4,7 @@ Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo
 [pesquisa de interface e desempenho](research/relationship-canvas-ux-performance.md).
 **Em validação: REL-02 a REL-07.** A migração dos outros canvas fica por último, depois da
 validação visual, funcional e de fluidez do grafo.
-A criação de pastas no grafo está planejada em REL-09.
+Pastas no grafo foram implementadas em REL-09.
 
 ## Ponto de retomada
 
@@ -159,7 +159,7 @@ de schema é pressuposta; se necessária, justificar e documentar antes de alter
    Reutilizar fixture de **500 itens/1.500 relações** e cenários pequeno/denso, paralelas e loops.
    Dados exclusivamente sintéticos em diretório temporário isolado.
 
-### Metas propostas — ainda não medidas
+### Metas e critérios de medição
 
 | Medida | Critério |
 | --- | --- |
@@ -189,9 +189,14 @@ da biblioteca ou de hardware universal. Não aprovar fluidez somente com HTTP/te
 **Portão de migração:** REL-02 a REL-07 concluídos com evidências visuais, funcionais e de desempenho.
 Até lá, Quadros, Cenas e Linha do Tempo ficam fora da execução.
 
+A [validação em produção de 17/11](performance/relationship-graph.md#validação-da-versão-com-pastas--17112026)
+confirmou o fluxo de pastas, os controles e avisos na árvore de acessibilidade do Chrome e o uso por
+teclado. O p95 de pan, zoom e arraste no cenário denso ficou acima de 20 ms. Leitor de tela e gestos
+em dispositivos físicos seguem pendentes.
+
 ## REL-09 — Pastas no grafo
 
-**Planejado.** Organizar cartões de qualquer tipo em pastas diretamente em **Relacionamentos**.
+**Implementado.** Organizar cartões de qualquer tipo em pastas diretamente em **Relacionamentos**.
 Cada pasta pertence ao mundo atual e agrupa os mesmos registros que já aparecem no grafo.
 
 1. Adicionar um painel **Pastas** para criar, renomear e abrir pastas. Permitir mover um cartão
@@ -213,6 +218,13 @@ Criar uma pasta pela tela, mover registros de tipos diferentes, recarregar e
 verificar que a organização foi preservada. Recolher, expandir, buscar um cartão de dentro
 da pasta e abrir sua ficha por teclado e toque. Excluir a pasta e confirmar que os registros,
 vínculos e posições estão disponíveis na vista principal. Verificar o isolamento entre mundos.
+
+O [teste de persistência](../src/repositories/filesystem/graphSettings.test.ts) cobre leitura de
+vistas v1–v3, membros de tipos diferentes, isolamento entre mundos e preservação de posições e
+vínculos ao excluir a pasta. Em Chrome com dados sintéticos, foram verificados criação, renomeação,
+movimentação em lote, indicador de vínculos externos, busca, recarregamento, abertura da ficha por
+teclado, exclusão e recolhimento/expansão com toque emulado. A validação em dispositivo físico e
+com leitor de tela permanece em REL-07.
 
 ## REL-08 — Etapa final: migrar os outros canvas
 
@@ -238,5 +250,6 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
 ## Impacto documental
 
 O guia de entidades, README, PROJECT e a arquitetura descrevem a versão implementada. O
-[acompanhamento](work-items.md) registra o que falta para a migração. O arquivo da vista permanece
-na versão 3 e os fluxos de vínculo continuam usando as mesmas Server Actions.
+[acompanhamento](work-items.md) registra o que falta para a migração. O arquivo da vista passa
+à versão 4 quando salvo com alterações; versões 1 a 3 são lidas com pastas vazias. Os fluxos
+de vínculo continuam usando as mesmas Server Actions.

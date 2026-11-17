@@ -1,5 +1,55 @@
 # Grafo de relacionamentos: verificação e desempenho
 
+## Validação da versão com pastas · 17/11/2026
+
+Build de produção Next.js 16.3.4 (Webpack), Windows, Ryzen 7 5700U e Chrome
+157.0.8103.78 em modo headless. Foram usados mundos sintéticos separados da demonstração.
+No cenário pequeno, passaram a criação e renomeação de pastas, a movimentação em lote de tipos
+mistos, o indicador de vínculos externos, a busca, a recarga, a abertura da ficha pelo teclado,
+a exclusão e o recolhimento por toque emulado. Também passaram a pinça emulada e o reenvio
+após falha de salvamento simulada. TypeScript, ESLint dos arquivos do grafo e o build passaram.
+A suíte registrou 268 testes aprovados e um ignorado.
+
+No mundo denso, **Ida**, **Volta** e **Ambos** mostraram os vínculos esperados. Com a rede
+externa bloqueada, o grafo abriu e permitiu selecionar um vínculo. No mundo pequeno, verifiquei
+que o cartão voltou à pasta e que o vínculo reapareceu quando o registro sintético retornou do
+diretório da lixeira. A restauração foi simulada no filesystem da fixture.
+
+A árvore de acessibilidade do Chrome expôs o painel de pastas, os nomes dos campos e botões,
+o estado expandido, a seleção de registros, a contagem de resultados como `status` e a falha
+de salvamento como `alert`. A navegação confirmou Tab, Enter, Espaço, Esc e devolução do foco
+aos botões Pastas e Mais. A inspeção visual cobriu os temas claro e escuro, com o mundo pequeno
+e vazio em 1.440 e 390 CSS px. O painel Pastas também coube na largura de 320 CSS px.
+A fala de um leitor de tela, o zoom nativo do navegador e gestos em trackpad e tela de toque
+físicos continuam pendentes.
+
+No cenário integral com 500 registros e 1.500 vínculos, sem pastas, o Chrome repetiu cada gesto
+por 10 s, três vezes, a 1.440 × 900 e DPR 1. Os intervalos são de `DrawFrame` no compositor.
+O intervalo da tabela reúne o menor e o maior valor das três repetições.
+
+| Gesto | p50 | p95 | `DroppedFrame` por repetição |
+| --- | ---: | ---: | ---: |
+| Pan | 33,93–34,54 ms | 39,98–41,14 ms | 315, 309, 307 |
+| Zoom | 35,14–38,98 ms | 52,22–53,08 ms | 212, 184, 206 |
+| Arraste | 24,53–24,71 ms | 29,17–30,63 ms | 196, 191, 192 |
+
+Os três gestos ficaram acima da meta de p95 ≤ 20 ms. A duração p95 das entradas `EventLatency`
+associadas a um identificador de frame no trace variou entre 81,25 e 84,31 ms no pan, 82,75 e
+91,33 ms no zoom e 71,36 e 73,43 ms no arraste. Esse dado do navegador headless é complementar.
+A medição de entrada até a alteração visível do cartão ou da seleção em uma tela física segue pendente.
+
+Em 20 ciclos de saída e retorno ao mundo pequeno, o número de Stages alternou entre zero e um
+e os sete tipos de listener conferidos mantiveram a mesma contagem. O heap após GC passou de
+6,91 para 9,19 MB. Em outros 20 ciclos no mundo denso, Stage e listeners mantiveram o mesmo
+comportamento e o heap passou de 21,90 para 25,33 MB. O trace denso registrou zero `DrawFrame`
+durante 2 s de ociosidade. A medição de heap inclui a aplicação e o cache de navegação.
+
+Na abertura do mundo denso, o primeiro byte chegou em 32–50 ms e o HTML terminou em 448–549 ms.
+Entre o fim do HTML e a primeira detecção da cena pronta no DOM passaram 1.616 ms com cache
+frio e 763–856 ms em três recargas com cache já preenchido. Essa medida usa sondagem a cada
+100 ms e inclui carga de scripts, hidratação e criação da cena. O ensaio não isolou o instante
+em que os dados ficaram disponíveis para o cliente.
+
 ## Canvas de área útil · 16/11/2026
 
 Build de produção no Windows (Ryzen 7 5700U, Chrome 157.0.8103.78 em modo headless).

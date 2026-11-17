@@ -162,8 +162,9 @@ domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
 ## Relacionamentos
 
 O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
-câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos e anotações no formato
-existente. A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
+câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
+mundo. Pastas agrupam registros de qualquer tipo e resumem seus vínculos externos quando recolhidas.
+A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
 ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
 formulário de um vínculo gravado na ficha de origem.
 O [guia de entidades](docs/user-guide/entities.md) explica os fluxos. A migração de

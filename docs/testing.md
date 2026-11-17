@@ -6,6 +6,10 @@ repositório preservam cobertura de relações, idempotência e conflito de revi
 [relatório do grafo](performance/relationship-graph.md) registra o ensaio em Chrome de produção
 com mundos sintéticos, além do que ainda depende de hardware físico.
 
+A validação de 17/11/2026 repetiu a suíte e o build com pastas e conferiu fluxo por teclado, árvore
+de acessibilidade do Chrome, salvamento, recuperação da fixture e runtime com rede externa bloqueada.
+Os três gestos ficaram acima da meta na fixture densa. [Medições e limites](performance/relationship-graph.md#validação-da-versão-com-pastas--17112026).
+
 A revisão de busca exercita ida, volta e ambos, vínculos sem direção, setas antigas e ancoradas
 e o reposicionamento das pontas. Em Chrome com dados sintéticos, foram verificados o esmaecimento
 enquanto se digita, o recorte por Enter ou pausa e a seta acompanhando o cartão após recarregar.

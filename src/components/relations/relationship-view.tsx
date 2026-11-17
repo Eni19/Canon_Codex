@@ -1,24 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Crosshair, Ellipsis, Link2, Minus, MousePointer2, MoveUpRight, Plus, Search, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Crosshair, Ellipsis, Folder, Link2, Minus, MousePointer2, MoveUpRight, Plus, Search, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useEffectEvent, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { CardPickerField } from '@/components/ui/card-picker'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cardCenter, organizeGraph, type ArrowEndpoint, type Point } from '@/domain/relations/graphGeometry'
+import { externalFolderLinks, folderPositions, indexGraphFolders, moveFolderMembers, type GraphFolder } from '@/domain/relations/graphFolders'
 import type { FreeArrow, GraphSettings } from '@/domain/relations/graphSettings'
 import { buildGraphCatalog, GraphStylesSchema, type GraphStyle } from '@/domain/relations/graphStyles'
 import { directionMark, relationDirection, type Relation } from '@/domain/relations/relation'
 import { relationshipNeighborhoodSlice, type GraphEntity, type NeighborhoodDirection } from '@/domain/relations/relationshipGraph'
 import { FreeArrowForm } from './graph-free-arrows'
+import { FolderMoveForm, FolderNameForm, GraphFoldersPanel } from './graph-folders-panel'
 import { CreateGraphRelation, EditGraphRelation } from './graph-relation-forms'
 import { GraphStyleLegend } from './graph-style-legend'
 import type { createRelationshipScene, GraphTool, SceneState } from './relationship-scene'
 import { useGraphAutosave } from './use-graph-autosave'
 
-type Panel = 'options' | 'filters' | 'legend' | 'records' | 'connect' | 'arrow' | 'card' | 'relation' | 'annotation'
-const panelTitle: Record<Panel, string> = { options: 'Mais ferramentas', filters: 'Busca e filtros', legend: 'Legenda e estilos', records: 'Registros e vínculos', connect: 'Conectar registros', arrow: 'Seta livre', card: 'Registro', relation: 'Editar vínculo', annotation: 'Seta livre' }
+type Panel = 'options' | 'filters' | 'legend' | 'records' | 'connect' | 'arrow' | 'card' | 'relation' | 'annotation' | 'folders' | 'folder' | 'folder-links'
+const panelTitle: Record<Panel, string> = { options: 'Mais ferramentas', filters: 'Busca e filtros', legend: 'Legenda e estilos', records: 'Registros e vínculos', connect: 'Conectar registros', arrow: 'Seta livre', card: 'Registro', relation: 'Editar vínculo', annotation: 'Seta livre', folders: 'Pastas', folder: 'Pasta', 'folder-links': 'Vínculos externos' }
 const field = 'min-h-9 w-full rounded-md border bg-background px-2 py-1'
 const linkStyle = 'text-primary underline underline-offset-2'
 const pageSize = 25
@@ -105,6 +107,13 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const [positions, setPositions] = useState(initialSettings.positions)
   const [automatic, setAutomatic] = useState(() => organizeGraph(entities.map((item) => item.id), initialRelations, initialSettings.positions))
   const [annotations, setAnnotations] = useState(initialSettings.annotations)
+  const [folders, setFolders] = useState(initialSettings.folders)
+  const [selectedFolder, setSelectedFolder] = useState('')
+  const [locatedCard, setLocatedCard] = useState('')
+  const [revealedFolder, setRevealedFolder] = useState(() => initialSettings.folders.find((folder) => initialFocus && folder.members.includes(initialFocus))?.id ?? '')
+  const [recordFolder, setRecordFolder] = useState('')
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkIds, setBulkIds] = useState<string[]>([])
   const [type, setType] = useState(() => entities.some((item) => item.type === initialSettings.preferences.type) ? initialSettings.preferences.type : '')
   const [relationType, setRelationType] = useState(() => initialRelations.some((item) => item.type === initialSettings.preferences.relationType) ? initialSettings.preferences.relationType : '')
   const [focus, setFocus] = useState(() => entities.some((item) => item.id === initialFocus) ? initialFocus ?? '' : '')
@@ -136,8 +145,15 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const types = useMemo(() => [...new Set(entities.map((item) => item.type))].sort(), [entities])
   const relationTypes = useMemo(() => [...new Set(relations.map((item) => item.type))].sort(), [relations])
   const byId = useMemo(() => new Map(entities.map((item) => [item.id, item])), [entities])
+  const activeIds = useMemo(() => new Set(byId.keys()), [byId])
+  const membership = useMemo(() => indexGraphFolders(folders), [folders])
+  const collapsedFolders = useMemo(() => new Set(folders.filter((folder) => folder.collapsed && folder.id !== revealedFolder).map((folder) => folder.id)), [folders, revealedFolder])
   const labels = useMemo(() => new Map(entities.map((item) => [item.id, normalize(item.title)])), [entities])
-  const pickerItems = useMemo(() => entities.map((item) => ({ id: item.id, title: item.title, subtitle: typeLabels[item.type] ?? item.type })), [entities, typeLabels])
+  const pickerItems = useMemo(() => entities.map((item) => ({
+    id: item.id,
+    title: item.title,
+    subtitle: [typeLabels[item.type] ?? item.type, membership.get(item.id)?.name].filter(Boolean).join(' · '),
+  })), [entities, typeLabels, membership])
   const graph = useMemo(() => {
     const hidden = new Set(styles.filter((item) => item.hidden).map((item) => item.type))
     const available = relations.filter((relation) => !hidden.has(relation.type) && (!relationType || relation.type === relationType))
@@ -152,7 +168,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const canvasSearch = choosingDestination && (nextSearch.draft || nextSearch.applied) ? nextSearch : search
   const term = normalize(canvasSearch.draft)
   const previewingSearch = term !== normalize(canvasSearch.applied)
-  const keepIds = useMemo(() => new Set([source, target, arrowStart?.cardId, arrowEnd?.cardId].filter(Boolean)), [source, target, arrowStart, arrowEnd])
+  const keepIds = useMemo(() => new Set([source, target, arrowStart?.cardId, arrowEnd?.cardId, locatedCard].filter(Boolean)), [source, target, arrowStart, arrowEnd, locatedCard])
   const visible = useMemo(() => {
     const matches = candidates.filter((item) => previewingSearch || labels.get(item.id)?.includes(term))
     for (const item of entities) if (keepIds.has(item.id) && !matches.includes(item)) matches.push(item)
@@ -161,21 +177,45 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const visibleIds = useMemo(() => new Set(visible.map((item) => item.id)), [visible])
   const dimmedIds = useMemo(() => new Set(previewingSearch ? visible.filter((item) => !keepIds.has(item.id) && !labels.get(item.id)?.includes(term)).map((item) => item.id) : []), [visible, keepIds, labels, previewingSearch, term])
   const visibleRelations = useMemo(() => graph.relations.filter((item) => visibleIds.has(item.sourceId) && visibleIds.has(item.targetId) && (!neighborhood || neighborhood.relationIds.has(item.id))), [graph, neighborhood, visibleIds])
-  const visibleRelationIds = useMemo(() => new Set(visibleRelations.map((item) => item.id)), [visibleRelations])
+  const canvasIds = useMemo(() => new Set([...visibleIds].filter((id) => {
+    const folder = membership.get(id)
+    return !folder || !collapsedFolders.has(folder.id) || keepIds.has(id) || (!!term && !dimmedIds.has(id))
+  })), [visibleIds, membership, collapsedFolders, keepIds, term, dimmedIds])
+  const visibleRelationIds = useMemo(() => new Set(visibleRelations.filter((item) => canvasIds.has(item.sourceId) && canvasIds.has(item.targetId)).map((item) => item.id)), [visibleRelations, canvasIds])
   const dimmedRelationIds = useMemo(() => new Set(visibleRelations.filter((item) => dimmedIds.has(item.sourceId) || dimmedIds.has(item.targetId)).map((item) => item.id)), [visibleRelations, dimmedIds])
   const nextTerm = normalize(nextSearch.draft)
   const targetMatches = choosingDestination && nextTerm ? candidates.filter((item) => labels.get(item.id)?.includes(nextTerm)) : []
   const displayedPositions = useMemo(() => ({ ...automatic, ...positions }), [automatic, positions])
+  const folderPoints = useMemo(() => folderPositions(folders, displayedPositions, activeIds), [folders, displayedPositions, activeIds])
+  const externalLinks = useMemo(() => externalFolderLinks(visibleRelations, membership), [visibleRelations, membership])
+  const aggregatedLinks = useMemo(() => new Map([...externalLinks].map(([id, links]) => [id, links.filter((link) =>
+    (membership.get(link.sourceId)?.id === id && !canvasIds.has(link.sourceId)) ||
+    (membership.get(link.targetId)?.id === id && !canvasIds.has(link.targetId)),
+  )])), [canvasIds, externalLinks, membership])
+  const filteredCanvas = !!(term || type || relationType || focus)
+  const sceneFolders = useMemo(() => folders.flatMap((folder) => {
+    const members = folder.members.filter((id) => visibleIds.has(id) && !dimmedIds.has(id)).length
+    const position = folderPoints.get(folder.id)
+    if (!position || (filteredCanvas && !members && selectedFolder !== folder.id)) return []
+    return [{ id: folder.id, name: folder.name, position, collapsed: collapsedFolders.has(folder.id), members, links: aggregatedLinks.get(folder.id)?.length ?? 0 }]
+  }), [folders, folderPoints, visibleIds, dimmedIds, filteredCanvas, selectedFolder, collapsedFolders, aggregatedLinks])
   const filtersActive = !!(search.draft || type || relationType || focus || styles.some((item) => item.hidden))
   const selected = relations.find((edge) => edge.id === selectedEdge)
   const card = byId.get(selectedCard)
   const arrow = annotations.find((item) => item.id === selectedArrow)
+  const folder = folders.find((item) => item.id === selectedFolder)
+  const folderForCard = membership.get(selectedCard)
   const relationLabel = (edge: Relation) => `${byId.get(edge.sourceId)?.title} ${directionMark(relationDirection(edge))} ${byId.get(edge.targetId)?.title} · ${edge.label || edge.type}`
   const listed = panel !== 'records' ? [] : list === 'items'
-    ? visible.filter((item) => normalize(item.title).includes(normalize(listQuery))).map((item) => ({ id: item.id, label: item.title }))
+    ? (recordFolder ? entities.filter((item) => membership.get(item.id)?.id === recordFolder) : visible)
+      .filter((item) => normalize(`${item.title} ${membership.get(item.id)?.name ?? ''}`).includes(normalize(listQuery)))
+      .map((item) => ({ id: item.id, label: item.title }))
     : visibleRelations.filter((edge) => normalize(relationLabel(edge)).includes(normalize(listQuery))).map((edge) => ({ id: edge.id, label: relationLabel(edge) }))
   const total = Math.max(1, Math.ceil(listed.length / pageSize))
   const current = Math.min(page, total - 1)
+  const folderLinks = (folder && (collapsedFolders.has(folder.id) ? aggregatedLinks : externalLinks).get(folder.id)) ?? []
+  const linkPages = Math.max(1, Math.ceil(folderLinks.length / pageSize))
+  const linkPage = Math.min(page, linkPages - 1)
 
   function clearDraft() { setTool('move'); setSource(''); setTarget(''); setArrowStart(null); setArrowEnd(null); nextSearch.clear() }
   function openPanel(next: Panel, restore = true) {
@@ -196,10 +236,16 @@ export function RelationshipView({ entities, relations: initialRelations, initia
     const active = document.activeElement
     if (active instanceof HTMLElement && tools.current?.contains(active)) opener.current = active
   }
+  function locateRecord(id: string) {
+    const containing = membership.get(id)
+    if (containing && collapsedFolders.has(containing.id)) setFolderCollapsed(containing.id, false)
+    if (!visibleIds.has(id) || dimmedIds.has(id)) setLocatedCard(id)
+    scene.current?.focus(id)
+  }
   function selectRecord(id: string, center: boolean) {
     setSelectedCard(id); setSelectedEdge(''); setSelectedArrow('')
     openPanel('card')
-    if (center) scene.current?.focus(id)
+    if (center) locateRecord(id)
   }
   function selectRelation(id: string) {
     setSelectedEdge(id); setSelectedCard(''); setSelectedArrow(''); openPanel('relation')
@@ -210,6 +256,36 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   function updateAnnotations(next: FreeArrow[]) {
     setAnnotations(next); view.edit((current) => ({ ...current, annotations: next }))
   }
+  function saveFolders(next: GraphFolder[]) {
+    setFolders(next)
+    view.edit((current) => ({ ...current, folders: next }))
+  }
+  function setFolderCollapsed(id: string, collapsed: boolean) {
+    if (revealedFolder === id) setRevealedFolder('')
+    if (collapsed && membership.get(locatedCard)?.id === id) setLocatedCard('')
+    saveFolders(folders.map((item) => item.id === id ? { ...item, collapsed } : item))
+  }
+  function inspectFolder(id: string, linksOnly = false) {
+    clearDraft()
+    setSelectedFolder(id)
+    setPage(0)
+    openPanel(linksOnly ? 'folder-links' : 'folder')
+  }
+  function openRecords(folderId = '') {
+    setRecordFolder(folderId)
+    setList('items')
+    setListQuery('')
+    setPage(0)
+    setBulkMode(false)
+    setBulkIds([])
+    openPanel('records')
+  }
+  function moveRecords(ids: readonly string[], destination: string) {
+    if (!ids.length) return
+    saveFolders(moveFolderMembers(folders, ids, destination))
+    setBulkIds([])
+    setNotice(ids.length === 1 ? 'Registro movido.' : `${ids.length} registros movidos.`)
+  }
   function updateStyle(style: GraphStyle) {
     const next = styles.some((item) => item.type === style.type)
       ? styles.map((item) => item.type === style.type ? style : item)
@@ -218,11 +294,13 @@ export function RelationshipView({ entities, relations: initialRelations, initia
     setStyles(next); view.edit((current) => ({ ...current, styles: next })); setNotice('')
   }
   function changeFilters(nextType: string, nextRelation: string) {
+    setLocatedCard('')
     setType(nextType); setRelationType(nextRelation)
     setPage(0)
     if (type !== nextType || relationType !== nextRelation) view.edit((current) => ({ ...current, preferences: { type: nextType, relationType: nextRelation } }))
   }
   function clearFilters() {
+    setLocatedCard('')
     search.clear(); setFocus(''); setDirection('both'); setDepth(1); setPage(0)
     const next = styles.map((item) => ({ ...item, hidden: false }))
     const saveStyles = styles.some((item) => item.hidden) && GraphStylesSchema.safeParse(next).success
@@ -231,6 +309,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
     setType(''); setRelationType('')
   }
   function chooseFocus(id: string) {
+    setLocatedCard('')
     setFocus(id); setDepth(1); setPage(0)
     if (!id) setDirection('both')
   }
@@ -277,12 +356,12 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   }
 
   const sceneState = useMemo<SceneState>(() => ({
-    entities, relations, styles, annotations, visibleIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels,
+    entities, relations, styles, annotations, folders: sceneFolders, membership, visibleIds: canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels,
     tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd,
-  }), [entities, relations, styles, annotations, visibleIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
+  }), [entities, relations, styles, annotations, sceneFolders, membership, canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
   const selectOnCanvas = useEffectEvent((hit: Parameters<Parameters<typeof createRelationshipScene>[1]['select']>[0], point: Point) => {
     const hitCard = hit?.kind === 'card' || hit?.kind === 'port' ? hit.id : ''
-    if (hitCard && (!visibleIds.has(hitCard) || dimmedIds.has(hitCard))) return
+    if (hitCard && (!canvasIds.has(hitCard) || dimmedIds.has(hitCard))) return
     if (tool === 'connect' && hitCard) {
       if (!source || target) { setSource(hitCard); setTarget(''); nextSearch.clear() }
       else chooseTarget(hitCard)
@@ -295,7 +374,9 @@ export function RelationshipView({ entities, relations: initialRelations, initia
       else if (hit?.kind === 'card') selectRecord(hit.id, false)
       else if (hit?.kind === 'edge') selectRelation(hit.id)
       else if (hit?.kind === 'arrow') selectAnnotation(hit.id)
-      else if (!hit) { setPanel(null); setSelectedCard(''); setSelectedEdge(''); setSelectedArrow('') }
+      else if (hit?.kind === 'folder') setFolderCollapsed(hit.id, !collapsedFolders.has(hit.id))
+      else if (hit?.kind === 'folder-links') inspectFolder(hit.id, true)
+      else if (!hit) { setPanel(null); setSelectedCard(''); setSelectedEdge(''); setSelectedArrow(''); setSelectedFolder('') }
     }
   })
   const connectOnCanvas = useEffectEvent((from: string, to: string) => {
@@ -343,6 +424,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         <Tool icon={SlidersHorizontal} label={filtersActive ? 'Busca e filtros (ativos)' : 'Busca e filtros'} expanded={panel === 'filters'} onClick={() => { if (panel === 'filters') closePanel(); else { clearDraft(); openPanel('filters') } }} />
         {filtersActive && <span aria-hidden="true" className="pointer-events-none absolute top-1 right-1 size-2 rounded-full bg-primary" />}
       </span>
+      <Tool icon={Folder} label="Pastas" expanded={panel === 'folders' || panel === 'folder' || panel === 'folder-links'} onClick={() => { if (panel === 'folders') closePanel(); else { clearDraft(); openPanel('folders') } }} />
       <Tool icon={Ellipsis} label="Mais" expanded={panel === 'options'} onClick={() => { if (panel === 'options') closePanel(); else { clearDraft(); openPanel('options') } }} />
     </div>
     <div role="group" aria-label="Câmera do grafo" className="absolute right-3 bottom-3 z-20 flex gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg md:right-4 md:bottom-4">
@@ -360,7 +442,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
       {!panel && <Button size="sm" variant="ghost" className="pointer-events-auto" onClick={closePanel}>Cancelar</Button>}
     </div>}
     <div className="pointer-events-none absolute inset-0 grid place-items-center p-4">
-      {(loading !== 'ready' || visible.length === 0) && <div className="pointer-events-auto max-w-xs rounded-lg border bg-popover px-4 py-3 text-center text-sm text-popover-foreground shadow-sm">
+      {(loading !== 'ready' || (visible.length === 0 && (entities.length > 0 || sceneFolders.length === 0))) && <div className="pointer-events-auto max-w-xs rounded-lg border bg-popover px-4 py-3 text-center text-sm text-popover-foreground shadow-sm">
         {loading === 'loading' ? <p role="status">Carregando grafo…</p> : loading === 'error' ? <><p role="alert">Não foi possível abrir o canvas.</p><Button size="sm" variant="outline" onClick={() => location.reload()}>Tentar novamente</Button></>
           : entities.length === 0 ? <><p>Crie um registro para começar.</p><Link href="/codex" className={linkStyle}>Abrir o Codex</Link></>
             : <><p>Nenhum registro no recorte.</p><Button size="sm" variant="outline" onClick={clearFilters}>Limpar filtros</Button></>}
@@ -387,7 +469,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
       {panel === 'options' && <>
         <div className="grid gap-2">
           <Button variant="outline" className="justify-start" onClick={() => openPanel('legend')}>Legenda e estilos</Button>
-          <Button variant="outline" className="justify-start" onClick={() => openPanel('records')}>Registros e vínculos</Button>
+          <Button variant="outline" className="justify-start" onClick={() => openRecords()}>Registros e vínculos</Button>
           {annotations.length > 0 && <Button variant="outline" className="justify-start" onClick={() => selectAnnotation(annotations[0].id)}>Setas livres</Button>}
           {entities.length > 0 && <Button variant="outline" className="justify-start" onClick={() => { if (Object.keys(positions).length) setReset(true); else restore() }}>Restaurar organização</Button>}
         </div>
@@ -402,7 +484,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         <form onSubmit={(event) => { event.preventDefault(); search.apply() }}>
           <label className="grid gap-1 font-medium">Buscar registro
             <span className="relative"><Search aria-hidden="true" className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-              <input type="search" className={field + ' pl-8 font-normal'} value={search.draft} placeholder="Digite parte do nome…" onChange={(event) => { search.setDraft(event.target.value); setPage(0) }} onBlur={search.apply} />
+              <input type="search" className={field + ' pl-8 font-normal'} value={search.draft} placeholder="Digite parte do nome…" onChange={(event) => { search.setDraft(event.target.value); setPage(0); setLocatedCard('') }} onBlur={search.apply} />
             </span>
           </label>
         </form>
@@ -427,16 +509,51 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         </div>
       </>}
       {panel === 'legend' && <><GraphStyleLegend styles={styles} relations={relations} update={updateStyle} />{notice && <p role="alert">{notice}</p>}</>}
+      {panel === 'folders' && <GraphFoldersPanel folders={folders} memberCount={(item) => item.members.filter((id) => activeIds.has(id)).length} isCollapsed={(item) => collapsedFolders.has(item.id)}
+        add={(name) => { const id = crypto.randomUUID(); saveFolders([...folders, { id, name, collapsed: false, members: [] }]); inspectFolder(id) }}
+        open={(id) => inspectFolder(id)} />}
+      {panel === 'folder' && folder && <>
+        <h3 className="break-words text-lg">{folder.name}</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setFolderCollapsed(folder.id, !collapsedFolders.has(folder.id))}>{collapsedFolders.has(folder.id) ? 'Expandir pasta' : 'Recolher pasta'}</Button>
+          <Button size="sm" variant="outline" onClick={() => { scene.current?.focus(folder.id, true); closePanel() }}>Ver pasta no grafo</Button>
+          <Button size="sm" variant="outline" onClick={() => openRecords(folder.id)}>Ver registros da pasta</Button>
+          <Button size="sm" variant="outline" onClick={() => inspectFolder(folder.id, true)}>Ver vínculos externos</Button>
+        </div>
+        <FolderNameForm key={folder.id} folders={folders} folder={folder} save={(name) => saveFolders(folders.map((item) => item.id === folder.id ? { ...item, name } : item))} />
+        {reset ? <div className="space-y-2 rounded-md border p-2">
+          <p>Os registros voltam à vista principal, com suas posições e vínculos.</p>
+          <Button size="sm" variant="destructive" onClick={() => { saveFolders(folders.filter((item) => item.id !== folder.id)); setSelectedFolder(''); openPanel('folders'); setNotice('Pasta excluída.') }}>Confirmar exclusão</Button>{' '}
+          <Button size="sm" variant="ghost" onClick={() => setReset(false)}>Cancelar</Button>
+        </div> : <Button size="sm" variant="ghost" onClick={() => setReset(true)}>Excluir pasta</Button>}
+      </>}
+      {panel === 'folder-links' && folder && <>
+        <h3 className="break-words text-lg">{folder.name}</h3>
+        <Button size="sm" variant="outline" onClick={() => inspectFolder(folder.id)}>Abrir painel da pasta</Button>
+        <p role="status">{folderLinks.length ? `${folderLinks.length} ${folderLinks.length === 1 ? 'vínculo externo' : 'vínculos externos'}` : 'Nenhum vínculo externo no recorte.'}</p>
+        <ul className="divide-y">{folderLinks.slice(linkPage * pageSize, (linkPage + 1) * pageSize).map((edge) => <li key={edge.id}>
+          <button type="button" className="min-h-9 w-full py-1.5 text-left hover:text-primary hover:underline" onClick={() => selectRelation(edge.id)}>{relationLabel(edge)}</button>
+        </li>)}</ul>
+        <Pager page={linkPage} total={linkPages} setPage={setPage} />
+      </>}
       {panel === 'records' && <>
-        <div className="flex gap-2">
+        {recordFolder && <div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-lg">{folder?.name}</h3><Button size="sm" variant="outline" onClick={() => openRecords()}>Todos os registros</Button></div>}
+        {!recordFolder && <div className="flex gap-2">
           <Button size="sm" variant={list === 'items' ? 'default' : 'outline'} aria-pressed={list === 'items'} onClick={() => { setList('items'); setPage(0) }}>Registros</Button>
           <Button size="sm" variant={list === 'relations' ? 'default' : 'outline'} aria-pressed={list === 'relations'} onClick={() => { setList('relations'); setPage(0) }}>Vínculos</Button>
-        </div>
+        </div>}
         <label className="block">Buscar na lista <input className={field} value={listQuery} onChange={(event) => { setListQuery(event.target.value); setPage(0) }} /></label>
         <p role="status">{listed.length} {list === 'items' ? 'registros' : 'vínculos'}</p>
-        <ul className="divide-y">{listed.slice(current * pageSize, (current + 1) * pageSize).map((item) => <li key={item.id}>
-          <button type="button" className="min-h-9 w-full py-1.5 text-left underline-offset-2 hover:text-primary hover:underline" onClick={() => list === 'items' ? selectRecord(item.id, true) : selectRelation(item.id)}>{item.label}</button>
-        </li>)}</ul>
+        {list === 'items' && folders.length > 0 && <Button size="sm" variant={bulkMode ? 'secondary' : 'outline'} aria-pressed={bulkMode} onClick={() => { setBulkMode(!bulkMode); setBulkIds([]) }}>{bulkMode ? 'Cancelar seleção' : 'Selecionar para mover'}</Button>}
+        {list === 'items' && bulkMode && <><p role="status">{bulkIds.length} selecionados</p><FolderMoveForm folders={folders} count={bulkIds.length} onMove={(destination) => moveRecords(bulkIds, destination)} /></>}
+        <ul className="divide-y">{listed.slice(current * pageSize, (current + 1) * pageSize).map((item) => {
+          const context = list === 'items' && !recordFolder ? membership.get(item.id)?.name : undefined
+          const label = <>{item.label}{context && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Folder aria-hidden="true" className="size-3" />{context}</span>}</>
+          return <li key={item.id}>{list === 'items' && bulkMode ? <label className="flex min-h-9 cursor-pointer items-center gap-2 py-1.5">
+            <input type="checkbox" checked={bulkIds.includes(item.id)} onChange={(event) => setBulkIds(event.target.checked ? [...bulkIds, item.id] : bulkIds.filter((id) => id !== item.id))} />
+            <span>{label}</span>
+          </label> : <button type="button" className="min-h-9 w-full py-1.5 text-left underline-offset-2 hover:text-primary hover:underline" onClick={() => list === 'items' ? selectRecord(item.id, true) : selectRelation(item.id)}>{label}</button>}</li>
+        })}</ul>
         <Pager page={current} total={total} setPage={setPage} />
       </>}
       {panel === 'connect' && <CreateGraphRelation worldId={initialSettings.worldId} entities={entities} styles={styles} typeLabels={typeLabels} source={source} target={target} setSource={setSource} setTarget={setTarget} onCreated={saveRelation} onStyleCreated={updateStyle} />}
@@ -444,11 +561,14 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         <div><h3 className="text-lg">{card.title}</h3><p className="text-muted-foreground">{typeLabels[card.type] ?? card.type}</p></div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/entity/${card.id}`} className={linkStyle}>Abrir ficha</Link>
-          <Button size="sm" variant="outline" onClick={() => { scene.current?.focus(card.id); closePanel() }}>Ver no grafo</Button>
+          <Button size="sm" variant="outline" onClick={() => { locateRecord(card.id); closePanel() }}>Ver no grafo</Button>
           <Button size="sm" variant="outline" onClick={() => { clearDraft(); setTool('connect'); setSource(card.id); setPanel(null) }}>Conectar a partir daqui</Button>
           <Button size="sm" variant="outline" onClick={() => { clearDraft(); setTool('arrow'); setArrowStart(endpointFor(card.id)); setPanel(null) }}>Seta a partir daqui</Button>
           <Button size="sm" variant="outline" onClick={() => { chooseFocus(card.id); openPanel('filters') }}>Filtrar vizinhança</Button>
         </div>
+        {folderForCard && <Button size="sm" variant="ghost" className="max-w-full whitespace-normal" onClick={() => inspectFolder(folderForCard.id)}><Folder aria-hidden="true" />{folderForCard.name}</Button>}
+        {folders.length > 0 ? <FolderMoveForm key={folderForCard?.id ?? 'root'} folders={folders} count={1} current={folderForCard?.id ?? ''} onMove={(destination) => moveRecords([card.id], destination)} />
+          : <Button size="sm" variant="ghost" onClick={() => openPanel('folders')}>Organizar em pastas</Button>}
         {!relations.some((edge) => edge.sourceId === card.id || edge.targetId === card.id) && <p className="text-muted-foreground">Sem vínculos.</p>}
       </>}
       {panel === 'relation' && selected && <>

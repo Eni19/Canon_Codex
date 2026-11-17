@@ -13,7 +13,7 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 ├── worlds/
 │   └── <world-dir>/                  # hoje, o slug do mundo; não é a identidade
 │       ├── world.json                # World + tipos + calendário + escalas da linha + origem?
-│       ├── relationship-graph.json   # opcional: posições, filtros, estilos e setas livres, versão 3
+│       ├── relationship-graph.json   # opcional: posições, filtros, estilos, setas livres e pastas, versão 4
 │       ├── entities/
 │       │   └── <entity-id>/          # UUID da entidade
 │       │       ├── metadata.json     # Entity, inclusive relations[]
@@ -45,7 +45,7 @@ consumidor ativo que grave esses caminhos; eles não são parte necessária da r
 ### Organização do grafo de relacionamentos
 
 `relationship-graph.json` é opcional e pertence ao mundo que o contém. Na ausência do arquivo,
-o grafo usa posições automáticas e filtros vazios. A versão 3 guarda UUID do mundo, revisão,
+o grafo usa posições automáticas e filtros vazios. A versão 4 guarda UUID do mundo, revisão,
 posições fixadas por UUID de entidade, filtros e um catálogo de estilos por tipo de relação.
 O catálogo inclui cor, traço, ponta, símbolo, significado, visibilidade e sentido padrão
 opcional por tipo. O sentido efetivo fica na relação do registro de origem. `directional: false`
@@ -54,7 +54,11 @@ indica relação sem direção, `directional: true` indica ida e o campo opciona
 vínculo. Setas livres guardam posições, cor e traço, além dos UUIDs opcionais
 `startCardId` e `endCardId`. Uma ponta presa segue o cartão; se o registro estiver indisponível, a
 vista usa a posição gravada. Esses IDs não criam vínculos nas entidades. Anotações v3 sem os
-novos campos continuam legíveis, sem migração.
+IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), estado recolhido
+(`collapsed`) e UUIDs dos membros (`members`) de cada pasta. Um registro pertence a no máximo
+uma pasta. A inclusão e movimentação validam os registros ativos do mundo. Membros indisponíveis
+ficam ocultos e preservam sua pasta em caso de restauração. Excluir uma pasta descarta somente o
+agrupamento da vista.
 A tela salva mudanças concluídas da vista automaticamente. A gravação usa o lock do mundo e
 escrita atômica; uma revisão desatualizada não sobrescreve uma organização diferente.
 Reenviar o mesmo conteúdo é idempotente. Posições de registros ocultos ou indisponíveis são

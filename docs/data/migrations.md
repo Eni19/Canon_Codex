@@ -18,16 +18,16 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
 
-## Grafo de relacionamentos: v1/v2 → v3
+## Grafo de relacionamentos: v1/v2/v3 → v4
 
-`relationship-graph.json` usa schema próprio na versão 3; sua ausência representa organização
-automática, filtros, catálogo e anotações vazios, sem criar arquivo na leitura. As versões 1 e 2
-são validadas e convertidas em memória: a versão 1 começa com catálogo vazio e ambas começam sem
-setas livres. Revisão, posições, filtros e estilos existentes são preservados; o próximo salvamento
-modificado grava a versão 3. Versões não reconhecidas são rejeitadas. A versão atual lê anotações
-v3 com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão, sem regravação na
-leitura. Builds anteriores podem recusar as configurações gravadas com esses campos. Relações
-sem o campo opcional `bidirectional` mantêm a leitura original de `directional`.
+`relationship-graph.json` usa schema próprio na versão 4; sua ausência representa organização
+automática, filtros, catálogo, anotações e pastas vazios, sem criar arquivo na leitura. As versões
+1 a 3 são convertidas em memória e começam sem pastas: a versão 1 inicia com catálogo vazio
+e as versões 1 e 2 iniciam sem setas livres. Revisão, posições, filtros, estilos e anotações existentes
+são preservados; o próximo salvamento modificado grava a versão 4. O leitor aceita anotações v3
+com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds anteriores à v4
+podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
+original de `directional`.
 
 ## Mundo: v1 → v23
 
