@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Crosshair, Ellipsis, Folder, Link2, Minus, MousePointer2, MoveUpRight, Plus, Search, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Crosshair, Ellipsis, Folder, Link2, List, Minus, MousePointer2, MoveUpRight, Plus, Search, SlidersHorizontal, Square, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useEffectEvent, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { CardPickerField } from '@/components/ui/card-picker'
@@ -16,12 +16,13 @@ import { FreeArrowForm } from './graph-free-arrows'
 import { FolderMoveForm, FolderNameForm, GraphFoldersPanel } from './graph-folders-panel'
 import { CreateGraphRelation, EditGraphRelation } from './graph-relation-forms'
 import { GraphStyleLegend } from './graph-style-legend'
+import form from './graph-forms.module.css'
 import type { createRelationshipScene, GraphTool, SceneState } from './relationship-scene'
 import { useGraphAutosave } from './use-graph-autosave'
 
 type Panel = 'options' | 'filters' | 'legend' | 'records' | 'connect' | 'arrow' | 'card' | 'relation' | 'annotation' | 'folders' | 'folder' | 'folder-links'
 const panelTitle: Record<Panel, string> = { options: 'Mais ferramentas', filters: 'Busca e filtros', legend: 'Legenda e estilos', records: 'Registros e vínculos', connect: 'Conectar registros', arrow: 'Seta livre', card: 'Registro', relation: 'Editar vínculo', annotation: 'Seta livre', folders: 'Pastas', folder: 'Pasta', 'folder-links': 'Vínculos externos' }
-const field = 'min-h-9 w-full rounded-md border bg-background px-2 py-1'
+const panelIcon: Record<Panel, LucideIcon> = { options: Ellipsis, filters: Search, legend: SlidersHorizontal, records: List, connect: Link2, arrow: MoveUpRight, card: Square, relation: Link2, annotation: MoveUpRight, folders: Folder, folder: Folder, 'folder-links': Link2 }
 const linkStyle = 'text-primary underline underline-offset-2'
 const pageSize = 25
 const normalize = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim()
@@ -47,8 +48,8 @@ function TargetSearch({ search, matches, choose, fit }: { search: ReturnType<typ
   useEffect(() => { input.current?.focus({ preventScroll: true }) }, [])
   const typed = !!normalize(search.draft)
   return <form className="pointer-events-auto grid w-full gap-2" onSubmit={(event) => { event.preventDefault(); search.apply() }}>
-    <label className="grid gap-1 font-medium">Buscar cartão de destino
-      <input ref={input} type="search" className={field + ' font-normal'} value={search.draft} placeholder="Digite um nome…" onChange={(event) => search.setDraft(event.target.value)} onBlur={search.apply} />
+    <label className={form.field}>Buscar cartão de destino
+      <input ref={input} type="search" className={form.control} value={search.draft} placeholder="Digite um nome…" onChange={(event) => search.setDraft(event.target.value)} onBlur={search.apply} />
     </label>
     {typed && matches.length === 0 && <p className="text-muted-foreground">Nenhum cartão com esse nome.</p>}
     {typed && matches.length === 1 && <Button type="button" variant="outline" className="min-w-0 justify-start" onClick={() => choose(matches[0].id)}><ArrowRight aria-hidden="true" /><span className="truncate">{matches[0].title}</span></Button>}
@@ -79,13 +80,15 @@ function Tool({ icon: Icon, label, pressed, onClick, primary, expanded }: {
 
 function GraphPanel({ panel, children, footer, onClose }: { panel: Panel; children: ReactNode; footer?: ReactNode; onClose: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null)
+  const Icon = panelIcon[panel]
   useEffect(() => { heading.current?.focus({ preventScroll: true }) }, [])
-  return <aside aria-labelledby="relationship-panel-title" className="absolute inset-x-2 bottom-17 z-10 flex max-h-[min(56%,36rem)] flex-col overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-xl md:inset-x-auto md:top-4 md:right-4 md:bottom-auto md:max-h-[calc(100%-6rem)] md:w-88">
-    <header className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-1.5">
-      <h2 ref={heading} tabIndex={-1} id="relationship-panel-title" className="font-serif text-lg outline-none">{panelTitle[panel]}</h2>
+  return <aside aria-labelledby="relationship-panel-title" className={form.panel + ' absolute inset-x-2 bottom-17 z-10 flex max-h-[min(64%,40rem)] flex-col overflow-hidden rounded-2xl border text-popover-foreground lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-6rem)] lg:w-96'}>
+    <header className="flex shrink-0 items-center gap-3 border-b px-4 py-1.5">
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-4" aria-hidden="true" /></span>
+      <h2 ref={heading} tabIndex={-1} id="relationship-panel-title" className="min-w-0 flex-1 font-serif text-lg leading-tight outline-none">{panelTitle[panel]}</h2>
       <Tool icon={X} label="Fechar painel" onClick={onClose} />
     </header>
-    <div className="space-y-3 overflow-y-auto overscroll-contain p-4 text-sm">{children}</div>
+    <div className={form.panelContent + ' space-y-4 overflow-y-auto overscroll-contain p-4 text-sm'}>{children}</div>
     {footer && <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t px-4 py-2">{footer}</footer>}
   </aside>
 }
@@ -473,7 +476,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
           {annotations.length > 0 && <Button variant="outline" className="justify-start" onClick={() => selectAnnotation(annotations[0].id)}>Setas livres</Button>}
           {entities.length > 0 && <Button variant="outline" className="justify-start" onClick={() => { if (Object.keys(positions).length) setReset(true); else restore() }}>Restaurar organização</Button>}
         </div>
-        {reset && <div className="space-y-2 rounded-md border p-2">
+        {reset && <div className={`${form.feedback} ${form.reveal} space-y-2`}>
           <p>Descartar todas as posições fixadas?</p>
           <Button size="sm" variant="destructive" onClick={restore}>Confirmar restauração</Button>{' '}
           <Button size="sm" variant="ghost" onClick={() => setReset(false)}>Cancelar</Button>
@@ -482,17 +485,17 @@ export function RelationshipView({ entities, relations: initialRelations, initia
       </>}
       {panel === 'filters' && <>
         <form onSubmit={(event) => { event.preventDefault(); search.apply() }}>
-          <label className="grid gap-1 font-medium">Buscar registro
-            <span className="relative"><Search aria-hidden="true" className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-              <input type="search" className={field + ' pl-8 font-normal'} value={search.draft} placeholder="Digite parte do nome…" onChange={(event) => { search.setDraft(event.target.value); setPage(0); setLocatedCard('') }} onBlur={search.apply} />
+          <label className={form.field}>Buscar registro
+            <span className={form.search}><Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input type="search" className={form.control} value={search.draft} placeholder="Digite parte do nome…" onChange={(event) => { search.setDraft(event.target.value); setPage(0); setLocatedCard('') }} onBlur={search.apply} />
             </span>
           </label>
         </form>
-        <div className="space-y-2 rounded-md border bg-surface p-3">
-          <div><label htmlFor={focusField} className="font-medium">A partir de um registro</label>
-            <CardPickerField id={focusField} items={pickerItems} title="Escolher registro de referência" value={focus} placeholder="Mundo inteiro · escolher um registro" clearable onChange={chooseFocus} />
+        <div className="space-y-3">
+          <div className={form.field}><label htmlFor={focusField}>A partir de um registro</label>
+            <CardPickerField id={focusField} items={pickerItems} title="Escolher registro de referência" value={focus} placeholder="Mundo inteiro · escolher um registro" triggerClassName={form.control} clearable onChange={chooseFocus} />
           </div>
-          {focus && <>
+          {focus && <div className={form.reveal + ' space-y-2'}>
             <div role="group" aria-label="Sentido dos vínculos" className="grid grid-cols-3 gap-1">
               {directions.map(({ id, label, icon: Icon }) => <Button key={id} type="button" variant={direction === id ? 'default' : 'outline'} size="sm" className="min-h-9" aria-pressed={direction === id} onClick={() => { setDirection(id); setPage(0) }}><Icon aria-hidden="true" />{label}</Button>)}
             </div>
@@ -501,11 +504,11 @@ export function RelationshipView({ entities, relations: initialRelations, initia
               <span className="text-xs text-muted-foreground">Distância: {depth} {depth === 1 ? 'passo' : 'passos'}</span>
               <Button size="sm" variant="outline" onClick={() => { setDepth((level) => level + 1); setPage(0) }}>Expandir conexões</Button>
             </div>
-          </>}
+          </div>}
         </div>
-        <div className="grid gap-2">
-          <label className="grid gap-1">Tipo de registro <select className={field} value={type} onChange={(event) => changeFilters(event.target.value, relationType)}><option value="">Todos os registros</option>{types.map((item) => <option key={item} value={item}>{typeLabels[item] ?? item}</option>)}</select></label>
-          <label className="grid gap-1">Tipo de vínculo <select className={field} value={relationType} onChange={(event) => changeFilters(type, event.target.value)}><option value="">Todos os vínculos</option>{relationTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className={form.field}>Tipo de registro <select className={form.control} value={type} onChange={(event) => changeFilters(event.target.value, relationType)}><option value="">Todos os registros</option>{types.map((item) => <option key={item} value={item}>{typeLabels[item] ?? item}</option>)}</select></label>
+          <label className={form.field}>Tipo de vínculo <select className={form.control} value={relationType} onChange={(event) => changeFilters(type, event.target.value)}><option value="">Todos os vínculos</option>{relationTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
         </div>
       </>}
       {panel === 'legend' && <><GraphStyleLegend styles={styles} relations={relations} update={updateStyle} />{notice && <p role="alert">{notice}</p>}</>}
@@ -521,7 +524,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
           <Button size="sm" variant="outline" onClick={() => inspectFolder(folder.id, true)}>Ver vínculos externos</Button>
         </div>
         <FolderNameForm key={folder.id} folders={folders} folder={folder} save={(name) => saveFolders(folders.map((item) => item.id === folder.id ? { ...item, name } : item))} />
-        {reset ? <div className="space-y-2 rounded-md border p-2">
+        {reset ? <div className={`${form.feedback} ${form.error} ${form.reveal} space-y-2`}>
           <p>Os registros voltam à vista principal, com suas posições e vínculos.</p>
           <Button size="sm" variant="destructive" onClick={() => { saveFolders(folders.filter((item) => item.id !== folder.id)); setSelectedFolder(''); openPanel('folders'); setNotice('Pasta excluída.') }}>Confirmar exclusão</Button>{' '}
           <Button size="sm" variant="ghost" onClick={() => setReset(false)}>Cancelar</Button>
@@ -542,7 +545,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
           <Button size="sm" variant={list === 'items' ? 'default' : 'outline'} aria-pressed={list === 'items'} onClick={() => { setList('items'); setPage(0) }}>Registros</Button>
           <Button size="sm" variant={list === 'relations' ? 'default' : 'outline'} aria-pressed={list === 'relations'} onClick={() => { setList('relations'); setPage(0) }}>Vínculos</Button>
         </div>}
-        <label className="block">Buscar na lista <input className={field} value={listQuery} onChange={(event) => { setListQuery(event.target.value); setPage(0) }} /></label>
+        <label className={form.field}>Buscar na lista <input type="search" className={form.control} value={listQuery} onChange={(event) => { setListQuery(event.target.value); setPage(0) }} /></label>
         <p role="status">{listed.length} {list === 'items' ? 'registros' : 'vínculos'}</p>
         {list === 'items' && folders.length > 0 && <Button size="sm" variant={bulkMode ? 'secondary' : 'outline'} aria-pressed={bulkMode} onClick={() => { setBulkMode(!bulkMode); setBulkIds([]) }}>{bulkMode ? 'Cancelar seleção' : 'Selecionar para mover'}</Button>}
         {list === 'items' && bulkMode && <><p role="status">{bulkIds.length} selecionados</p><FolderMoveForm folders={folders} count={bulkIds.length} onMove={(destination) => moveRecords(bulkIds, destination)} /></>}
@@ -572,10 +575,10 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         {!relations.some((edge) => edge.sourceId === card.id || edge.targetId === card.id) && <p className="text-muted-foreground">Sem vínculos.</p>}
       </>}
       {panel === 'relation' && selected && <>
-        <p className="break-words"><Link href={`/entity/${selected.sourceId}`} className={linkStyle}>{byId.get(selected.sourceId)?.title}</Link>
+        <p className={form.preview + ' wrap-anywhere'}><Link href={`/entity/${selected.sourceId}`} className={linkStyle}>{byId.get(selected.sourceId)?.title}</Link>
           {' '}{directionMark(relationDirection(selected))}{' '}
           <Link href={`/entity/${selected.targetId}`} className={linkStyle}>{byId.get(selected.targetId)?.title}</Link></p>
-        <EditGraphRelation key={selected.id} worldId={initialSettings.worldId} relation={selected} types={styles.map((style) => style.type)} onUpdated={saveRelation}
+        <EditGraphRelation key={selected.id} worldId={initialSettings.worldId} relation={selected} styles={styles} onUpdated={saveRelation}
           onRemoved={(id) => { setRelations((current) => current.filter((item) => item.id !== id)); setSelectedEdge(''); closePanel(); setNotice('Vínculo removido.') }} />
       </>}
       {panel === 'arrow' && <FreeArrowForm start={arrowStart} end={arrowEnd} items={pickerItems} choose={(end, id) => {
@@ -586,7 +589,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         updateAnnotations([...annotations, item]); clearDraft(); selectAnnotation(item.id)
       }} />}
       {panel === 'annotation' && arrow && <>
-        <label className="block">Anotação <select className={field} value={arrow.id} onChange={(event) => setSelectedArrow(event.target.value)}>
+        <label className={form.field}>Anotação <select className={form.control} value={arrow.id} onChange={(event) => setSelectedArrow(event.target.value)}>
           {annotations.map((item, index) => <option key={item.id} value={item.id}>Seta {index + 1}</option>)}
         </select></label>
         <FreeArrowForm key={arrow.id} existing={arrow} start={{ point: arrow.start, cardId: arrow.startCardId }} end={{ point: arrow.end, cardId: arrow.endCardId }} items={pickerItems}

@@ -1,11 +1,11 @@
 'use client'
 
 import { useId, useState, type FormEvent } from 'react'
-import { Folder, FolderOpen } from 'lucide-react'
+import { Check, ChevronRight, Folder, FolderOpen, FolderPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FolderNameSchema, folderNameKey, type GraphFolder } from '@/domain/relations/graphFolders'
 
-const field = 'min-h-10 w-full rounded-md border bg-background px-2 py-1'
+import form from './graph-forms.module.css'
 
 export function FolderNameForm({ folders, folder, save }: {
   folders: GraphFolder[]; folder?: GraphFolder; save: (name: string) => void
@@ -24,12 +24,14 @@ export function FolderNameForm({ folders, folder, save }: {
     if (!folder) setName('')
     setError('')
   }
-  return <form className="space-y-2" onSubmit={submit}>
-    <label className="grid gap-1">{folder ? 'Renomear pasta' : 'Nome da nova pasta'}
-      <input className={field} value={name} maxLength={80} required onChange={(event) => { setName(event.target.value); setError('') }} />
+  return <form className={form.form} onSubmit={submit}>
+    <label className={form.field}>{folder ? 'Renomear pasta' : 'Nome da nova pasta'}
+      <input className={form.control} value={name} maxLength={80} required onChange={(event) => { setName(event.target.value); setError('') }} />
     </label>
-    <Button size="sm" type="submit" disabled={!name.trim()}>{folder ? 'Salvar nome' : 'Criar pasta'}</Button>
-    {error && <p role="alert" className="text-danger">{error}</p>}
+    {error && <p role="alert" className={`${form.feedback} ${form.error} ${form.reveal}`}>{error}</p>}
+    <div className={form.actions}>
+      <Button type="submit" disabled={!name.trim()}>{folder ? <Check aria-hidden="true" /> : <FolderPlus aria-hidden="true" />}{folder ? 'Salvar nome' : 'Criar pasta'}</Button>
+    </div>
   </form>
 }
 
@@ -48,10 +50,13 @@ export function GraphFoldersPanel({ folders, add, open, isCollapsed, memberCount
         const closed = isCollapsed(folder)
         const Icon = closed ? Folder : FolderOpen
         return <li key={folder.id}>
-          <button type="button" className="flex min-h-12 w-full items-center gap-2 py-2 text-left hover:text-primary" onClick={() => open(folder.id)}>
-            <Icon aria-hidden="true" className="size-4 shrink-0" />
-            <span className="min-w-0 flex-1 break-words">{folder.name}</span>
-            <span className="shrink-0 text-xs text-muted-foreground">{memberCount(folder)} · {closed ? 'Recolhida' : 'Aberta'}</span>
+          <button type="button" className="flex min-h-12 w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent motion-safe:transition-colors" onClick={() => open(folder.id)}>
+            <Icon aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <span className="wrap-anywhere font-medium">{folder.name}</span>
+              <span className="text-xs text-muted-foreground">{memberCount(folder)} · {closed ? 'Recolhida' : 'Aberta'}</span>
+            </span>
+            <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           </button>
         </li>
       })}
@@ -64,12 +69,12 @@ export function FolderMoveForm({ folders, count, current, onMove }: {
 }) {
   const id = useId()
   const [destination, setDestination] = useState(current ?? '')
-  return <form className="space-y-2 rounded-md border p-2" onSubmit={(event) => { event.preventDefault(); onMove(destination) }}>
-    <label htmlFor={id} className="block">Mover para</label>
-    <select className={field} id={id} value={destination} onChange={(event) => setDestination(event.target.value)}>
+  return <form className={form.form + ' ' + form.reveal + ' border-t pt-3'} onSubmit={(event) => { event.preventDefault(); onMove(destination) }}>
+    <label className={form.field} htmlFor={id}>Mover para
+    <select className={form.control} id={id} value={destination} onChange={(event) => setDestination(event.target.value)}>
       <option value="">Vista principal</option>
       {folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-    </select>
-    <Button type="submit" size="sm" disabled={!count || destination === current}>{count > 1 ? `Mover ${count} registros` : 'Mover registro'}</Button>
+    </select></label>
+    <Button type="submit" size="sm" className="justify-self-end" disabled={!count || destination === current}>{count > 1 ? `Mover ${count} registros` : 'Mover registro'}</Button>
   </form>
 }

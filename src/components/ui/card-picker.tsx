@@ -90,7 +90,7 @@ export function CardPicker({ items, selectedIds, multiple = false, title, search
 const TRIGGER_CLASS = 'flex min-h-9 w-full items-center gap-2.5 rounded-md border bg-popover px-3 py-1.5 text-left text-sm text-popover-foreground hover:border-primary disabled:opacity-50'
 
 /** Form field that picks ONE item through a CardPicker. Submits the id through a hidden input named `name`. */
-export function CardPickerField({ id, name, value, onChange, placeholder = 'Escolher...', disabled, clearable = false, ...picker }: CardPickerBaseProps & { id?: string; name?: string; value: string; onChange: (id: string) => void; placeholder?: string; disabled?: boolean; clearable?: boolean }) {
+export function CardPickerField({ id, name, value, onChange, placeholder = 'Escolher...', disabled, clearable = false, triggerClassName, ...picker }: CardPickerBaseProps & { id?: string; name?: string; value: string; onChange: (id: string) => void; placeholder?: string; disabled?: boolean; clearable?: boolean; triggerClassName?: string }) {
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const close = () => { setOpen(false); trigger.current?.focus() }
@@ -99,7 +99,7 @@ export function CardPickerField({ id, name, value, onChange, placeholder = 'Esco
     <>
       {name && <input type="hidden" name={name} value={value} />}
       <div className="flex items-stretch gap-1.5">
-        <button ref={trigger} id={id} type="button" disabled={disabled} onClick={() => setOpen(true)} className={TRIGGER_CLASS}>
+        <button ref={trigger} id={id} type="button" disabled={disabled} onClick={() => setOpen(true)} className={cn(TRIGGER_CLASS, triggerClassName)}>
           {current?.imageAssetId && <Image src={assetVariantUrl(current.imageAssetId, 'thumbnail')} alt="" width={28} height={28} unoptimized className={cn('size-7 shrink-0 object-cover', current.imagePosition === 'top' && 'object-top')} />}
           <span className="min-w-0 flex-1 truncate">{value ? (current ? current.title : UNAVAILABLE) : <span className="text-muted-foreground">{placeholder}</span>}</span>
           <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />

@@ -51,6 +51,11 @@ quando muda a classe de tema. Ferramentas, estados de tela e editores permanecem
 As cores configuráveis dos vínculos e das anotações são dados do mundo; o catálogo compartilha
 traços, pontas e símbolos com as amostras da legenda.
 
+Os painéis do grafo compartilham tokens de superfície, preenchimento e foco nos formulários.
+A entrada dos painéis e a revelação de controles usam transições CSS curtas, desativadas pela
+preferência de movimento reduzido. O sentido dos vínculos usa um grupo de opções nativas do
+tipo rádio, com ícones e texto.
+
 ### Atualização: temas locais do calendário (12/11/2026)
 
 O calendário oferece Codex, Celeste e Pergaminho e permite paletas personalizadas por mundo. A página

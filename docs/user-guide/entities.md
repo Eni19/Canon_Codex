@@ -114,15 +114,17 @@ aproxima o recorte. **Mais → Registros e vínculos** oferece uma alternativa H
 resultados por página. Selecione um registro para ir até ele ou um vínculo para editá-lo.
 Em **Mais → Legenda e estilos → Novo tipo de seta**, escolha um nome, cor, traço contínuo,
 tracejado ou pontilhado, formato da ponta, símbolo opcional e sentido padrão. A prévia acompanha
-as mudanças. O sentido padrão se aplica aos próximos vínculos. Cada vínculo salvo guarda seu
+as mudanças. Use Tab para chegar ao seletor de sentido e as setas do teclado para alternar
+entre uma direção, duas direções e sem direção. O sentido padrão se aplica aos próximos vínculos. Cada vínculo salvo guarda seu
 próprio sentido.
 
 Para criar um vínculo, ative **Conectar** e arraste da porta de um cartão até o destino ou escolha os
 dois cartões por clique/toque. Também é possível pesquisar origem e destino nos campos do painel.
 Depois de marcar a origem, digite o nome do próximo cartão. A busca esmaece os demais durante a
 digitação, mantém a origem visível e oferece os resultados no grafo e em uma lista.
-Escolha um tipo existente ou use **Novo tipo de seta** no próprio formulário. Você pode alterar
-o sentido para este vínculo e adicionar um rótulo. **Criar relação** grava o vínculo na ficha de
+Digite um tipo, escolha uma das sugestões ou use **Novo tipo de seta** no próprio formulário.
+Você pode alterar o sentido para este vínculo e adicionar um rótulo. Na criação e na edição,
+o formulário mostra uma prévia quando o tipo tem um estilo no catálogo. **Criar relação** grava o vínculo na ficha de
 origem e a referência aparece na ficha de destino. Selecione um vínculo no canvas ou na lista para editá-lo ou removê-lo;
 a remoção exige confirmação. Os backlinks vêm da ficha de origem. Fichas de Local, Evidência e
 Organização também exibem suas referências vindas de outros registros. Se o alvo deixa de estar ativo,
@@ -131,7 +133,8 @@ o vínculo fica oculto sem ser apagado da origem.
 Em **Seta livre**, clique em um cartão ou no fundo para marcar cada ponta. Depois do primeiro
 clique, você também pode digitar para buscar o próximo cartão. Se as duas pontas forem cartões,
 abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotação da vista
-e acompanha o cartão a que estiver presa. Selecione-a para mover as pontas, mudar o estilo ou apagar.
+e acompanha o cartão a que estiver presa. A prévia mostra a cor e o traço escolhidos antes de
+salvar. Selecione uma seta para mover as pontas, mudar o estilo ou apagar.
 
 Use **Pastas** na barra do grafo para criar, renomear e abrir pastas. Uma pasta pode reunir eventos,
 personagens, locais, itens e registros personalizados. Para mover um só registro, clique no cartão
