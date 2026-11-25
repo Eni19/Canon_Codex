@@ -41,13 +41,13 @@ const DIE_ITEMS: SlashCommandItem[] = ([4, 6, 8, 10, 12, 20] as const).map((side
 const COMMAND_ITEMS: SlashCommandItem[] = [
   {
     title: 'Título 1',
-    description: 'Título de seção grande',
+    description: 'Seção grande; entra no índice de seções',
     icon: Heading1,
     command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run(),
   },
   {
     title: 'Título 2',
-    description: 'Título de seção médio',
+    description: 'Subseção; entra no índice de seções',
     icon: Heading2,
     command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run(),
   },

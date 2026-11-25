@@ -1,3 +1,9 @@
 .tabs { position: sticky; top: 0; z-index: 2; display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid color-mix(in oklch, var(--primary) 24%, transparent); background: var(--background); }
 .tabs button { padding: 0.4rem 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted-foreground); font-size: 0.72rem; text-transform: uppercase; cursor: pointer; }
 .tabs button[aria-selected='true'] { border-color: var(--primary); color: var(--primary); }
+.sections { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; margin-bottom: 1rem; padding: 0.5rem 0.75rem; border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent); border-radius: 0.5rem; font-size: 0.8rem; }
+.sections > span { color: var(--muted-foreground); font-size: 0.72rem; text-transform: uppercase; }
+.sections ul { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+.sections li[data-level='2'] button { color: var(--muted-foreground); }
+.sections button { min-height: 1.75rem; border: 0; background: transparent; color: var(--foreground); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--primary) 40%, transparent); text-underline-offset: 3px; cursor: pointer; }
+.sections button:hover { color: var(--primary); }

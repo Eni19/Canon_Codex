@@ -9,13 +9,18 @@ uma página.
 Na edição de uma entidade:
 
 1. escreva na página ativa;
-2. use **Novo página** ou **Novo capítulo** quando o tipo permitir;
+2. use **Nova página** ou **Novo capítulo** quando o tipo permitir;
 3. renomeie a página na linha de nome;
 4. exclua a página ativa somente quando existir outra;
 5. salve o formulário da entidade.
 
 O limite visual é de cinco páginas para a maioria dos tipos, uma para conceitos e 50 para contos.
 Esses limites são da tela; o schema de conteúdo aceita de 1 a 50 páginas.
+
+Na leitura, as páginas aparecem como abas; as setas, Home e End trocam de aba pelo teclado.
+Dentro de uma página longa, use **Título 1** e **Título 2** para criar seções: com dois ou mais
+desses títulos, a ficha mostra um índice **Seções** no topo da página, e cada item leva até o
+título correspondente. O índice é derivado do texto e não muda o formato salvo.
 
 ## Datas do calendário do mundo
 
