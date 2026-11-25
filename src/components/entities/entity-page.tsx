@@ -101,8 +101,8 @@ export function EntityPage(props: EntityPageProps) {
             {entity.tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {entity.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
+                  <Badge key={tag} variant="secondary" asChild>
+                    <Link href={`/all?${new URLSearchParams({ tag })}`} aria-label={`Ver registros com a etiqueta ${tag}`}>{tag}</Link>
                   </Badge>
                 ))}
               </div>

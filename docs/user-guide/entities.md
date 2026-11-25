@@ -169,6 +169,13 @@ as alterações locais após aviso.
 
 Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
 
+**Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
+encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com
+busca pelo nome. A comparação ignora maiúsculas e acentos. Em **Todos os conteúdos**, as etiquetas
+do mundo aparecem com a contagem de registros; escolher uma ou mais filtra a lista (todas as
+escolhidas precisam estar presentes) e o endereço guarda o filtro, como `/all?tag=nobreza`.
+Na ficha, cada etiqueta leva a essa lista filtrada.
+
 As telas também agrupam ou ordenam os resultados conforme o tipo. Personagens podem ser agrupados por nome, organização ou local atual; locais, por hierarquia ou nome; criaturas, por natureza ou nome; espécies, por tipo de registro ou nome; e ciências naturais, por disciplina, subtipo ou nome. Os demais catálogos usam principalmente o nome/título.
 
 Na organização **Regiões** de Locais, cada local que tem sub-locais (pelo campo **Região/local pai**)
