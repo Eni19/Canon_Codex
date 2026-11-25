@@ -26,6 +26,21 @@ Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo s
 `Canon Codex` quando a biblioteca SQLite é inicializada. Para configurar o local dos dados ou
 importar uma biblioteca existente, veja [SQLite local](docs/data/sqlite.md).
 
+### Já tem uma biblioteca em arquivos?
+
+Desde a adoção do SQLite, uma biblioteca antiga (pastas de mundos em JSON no `workspace/`) não é
+aberta automaticamente: a página inicial mostra um aviso de migração em vez dos mundos. Nada é
+apagado. Com o servidor parado, faça uma cópia da pasta e rode:
+
+```bash
+pnpm storage preview <pasta-legada>
+pnpm storage import <pasta-legada> <diretório-novo>/canon-codex.sqlite
+```
+
+Depois aponte `SQLITE_DATABASE_PATH` para o banco gerado. Para adiar a migração, defina
+`PERSISTENCE_DRIVER=filesystem` em `.env.local` e o app volta a ler os arquivos. Detalhes em
+[SQLite local](docs/data/sqlite.md).
+
 ### Comandos
 
 ```bash
