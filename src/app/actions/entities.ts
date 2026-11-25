@@ -81,13 +81,15 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
   const previousSymbol = typeof entity.properties.symbolAssetId === 'string' ? entity.properties.symbolAssetId : undefined
   let replacedAssets: (string | undefined)[] = []
   try {
-    const form = parseEntityForm(entityType, formData, world.calendar)
+    const form = parseEntityForm(entityType, formData, world.calendar, entity.properties)
     const properties = { ...form.properties }
     // `undefined` keeps the stored symbol; `null` clears it.
     const symbol = form.symbolAssetId === undefined ? previousSymbol : form.symbolAssetId ?? undefined
     if (symbol) properties.symbolAssetId = symbol
+    else if (form.symbolAssetId === null) delete properties.symbolAssetId
 
     await repo.updateEntity(world.id, entityId, {
+      expectedUpdatedAt: entity.updatedAt,
       title: form.title,
       aliases: form.aliases,
       tags: form.tags,

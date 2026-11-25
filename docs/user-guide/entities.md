@@ -41,11 +41,21 @@ calendário, usa o dia selecionado. O campo pode ser alterado ou limpo, e **Usar
 preenche novamente uma data. A sugestão é a data apresentada ao abrir o formulário; avançar o Hoje
 em outra aba não altera o que já estava preenchido.
 
+## Campos opcionais da ficha
+
+- **Personagem** — Objetivo atual.
+- **Caso** — Pergunta central.
+- **Pista** — Evidências associadas.
+- **Criatura** — Comportamento típico.
+- **Evento** — Consequências.
+- **Fenômeno** — Condições de manifestação.
+- **Objeto / Artefato** — Efeito conhecido.
+
+Na Pista, selecione evidências do mundo atual. Fichas antigas podem receber os novos valores ao editar.
+
 ## Tipos iniciais
 
-O mundo semente atual define 17 tipos. `showInSidebar = false` em **Caso**, **Documento**,
-**Pista** e **Fenômeno** apenas os oculta da navegação principal; eles continuam sendo tipos
-persistidos e podem ser usados por referências.
+O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam ocultos na navegação principal.
 
 | ID | Nome | Apresentação ou campos destacados |
 | --- | --- | --- |
@@ -61,7 +71,7 @@ persistidos e podem ser usados por referências.
 | `clue` | Pista | evento relacionado e descobridor; apresentação genérica |
 | `creature` | Criatura | natureza, apresentação da imagem, classificação, habitat e perigo |
 | `naturalScience` | Natureza / Medicina | disciplina, subtipo, habitat, sintomas, toxicidade e tratamento |
-| `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados; oculto da barra |
+| `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados |
 | `artifact` | Objeto / Artefato | catálogo, registro, materiais, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
@@ -93,8 +103,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 Propriedades `reference` e `referenceList` oferecem candidatos de outros registros do tipo
 esperado. Essas referências guardam IDs; renomear o alvo não quebra a seleção.
 
-Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e se ela é
-direcional. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
+Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e marque **Relação mútua** quando o vínculo valer nos dois sentidos. Com a caixa desmarcada, o vínculo vai da origem ao alvo. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
 por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
 
 ## Buscar e organizar catálogos

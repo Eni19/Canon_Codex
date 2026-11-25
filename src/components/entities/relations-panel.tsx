@@ -73,8 +73,8 @@ export function RelationsPanel({
           <Input name="type" placeholder="Tipo de relação (ex: conhece, investiga)" required />
           <Input name="label" placeholder="Rótulo (opcional)" />
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input type="checkbox" name="directional" defaultChecked />
-            Direcional
+            <input type="checkbox" name="mutual" />
+            Relação mútua
           </label>
           <Button type="submit" size="sm" className="self-start">
             Adicionar

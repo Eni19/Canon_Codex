@@ -112,18 +112,21 @@ function parseAssetField(formData: FormData, key: string): AssetFieldValue {
   return raw
 }
 
-export function parseEntityForm(entityType: EntityTypeDefinition, formData: FormData, calendar: Calendar): ParsedEntityForm {
+export function parseEntityForm(entityType: EntityTypeDefinition, formData: FormData, calendar: Calendar, previousProperties: Record<string, unknown> = {}): ParsedEntityForm {
   const title = String(formData.get('title') ?? '').trim()
   if (!title) throw new EntityFormError('O título é obrigatório.')
 
-  const properties: Record<string, unknown> = {}
+  const properties = { ...previousProperties }
   for (const property of entityType.properties) {
+    // Unsupported media fields and legacy keys have no editable control.
+    if (property.kind === 'image' || property.kind === 'gallery') continue
     const value = parsePropertyValue(property, formData, calendar)
-    if (value !== undefined) properties[property.key] = value
+    if (value === undefined) delete properties[property.key]
+    else properties[property.key] = value
   }
 
   const structured = STRUCTURED_FIELDS[entityType.id]
-  if (structured) {
+  if (structured && (formData.has(structured.key) || !(structured.key in previousProperties))) {
     const parsed = structured.schema.safeParse(parseJsonField(formData, structured.key) ?? [])
     if (!parsed.success) throw new EntityFormError('Há itens incompletos no editor desta página. Revise-os e salve de novo.')
     properties[structured.key] = parsed.data
@@ -135,6 +138,7 @@ export function parseEntityForm(entityType: EntityTypeDefinition, formData: Form
     if (raw !== undefined) {
       const framing = CoverFramingSchema.safeParse(raw)
       if (!framing.success) throw new EntityFormError('O enquadramento da imagem é inválido. Ajuste-o novamente.')
+      delete properties.coverFraming
       if (!isDefaultCoverFraming(framing.data, defaultCoverFraming(entityType))) properties.coverFraming = framing.data
     }
   }

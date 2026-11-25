@@ -21,7 +21,7 @@ export async function addRelationAction(entityId: string, formData: FormData): P
     targetId,
     type,
     label: label || undefined,
-    directional: formData.get('directional') === 'on',
+    directional: !formData.has('mutual'),
   })
 
   revalidatePath(`/entity/${entityId}`)

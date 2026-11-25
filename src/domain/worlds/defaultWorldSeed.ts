@@ -1,3 +1,4 @@
+import { addWorldV24Fields } from '@/domain/worlds/entityFieldsV24'
 import { newId } from '@/lib/ids'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { WORLD_SCHEMA_VERSION, type World } from '@/domain/worlds/world'
@@ -367,7 +368,7 @@ export function createDefaultWorldSeed(): World {
     slug: 'paranormal',
     name: 'Canon Codex',
     description: 'Mundo semente: investigação e paranormalidade.',
-    entityTypes: DEFAULT_ENTITY_TYPES,
+    entityTypes: DEFAULT_ENTITY_TYPES.map(addWorldV24Fields),
     timelineScaleDefaults: Object.fromEntries(DEFAULT_ENTITY_TYPES.map((type) => [type.id, defaultTimelineScale(type.id)])),
     calendar: createDefaultCalendar(),
     calendarMoons: [],
