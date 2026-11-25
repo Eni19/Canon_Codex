@@ -34,7 +34,7 @@ export function Polaroid({ src, caption, href, icon, date, ...at }: Placement & 
       {src
         // Asset thumbnails are served by our own route; next/image adds nothing for these.
         // eslint-disable-next-line @next/next/no-img-element
-        ? <img src={src} alt="" loading="lazy" draggable={false}/>
+        ? <img src={src} alt="" decoding="async" draggable={false}/>
         : <span className={styles.polaroidSketch}>{icon && <EntityTypeIcon name={icon}/>}</span>}
     </span>
     <span className={styles.polaroidCaption}>{caption}</span>

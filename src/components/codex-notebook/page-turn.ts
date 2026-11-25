@@ -45,12 +45,14 @@ export function progressFromPointer(x: number, spineX: number, pageWidth: number
 
 /**
  * Where a released leaf settles. A quick flick wins over position, so a short fast throw still turns
- * the page; otherwise the leaf goes to whichever side it is closer to.
+ * the page. Otherwise the turn completes once the leaf has travelled `commit` of the way in the
+ * direction it was dragged; a halfway rule makes ordinary drags spring back, which reads as a bug.
  */
-export function settleTarget(p: number, velocity: number, flick = 1.2): 0 | 1 {
+export function settleTarget(p: number, velocity: number, direction: 'next' | 'prev', commit = 0.35, flick = 1.2): 0 | 1 {
   if (velocity > flick) return 1
   if (velocity < -flick) return 0
-  return p >= 0.5 ? 1 : 0
+  if (direction === 'next') return p >= commit ? 1 : 0
+  return p <= 1 - commit ? 0 : 1
 }
 
 /** One step of a damped spring toward `target`; returns the new position and velocity. */

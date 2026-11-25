@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Caveat, Special_Elite } from 'next/font/google'
 import { buildSpreads, type NotebookType } from './notebook-contents'
 import { Cover, renderSpread, type NotebookWorld, type SpreadPages } from './notebook-pages'
-import { clamp, leafPose, progressFromPointer, settleTarget, springStep, STRIPS } from './page-turn'
+import { leafPose, progressFromPointer, settleTarget, springStep, STRIPS } from './page-turn'
 import styles from './notebook.module.css'
 
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand' })
@@ -14,9 +14,8 @@ const typewriter = Special_Elite({ weight: '400', subsets: ['latin'], variable: 
 export const PAGE_W = 600
 export const PAGE_H = 820
 const STRIP_W = PAGE_W / STRIPS
-/** Pointer tilt of the book, in degrees: deliberately small. */
-const TILT_X = 4
-const TILT_Y = 6
+/** A drag must travel this far, mostly sideways, before it turns a page; shorter is a click. */
+const DRAG_START = 10
 
 interface Turn {
   from: number
@@ -43,8 +42,8 @@ export function Notebook({ world, types }: NotebookProps) {
   const leaf = useRef<HTMLDivElement>(null)
   const motion = useRef({
     progress: 0, velocity: 0, target: null as number | null,
-    tilt: { x: 0, y: 0, tx: 0, ty: 0 }, scale: 1, reduced: false, started: null as Turn | null,
-    drag: null as null | { id: number; startX: number; side: 'left' | 'right'; started: boolean; lastX: number; lastT: number },
+    scale: 1, reduced: false, started: null as Turn | null,
+    drag: null as null | { id: number; startX: number; startY: number; side: 'left' | 'right'; started: boolean; lastX: number; lastT: number },
     finish: null as null | (() => void),
   })
 
@@ -89,6 +88,11 @@ export function Notebook({ world, types }: NotebookProps) {
     leafRoot.querySelectorAll<HTMLElement>('[data-strip]').forEach((strip, i) => {
       strip.style.setProperty('--near', pose.shading[i].near.toFixed(3))
       strip.style.setProperty('--far', pose.shading[i].far.toFixed(3))
+      // Which face is toward the reader, chosen here rather than with backface-visibility, which
+      // flickers in Firefox: a strip shows its front until it passes upright.
+      const facingFront = pose.spine - i * pose.step < 90
+      strip.style.setProperty('--front', facingFront ? 'visible' : 'hidden')
+      strip.style.setProperty('--back', facingFront ? 'hidden' : 'visible')
     })
   }, [index, involvesCover, turn])
 
@@ -138,7 +142,7 @@ export function Notebook({ world, types }: NotebookProps) {
     return () => observer.disconnect()
   }, [])
 
-  // One animation loop: the turning spring and the pointer tilt.
+  // One animation loop for the turning spring.
   useEffect(() => {
     let frame = 0
     let last = performance.now()
@@ -156,13 +160,6 @@ export function Notebook({ world, types }: NotebookProps) {
           m.finish?.()
         } else applyPose()
       }
-      const ease = m.reduced ? 1 : 0.1
-      m.tilt.x += (m.tilt.tx - m.tilt.x) * ease
-      m.tilt.y += (m.tilt.ty - m.tilt.y) * ease
-      stage.current?.style.setProperty('--tilt-x', `${m.tilt.x.toFixed(3)}deg`)
-      stage.current?.style.setProperty('--tilt-y', `${m.tilt.y.toFixed(3)}deg`)
-      stage.current?.style.setProperty('--px', (m.tilt.y / TILT_Y).toFixed(3))
-      stage.current?.style.setProperty('--py', (m.tilt.x / TILT_X).toFixed(3))
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
@@ -190,22 +187,22 @@ export function Notebook({ world, types }: NotebookProps) {
   const onPointerDown = (event: React.PointerEvent) => {
     if (turn || event.button !== 0) return
     if (event.target instanceof Element && event.target.closest('a, button')) return
-    motion.current.drag = { id: event.pointerId, startX: event.clientX, side: event.clientX > spineX() ? 'right' : 'left', started: false, lastX: event.clientX, lastT: performance.now() }
+    motion.current.drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, side: event.clientX > spineX() ? 'right' : 'left', started: false, lastX: event.clientX, lastT: performance.now() }
   }
 
   const onPointerMove = (event: React.PointerEvent) => {
     const m = motion.current
-    const rect = stage.current?.getBoundingClientRect()
-    if (rect) {
-      const nx = clamp((event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2), -1, 1)
-      const ny = clamp((event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2), -1, 1)
-      m.tilt.ty = m.drag?.started ? m.tilt.ty : nx * TILT_Y
-      m.tilt.tx = m.drag?.started ? m.tilt.tx : -ny * TILT_X
-    }
     const drag = m.drag
     if (!drag || drag.id !== event.pointerId) return
     if (!drag.started) {
-      if (Math.abs(event.clientX - drag.startX) < 6) return
+      const dx = Math.abs(event.clientX - drag.startX)
+      const dy = Math.abs(event.clientY - drag.startY)
+      if (dx < DRAG_START) return
+      // A mostly vertical movement is not a page turn (e.g. selecting or scrolling).
+      if (dy > dx) {
+        m.drag = null
+        return
+      }
       const forward = drag.side === 'right' && event.clientX < drag.startX
       const backward = drag.side === 'left' && event.clientX > drag.startX
       const target = forward ? index + 1 : backward ? index - 1 : null
@@ -237,7 +234,7 @@ export function Notebook({ world, types }: NotebookProps) {
       m.drag = null
       return
     }
-    m.target = settleTarget(m.progress, m.velocity)
+    m.target = settleTarget(m.progress, m.velocity, turn?.dir ?? 'next')
     m.velocity *= 0.5
     m.drag = null
   }
@@ -254,13 +251,16 @@ export function Notebook({ world, types }: NotebookProps) {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <Desk/>
+      <div aria-hidden className={styles.desk}/>
       <p className="sr-only" aria-live="polite">{index === -1 ? 'Capa do Codex' : `Páginas: ${spreads[index].tab}`}</p>
       <div className={styles.bookFrame}>
         <div ref={book} className={styles.book} data-turning={turn ? true : undefined} data-closed={index === -1 && !turn ? true : undefined}>
           <div className={styles.page} data-side="left" data-empty={under.left ? undefined : true}>{under.left}</div>
           <div className={styles.page} data-side="right">{under.right}</div>
-          {turn && leafFaces && <Leaf ref={leaf} front={leafFaces.front} back={leafFaces.back}/>}
+          {/* The only 3D in the book: a layer kept mounted, holding the leaf while it turns. */}
+          <div className={styles.turnLayer}>
+            {turn && leafFaces && <Leaf ref={leaf} front={leafFaces.front} back={leafFaces.back}/>}
+          </div>
           <nav aria-label="Abas do caderno" className={styles.tabs}>
             {tabs.map(({ spread, i, side }) => <button
               key={spread.id}
@@ -303,21 +303,4 @@ function Leaf({ ref, front, back }: { ref: React.Ref<HTMLDivElement>; front: Rea
     </div>
   }
   return <div ref={ref} className={styles.leaf} aria-hidden>{chain}</div>
-}
-
-/** The desk around the book: walnut, a pen, clips and a roll of tape, each on its own parallax layer. */
-function Desk() {
-  return <div aria-hidden className={styles.desk}>
-    <span className={styles.deskGlow}/>
-    <svg className={styles.pen} viewBox="0 0 40 420">
-      <rect x="12" y="8" width="16" height="250" rx="8" fill="currentColor"/>
-      <rect x="11" y="250" width="18" height="16" rx="3" className={styles.brassFill}/>
-      <rect x="14" y="266" width="12" height="96" rx="5" fill="currentColor"/>
-      <path d="M14 362 L26 362 L20 410 Z" className={styles.brassFill}/>
-      <rect x="27" y="30" width="5" height="120" rx="2.5" className={styles.brassFill}/>
-    </svg>
-    <span className={styles.tapeRoll}/>
-    <svg className={styles.clipA} viewBox="0 0 30 90"><path d="M10 22 V70 a8 8 0 0 0 16 0 V14 a11 11 0 0 0 -22 0 V64" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
-    <svg className={styles.clipB} viewBox="0 0 30 90"><path d="M10 22 V70 a8 8 0 0 0 16 0 V14 a11 11 0 0 0 -22 0 V64" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
-  </div>
 }

@@ -34,7 +34,16 @@ Referências estudadas:
   imagens de capa reais dos registros.
 - A virada (`page-turn.ts`) usa 12 tiras aninhadas; cada uma mostra, numa face, uma fatia da página
   da frente e, na outra, da página de trás. A curvatura máxima acontece no meio da virada. Arrastar
-  faz a borda da folha seguir o ponteiro; ao soltar, a velocidade decide se a página vira.
+  faz a borda da folha seguir o ponteiro; a virada só começa depois de 10 px de movimento
+  principalmente horizontal, para que um clique nunca vire a página. Ao soltar, um movimento
+  rápido vira a página; sem ele, a virada se completa a partir de 35% do caminho.
+- Só a folha que vira é 3D. O livro, as páginas e as abas são planos, e a folha fica numa camada
+  com perspectiva própria, sempre montada. A face visível de cada tira é escolhida pelo ângulo em
+  JavaScript, em vez de `backface-visibility`. Motivo: no Firefox (e no Zen, baseado nele), o livro
+  inteiro em 3D aparecia em blocos, perdia os efeitos de mesclagem, piscava ao virar e deslocava a
+  área de clique. Por isso a inclinação do livro com o cursor, presente no sketchbook, foi retirada.
+- A mesa é só uma textura (feltro escuro com trama fina e luz quente); os objetos decorativos
+  ficaram de fora até haver uma arte que combine com o papel.
 - As abas ficam à direita para as páginas adiante e passam para a esquerda quando são viradas.
 - As cores vêm dos tokens `--nb-*` de `globals.css` (ADR-005). As fontes Caveat (escrita à mão) e
   Special Elite (máquina de escrever) são carregadas com `next/font` só no caderno.

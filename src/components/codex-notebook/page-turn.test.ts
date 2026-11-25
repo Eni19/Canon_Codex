@@ -38,13 +38,15 @@ describe('progressFromPointer', () => {
 
 describe('settleTarget', () => {
   it('follows a fast flick even when the leaf has barely moved', () => {
-    expect(settleTarget(0.1, 2)).toBe(1)
-    expect(settleTarget(0.9, -2)).toBe(0)
+    expect(settleTarget(0.1, 2, 'next')).toBe(1)
+    expect(settleTarget(0.9, -2, 'prev')).toBe(0)
   })
 
-  it('otherwise settles on the nearer side', () => {
-    expect(settleTarget(0.6, 0)).toBe(1)
-    expect(settleTarget(0.4, 0.3)).toBe(0)
+  it('completes a turn dragged a third of the way, in either direction', () => {
+    expect(settleTarget(0.4, 0, 'next')).toBe(1)
+    expect(settleTarget(0.2, 0, 'next')).toBe(0)
+    expect(settleTarget(0.6, 0, 'prev')).toBe(0)
+    expect(settleTarget(0.8, 0, 'prev')).toBe(1)
   })
 })
 
