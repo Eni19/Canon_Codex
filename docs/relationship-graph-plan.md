@@ -274,6 +274,19 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
    quadros/cenas/projeção; verificar produção HTTPS e runtime local sem chave, pagamento, rede
    externa ou marca-d'água em todas as superfícies migradas.
 
+### Estimativa (25/11/2026)
+
+O código acoplado ao tldraw é pequeno (`investigation-board.tsx` com cerca de 290 linhas e
+`scene-runner.tsx` com cerca de 100), mas ele delega ao tldraw quase toda a edição. As Cenas usam
+três formas próprias (fundo, token e ponto de interesse) sobre a câmera e a seleção do tldraw; os
+Quadros usam uma forma de cartão de registro mais as ferramentas nativas de desenho livre, texto,
+notas e setas ligadas a formas, que precisariam ser reescritas. Ordem sugerida, do menor risco ao
+maior: (1) conversor de snapshots com prévia e backup; (2) **Cenas**, porque o conjunto de formas
+é fechado e o motor Konva do grafo já cobre câmera, seleção, arraste e toque; (3) **Quadros**, que
+exigem editor de texto no canvas, desenho livre e setas com vínculo. Cada etapa é uma entrega
+separada. Enquanto isso, a [verificação da licença](research/tldraw-license.md) indica usar uma
+chave hobby se o app precisar abrir fora de `localhost`.
+
 ## Impacto documental
 
 O guia de entidades, README, PROJECT e a arquitetura descrevem a versão implementada. O
