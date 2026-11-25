@@ -106,11 +106,29 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   }, [])
 
   useEffect(() => {
-    if (!error || !errorRef.current || prefersReducedMotion()) return
-    const animation = animate(errorRef.current, { opacity: { from: 0, to: 1 }, translateY: { from: -6, to: 0 }, duration: 320, ease: 'outCubic' })
-    errorRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-    return () => { animation.revert() }
-  }, [error])
+    const form = formRef.current
+    if (!error || !form) return
+    // Inline messages are in reading order, even when the server validated fields in another order.
+    const message = form.querySelector<HTMLElement>('[data-field-error]')
+    let target = message ?? errorRef.current
+    if (message) {
+      const field = form.elements.namedItem(message.dataset.fieldError!)
+      if (field instanceof RadioNodeList) {
+        const radios = Array.from(field)
+        const radio = radios.find(node => node instanceof HTMLInputElement && node.checked) ?? radios[0]
+        if (radio instanceof HTMLElement) target = radio
+      } else if (field instanceof HTMLInputElement && field.type === 'hidden') {
+        // Composite editors submit JSON through a hidden input. Focus their visible editor.
+        const editor = field.parentElement
+        target = editor?.querySelector<HTMLElement>('input:not([type=hidden], [type=file], :disabled), textarea:not(:disabled), [contenteditable=true], select:not(:disabled)')
+          ?? editor?.querySelector<HTMLElement>('button:not(:disabled)') ?? message
+      } else if (field instanceof HTMLElement) {
+        target = field
+      }
+    }
+    target?.focus({ preventScroll: true })
+    target?.scrollIntoView({ block: 'center', behavior: 'instant' })
+  }, [error, fieldErrors])
 
   // Ctrl/Cmd+S saves from anywhere in the form, as in any editor.
   useEffect(() => {
@@ -190,7 +208,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
 
           <div className="flex min-w-0 flex-col gap-12">
             <section aria-label="Identificação" data-reveal={0}>
-              {error && <p ref={errorRef} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
+              {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
               <label className="group/title relative block">
                 <span className="sr-only">Título</span>
                 <input
@@ -315,7 +333,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
 
 function FieldError({ name, message }: { name: string; message?: string }) {
   if (!message) return null
-  return <p id={'entity-error-' + name} className="mt-1 text-sm text-destructive">{message}</p>
+  return <p data-field-error={name} tabIndex={-1} id={'entity-error-' + name} className="mt-1 text-sm text-destructive">{message}</p>
 }
 
 function EditorSection({ title, children, reveal }: { title: string; children: ReactNode; reveal: number }) {

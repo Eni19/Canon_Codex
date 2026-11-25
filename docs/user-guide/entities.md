@@ -16,7 +16,7 @@ antes de o registro existir. A imagem é enviada à biblioteca de assets do mund
 escolhida (clique ou arraste); se o formulário for abandonado, esse asset fica sem referência no
 mundo. Ao trocar ou remover a imagem de um registro salvo, a imagem anterior é apagada quando
 nenhum outro registro a usa. A cor escolhida retinge o formulário imediatamente. Se a validação
-falhar, a mensagem aparece no topo do formulário e o que foi digitado é mantido. Fechar a aba com
+falhar, a tela leva o foco ao primeiro campo com erro. Por exemplo, se você preencher **Apelidos** e deixar o nome em branco, pode digitar o nome e salvar novamente com os mesmos apelidos. Fechar a aba com
 alterações não salvas pede confirmação, assim como **Cancelar**; a navegação pela barra lateral
 ainda não pede.
 

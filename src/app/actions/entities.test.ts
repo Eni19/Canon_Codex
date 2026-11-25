@@ -108,6 +108,22 @@ describe('formulário único de entidade', () => {
     expect(mocks.createEntity).not.toHaveBeenCalled()
   })
 
+  it('salva o apelido na criação e na edição após corrigir somente o nome', async () => {
+    const form = new FormData()
+    form.set('worldId', fixedWorld.id)
+    form.set('type', 'character')
+    form.set('aliases', 'Coruja')
+    await expect(createEntityAction(form)).resolves.toMatchObject({ fieldErrors: { title: expect.any(String) } })
+    await expect(updateEntityAction('char-1', form)).resolves.toMatchObject({ fieldErrors: { title: expect.any(String) } })
+
+    form.set('title', 'Lia')
+    const record = expect.objectContaining({ title: 'Lia', aliases: ['Coruja'] })
+    await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
+    expect(mocks.createEntity).toHaveBeenCalledWith(fixedWorld.id, record)
+    await expect(updateEntityAction('char-1', form)).rejects.toThrow('REDIRECT')
+    expect(mocks.updateEntity).toHaveBeenCalledWith(fixedWorld.id, 'char-1', record)
+  })
+
   it('cria com imagem, cor e conteúdo de uma só vez', async () => {
     const pages = [{ id: 'principal', title: 'Principal', body: { type: 'doc', content: [] } }]
     const form = new FormData()
