@@ -141,7 +141,8 @@ export class FileSystemWorldRepository implements WorldRepository {
     return withWorldWriteLock(worldDir, () => replaceOriginEvent(worldDir, eventId, fingerprint))
   }
 
-  async createOriginEvent(worldId: string, input: NewEntityInput): Promise<Entity> {
+  async createOriginEvent(worldId: string, input: NewEntityInput, content = emptyContentDocument()): Promise<Entity> {
+    const document = ContentDocumentSchema.parse(content)
     const parsed = NewEntityInputSchema.parse(input)
     if (parsed.type !== 'event') throw new Error('A origem precisa ser um Evento.')
     const worldDir = await resolveWorldDir(worldId)
@@ -160,7 +161,7 @@ export class FileSystemWorldRepository implements WorldRepository {
       const next = WorldSchema.parse({ ...world, originEventId: entity.id, calendar: { ...world.calendar, origin: { ...world.calendar.origin, month: originDate.month, day: originDate.day } }, updatedAt: now })
       try {
         await writeEntity(worldDir, entity)
-        await atomicWriteJson(getEntityContentPath(worldDir, entity.id), emptyContentDocument())
+        await atomicWriteJson(getEntityContentPath(worldDir, entity.id), document)
         await atomicWriteJson(getWorldJsonPath(worldDir), next)
       } catch (error) {
         await rm(getEntityDir(worldDir, entity.id), { recursive: true, force: true })
@@ -367,17 +368,18 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
   }
 
-  async createEntity(worldId: string, input: NewEntityInput): Promise<Entity> {
+  async createEntity(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity> {
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const entity = buildNewEntity(worldId, input)
-    await writeInitialEntityFiles(worldDir, entity)
+    await writeInitialEntityFiles(worldDir, entity, content)
     return entity
     })
   }
 
-  async updateEntity(worldId: string, entityId: string, patch: EntityPatch): Promise<Entity> {
+  async updateEntity(worldId: string, entityId: string, patch: EntityPatch, content?: ContentDocument): Promise<Entity> {
     const parsedPatch = EntityPatchSchema.parse(patch)
+    const document = content === undefined ? undefined : ContentDocumentSchema.parse(content)
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const current = await readEntityByDir(worldDir, entityId)
@@ -408,6 +410,7 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
 
     await writeEntity(worldDir, next)
+    if (document) await atomicWriteJson(getEntityContentPath(worldDir, entityId), document)
     return next
     })
   }

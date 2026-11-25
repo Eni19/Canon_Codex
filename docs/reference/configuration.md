@@ -7,12 +7,13 @@ As variáveis documentadas em .env.example são lidas no servidor:
 | Variável | Padrão | Valores/efeito |
 | --- | --- | --- |
 | WIKI_WORKSPACE_DIR | <raiz do projeto>/workspace | caminho absoluto recomendado para os dados locais; o código também aceita o valor informado pelo ambiente |
-| PERSISTENCE_DRIVER | filesystem | somente filesystem; qualquer outro valor faz a factory lançar Unknown PERSISTENCE_DRIVER |
+| PERSISTENCE_DRIVER | sqlite | use filesystem para uma biblioteca legada em arquivos |
+| SQLITE_DATABASE_PATH | canon-codex.sqlite dentro de WIKI_WORKSPACE_DIR | caminho de um banco específico, inclusive após importação ou restauração |
 
 Exemplo seguro:
 
     WIKI_WORKSPACE_DIR=C:\Dados\canon-codex
-    PERSISTENCE_DRIVER=filesystem
+    PERSISTENCE_DRIVER=sqlite
 
 Use .env.local, que é ignorado pelo Git. Não coloque conteúdo de usuário, tokens ou chaves reais
 em .env.example, README, testes ou commits.
@@ -28,10 +29,11 @@ reproduzido aqui; confirmar essa necessidade é o item DOC-GAP-003 em
 
 Em desenvolvimento, execute pnpm dev; o processo usa o workspace configurado e o servidor local
 do Next.js. Para uma execução de produção, construa primeiro com pnpm build e depois execute
-pnpm start. Não há configuração de staging, deploy, domínio, banco ou storage externo verificada.
+pnpm start. As opções de migração, backup e restauração estão em [SQLite](../data/sqlite.md).
 
 O next.config.ts configura:
 
+- exclusão do workspace e arquivos SQLite do rastreamento de dependências do build;
 - limite de corpo de 2mb para Server Actions;
 - imagens Next sem otimização (unoptimized: true) porque o optimizer não encaminha o cookie do
   mundo ativo aos assets locais;

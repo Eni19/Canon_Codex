@@ -1,5 +1,9 @@
 # Migrações e compatibilidade
 
+Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
+validadas pelo importador. Os procedimentos que citam arquivos descrevem o driver legado.
+No SQLite, a conversão de datas e a recuperação operam em transações, com histórico no banco.
+
 As migrações de mundo, entidade, conteúdo e asset são aplicadas em memória na leitura pelo registry de
 [`src/lib/migrations/registry.ts`](../../src/lib/migrations/registry.ts). O registry usa
 `schemaVersion`; se o campo faltar, trata o registro como versão 1. Ele executa cada função

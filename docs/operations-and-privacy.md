@@ -13,8 +13,9 @@ ID do mundo.
 
 ## Dados e exposição
 
-O workspace contém texto, relações, imagens, quadros, cenas e a lixeira. Ele está em
-WIKI_WORKSPACE_DIR ou em workspace/ e é ignorado pelo Git. O processo lê e grava esses dados
+O arquivo SQLite contém texto, relações, imagens, quadros, cenas e a lixeira. Ele fica em
+`WIKI_WORKSPACE_DIR` por padrão. Mantenha bancos configurados por `SQLITE_DATABASE_PATH` e backups
+em locais privados. Consulte [backup e restauração](data/sqlite.md#backup-e-restauração). O processo lê e grava esses dados
 localmente; não há cliente de banco remoto, storage externo ou sincronização implementados.
 
 Assets são servidos por Route Handler e o browser recebe cache immutable. O handler consulta o mundo

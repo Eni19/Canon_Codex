@@ -10,7 +10,8 @@ import { getWorkspaceRoot, getWorldDir, getWorldJsonPath, getWorldsRootDir } fro
 import { newId } from '@/lib/ids'
 import { readMigratedJson } from '@/lib/migrations/registry'
 import { slugify } from '@/lib/slugify'
-import { getWorldRepository } from '@/repositories'
+import { getSqliteWorldRepository, getWorldRepository } from '@/repositories'
+import { readLegacySource } from '@/repositories/sqlite/legacy-source'
 import { worldMigrations } from '@/repositories/filesystem/migrations'
 import { readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
 import { WorldSchema } from '@/domain/worlds/world'
@@ -68,6 +69,8 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export async function createWorld(name: string, description?: string): Promise<World> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.createWorld(name, description)
   const cleanName = name.trim()
   if (!cleanName) throw new Error('Informe um nome para o novo Codex.')
   const slug = await uniqueSlug(cleanName)
@@ -112,6 +115,14 @@ async function discoverWorldFolders(sourcePath: string): Promise<string[]> {
 
 export async function importWorldsFromFolder(sourcePath: string): Promise<World[]> {
   if (!sourcePath.trim()) throw new WorldImportError('Informe a pasta que deseja carregar.')
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) {
+    try {
+      return sqlite.importWorlds(await readLegacySource(sourcePath, 'folder'))
+    } catch (error) {
+      throw new WorldImportError(error instanceof Error ? error.message : 'Não foi possível importar o Codex.')
+    }
+  }
   const sources = await discoverWorldFolders(sourcePath)
   const existing = await getWorldRepository().listWorlds()
   const existingIds = new Set(existing.map((world) => world.id))
@@ -155,6 +166,8 @@ export async function importWorldsFromFolder(sourcePath: string): Promise<World[
 }
 
 export async function renameWorld(worldId: string, name: string): Promise<World> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.renameWorld(worldId, name)
   const cleanName = name.trim()
   if (!cleanName) throw new Error('Informe um nome para o Codex.')
   const worldDir = await resolveWorldDir(worldId)
@@ -167,6 +180,8 @@ export async function renameWorld(worldId: string, name: string): Promise<World>
 }
 
 export async function deleteWorld(worldId: string): Promise<World | null> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.deleteWorld(worldId)
   const worlds = await getWorldRepository().listWorlds()
   const target = worlds.find((world) => world.id === worldId)
   if (!target) throw new Error('Codex não encontrado.')

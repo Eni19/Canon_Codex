@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { FileSystemWorldRepository } from './fileSystemWorldRepository'
 import { createWorld } from '@/services/worlds/worldLibrary'
@@ -12,11 +12,12 @@ describe('graph settings persistence', () => {
   let worldId: string
   beforeEach(async () => {
     root = await mkdtemp(path.join(tmpdir(), 'canon-graph-test-'))
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     process.env.WIKI_WORKSPACE_DIR = root
     repo = new FileSystemWorldRepository()
     worldId = (await repo.listWorlds())[0].id
   })
-  afterEach(async () => { delete process.env.WIKI_WORKSPACE_DIR; await rm(root, { recursive: true, force: true }) })
+  afterEach(async () => { vi.unstubAllEnvs(); delete process.env.WIKI_WORKSPACE_DIR; await rm(root, { recursive: true, force: true }) })
 
   it('persists positions and preferences, isolates worlds, and permits identical retries', async () => {
     const other = await createWorld('Mundo sintético', '')

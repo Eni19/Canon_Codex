@@ -56,10 +56,10 @@ export async function createEntityAction(formData: FormData): Promise<EntityForm
       properties: form.symbolAssetId ? { ...form.properties, symbolAssetId: form.symbolAssetId } : form.properties,
     }
     const repo = getWorldRepository()
+    const content = form.content ? [form.content] as const : [] as const
     const entity = entityType.id === 'event' && formData.get('isOrigin') === 'yes'
-      ? await repo.createOriginEvent(world.id, input)
-      : await repo.createEntity(world.id, input)
-    if (form.content) await repo.saveContent(world.id, entity.id, form.content)
+      ? await repo.createOriginEvent(world.id, input, ...content)
+      : await repo.createEntity(world.id, input, ...content)
     entityId = entity.id
   } catch (error) {
     return formError(error)
@@ -95,8 +95,7 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
       ...(form.theme ? { theme: form.theme } : {}),
       ...(form.coverAssetId !== undefined ? { coverAssetId: form.coverAssetId } : {}),
       properties,
-    })
-    if (form.content) await repo.saveContent(world.id, entityId, form.content)
+    }, ...(form.content ? [form.content] as const : [] as const))
 
     replacedAssets = [
       form.coverAssetId !== undefined && form.coverAssetId !== entity.coverAssetId ? entity.coverAssetId : undefined,

@@ -14,6 +14,9 @@ import type { TimelineAppearance, TimelineAppearanceFields, TimelineData } from 
 import type { TimelineScale } from '@/domain/timelines/timelineScale'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
 import type { GraphSettings } from '@/domain/relations/graphSettings'
+import type { OriginEventPreview } from '@/domain/worlds/originEventPlan'
+
+export type { OriginEventPreview } from '@/domain/worlds/originEventPlan'
 
 export interface EntityListFilter {
   type?: string
@@ -41,7 +44,7 @@ export interface WorldRepository {
   updateCalendarLandmarks(worldId: string, landmarks: CalendarLandmarks, expectedLandmarks: string, expectedCalendar: string): Promise<World>
   updateCalendarAppearance(worldId: string, appearance: CalendarAppearance, expectedAppearance: string): Promise<World>
   updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World>
-  createOriginEvent(worldId: string, input: NewEntityInput): Promise<Entity>
+  createOriginEvent(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity>
   previewOriginEvent(worldId: string, eventId: string): Promise<OriginEventPreview>
   replaceOriginEvent(worldId: string, eventId: string, fingerprint: string): Promise<World>
   previewDateMigration(worldId: string): Promise<DateMigrationPreview>
@@ -64,8 +67,8 @@ export interface WorldRepository {
   removeTimelineAppearance(worldId: string, timelineId: string, appearanceId: string, expectedUpdatedAt: string): Promise<{ timeline: TimelineData; removed: TimelineAppearance; index: number }>
   restoreTimelineAppearance(worldId: string, timelineId: string, appearance: TimelineAppearance, index: number, expectedUpdatedAt: string): Promise<TimelineData>
   getOriginEvent(worldId: string): Promise<{ id: string; title: string; trashed: boolean } | null>
-  createEntity(worldId: string, input: NewEntityInput): Promise<Entity>
-  updateEntity(worldId: string, entityId: string, patch: EntityPatch): Promise<Entity>
+  createEntity(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity>
+  updateEntity(worldId: string, entityId: string, patch: EntityPatch, content?: ContentDocument): Promise<Entity>
   /** Soft-delete: moves the entity's folder into `trash/`. */
   deleteEntity(worldId: string, entityId: string): Promise<void>
 
@@ -77,16 +80,4 @@ export interface WorldRepository {
   removeRelation(worldId: string, sourceId: string, relationId: string, expected?: Relation): Promise<void>
   /** Derived data: computed by scanning every entity's `relations` array for this target. */
   getBacklinks(worldId: string, entityId: string): Promise<Backlink[]>
-}
-
-export interface OriginEventPreview {
-  fingerprint: string
-  eventId: string
-  eventTitle: string
-  shiftDays: number
-  affectedEntities: number
-  affectedDates: number
-  precisionChanges: number
-  examples: { title: string; field: string; before: string; after: string; precisionChanged: boolean }[]
-  worldDates: { title: string; field: string; before: string; after: string }[]
 }

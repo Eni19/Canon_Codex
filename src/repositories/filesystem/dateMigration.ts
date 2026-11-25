@@ -7,6 +7,7 @@ import { EntitySchema, type Entity } from '@/domain/entities/entity'
 import type { DateMigrationExample, DateMigrationPreview } from '@/domain/worlds/dateMigration'
 import { exactDateAtOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { legacyIsoDateToOrdinal, parseLegacyIsoDate, validateCalendarDateValue } from '@/domain/worlds/calendar-date'
+import type { World } from '@/domain/worlds/world'
 import { atomicWriteJson, atomicWriteText, ensureDir, pathExists } from '@/lib/fs/atomicWrite'
 import { getEntitiesDir, getTrashDir, getWorldDir } from '@/lib/fs/paths'
 import { migrateToLatest, readMigratedJson } from '@/lib/migrations/registry'
@@ -38,11 +39,11 @@ const MigrationManifestSchema = z.object({
   }),
 })
 type MigrationEntry = z.infer<typeof MigrationEntrySchema>
-type MigrationManifest = z.infer<typeof MigrationManifestSchema>
+export type DateMigrationManifest = z.infer<typeof MigrationManifestSchema>
 
-interface ScannedEntity { relativePath: string; text: string; entity: Entity; trashed: boolean }
+export interface DateMigrationRecord { relativePath: string; text: string; entity: Entity; trashed: boolean }
 
-async function scan(worldDir: string): Promise<ScannedEntity[]> {
+async function scan(worldDir: string): Promise<DateMigrationRecord[]> {
   const root = getWorldDir(worldDir)
   const files: { file: string; trashed: boolean }[] = []
   for (const [directory, trashed] of [[getEntitiesDir(worldDir), false], [getTrashDir(worldDir), true]] as const) {
@@ -67,26 +68,36 @@ function manifestPath(worldDir: string, id: string): string {
   if (!z.uuid().safeParse(id).success) throw new Error('Identificador de backup inválido.')
   return path.join(migrationDir(worldDir), `${id}.json`)
 }
-async function readManifest(file: string): Promise<MigrationManifest> {
-  return validateManifest(JSON.parse(await readFile(file, 'utf8')))
+async function readManifest(file: string): Promise<DateMigrationManifest> {
+  return validateDateMigrationManifest(JSON.parse(await readFile(file, 'utf8')))
 }
-async function writeManifest(worldDir: string, manifest: MigrationManifest): Promise<void> {
-  await atomicWriteJson(manifestPath(worldDir, manifest.id), validateManifest(manifest))
+async function writeManifest(worldDir: string, manifest: DateMigrationManifest): Promise<void> {
+  await atomicWriteJson(manifestPath(worldDir, manifest.id), validateDateMigrationManifest(manifest))
 }
-function validateManifest(input: unknown): MigrationManifest {
+export function validateDateMigrationManifest(input: unknown): DateMigrationManifest {
   const manifest = MigrationManifestSchema.parse(input)
+  const seen = new Set<string>()
   for (const entry of manifest.entries) {
-    const original = EntitySchema.parse(migrateToLatest(entityMigrations,
-      z.record(z.string(), z.unknown()).parse(JSON.parse(entry.originalText))))
-    const converted = EntitySchema.parse(JSON.parse(entry.convertedText))
+    const { original, converted } = parseDateMigrationSnapshots(entry)
     const parts = entry.relativePath.split(/[\\/]/)
     const pathEntityId = parts[0] === 'entities' ? parts[1] : parts[1].slice('entity-'.length, 'entity-'.length + 36)
     if (original.id !== converted.id || original.worldId !== manifest.worldId || converted.worldId !== manifest.worldId
       || pathEntityId !== original.id) {
       throw new Error('O manifesto contém um registro de outro mundo ou um caminho incompatível.')
     }
+    if (seen.has(original.id)) throw new Error(`O manifesto repete o registro ${original.id}.`)
+    seen.add(original.id)
   }
   return manifest
+}
+
+export function parseDateMigrationSnapshots(entry: MigrationEntry): { original: Entity; converted: Entity } {
+  return {
+    original: EntitySchema.parse(migrateToLatest(entityMigrations,
+      z.record(z.string(), z.unknown()).parse(JSON.parse(entry.originalText)))),
+    converted: EntitySchema.parse(migrateToLatest(entityMigrations,
+      z.record(z.string(), z.unknown()).parse(JSON.parse(entry.convertedText)))),
+  }
 }
 function metadataPath(worldDir: string, relativePath: string): string {
   const validated = MetadataPathSchema.parse(relativePath)
@@ -95,7 +106,7 @@ function metadataPath(worldDir: string, relativePath: string): string {
   if (!file.startsWith(root + path.sep)) throw new Error('Caminho de backup inválido.')
   return file
 }
-async function manifests(worldDir: string): Promise<MigrationManifest[]> {
+async function manifests(worldDir: string): Promise<DateMigrationManifest[]> {
   const dir = migrationDir(worldDir)
   if (!(await pathExists(dir))) return []
   const names = (await readdir(dir)).filter((name) => /^[0-9a-f-]{36}\.json$/i.test(name)).sort()
@@ -106,10 +117,10 @@ async function manifests(worldDir: string): Promise<MigrationManifest[]> {
   }))
   return items.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 }
-function pending(items: MigrationManifest[]): MigrationManifest | undefined {
+function pending(items: DateMigrationManifest[]): DateMigrationManifest | undefined {
   return items.find((item) => item.state === 'applying' || item.state === 'restoring')
 }
-function fingerprint(worldId: string, calendar: unknown, entityTypes: unknown, entities: ScannedEntity[]): string {
+function fingerprint(worldId: string, calendar: unknown, entityTypes: unknown, entities: DateMigrationRecord[]): string {
   const hash = createHash('sha256').update(worldId).update(JSON.stringify(calendar)).update(JSON.stringify(entityTypes))
   for (const entity of entities) hash.update(entity.relativePath).update(entity.text)
   return hash.digest('hex')
@@ -118,7 +129,11 @@ function fingerprint(worldId: string, calendar: unknown, entityTypes: unknown, e
 async function build(worldId: string) {
   const worldDir = await resolveWorldDir(worldId)
   const world = await readWorldByDir(worldDir)
-  const entities = await scan(worldDir)
+  return { worldDir, ...planDateMigration(world, await scan(worldDir)) }
+}
+
+export function planDateMigration(world: World, entities: DateMigrationRecord[]) {
+  const worldId = world.id
   const keys = new Map(world.entityTypes.map((type) => [type.id, type.properties.filter((property) => property.kind === 'date')]))
   const examples: DateMigrationExample[] = []
   const problems: DateMigrationExample[] = []
@@ -164,7 +179,6 @@ async function build(worldId: string) {
   const convertedText = new Map(entries.map((entry) => [entry.relativePath, entry.convertedText]))
   const expectedEntities = entities.map((item) => ({ ...item, text: convertedText.get(item.relativePath) ?? item.text }))
   return {
-    worldDir,
     preview: { worldId, fingerprint: fingerprint(worldId, world.calendar, world.entityTypes, entities), total, convertible, alreadyConverted, invalid: problems.length, examples, problems } satisfies DateMigrationPreview,
     completionFingerprint: fingerprint(worldId, world.calendar, world.entityTypes, expectedEntities),
     entries,
@@ -183,7 +197,7 @@ export async function previewDateMigration(worldId: string): Promise<DateMigrati
   }
 }
 
-async function replay(worldDir: string, manifest: MigrationManifest, restore: boolean): Promise<void> {
+async function replay(worldDir: string, manifest: DateMigrationManifest, restore: boolean): Promise<void> {
   for (const entry of manifest.entries) {
     const file = metadataPath(worldDir, entry.relativePath)
     const current = await readFile(file, 'utf8')
@@ -212,7 +226,7 @@ export async function startDateMigration(worldId: string, expectedFingerprint: s
   if (pending(await manifests(built.worldDir))) throw new Error('Existe uma conversão interrompida. Retome ou restaure antes de começar outra.')
   if (built.entries.length === 0) throw new Error('Não há datas conversíveis neste mundo.')
   const { total, convertible, invalid, examples, problems } = built.preview
-  const manifest: MigrationManifest = {
+  const manifest: DateMigrationManifest = {
     schemaVersion: 1, id: randomUUID(), worldId, createdAt: new Date().toISOString(), state: 'applying', entries: built.entries,
     sourceFingerprint: built.preview.fingerprint, completionFingerprint: built.completionFingerprint,
     report: { total, convertible, invalid, examples, problems },

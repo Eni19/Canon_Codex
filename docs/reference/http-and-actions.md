@@ -1,6 +1,7 @@
 # Referência HTTP e Server Actions
 
-Estas são interfaces internas da aplicação, verificadas em 28/09/2026. Elas usam o mundo ativo
+Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
+escritas de arquivos nesta referência descrevem o driver legado. Elas usam o mundo ativo
 selecionado pelo cookie canon-codex-world; não há autenticação, versionamento ou promessa de
 compatibilidade para consumidores externos.
 
@@ -53,17 +54,33 @@ Exemplo seguro, sem arquivo real:
 
 ### GET /api/assets/[assetId]/[variant]
 
-Consumidores: assetVariantUrl, páginas de entidade, galerias, quadros e cenas. variant deve ser
-original ou thumbnail.
+Consumidores incluem `assetVariantUrl`, páginas de entidade, galerias, quadros, cenas e o
+calendário. A rota aceita `original`, `thumbnail`, `calendar-mobile` e `calendar-desktop`.
 
 - 400 Invalid variant se a variante não for reconhecida;
 - 404 Not found se o asset não existir no mundo ativo, a variante não existir ou não houver
   thumbnail gerada;
-- 200 com bytes da imagem, Content-Type igual ao MIME original ou image/webp para thumbnail;
+- 200 com os bytes da imagem e `Content-Type` igual ao MIME informado pelo repositório.
+  As variantes derivadas usam `image/webp`;
 - resposta inclui Cache-Control: public, max-age=31536000, immutable.
 
-O handler lê o asset pelo store e transmite o caminho resolvido; a URL não é um path de disco. O
-cookie do mundo é apenas seleção de contexto, não controle de acesso.
+O handler chama `AssetStore.getVariant(worldId, assetId, variant)` para obter os bytes e o MIME.
+No SQLite, a consulta lê o BLOB da variante associado ao asset ativo no mundo selecionado. O
+cookie do mundo seleciona o contexto.
+
+### POST /api/calendar-background
+
+Recebe `multipart/form-data` com `file` e `worldId`. Aceita PNG, JPEG, WebP, GIF e AVIF de até
+8 MB e 40 milhões de pixels. Em sucesso, retorna `200 {"assetId":"<uuid>"}`.
+
+- 400 para arquivo ausente, incompatível ou inválido, inclusive se exceder os limites do arquivo.
+- 409 se `worldId` divergir do mundo ativo.
+- 413 quando o `Content-Length` ultrapassa o limite de 8 MB mais a margem de 64 KiB para o multipart.
+- 500 quando a importação ou a geração das variantes falha.
+
+Uma chamada a `AssetStore.importFromBuffer` com a finalidade `calendar-background` importa o
+original e gera as variantes responsivas de até 768 e 1600 px. No SQLite, a importação grava as
+variantes e os metadados em uma transação.
 
 ### GET /api/entities/search
 
@@ -147,10 +164,10 @@ handler, sem envelope/status específico implementado.
 openWorldAction valida o ID e grava o cookie antes de redirecionar para /codex.
 createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia uma ou mais
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
-ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
-`archiveIncompleteWorldAction` recebe o nome de uma pasta da biblioteca, recusa a operação se
-`world.json` já estiver presente, move a pasta para `trash/worlds/` e atualiza `/`. A seleção
-do mundo ativo permanece a mesma.
+ou exclui logicamente; se o removido era ativo, seleciona outro ou limpa o cookie.
+No driver legado em arquivos, `archiveIncompleteWorldAction` recebe o nome de uma pasta da biblioteca,
+recusa a operação se `world.json` já estiver presente, move a pasta para `trash/worlds/` e atualiza `/`.
+A seleção do mundo ativo permanece a mesma.
 
 `updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
 valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de
@@ -213,7 +230,8 @@ de calendário ou uma string ISO legada, validando precisão, existência de mê
 antes de gravar. O editor envia valores novos como JSON e valores legados como ISO no campo oculto; a leitura usa o mesmo formatador
 do domínio, inclusive na apresentação especial de Evento e Organização. Strings ISO antigas são
 mantidas como strings quando o registro é salvo. Dados inválidos são devolvidos como `{ error }` e não
-são gravados. Se houver content, a action também salva as páginas Tiptap. Os campos `coverAssetId` e
+são gravados. Se houver content, a action passa as páginas Tiptap junto dos metadados para o repositório.
+No SQLite, a operação salva ambos na mesma transação. Os campos `coverAssetId` e
 `symbolAssetId` distinguem ausente (mantém), vazio (remove) e UUID (define); quando a imagem muda,
 `updateEntityAction` apaga a anterior se nenhum registro a referencia.
 `deleteEntityAction` move a pasta para a lixeira e redireciona ao catálogo.

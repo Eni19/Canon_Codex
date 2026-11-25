@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import { getWorldRepository } from '@/repositories'
 import { archiveIncompleteWorld, createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from './worldLibrary'
@@ -13,6 +13,7 @@ describe('world library', () => {
   let externalRoot: string
 
   beforeEach(async () => {
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     workspaceDir = await mkdtemp(path.join(tmpdir(), 'codex-library-'))
     externalRoot = await mkdtemp(path.join(tmpdir(), 'external-codex-'))
     process.env.WIKI_WORKSPACE_DIR = workspaceDir
@@ -20,6 +21,7 @@ describe('world library', () => {
   })
 
   afterEach(async () => {
+    vi.unstubAllEnvs()
     delete process.env.WIKI_WORKSPACE_DIR
     await Promise.all([
       rm(workspaceDir, { recursive: true, force: true }),

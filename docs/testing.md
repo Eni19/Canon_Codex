@@ -138,8 +138,9 @@ Não há suíte E2E, teste de navegador, teste de acessibilidade visual, teste d
 autenticação, autorização ou contrato público de API. Os handlers sem envelope de erro próprio
 dependem do comportamento do Next.js em falhas não capturadas.
 
-Os testes de repositório verificam a implementação filesystem. Eles não provam que uma futura
-implementação de banco ou storage preservaria o mesmo comportamento.
+Os testes SQLite usam bancos em memória ou diretórios temporários. Cobrem importação legada,
+rollback de operações compostas, isolamento, revisão de artigos, lixeira e backup reaberto.
+Os testes do adaptador filesystem continuam cobrindo a compatibilidade legada.
 
 ## Mudança de migração
 

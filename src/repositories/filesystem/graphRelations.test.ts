@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createWorld } from '@/services/worlds/worldLibrary'
 import { FileSystemWorldRepository } from './fileSystemWorldRepository'
 
@@ -10,9 +10,10 @@ describe('graph relationship writes', () => {
   let root: string; let repo: FileSystemWorldRepository; let world: string
   beforeEach(async () => {
     root = await mkdtemp(path.join(tmpdir(), 'canon-graph-relations-'))
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     process.env.WIKI_WORKSPACE_DIR = root; repo = new FileSystemWorldRepository(); world = (await repo.listWorlds())[0].id
   })
-  afterEach(async () => { delete process.env.WIKI_WORKSPACE_DIR; await rm(root, { recursive: true, force: true }) })
+  afterEach(async () => { vi.unstubAllEnvs(); delete process.env.WIKI_WORKSPACE_DIR; await rm(root, { recursive: true, force: true }) })
 
   it('creates idempotently, updates, derives backlinks and removes idempotently', async () => {
     const a = await repo.createEntity(world, { type: 'character', title: 'A sintético' })

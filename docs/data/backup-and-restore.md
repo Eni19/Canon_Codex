@@ -1,5 +1,8 @@
 # Backup, restauração, importação e descarte
 
+Para o driver padrão, siga o [backup e a restauração do SQLite](sqlite.md#backup-e-restauração).
+As instruções abaixo se aplicam às bibliotecas legadas em arquivos.
+
 ## O que deve ser copiado
 
 O backup manual confiável é uma cópia do workspace com o servidor parado ou sem nenhuma gravação
