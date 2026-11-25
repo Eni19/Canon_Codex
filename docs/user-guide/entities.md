@@ -140,3 +140,5 @@ Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, no
 **Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira
 provoca a remoção das aparições na próxima consulta de linha ou origem, ou ao criar uma origem. Se o registro era o
 Evento de origem, o vínculo é limpo e o calendário preservado. Veja [linhas do tempo](timelines.md).
+
+Ao tentar salvar uma ficha inválida, confira o aviso no topo e as orientações junto aos campos ou editores que precisam de correção. Os valores digitados continuam no formulário.

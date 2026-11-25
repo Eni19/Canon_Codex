@@ -9,10 +9,10 @@ import { EntityFormError, parseEntityForm } from '@/services/entities/parseEntit
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
 /** Returned only on failure; success redirects. Errors stay on screen with what was typed. */
-export type EntityFormState = { error?: string }
+export type EntityFormState = { error?: string; fieldErrors?: Record<string, string> }
 
 function formError(error: unknown): EntityFormState {
-  if (error instanceof EntityFormError) return { error: error.message }
+  if (error instanceof EntityFormError) return { error: error.message, fieldErrors: error.fieldErrors }
   // Repository rules (origin event, schema validation) also explain themselves in Portuguese.
   return { error: error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.' }
 }

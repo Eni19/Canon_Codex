@@ -98,7 +98,13 @@ describe('formulário único de entidade', () => {
     form.set('type', 'character')
     form.set('worldId', fixedWorld.id)
     form.set('title', '')
-    await expect(createEntityAction(form)).resolves.toEqual({ error: 'O título é obrigatório.' })
+    const expected = {
+      error: 'Revise os campos indicados antes de salvar.',
+      fieldErrors: { title: 'Informe o título do registro.' },
+    }
+    await expect(createEntityAction(form)).resolves.toEqual(expected)
+    await expect(updateEntityAction('char-1', form)).resolves.toEqual(expected)
+    expect(mocks.updateEntity).not.toHaveBeenCalled()
     expect(mocks.createEntity).not.toHaveBeenCalled()
   })
 

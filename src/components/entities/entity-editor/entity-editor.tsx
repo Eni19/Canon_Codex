@@ -71,6 +71,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   const formRef = useRef<HTMLFormElement>(null)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [dirty, setDirty] = useState(false)
   const [theme, setTheme] = useState<CharacterTheme>(entity?.theme ?? 'amber')
   const [coverId, setCoverId] = useState<string | undefined>(entity?.coverAssetId)
@@ -152,9 +153,11 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     setError(null)
+    setFieldErrors({})
     startTransition(async () => {
       const result = await action(formData)
       if (result?.error) setError(result.error)
+      setFieldErrors(result?.fieldErrors ?? {})
     })
   }
 
@@ -192,7 +195,9 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
                 <span className="sr-only">Título</span>
                 <input
                   name="title"
-                  required
+                  aria-required="true"
+                  aria-invalid={Boolean(fieldErrors.title)}
+                  aria-describedby={fieldErrors.title ? "entity-error-title" : undefined}
                   autoFocus={mode === 'create'}
                   defaultValue={entity?.title ?? initialTitle}
                   placeholder="Dê um nome a este registro"
@@ -202,6 +207,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border"/>
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within/title:scale-x-100"/>
               </label>
+              <FieldError name="title" message={fieldErrors.title}/>
               <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) && 'sm:grid-cols-2')}>
                 {supportsAliases(entityType) && <InlineField icon={<AtSign/>} name="aliases" label="Apelidos" placeholder="Outros nomes, separados por vírgula" defaultValue={entity?.aliases.join(', ')}/>}
                 <InlineField icon={<Tag/>} name="tags" label="Tags" placeholder="Tags, separadas por vírgula" defaultValue={entity?.tags.join(', ')}/>
@@ -212,6 +218,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               <div className="grid grid-cols-2 gap-x-5 gap-y-5">
                 {shortFields.map((property) => <div key={property.key} className={isWideField(property) ? 'col-span-2' : undefined}>
                   <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
+                  <FieldError name={property.key} message={fieldErrors[property.key]}/>
                 </div>)}
               </div>
               {mode === 'create' && entityType.id === 'event' && <label className="mt-5 flex items-start gap-2.5 rounded-md bg-surface px-3 py-3 text-sm">
@@ -235,9 +242,13 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </EditorSection>}
 
             <StructuredEditor entityType={entityType} values={values} coverId={coverId} data={data}/>
+            {['pointsOfInterest', 'evidenceFindings', 'organizationGroups', 'artifactDetails', 'conceptBlocks'].map((name) =>
+              <FieldError key={name} name={name} message={fieldErrors[name]}/>,
+            )}
 
             <EditorSection title={content.label} reveal={5}>
               <ContentEditor content={data.content} theme={themed ? theme : entity?.theme} maxPages={content.maxPages} pageNoun={content.pageNoun}/>
+              <FieldError name="content" message={fieldErrors.content}/>
             </EditorSection>
           </div>
 
@@ -250,6 +261,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               onChange={(id) => { setCoverId(id ?? undefined); setFraming(typeFraming); setDirty(true) }}
               aspect={entityType.id === 'tale' ? 'aspect-3/4' : 'aspect-4/3'}
             />}
+            <FieldError name="coverAssetId" message={fieldErrors.coverAssetId}/>
             {supportsCoverFraming(entityType) && <div className="-mt-5 flex items-center justify-between gap-2">
               <input type="hidden" name="coverFraming" value={JSON.stringify(framing)}/>
               <Button ref={framingButtonRef} type="button" variant="outline" size="sm" disabled={!coverId} onClick={openFramingStudio} title={coverId ? undefined : 'Escolha uma imagem primeiro'}>
@@ -257,6 +269,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               </Button>
               <span className="text-xs text-muted-foreground">{isDefaultCoverFraming(framing, typeFraming) ? 'Padrão' : 'Personalizado'}</span>
             </div>}
+            <FieldError name="coverFraming" message={fieldErrors.coverFraming}/>
             {supportsSymbol(entityType) && <ImageField
               name="symbolAssetId"
               label="Selo ou símbolo"
@@ -266,7 +279,9 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               aspect="aspect-[2/1]"
               contain
             />}
+            <FieldError name="symbolAssetId" message={fieldErrors.symbolAssetId}/>
             {themed && <CharacterThemePicker value={theme} label={themeLabel(entityType)} onChange={(next) => { setTheme(next); setDirty(true) }}/>}
+            <FieldError name="theme" message={fieldErrors.theme}/>
             {supportsStatus(entityType) && <div className="flex flex-col gap-1.5">
               <Label htmlFor="status">Status</Label>
               <Input id="status" name="status" defaultValue={entity?.status ?? ''} placeholder="Ex.: rascunho, canônico"/>
@@ -296,6 +311,11 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
       />}
     </div>
   )
+}
+
+function FieldError({ name, message }: { name: string; message?: string }) {
+  if (!message) return null
+  return <p id={'entity-error-' + name} className="mt-1 text-sm text-destructive">{message}</p>
 }
 
 function EditorSection({ title, children, reveal }: { title: string; children: ReactNode; reveal: number }) {

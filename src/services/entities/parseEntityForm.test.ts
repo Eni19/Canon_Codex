@@ -29,6 +29,19 @@ describe('parseEntityForm', () => {
     if (!location) expect(reopened.properties).not.toHaveProperty('currentLocation')
   })
 
+  it('identifica vários campos inválidos no mesmo envio', () => {
+    const invalid = form({ title: ' ', eventDate: '{', coverAssetId: 'imagem' })
+    expect(() => parseEntityForm(typeOf('event'), invalid, world.calendar)).toThrow(
+      expect.objectContaining({
+        fieldErrors: expect.objectContaining({
+          title: expect.any(String),
+          eventDate: expect.any(String),
+          coverAssetId: expect.any(String),
+        }),
+      }),
+    )
+  })
+
   it('exige título', () => {
     expect(() => parseEntityForm(typeOf('character'), form({ title: '   ' }), world.calendar)).toThrow(EntityFormError)
   })
