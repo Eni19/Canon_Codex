@@ -28,6 +28,12 @@ cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepos
 `workspace/`. `SQLITE_DATABASE_PATH` seleciona o arquivo diretamente.
 `PERSISTENCE_DRIVER=filesystem` seleciona o driver legado. Veja [SQLite local](../data/sqlite.md).
 
+## Caderno do Codex (experimental)
+
+`/codex` é um Server Component que reúne contagens e registros recentes por tipo e entrega ao
+`Notebook` (`src/components/codex-notebook/`). A lista de páginas duplas, a geometria da virada e
+as peças de colagem ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do

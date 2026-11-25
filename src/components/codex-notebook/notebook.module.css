@@ -1,0 +1,902 @@
+/* Codex notebook: a scrapbook diary on a walnut desk. Pages are laid out on a 600 × 820 sheet and
+   the book is scaled to fit (--scale). Colours come from the --nb-* tokens in globals.css. */
+
+/* ---------------------------------------------------------------- desk */
+
+.stage {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  perspective: 4200px;
+  background: var(--nb-desk-deep);
+}
+
+.desk {
+  position: absolute;
+  inset: -40px;
+  z-index: 0;
+  background:
+    radial-gradient(70% 60% at 50% 45%, transparent 30%, color-mix(in oklch, var(--nb-desk-deep) 85%, transparent) 100%),
+    repeating-linear-gradient(92deg, transparent 0 22px, color-mix(in oklch, var(--nb-desk-deep) 35%, transparent) 22px 24px, transparent 24px 61px),
+    repeating-linear-gradient(88deg, color-mix(in oklch, var(--nb-desk) 92%, var(--nb-paper)) 0 3px, transparent 3px 140px),
+    var(--grain),
+    var(--nb-desk);
+  translate: calc(var(--px, 0) * -10px) calc(var(--py, 0) * 8px);
+}
+
+/* A warm pool of lamp light falling on the middle of the desk. */
+.deskGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(45% 50% at 50% 42%, color-mix(in oklch, var(--nb-brass) 22%, transparent), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+.pen {
+  position: absolute;
+  right: 6%;
+  top: 14%;
+  width: 34px;
+  height: 360px;
+  color: var(--nb-ink);
+  filter: drop-shadow(14px 18px 10px var(--nb-shadow));
+  rotate: 14deg;
+  translate: calc(var(--px, 0) * -26px) calc(var(--py, 0) * 18px);
+}
+
+.brassFill {
+  fill: var(--nb-brass);
+}
+
+.tapeRoll {
+  position: absolute;
+  left: 7%;
+  bottom: 12%;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, var(--nb-desk-deep) 0 30%, var(--nb-paper-aged) 31% 38%, transparent 39%),
+    radial-gradient(circle, var(--nb-tape-rose) 0 70%, color-mix(in oklch, var(--nb-tape-rose) 70%, var(--nb-ink)) 71%);
+  box-shadow: 10px 14px 18px var(--nb-shadow);
+  translate: calc(var(--px, 0) * -22px) calc(var(--py, 0) * 16px);
+}
+
+.clipA,
+.clipB {
+  position: absolute;
+  width: 26px;
+  height: 78px;
+  color: color-mix(in oklch, var(--nb-paper) 75%, var(--nb-ink));
+  filter: drop-shadow(4px 6px 4px var(--nb-shadow));
+  translate: calc(var(--px, 0) * -20px) calc(var(--py, 0) * 14px);
+}
+
+.clipA {
+  left: 9%;
+  top: 16%;
+  rotate: -28deg;
+}
+
+.clipB {
+  left: 12%;
+  top: 22%;
+  rotate: 12deg;
+}
+
+/* ---------------------------------------------------------------- book */
+
+.bookFrame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: 1200px;
+  height: 820px;
+  transform: translate(-50%, -50%) scale(var(--scale, 0.6));
+  transform-style: preserve-3d;
+}
+
+.book {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: translateX(var(--slide, 0)) rotateX(var(--tilt-x, 0)) rotateY(var(--tilt-y, 0));
+}
+
+/* Open, the cover shows around the pages, and a few page edges show the book's thickness. */
+.book::before {
+  content: '';
+  position: absolute;
+  inset: -16px -14px -18px -14px;
+  border-radius: 10px;
+  background: var(--grain), linear-gradient(160deg, var(--nb-cover), var(--nb-cover-deep));
+  box-shadow: 0 40px 70px -24px var(--nb-shadow), inset 0 0 0 1px color-mix(in oklch, var(--nb-cover-deep) 80%, black);
+  transform: translateZ(-2px);
+}
+
+.book::after {
+  content: '';
+  position: absolute;
+  inset: 4px -5px -7px -5px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(var(--nb-paper-shade) 0 2px, var(--nb-paper-aged) 2px 3px);
+  transform: translateZ(-1px);
+}
+
+/* Closed, only the right half (the cover itself) is on the desk; the left board unfolds as it opens. */
+.book::before,
+.book::after {
+  clip-path: inset(-40px -40px -40px calc(var(--closed, 0) * 50% + (1 - var(--closed, 0)) * -40px));
+}
+
+.page {
+  position: absolute;
+  top: 0;
+  width: 600px;
+  height: 820px;
+}
+
+.page[data-side='left'] {
+  left: 0;
+}
+
+.page[data-side='right'] {
+  left: 600px;
+}
+
+.book[data-turning] .page {
+  pointer-events: none;
+}
+
+/* The lifted leaf casts a soft shadow across the pages near the spine. */
+.book[data-turning] .page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: var(--lift, 0);
+}
+
+.book[data-turning] .page[data-side='right']::after {
+  background: linear-gradient(90deg, var(--nb-shadow), transparent 45%);
+}
+
+.book[data-turning] .page[data-side='left']::after {
+  background: linear-gradient(270deg, var(--nb-shadow), transparent 45%);
+}
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--nb-paper);
+  box-shadow: 0 30px 50px -18px var(--nb-shadow), 0 2px 0 var(--nb-paper-shade);
+}
+
+.sheet[data-side='left'] {
+  border-radius: 6px 2px 2px 6px;
+}
+
+.sheet[data-side='right'] {
+  border-radius: 2px 6px 6px 2px;
+}
+
+.sheet[data-paper='grid'] {
+  background-image:
+    linear-gradient(var(--nb-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nb-rule) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position: 13px 13px;
+}
+
+.sheet[data-paper='lined'] {
+  background-image:
+    linear-gradient(90deg, transparent 62px, var(--nb-margin) 62px 64px, transparent 64px),
+    repeating-linear-gradient(transparent 0 33px, var(--nb-rule) 33px 34px);
+  background-position: 0 0, 0 18px;
+}
+
+/* Paper grain, and the shadow where the page curves into the binding. */
+.sheet::before,
+.sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sheet::before {
+  z-index: 0;
+  background: var(--grain);
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+}
+
+.sheet::after {
+  z-index: 30;
+}
+
+.sheet[data-side='left']::after {
+  background: linear-gradient(270deg, color-mix(in oklch, var(--nb-shadow) 70%, transparent), transparent 9%);
+}
+
+.sheet[data-side='right']::after {
+  background: linear-gradient(90deg, color-mix(in oklch, var(--nb-shadow) 70%, transparent), transparent 9%);
+}
+
+.pageNumber {
+  position: absolute;
+  bottom: 22px;
+  z-index: 2;
+  color: var(--nb-ink-soft);
+  font: 15px var(--font-type);
+}
+
+.sheet[data-side='left'] .pageNumber {
+  left: 34px;
+}
+
+.sheet[data-side='right'] .pageNumber {
+  right: 34px;
+}
+
+/* ---------------------------------------------------------------- turning leaf */
+
+.leaf {
+  position: absolute;
+  left: 600px;
+  top: 0;
+  z-index: 40;
+  height: 820px;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.strip {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  height: 820px;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--step, 0deg));
+}
+
+.strip[data-first] {
+  left: 0;
+  transform: rotateY(var(--spine, 0deg));
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  background: var(--nb-paper);
+}
+
+.face[data-face='back'] {
+  transform: rotateY(180deg);
+}
+
+.faceContent {
+  position: absolute;
+  top: 0;
+  width: 600px;
+  height: 820px;
+}
+
+.faceShade {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(90deg,
+    color-mix(in oklch, var(--nb-shadow) calc(var(--near, 0) * 160%), transparent),
+    color-mix(in oklch, var(--nb-shadow) calc(var(--far, 0) * 160%), transparent));
+}
+
+.face[data-face='back'] .faceShade {
+  background: linear-gradient(270deg,
+    color-mix(in oklch, var(--nb-shadow) calc(var(--near, 0) * 160%), transparent),
+    color-mix(in oklch, var(--nb-shadow) calc(var(--far, 0) * 160%), transparent));
+}
+
+/* ---------------------------------------------------------------- tabs */
+
+.tabs {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  transform: translateZ(-1px);
+}
+
+.tab {
+  position: absolute;
+  display: grid;
+  width: 42px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0 6px 6px 0;
+  background: var(--nb-paper-aged);
+  color: var(--nb-ink);
+  font: 13px var(--font-type);
+  box-shadow: 4px 4px 8px -2px var(--nb-shadow);
+  pointer-events: auto;
+  transition: translate 180ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease;
+}
+
+.tab span {
+  overflow: hidden;
+  max-height: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+}
+
+.tab:nth-of-type(4n + 1) { background: color-mix(in oklch, var(--nb-paper-aged) 80%, var(--nb-red)); }
+.tab:nth-of-type(4n + 2) { background: color-mix(in oklch, var(--nb-paper) 85%, var(--nb-tape-blue)); }
+.tab:nth-of-type(4n + 3) { background: color-mix(in oklch, var(--nb-paper-aged) 85%, var(--nb-tape-green)); }
+
+.tab[data-side='right'] {
+  left: 1192px;
+}
+
+.tab[data-side='left'] {
+  left: -34px;
+  border-radius: 6px 0 0 6px;
+}
+
+.tab:hover:not(:disabled) {
+  translate: 6px 0;
+}
+
+.tab[data-side='left']:hover:not(:disabled) {
+  translate: -6px 0;
+}
+
+.tab[data-current] {
+  background: var(--nb-highlight);
+  font-weight: 700;
+}
+
+.tab:focus-visible,
+.indexTag:focus-visible,
+.coverIndex button:focus-visible,
+.interactive:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Paper tag in the corner that closes the notebook back to its index. */
+.indexTag {
+  position: absolute;
+  top: 24px;
+  right: 34px;
+  z-index: 3;
+  padding: 10px 18px 10px 26px;
+  border-radius: 4px;
+  background: var(--nb-paper-aged);
+  color: var(--nb-ink);
+  font: 15px var(--font-type);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  box-shadow: 6px 8px 14px var(--nb-shadow);
+  rotate: 6deg;
+  transition: rotate 200ms cubic-bezier(0.23, 1, 0.32, 1), scale 160ms ease;
+}
+
+.indexTag::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--nb-desk-deep);
+  translate: 0 -50%;
+}
+
+.indexTag:hover {
+  rotate: 2deg;
+}
+
+.indexTag:active {
+  scale: 0.97;
+}
+
+/* ---------------------------------------------------------------- cover */
+
+.cover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 4px 14px 14px 4px;
+  background:
+    var(--grain),
+    radial-gradient(90% 70% at 40% 30%, color-mix(in oklch, var(--nb-cover) 80%, var(--nb-brass)), transparent 70%),
+    linear-gradient(160deg, var(--nb-cover), var(--nb-cover-deep));
+  box-shadow: inset 10px 0 18px -8px var(--nb-shadow), 0 34px 60px -20px var(--nb-shadow);
+}
+
+.coverCorner {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  background: linear-gradient(135deg, var(--nb-brass), color-mix(in oklch, var(--nb-brass) 60%, var(--nb-desk-deep)));
+}
+
+.coverCorner[data-corner='tl'] { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.coverCorner[data-corner='tr'] { top: 0; right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.coverCorner[data-corner='bl'] { bottom: 0; left: 0; clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.coverCorner[data-corner='br'] { right: 0; bottom: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+
+/* The elastic band that keeps the notebook shut. */
+.coverBand {
+  position: absolute;
+  top: 0;
+  right: 64px;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(90deg, var(--nb-desk-deep), color-mix(in oklch, var(--nb-desk-deep) 70%, var(--nb-paper)) 45%, var(--nb-desk-deep));
+  box-shadow: -4px 0 8px var(--nb-shadow);
+}
+
+.coverLabel {
+  position: absolute;
+  top: 120px;
+  left: 90px;
+  display: grid;
+  width: 360px;
+  gap: 6px;
+  padding: 22px 26px;
+  background: var(--nb-paper);
+  color: var(--nb-ink);
+  box-shadow: 0 6px 14px var(--nb-shadow);
+  rotate: -1.5deg;
+}
+
+.coverLabel small {
+  color: var(--nb-red);
+  font: 13px var(--font-type);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.coverLabel strong {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.coverLabel span {
+  color: var(--nb-ink-soft);
+  font: 15px var(--font-type);
+}
+
+.coverIndex {
+  position: absolute;
+  top: 330px;
+  left: 110px;
+  width: 340px;
+  padding: 18px 22px 20px;
+  background-color: var(--nb-card);
+  background-image: repeating-linear-gradient(transparent 0 27px, var(--nb-rule) 27px 28px);
+  background-position: 0 44px;
+  box-shadow: 0 8px 18px var(--nb-shadow);
+  rotate: 1deg;
+}
+
+.coverIndexTitle {
+  margin-bottom: 6px;
+  color: var(--nb-red);
+  font: 26px var(--font-hand);
+}
+
+.coverIndex ol {
+  display: grid;
+}
+
+.coverIndex button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  color: var(--nb-ink);
+  font: 22px/28px var(--font-hand);
+  text-align: left;
+}
+
+.coverIndex button i {
+  flex: 1;
+  border-bottom: 2px dotted color-mix(in oklch, var(--nb-ink) 35%, transparent);
+}
+
+.coverIndex button small {
+  font: 13px var(--font-type);
+}
+
+.coverIndex button:hover span {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+/* ---------------------------------------------------------------- collage pieces */
+
+.piece {
+  position: absolute;
+  z-index: 2;
+}
+
+.interactive {
+  cursor: pointer;
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1), scale 220ms cubic-bezier(0.23, 1, 0.32, 1), filter 220ms ease;
+}
+
+.interactive:hover {
+  translate: 0 -5px;
+  scale: 1.02;
+  filter: drop-shadow(0 14px 12px var(--nb-shadow));
+}
+
+.interactive:active {
+  scale: 0.98;
+}
+
+.tape {
+  position: absolute;
+  z-index: 6;
+  height: 28px;
+  background: var(--nb-tape);
+  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 0, 88% 0, 92% 10%, 96% 0, 100% 8%, 100% 92%, 96% 100%, 92% 90%, 88% 100%, 12% 100%, 8% 90%, 4% 100%, 0 92%);
+  mix-blend-mode: multiply;
+}
+
+.tape[data-color='blue'] { background: var(--nb-tape-blue); }
+.tape[data-color='rose'] { background: var(--nb-tape-rose); }
+.tape[data-color='green'] { background: var(--nb-tape-green); }
+
+.polaroid {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 0;
+  background: var(--nb-card);
+  box-shadow: 0 10px 18px -6px var(--nb-shadow), 0 1px 2px var(--nb-shadow);
+}
+
+.polaroidPhoto {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.04;
+  background: var(--nb-desk-deep);
+}
+
+.polaroidPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.18) saturate(0.9) contrast(1.04);
+}
+
+/* A record without an image gets a pencil-hatched placeholder with its type icon. */
+.polaroidSketch {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in oklch, var(--nb-ink) 14%, transparent) 7px 8px),
+    var(--nb-paper);
+  color: var(--nb-ink-soft);
+}
+
+.polaroidSketch svg {
+  width: 34%;
+  height: 34%;
+  stroke-width: 1.2;
+}
+
+.polaroidCaption {
+  overflow: hidden;
+  padding: 8px 4px 2px;
+  color: var(--nb-ink);
+  font: 26px/1.1 var(--font-hand);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.polaroidDate {
+  padding-bottom: 10px;
+  color: var(--nb-ink-soft);
+  font: 12px var(--font-type);
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.polaroid:not(:has(.polaroidDate)) .polaroidCaption {
+  padding-bottom: 14px;
+}
+
+.tornNote {
+  padding: 26px 24px 28px;
+  background-color: var(--nb-card);
+  clip-path: polygon(0 3%, 6% 0, 13% 2%, 21% 0, 30% 3%, 40% 0, 52% 2%, 63% 0, 74% 3%, 85% 0, 93% 2%, 100% 0, 100% 97%, 92% 100%, 82% 97%, 70% 100%, 58% 98%, 46% 100%, 34% 97%, 22% 100%, 11% 98%, 0 100%);
+  filter: drop-shadow(0 6px 8px var(--nb-shadow));
+}
+
+.tornNote[data-paper='grid'] {
+  background-image:
+    linear-gradient(var(--nb-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nb-rule) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.tornNote[data-paper='lined'] {
+  background-image: repeating-linear-gradient(transparent 0 29px, var(--nb-rule) 29px 30px);
+  background-position: 0 14px;
+}
+
+.tornNote[data-paper='yellow'] {
+  background-color: color-mix(in oklch, var(--nb-highlight) 70%, var(--nb-card));
+}
+
+.noteText {
+  color: var(--nb-ink);
+  font: 26px/1.25 var(--font-hand);
+}
+
+.noteList {
+  display: grid;
+  gap: 2px;
+}
+
+.noteList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.noteList a {
+  overflow: hidden;
+  color: var(--nb-ink);
+  font: 24px/30px var(--font-hand);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteList a:hover {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.noteList small {
+  flex: none;
+  color: var(--nb-ink-soft);
+  font: 11px var(--font-type);
+  text-transform: uppercase;
+}
+
+.tallyTitle {
+  margin-bottom: 6px;
+  color: var(--nb-red);
+  font: 13px var(--font-type);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tally button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  color: var(--nb-ink);
+  font: 25px/32px var(--font-hand);
+  text-align: left;
+}
+
+.tally button:hover span {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.tally b {
+  font: 16px var(--font-type);
+}
+
+.ticket {
+  display: flex;
+  min-height: 96px;
+  background: var(--nb-paper-aged);
+  color: var(--nb-red);
+  box-shadow: 0 8px 14px -6px var(--nb-shadow);
+  font-family: var(--font-type);
+}
+
+.ticketSerial {
+  display: grid;
+  width: 34px;
+  place-items: center;
+  border-right: 2px dashed color-mix(in oklch, var(--nb-red) 50%, transparent);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+}
+
+.ticketBody {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  gap: 2px;
+  margin: 8px;
+  padding: 8px 14px;
+  border: 2px solid color-mix(in oklch, var(--nb-red) 60%, transparent);
+}
+
+.ticketBody strong {
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ticketBody small {
+  overflow: hidden;
+  color: var(--nb-ink-soft);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.postmark {
+  height: auto;
+  color: var(--nb-red);
+  opacity: 0.55;
+  font-family: var(--font-type);
+  overflow: visible;
+  mix-blend-mode: multiply;
+}
+
+.star {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(140deg, var(--nb-brass), color-mix(in oklch, var(--nb-brass) 55%, var(--nb-desk-deep)));
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 2px 1px var(--nb-shadow));
+}
+
+.star[data-tone='red'] { background: linear-gradient(140deg, var(--nb-red), var(--nb-cover-deep)); }
+.star[data-tone='paper'] { background: linear-gradient(140deg, var(--nb-card), var(--nb-paper-aged)); }
+
+.paperclip {
+  z-index: 7;
+  width: 28px;
+  height: 84px;
+  color: color-mix(in oklch, var(--nb-paper) 60%, var(--nb-ink));
+  filter: drop-shadow(2px 3px 2px var(--nb-shadow));
+}
+
+.handArrow {
+  width: 84px;
+  height: 56px;
+  color: var(--nb-ink);
+}
+
+.turnHint {
+  width: 90px;
+  height: 64px;
+  padding: 0;
+  cursor: pointer;
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.turnHint:hover {
+  translate: 6px -2px;
+}
+
+.cutout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.12em 0.4em;
+  line-height: 1;
+}
+
+.cutoutWord {
+  display: inline-flex;
+}
+
+.cutoutLetter {
+  display: inline-block;
+  margin: 0 0.02em;
+  padding: 0.05em 0.1em 0.02em;
+  box-shadow: 0 2px 3px var(--nb-shadow);
+}
+
+.cutoutLetter[data-paper='0'] { background: var(--nb-card); color: var(--nb-ink); }
+.cutoutLetter[data-paper='1'] { background: var(--nb-paper-aged); color: var(--nb-cover-deep); }
+.cutoutLetter[data-paper='2'] { background: var(--nb-red); color: var(--nb-card); }
+.cutoutLetter[data-paper='3'] { background: var(--nb-ink); color: var(--nb-paper); }
+.cutoutLetter[data-paper='4'] { background: color-mix(in oklch, var(--nb-highlight) 80%, var(--nb-card)); color: var(--nb-ink); }
+
+.cutoutLetter[data-face='0'] { font-family: var(--font-serif); font-weight: 700; }
+.cutoutLetter[data-face='1'] { font-family: var(--font-type); }
+.cutoutLetter[data-face='2'] { font-family: var(--font-sans); font-weight: 900; font-style: italic; }
+
+.handwriting {
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  line-height: 1.28;
+}
+
+.handwriting[data-tone='soft'] { color: var(--nb-ink-soft); }
+.handwriting[data-tone='red'] { color: var(--nb-red); }
+
+.typeLabel {
+  padding: 5px 12px;
+  background: var(--nb-card);
+  color: var(--nb-ink);
+  font: 15px var(--font-type);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px var(--nb-shadow);
+}
+
+.typeLabel[data-dark] {
+  background: var(--nb-ink);
+  color: var(--nb-paper);
+}
+
+.stickyFlags {
+  display: grid;
+  gap: 6px;
+}
+
+.stickyFlags span {
+  display: block;
+  width: 70px;
+  height: 26px;
+  opacity: 0.9;
+}
+
+.stickyFlags span[data-color='rose'] { background: var(--nb-tape-rose); }
+.stickyFlags span[data-color='cream'] { background: var(--nb-highlight); }
+.stickyFlags span[data-color='blue'] { background: var(--nb-tape-blue); }
+
+.handLink {
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  line-height: 1.1;
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 88% / 0% 42% no-repeat;
+  transition: background-size 260ms cubic-bezier(0.23, 1, 0.32, 1), translate 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.handLink:hover {
+  background-size: 100% 42%;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive,
+  .tab,
+  .indexTag,
+  .handLink,
+  .turnHint {
+    transition: none;
+  }
+}

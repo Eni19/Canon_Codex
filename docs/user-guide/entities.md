@@ -2,7 +2,7 @@
 
 ## Criar e editar
 
-1. Em `/codex`, escolha um catálogo ou abra `/<entityType>`.
+1. Em `/codex`, abra a página do tipo no caderno e clique em **ver todos**, ou abra `/<entityType>`.
 2. Clique em **Nova entidade**.
 3. Preencha o formulário completo, que é o mesmo da edição: nome, apelidos (quando exibidos) e tags
    no topo; **Ficha** com as propriedades curtas e referências; **Detalhes** com os textos longos;

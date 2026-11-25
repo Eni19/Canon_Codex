@@ -22,6 +22,20 @@ uma cena para apresentação.
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.
 
+## Caderno do Codex (experimental)
+
+O início do mundo (`/codex`) é um caderno sobre a mesa. Fechado, a capa mostra o índice: clique numa
+linha para abrir aquela parte. Aberto, cada página dupla é uma área:
+
+- **Prefácio**: a descrição do mundo, a contagem de registros, os registros recentes e os tipos com
+  mais registros.
+- **Uma página por tipo** que aparece na barra lateral: o nome, quantos registros há, **ver todos**,
+  **+ novo registro** e polaroids dos quatro registros mais recentes, com a imagem de capa.
+- **Ferramentas**: Calendário, Relacionamentos, Quadros, Cenas, Trilha sonora e Todos os conteúdos.
+
+Para virar, arraste a página com o mouse, use as setas do teclado ou clique numa aba. As abas das
+páginas já viradas passam para a esquerda. A etiqueta **Índice** fecha o caderno na capa.
+
 ## Fluxo recomendado
 
 1. [Crie, importe ou selecione um mundo](worlds.md).

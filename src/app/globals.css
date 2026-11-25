@@ -67,6 +67,27 @@
   --cosmic-muted: var(--muted-foreground);
   --cosmic-accent: var(--primary);
   --cosmic-border: var(--border);
+  /* Codex notebook (world home): cream paper on a dark walnut desk, in both themes. */
+  --nb-desk: oklch(0.25 0.035 50);
+  --nb-desk-deep: oklch(0.16 0.025 45);
+  --nb-paper: oklch(0.93 0.022 85);
+  --nb-paper-shade: oklch(0.86 0.03 80);
+  --nb-paper-aged: oklch(0.82 0.045 75);
+  --nb-card: oklch(0.97 0.008 90);
+  --nb-ink: oklch(0.27 0.03 260);
+  --nb-ink-soft: oklch(0.45 0.03 255);
+  --nb-rule: oklch(0.72 0.05 240 / 45%);
+  --nb-margin: oklch(0.62 0.14 20 / 45%);
+  --nb-cover: oklch(0.36 0.1 28);
+  --nb-cover-deep: oklch(0.25 0.07 25);
+  --nb-brass: oklch(0.74 0.12 80);
+  --nb-red: oklch(0.53 0.17 28);
+  --nb-highlight: oklch(0.9 0.14 98 / 65%);
+  --nb-tape: oklch(0.88 0.05 90 / 75%);
+  --nb-tape-blue: oklch(0.82 0.05 230 / 75%);
+  --nb-tape-rose: oklch(0.8 0.07 15 / 75%);
+  --nb-tape-green: oklch(0.84 0.06 150 / 75%);
+  --nb-shadow: oklch(0.1 0.02 40 / 55%);
   --background: oklch(0.98 0.004 80);
   --foreground: oklch(0.2 0.012 260);
 
