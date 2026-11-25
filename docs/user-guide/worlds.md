@@ -47,7 +47,8 @@ o mês consultado, com links para as entidades; datas parciais e aproximadas apa
 própria. A lista é paginada e não inclui registros sem data válida.
 
 No teclado, use **Tab** para entrar nos dias do mês. As setas percorrem os dias do trecho,
-**Home** e **End** vão ao primeiro ou último dia da semana exibida, e **Enter** seleciona.
+**Home** e **End** vão ao primeiro ou último dia da semana exibida, **Page Up** e **Page Down**
+trocam para o mês anterior ou o próximo mantendo o foco na grade, e **Enter** seleciona.
 
 Na vista mensal, selecione um dia e escolha **Definir como hoje** para registrar a data da campanha.
 Depois, **Avançar um dia** passa para a próxima data, inclusive em viradas e dias intercalares.

@@ -158,7 +158,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       </> : <>
         <div className={styles.monthLayout}><div className="min-w-0">
           <div className={styles.monthGridHeader}>{calendar.daysOfWeek.map((name, index) => <div key={`${index}-${name}`} title={name}><span className={styles.weekdayFull}>{name}</span><abbr className={styles.weekdayShort} aria-label={name}>{Array.from(name).slice(0, 3).join('')}</abbr></div>)}</div>
-          <CalendarDayNavigation className={styles.monthGrid} firstWeekday={projection!.firstWeekday}>{Array.from({ length: projection!.firstWeekday }, (_, index) => <div key={`empty-${index}`} aria-hidden="true" />)}{dayEntries.map((entry) => {
+          <CalendarDayNavigation className={styles.monthGrid} firstWeekday={projection!.firstWeekday} previousHref={previous.year >= -1000000 ? url(previous.year, previous.month, 1) : undefined} nextHref={next.year <= 1000000 ? url(next.year, next.month, 1) : undefined}>{Array.from({ length: projection!.firstWeekday }, (_, index) => <div key={`empty-${index}`} aria-hidden="true" />)}{dayEntries.map((entry) => {
             if (!('day' in entry.date)) return null
             const number = entry.date.day
             const phases = entry.moons.filter((phase) => visibleMoonIds.has(phase.id)).map((phase) => ({ ...phase, moon: world.calendarMoons.find((moon) => moon.id === phase.id)! }))
