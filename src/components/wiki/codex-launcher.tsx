@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
+import { useActionState, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 import { useFormStatus } from 'react-dom'
 import { ArrowRight, FolderInput, Globe, HardDrive, Loader2, Plus, Settings2, Sparkles } from 'lucide-react'
-import { openWorldAction } from '@/app/actions/worlds'
+import { archiveIncompleteWorldAction, openWorldAction } from '@/app/actions/worlds'
 import type { World } from '@/domain/worlds/world'
 import { Button } from '@/components/ui/button'
 import { CreateWorldDialog, ImportWorldDialog } from '@/components/wiki/world-library-dialogs'
@@ -52,8 +52,8 @@ export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = []
     <main className="min-w-0 flex-1 overflow-y-auto">
       {missingWorldMetadata.length > 0 && <div role="alert" className="mx-auto mt-6 max-w-4xl rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
         <p className="font-medium">Algumas pastas de mundo estão sem o arquivo world.json.</p>
-        <p className="mt-1">Os arquivos dessas pastas foram preservados. Restaure o world.json correspondente de um backup para voltar a abri-las:</p>
-        <ul className="mt-2 list-inside list-disc">{missingWorldMetadata.map((name) => <li key={name}>{name}</li>)}</ul>
+        <p className="mt-1">Restaure o world.json de um backup para reabrir o mundo ou arquive a pasta para removê-la deste aviso e guardar os arquivos.</p>
+        <ul className="mt-2 space-y-2">{missingWorldMetadata.map((name) => <IncompleteWorldRow key={name} name={name}/>)}</ul>
       </div>}
       {worlds.length === 0
         ? <EmptyLibrary onCreate={() => setPanel('create')} onImport={() => setPanel('import')}/>
@@ -88,6 +88,24 @@ export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = []
     <ImportWorldDialog open={panel === 'import'} onOpenChange={(open) => setPanel(open ? 'import' : null)}/>
     {managedWorld && <WorldManageDialog world={managedWorld} onClose={() => setManagedWorld(null)}/>}
   </div>
+}
+
+function IncompleteWorldRow({ name }: { name: string }) {
+  const [confirming, setConfirming] = useState(false)
+  const [state, action, pending] = useActionState(archiveIncompleteWorldAction, {})
+  return <li className="rounded-md border border-border px-3 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <strong className="break-all font-medium">{name}</strong>
+      {!confirming && <Button variant="outline" size="sm" onClick={() => setConfirming(true)} aria-label={`Arquivar pasta ${name}`}>Arquivar pasta</Button>}
+    </div>
+    {confirming && <form action={action} className="mt-2 flex flex-wrap items-center gap-2">
+      <input type="hidden" name="folder" value={name}/>
+      <p className="w-full">A pasta vai para a lixeira interna com todos os arquivos.</p>
+      <Button type="submit" size="sm" disabled={pending}>{pending ? 'Arquivando…' : 'Confirmar arquivamento'}</Button>
+      <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => setConfirming(false)}>Cancelar</Button>
+      {state.error && <p role="alert" className="w-full">{state.error}</p>}
+    </form>}
+  </li>
 }
 
 function EmptyLibrary({ onCreate, onImport }: { onCreate: () => void; onImport: () => void }) {

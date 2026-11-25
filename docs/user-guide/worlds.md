@@ -2,20 +2,21 @@
 
 ## Selecionar um Codex
 
-Abra `/`. A biblioteca lista os mundos encontrados em `WIKI_WORKSPACE_DIR`: o mundo ativo aparece em
+Abra `/`. A biblioteca lista os mundos ativos: o mundo ativo aparece em
 destaque, com o botão **Continuar**, e os demais ficam em **Outros mundos**, do atualizado mais
 recentemente ao mais antigo. Escolha **Continuar** ou clique no nome de um mundo para gravar o cookie
 `canon-codex-world` e abrir `/codex`. A barra lateral da biblioteca reúne as ações **Criar Codex**,
 **Carregar pasta** e os atlas incluídos.
 
 Se não houver mundo, `/` ainda abre a biblioteca sem exigir um mundo ativo. Use **Criar Codex**
-ou **Carregar pasta** no estado vazio para começar. Em uma instalação na qual `workspace/worlds/`
-ainda não existe, a primeira leitura cria automaticamente o seed `Canon Codex` com 17 tipos
-iniciais.
+ou **Carregar pasta** no estado vazio para começar. Na primeira abertura de um banco novo, a biblioteca cria o mundo inicial `Canon Codex` com 17
+tipos. Para uma biblioteca antiga, veja a [migração para SQLite](../data/sqlite.md).
 
-Se uma pasta de mundo estiver sem `world.json`, a biblioteca exibe um aviso com o nome da pasta
+No driver legado, se uma pasta de mundo estiver sem `world.json`, a biblioteca exibe um aviso com o nome da pasta
 e mantém os demais mundos acessíveis. A pasta não é apagada nem recriada; restaure o arquivo
-correspondente de um backup para abrir esse mundo novamente. Sem mundos disponíveis, uma rota
+correspondente de um backup para abrir esse mundo novamente. Para retirar a pasta do aviso, escolha
+**Arquivar pasta** e confirme: a biblioteca move a pasta inteira para `trash/worlds/` dentro de
+`WIKI_WORKSPACE_DIR`, preservando seus arquivos. Sem mundos disponíveis, uma rota
 interna volta para a biblioteca.
 
 ## Criar um mundo
@@ -33,6 +34,10 @@ pasta.
 Com um mundo aberto, escolha **Calendário** na barra lateral. As vistas **Mês** e **Ano** permitem
 consultar períodos e selecionar um dia. Use **Ir para data**, entre as setas do período, para abrir
 o seletor de ano, mês e dia. A URL conserva a consulta.
+
+**Baixar PDF** salva o ano exibido, com uma visão geral e as grades de todos os meses. O arquivo
+inclui marcos e dias intercalares e usa as cores do tema nos cabeçalhos. O ano inicial é o do
+Hoje da campanha, quando definido, ou o ano zero. A exportação aceita anos de até 5.000 dias.
 Meses longos são divididos em páginas de até seis semanas. Dias intercalares independentes aparecem
 após o mês correspondente e podem ser selecionados; a seleção é conservada na URL ao trocar de vista.
 A grade mostra inícios de estações e marcos. Em telas estreitas, use o atalho **Detalhes** abaixo da
@@ -142,9 +147,9 @@ uma alteração feita na tela grava o calendário validado de forma atômica.
    origem.
 4. Escolha **Importar e abrir**.
 
-O importador aceita vários mundos encontrados na raiz. Ele rejeita `world.json` inválido, pasta
-ausente, IDs que já existem na biblioteca e duas cópias do mesmo ID na mesma importação. Em colisão
-de slug, o diretório de destino recebe um sufixo; o `World.id` permanece o mesmo.
+O importador aceita vários mundos ativos encontrados na raiz. Ele rejeita documentos inválidos,
+pasta ausente e IDs duplicados. Em colisão de slug, o mundo importado recebe um sufixo e mantém
+o `World.id`.
 
 ## Renomear e remover
 
@@ -152,9 +157,8 @@ de slug, o diretório de destino recebe um sufixo; o `World.id` permanece o mesm
 2. Edite o nome e salve para renomear.
 3. Para remover, confirme **Excluir**.
 
-A remoção tira o mundo da biblioteca e move a pasta para o `trash/worlds` do workspace. É uma
-exclusão lógica, não uma restauração disponível na interface: preserve um backup antes de tratar a
-ação como reversível. A política detalhada está em [backup e restauração](../data/backup-and-restore.md).
+A remoção tira o mundo da biblioteca e mantém seus dados na lixeira do SQLite. A restauração
+integral está documentada em [backup e restauração](../data/sqlite.md#backup-e-restauração).
 
 ## Limites atuais
 

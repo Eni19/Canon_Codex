@@ -1,5 +1,19 @@
 # Testes e qualidade
 
+Grafo de relacionamentos (16/11/2026): `graphGeometry.test.ts` verifica posições automáticas
+reproduzíveis com cartões fixos, a âncora do zoom/pinça e o centro no resize. Os testes do
+repositório preservam cobertura de relações, idempotência e conflito de revisão. O
+[relatório do grafo](performance/relationship-graph.md) registra o ensaio em Chrome de produção
+com mundos sintéticos, além do que ainda depende de hardware físico.
+
+A validação de 17/11/2026 repetiu a suíte e o build com pastas e conferiu fluxo por teclado, árvore
+de acessibilidade do Chrome, salvamento, recuperação da fixture e runtime com rede externa bloqueada.
+Os três gestos ficaram acima da meta na fixture densa. [Medições e limites](performance/relationship-graph.md#validação-da-versão-com-pastas--17112026).
+
+A revisão de busca exercita ida, volta e ambos, vínculos sem direção, setas antigas e ancoradas
+e o reposicionamento das pontas. Em Chrome com dados sintéticos, foram verificados o esmaecimento
+enquanto se digita, o recorte por Enter ou pausa e a seta acompanhando o cartão após recarregar.
+
 Cosmic Canvas (15/10/2026): cinco testes novos em timelineCanvas.test.ts cobrem 500 coordenadas
 sem sobreposição, âncora de zoom nos limites, pinch com translação, enquadramento/culling e
 preservação das posições ao filtrar. Os 36 testes relevantes de timeline passaram. Ensaios de navegador usam somente dados sintéticos e o harness opt-in
@@ -56,6 +70,7 @@ conforme vitest.config.mts. Para uma área específica:
 
 Os testes de filesystem usam mkdtemp e definem WIKI_WORKSPACE_DIR para diretórios temporários.
 Eles removem esses diretórios em afterEach; não apontam para o workspace privado do projeto.
+TypeScript e ESLint excluem `workspace/` da descoberta de arquivos.
 
 ## Cobertura atual
 
@@ -123,8 +138,9 @@ Não há suíte E2E, teste de navegador, teste de acessibilidade visual, teste d
 autenticação, autorização ou contrato público de API. Os handlers sem envelope de erro próprio
 dependem do comportamento do Next.js em falhas não capturadas.
 
-Os testes de repositório verificam a implementação filesystem. Eles não provam que uma futura
-implementação de banco ou storage preservaria o mesmo comportamento.
+Os testes SQLite usam bancos em memória ou diretórios temporários. Cobrem importação legada,
+rollback de operações compostas, isolamento, revisão de artigos, lixeira e backup reaberto.
+Os testes do adaptador filesystem continuam cobrindo a compatibilidade legada.
 
 ## Mudança de migração
 

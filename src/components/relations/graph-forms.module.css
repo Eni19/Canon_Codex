@@ -1,0 +1,220 @@
+.panel {
+  background: color-mix(in srgb, var(--surface) 72%, var(--popover));
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--sidebar) 62%, transparent);
+}
+
+.panelContent {
+  scrollbar-color: var(--muted-foreground) transparent;
+  scrollbar-width: thin;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .375rem;
+  color: var(--foreground);
+  font-size: .8125rem;
+  font-weight: 500;
+}
+
+.control {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.625rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  padding: .5rem .75rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: .875rem;
+  font-weight: 400;
+}
+
+button.control {
+  background: var(--background);
+}
+
+button.control > span {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.control:hover:not(:disabled), .color:hover {
+  border-color: var(--ring);
+}
+
+.control:focus-visible, .color:focus-within, .segments input:focus-visible + span {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.control:disabled {
+  opacity: .55;
+}
+
+.search { position: relative; }
+.search input { padding-inline-start: 2.25rem; }
+
+.endpoints {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: .5rem;
+}
+
+.endpoints .field {
+  grid-template-rows: auto 1fr;
+}
+
+.endpointMark {
+  display: grid;
+  margin-top: 1.5rem;
+  place-items: center;
+  color: var(--muted-foreground);
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .25rem;
+  background: var(--background);
+}
+
+.segments label {
+  position: relative;
+  min-width: 0;
+}
+
+.segments span {
+  display: flex;
+  min-height: 2.625rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  border-radius: var(--radius-md);
+  padding: .375rem .125rem;
+  color: var(--muted-foreground);
+  font-size: .6875rem;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+
+.segments input:not(:disabled) + span:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.segments input:checked + span,
+.segments input:checked:not(:disabled) + span:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.segments input:disabled + span {
+  cursor: default;
+  opacity: .55;
+}
+
+.preview {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  border-radius: var(--radius-lg);
+  padding: .625rem .75rem;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: .75rem;
+}
+
+.preview svg {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.color {
+  display: flex;
+  width: 100%;
+  min-height: 2.625rem;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  padding: .375rem .625rem;
+  background: var(--background);
+  cursor: pointer;
+}
+
+.color input {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.color input::-webkit-color-swatch-wrapper { padding: 0; }
+.color input::-webkit-color-swatch { border: 0; border-radius: var(--radius-sm); }
+.color input::-moz-color-swatch { border: 0; border-radius: var(--radius-sm); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
+}
+
+.feedback {
+  border-radius: var(--radius-md);
+  padding: .625rem .75rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  background: color-mix(in srgb, var(--danger) 12%, var(--background));
+  color: color-mix(in srgb, var(--danger) 62%, var(--foreground));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel { animation: panel-enter 260ms cubic-bezier(.2, .75, .25, 1); }
+  .reveal { animation: reveal 200ms cubic-bezier(.2, .75, .25, 1); }
+  .styleEditor:not([open]) > .reveal { animation: none; }
+  .control, .color, .segments span {
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel button { transition: none; }
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(.5rem) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}

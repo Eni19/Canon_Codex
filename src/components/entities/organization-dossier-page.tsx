@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Building2, MapPin, Pencil, ShieldCheck } from 'lucide-react'
 import { ContentRenderer } from '@/components/editor/content-renderer'
+import { BacklinksPanel } from '@/components/entities/backlinks-panel'
 import { OrganizationMemberFiles } from './organization-member-files'
 import { RelationsPanel } from './relations-panel'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,7 @@ function textProperty(value: unknown) { return typeof value === 'string' ? value
 function idList(value: unknown) { return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [] }
 
 export function OrganizationDossierPage(props: EntityPageProps) {
-  const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar } = props
+  const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar, backlinks } = props
   const memberIds = idList(entity.properties.members)
   const leaderIds = idList(entity.properties.leaders)
   const personnelIds = [...new Set([...leaderIds, ...memberIds])]
@@ -24,7 +25,6 @@ export function OrganizationDossierPage(props: EntityPageProps) {
   const parsedGroups = OrganizationGroupsSchema.safeParse(entity.properties.organizationGroups)
   const groups = parsedGroups.success ? parsedGroups.data : []
   const organizationIds = new Set(allEntities.filter((candidate) => candidate.type === 'organization').map((candidate) => candidate.id))
-  const relations = entity.relations.filter((relation) => organizationIds.has(relation.targetId))
   const organizationOptions = relationTargetOptions.filter((option) => organizationIds.has(option.id))
   const headquarters = textProperty(entity.properties.headquarters)
   const founded = formatDateFieldValue(calendar, entity.properties.founded)
@@ -57,7 +57,14 @@ export function OrganizationDossierPage(props: EntityPageProps) {
           <section className={`${styles.memo} ${styles.objectives}`}><span className={styles.memoCode}>DIRETRIZ A</span><h2>Objetivos</h2><p>{textProperty(entity.properties.objectives) || 'Nenhum objetivo formalizado.'}</p></section>
           <section className={`${styles.memo} ${styles.ideals}`}><span className={styles.memoCode}>DOUTRINA</span><h2>Ideais</h2><p>{textProperty(entity.properties.ideals) || 'Nenhum ideal registrado.'}</p></section>
           <section className={styles.section}><div className={styles.sectionHeading}><span>03</span><h2>Subgrupos</h2></div><div className={styles.groupStack}>{groups.length ? groups.map((group) => <article key={group.id} className={styles.groupFolder}><span className={styles.groupTab}>EQUIPE</span><h3>{group.name}</h3>{group.description && <p>{group.description}</p>}<div>{group.memberIds.map((id) => <Link key={id} href={`/entity/${id}`}>{entityTitleById[id] ?? allEntities.find((candidate) => candidate.id === id)?.title ?? 'Membro'}</Link>)}</div></article>) : <p className={styles.emptyRecord}>Nenhuma equipe interna registrada.</p>}</div></section>
-          <section className={styles.section}><div className={styles.sectionHeading}><span>04</span><h2>Relações institucionais</h2></div><div className={styles.relations}><RelationsPanel entityId={entity.id} relations={relations} entityTitleById={entityTitleById} targetOptions={organizationOptions} /></div></section>
+          <section className={styles.section}>
+            <div className={styles.sectionHeading}><span>04</span><h2>Relações institucionais</h2></div>
+            <div className={styles.relations}><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={organizationOptions} /></div>
+          </section>
+          {backlinks.length > 0 && <section className={styles.section}>
+            <div className={styles.sectionHeading}><h2>Referências de outros registros</h2></div>
+            <div className={styles.relations}><BacklinksPanel backlinks={backlinks} /></div>
+          </section>}
         </aside>
       </div>
     </main>

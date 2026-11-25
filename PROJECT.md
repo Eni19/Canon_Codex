@@ -1,7 +1,7 @@
 # PROJECT.md — Wiki local-first de worldbuilding
 
 Este documento registra a memória arquitetural e separa regras desejadas do comportamento que foi
-verificado no código em **23/09/2026**. Decisões marcadas como **[fixas]** só devem mudar com
+implementado no código. A seção de persistência foi atualizada para o driver SQLite. Decisões marcadas como **[fixas]** só devem mudar com
 justificativa explícita em novo ADR.
 
 ## Visão do produto
@@ -18,6 +18,7 @@ revisão de segurança, operação e documentação.
 ## Stack e execução
 
 - Next.js `16.3.4` com App Router, React `19.2.8` e TypeScript strict;
+- Node.js `>=24.15.0`, com a versão 24 LTS recomendada, e `node:sqlite` no servidor;
 - pnpm declarado como `12.3.4` em `package.json`;
 - Tailwind CSS v4, componentes locais inspirados em shadcn/Radix e lucide-react;
 - Tiptap/ProseMirror para conteúdo rico, isolado por `ContentDocument`;
@@ -31,35 +32,33 @@ o repositório; mutações usam Server Actions ou Route Handlers e revalidam qua
 
 ## Persistência: regra e estado atual
 
-**Regra arquitetural [fixa]:** telas, componentes e Server Actions devem depender de contratos,
-não conhecer o formato dos arquivos. **Estado atual:** a factory em `src/repositories/index.ts`
-oferece quatro contratos:
+**Regra arquitetural [fixa]**. Telas, componentes e Server Actions dependem dos contratos de
+repositório. A factory em `src/repositories/index.ts` oferece cinco contratos.
 
-- `WorldRepository`: mundos, calendários, entidades, conteúdo e relações;
-- `AssetStore`: importação, resolução e exclusão lógica de imagens;
-- `BoardRepository`: snapshots de quadros;
-- `SceneRepository`: cenas, snapshots e grade.
+- `WorldRepository` cobre mundos, calendários, entidades, conteúdo, relações e linhas do tempo.
+- `AssetStore` importa, entrega e exclui logicamente imagens e variantes.
+- `BoardRepository` gerencia quadros e snapshots.
+- `SceneRepository` gerencia cenas, snapshots e grade.
+- `PlaylistRepository` gerencia playlists locais.
 
-A única implementação disponível é filesystem:
-`FileSystemWorldRepository`, `FileSystemAssetStore`, `FileSystemBoardRepository` e
-`FileSystemSceneRepository`, em `src/repositories/filesystem/`. `PERSISTENCE_DRIVER` só aceita
-`filesystem` hoje; Postgres/S3 são possibilidades futuras, não implementações presentes.
+SQLite é o driver padrão. O arquivo fica em `workspace/canon-codex.sqlite` ou no diretório
+`WIKI_WORKSPACE_DIR`. `SQLITE_DATABASE_PATH` pode escolher diretamente o arquivo. O driver
+`PERSISTENCE_DRIVER=filesystem` abre a biblioteca JSON legada. O diretório padrão `workspace/`
+contém dados privados e está excluído pelo Git. Veja [SQLite local](docs/data/sqlite.md).
 
-O diretório padrão é `workspace/`, ou o caminho absoluto em `WIKI_WORKSPACE_DIR`. Ele contém dados
-privados e está excluído por `.gitignore`; portanto não é atualmente versionável em Git, apesar de
-essa possibilidade ter aparecido em documentação histórica.
+IDs de mundo, entidade, relação e asset são UUIDs persistentes. Slugs servem à organização e à
+apresentação. O filesystem resolve o diretório do mundo a partir do ID de `world.json`. As
+referências de domínio usam IDs.
 
-IDs de mundo, entidade, relação e asset são UUIDs persistentes. Slugs e nomes de diretório são
-detalhes de armazenamento: o diretório de mundo usa hoje o slug, e `resolveWorldDir` encontra o
-slug lendo `world.json`. Nunca persistir path absoluto do sistema operacional em entidades.
+O SQLite valida documentos do domínio com Zod e agrupa escritas que afetam vários registros em
+transações. A exclusão lógica registra `deleted_at` e retém os dados. A leitura paginada de
+artigos no repositório SQLite retorna metadados, conteúdo e uma revisão numérica em uma única
+transação de leitura. Mudanças em metadados ou conteúdo incrementam essa revisão.
 
-As escritas JSON usam `src/lib/fs/atomicWrite.ts`, não `atomicWriteJson.ts`: o arquivo é escrito
-em um temporário no mesmo diretório e renomeado. A validação Zod ocorre antes da gravação nas
-operações de domínio; leituras de mundo, entidade, conteúdo e asset aplicam migração e schema.
-Quadros e cenas leem e validam diretamente seus schemas atuais.
-
-Exclusão de mundo, entidade, asset, quadro e cena é hoje um `rename` para `trash/`. Não há ação de
-restauração nem descarte permanente implementada; a documentação não trata a lixeira como backup.
+No filesystem legado, cada documento JSON é gravado em um temporário vizinho e renomeado por
+`src/lib/fs/atomicWrite.ts`. Leituras de mundo, entidade, conteúdo e asset aplicam migrações de
+documento e schemas. A exclusão lógica move os diretórios para `trash/`. Consulte
+[Armazenamento legado](docs/data/storage.md).
 
 ## Camadas e dependências
 
@@ -68,23 +67,21 @@ src/app/                 App Router, páginas, Server Actions e Route Handlers
 src/components/          UI, editores, catálogos, quadros, cenas e projeções
 src/services/             casos de uso como biblioteca de mundos e busca
 src/domain/               schemas/tipos Zod, sem responsabilidade de I/O
-src/repositories/        contratos e implementação filesystem
+src/repositories/        contratos e adaptadores SQLite e filesystem
 src/lib/fs/               caminhos e escrita atômica
 src/lib/migrations/       registry de migrações lazy
 ```
 
-O domínio não importa repositórios nem App Router. A intenção é que a UI use os contratos; a
-implementação atual ainda tem I/O auxiliar em `src/services/worlds/worldLibrary.ts`,
-`src/repositories/filesystem/worldDirRegistry.ts`, `src/lib/fs/` e no handler que transmite o
-asset, porque esses pontos realizam descoberta, cópia, rename ou streaming. Essa é uma observação
-do estado atual, não autorização para espalhar I/O em novos componentes.
+O domínio é independente de repositórios e do App Router. O armazenamento local fica nos
+adaptadores, com I/O auxiliar de descoberta, cópia e importação para a biblioteca legada. A rota
+de imagens usa os bytes e o MIME devolvidos por `AssetStore`.
 
 ## Modelo de entidades e apresentação
 
-O arquivo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`) com
-`properties: Record<string, unknown>`, relações e conteúdo separado. `EntityTypeDefinition` em
-`world.json` declara propriedades, ícone, visibilidade e blocos de layout.
-O mesmo `world.json` guarda `calendar`, validado por `src/domain/worlds/calendar.ts`: dias da
+O modelo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`) com
+`properties: Record<string, unknown>`, relações e conteúdo separado. `EntityTypeDefinition` no
+documento do mundo declara propriedades, ícone, visibilidade e blocos de layout.
+O documento também guarda `calendar`, validado por `src/domain/worlds/calendar.ts`, com dias da
 semana, meses com duração própria, horas por dia, eras, origem e regras intercalares.
 A rota `/calendar` apresenta consultas mensais, anuais e uma agenda de Eventos no servidor, com
 data na URL e janelas de até seis semanas para meses longos; dias intercalares independentes são
@@ -100,8 +97,8 @@ formulários de configuração. Datas de Eventos e aparições podem identificar
 independentes por ano e ID da regra; a troca de origem inclui as datas do mundo na prévia e no backup.
 O campo opcional `originEventId` identifica um único Evento de origem. Criá-lo posiciona sua data
 no ano zero. A troca exige prévia com fingerprint, desloca datas de propriedades por ordinal sob
-bloqueio do mundo e guarda backup dos metadados e aparições alterados. Uma operação interrompida é restaurada
-antes da próxima leitura ou gravação de metadados do mundo. Linhas do Tempo têm canvas espacial
+transação SQLite e guarda o histórico das mudanças. No filesystem legado, a troca usa o lock do
+mundo e restaura uma operação interrompida antes da próxima leitura ou gravação de metadados. Linhas do Tempo têm canvas espacial
 com aparições datadas ou sem data armazenadas separadamente. Cartões têm título, nota, data,
 escala mínima e opção de capa próprios. Biblioteca, inclusão em lote, remoção/Desfazer e Eventos
 rápidos permanecem disponíveis. Filtros cronológicos/categorias/busca usam a URL; ampliação
@@ -120,14 +117,15 @@ formulários. A prévia de aparência reutiliza o componente de capa e os tokens
 editores são carregados ao abrir suas seções. Consulte o [guia de mundos](docs/user-guide/worlds.md#configurar-o-calendário).
 A Agenda usa `WorldRepository.listCalendarAgenda` para obter os Eventos ativos antes de projetar
 o mês. A implementação em filesystem mantém uma projeção em memória conferida com os metadados
-a cada consulta. Consulte [armazenamento](docs/data/storage.md#calendário-por-mundo).
+a cada consulta. Consulte [armazenamento legado](docs/data/storage.md#calendário-por-mundo).
 
 O ciclo de vida das aparições distingue registros ativos, na lixeira e ausentes definitivamente.
-Consultas de linha e origem, além da criação de origem, reconciliam referências sob lock: cartões na lixeira mantêm
+Consultas de linha e origem, além da criação de origem, reconciliam referências no repositório. Cartões na lixeira mantêm
 campos próprios e aviso de indisponibilidade; ausência definitiva remove todas as aparições nas
 linhas ativas e na lixeira e limpa somente o vínculo de origem, preservando o calendário.
-Erros de leitura impedem a limpeza. As gravações são atômicas por arquivo e a retomada é
-idempotente, sem backup automático nem transação entre arquivos. Ver [armazenamento](docs/data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+Erros de leitura impedem a limpeza. O SQLite grava a reconciliação em transação. O filesystem
+legado faz escritas atômicas por arquivo com retomada idempotente. Veja [SQLite local](docs/data/sqlite.md)
+e [ciclo de vida no filesystem](docs/data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
 
 O Cosmic Canvas (15/10/2026) substitui a paginação visual TL-11/TL-12 por coordenadas fixas para
 a coleção inteira e cartões limitados ao viewport (teto 96; abaixo de 28%, visão geral por pontos).
@@ -158,6 +156,18 @@ personagem também usa uma composição de retrato. Os demais tipos usam o compo
 Relações são armazenadas no array da entidade fonte; backlinks são derivados por varredura de
 `targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
 domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
+
+## Relacionamentos
+
+O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
+câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
+mundo. Pastas agrupam registros de qualquer tipo e resumem seus vínculos externos quando recolhidas.
+A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
+ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
+formulário de um vínculo gravado na ficha de origem.
+O [guia de entidades](docs/user-guide/entities.md) explica os fluxos. A migração de
+Quadros, Cenas e Linha do Tempo depende das verificações do
+[plano de relacionamentos](docs/relationship-graph-plan.md).
 
 ## Componentes de UI reutilizáveis
 

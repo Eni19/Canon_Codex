@@ -1,5 +1,9 @@
 # Migrações e compatibilidade
 
+Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
+validadas pelo importador. Os procedimentos que citam arquivos descrevem o driver legado.
+No SQLite, a conversão de datas e a recuperação operam em transações, com histórico no banco.
+
 As migrações de mundo, entidade, conteúdo e asset são aplicadas em memória na leitura pelo registry de
 [`src/lib/migrations/registry.ts`](../../src/lib/migrations/registry.ts). O registry usa
 `schemaVersion`; se o campo faltar, trata o registro como versão 1. Ele executa cada função
@@ -17,6 +21,17 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 `showCover: true` a cada aparição, e expõe o documento como v2 em memória. A leitura não regrava o
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
+
+## Grafo de relacionamentos: v1/v2/v3 → v4
+
+`relationship-graph.json` usa schema próprio na versão 4; sua ausência representa organização
+automática, filtros, catálogo, anotações e pastas vazios, sem criar arquivo na leitura. As versões
+1 a 3 são convertidas em memória e começam sem pastas: a versão 1 inicia com catálogo vazio
+e as versões 1 e 2 iniciam sem setas livres. Revisão, posições, filtros, estilos e anotações existentes
+são preservados; o próximo salvamento modificado grava a versão 4. O leitor aceita anotações v3
+com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds anteriores à v4
+podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
+original de `directional`.
 
 ## Mundo: v1 → v24
 

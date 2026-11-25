@@ -285,6 +285,13 @@
   @apply border-l-danger bg-danger/10;
 }
 
+/* Landscape phones keep the compact navigation above the relationship surface. */
+@media (pointer: coarse) and (max-height: 580px) {
+  [data-relationship-shell] { flex-direction: column; }
+  [data-relationship-shell] > aside { display: none; }
+  [data-relationship-shell] > header { display: flex; }
+}
+
 /* Keep projection available above the timeline camera controls. */
 body:has([data-cosmic-timeline]) [data-page-projection] {
   right: 28px;

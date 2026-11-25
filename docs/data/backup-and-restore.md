@@ -1,5 +1,8 @@
 # Backup, restauração, importação e descarte
 
+Para o driver padrão, siga o [backup e a restauração do SQLite](sqlite.md#backup-e-restauração).
+As instruções abaixo se aplicam às bibliotecas legadas em arquivos.
+
 ## O que deve ser copiado
 
 O backup manual confiável é uma cópia do workspace com o servidor parado ou sem nenhuma gravação
@@ -63,6 +66,10 @@ primeiro mundo disponível.
 Outra opção é usar a interface **Carregar pasta** em `/`: informe a pasta que contém
 `world.json` ou a raiz de outro Canon Codex. A aplicação copia o mundo para a biblioteca, ajusta o
 slug de diretório em caso de colisão e preserva o `World.id`.
+
+Se você arquivou uma pasta incompleta pelo aviso da biblioteca, os arquivos ficam em
+`trash/worlds/<nome>-<sufixo>/` no diretório de dados. Trabalhe sobre uma cópia dessa pasta e
+restaure o `world.json` correspondente de um backup antes de importar a cópia.
 
 ## Colisões e cópias
 

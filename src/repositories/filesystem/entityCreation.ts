@@ -1,5 +1,5 @@
 import 'server-only'
-import { emptyContentDocument } from '@/domain/content/contentDocument'
+import { ContentDocumentSchema, emptyContentDocument } from '@/domain/content/contentDocument'
 import { ENTITY_SCHEMA_VERSION, EntitySchema, NewEntityInputSchema, type Entity, type NewEntityInput } from '@/domain/entities/entity'
 import { emptyTimelineData } from '@/domain/timelines/timeline'
 import { atomicWriteJson } from '@/lib/fs/atomicWrite'
@@ -15,8 +15,9 @@ export function buildNewEntity(worldId: string, input: NewEntityInput): Entity {
     relations: [], schemaVersion: ENTITY_SCHEMA_VERSION, createdAt: now, updatedAt: now })
 }
 
-export async function writeInitialEntityFiles(worldDir: string, entity: Entity): Promise<void> {
+export async function writeInitialEntityFiles(worldDir: string, entity: Entity, content = emptyContentDocument()): Promise<void> {
+  const document = ContentDocumentSchema.parse(content)
   await atomicWriteJson(getEntityMetadataPath(worldDir, entity.id), entity)
-  await atomicWriteJson(getEntityContentPath(worldDir, entity.id), emptyContentDocument())
+  await atomicWriteJson(getEntityContentPath(worldDir, entity.id), document)
   if (entity.type === 'timeline') await atomicWriteJson(getTimelineDataPath(worldDir, entity.id), emptyTimelineData(entity.worldId, entity.id))
 }

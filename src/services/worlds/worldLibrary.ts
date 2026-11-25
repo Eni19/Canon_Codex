@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cp, readdir, rename, rm, stat } from 'node:fs/promises'
+import { cp, lstat, mkdir, readdir, rename, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import type { World } from '@/domain/worlds/world'
@@ -10,7 +10,8 @@ import { getWorkspaceRoot, getWorldDir, getWorldJsonPath, getWorldsRootDir } fro
 import { newId } from '@/lib/ids'
 import { readMigratedJson } from '@/lib/migrations/registry'
 import { slugify } from '@/lib/slugify'
-import { getWorldRepository } from '@/repositories'
+import { getSqliteWorldRepository, getWorldRepository } from '@/repositories'
+import { readLegacySource } from '@/repositories/sqlite/legacy-source'
 import { worldMigrations } from '@/repositories/filesystem/migrations'
 import { readWorldByDir, resolveWorldDir } from '@/repositories/filesystem/worldDirRegistry'
 import { WorldSchema } from '@/domain/worlds/world'
@@ -20,6 +21,41 @@ export class WorldImportError extends Error {
     super(message)
     this.name = 'WorldImportError'
   }
+}
+
+export class IncompleteWorldArchiveError extends Error {}
+
+async function ensureLocalDirectory(directory: string) {
+  await mkdir(directory).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EEXIST') throw error
+  })
+  if (!(await lstat(directory)).isDirectory()) {
+    throw new IncompleteWorldArchiveError('A lixeira interna não aponta para uma pasta local.')
+  }
+}
+
+/** Remove an incomplete folder from discovery without deleting or rewriting its contents. */
+export async function archiveIncompleteWorld(name: string): Promise<void> {
+  const entries = await readdir(getWorldsRootDir(), { withFileTypes: true })
+  const entry = entries.find((folder) => folder.name === name && folder.isDirectory())
+  if (!entry) throw new IncompleteWorldArchiveError('Pasta não encontrada na biblioteca. Atualize a página.')
+
+  const source = getWorldDir(entry.name)
+  const trashRoot = path.join(getWorkspaceRoot(), 'trash')
+  const trash = path.join(trashRoot, 'worlds')
+  await ensureLocalDirectory(trashRoot)
+  await ensureLocalDirectory(trash)
+
+  // Recheck after preparing the destination: a restored world must remain in the library.
+  if (!(await lstat(source)).isDirectory()) {
+    throw new IncompleteWorldArchiveError('Pasta não encontrada na biblioteca. Atualize a página.')
+  }
+  const metadata = await lstat(getWorldJsonPath(entry.name)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') return null
+    throw error
+  })
+  if (metadata) throw new IncompleteWorldArchiveError('Esta pasta não está mais sem metadados. Atualize a biblioteca.')
+  await rename(source, path.join(trash, entry.name.slice(0, 120) + '-' + newId()))
 }
 
 async function uniqueSlug(base: string): Promise<string> {
@@ -33,6 +69,8 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export async function createWorld(name: string, description?: string): Promise<World> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.createWorld(name, description)
   const cleanName = name.trim()
   if (!cleanName) throw new Error('Informe um nome para o novo Codex.')
   const slug = await uniqueSlug(cleanName)
@@ -77,6 +115,14 @@ async function discoverWorldFolders(sourcePath: string): Promise<string[]> {
 
 export async function importWorldsFromFolder(sourcePath: string): Promise<World[]> {
   if (!sourcePath.trim()) throw new WorldImportError('Informe a pasta que deseja carregar.')
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) {
+    try {
+      return sqlite.importWorlds(await readLegacySource(sourcePath, 'folder'))
+    } catch (error) {
+      throw new WorldImportError(error instanceof Error ? error.message : 'Não foi possível importar o Codex.')
+    }
+  }
   const sources = await discoverWorldFolders(sourcePath)
   const existing = await getWorldRepository().listWorlds()
   const existingIds = new Set(existing.map((world) => world.id))
@@ -120,6 +166,8 @@ export async function importWorldsFromFolder(sourcePath: string): Promise<World[
 }
 
 export async function renameWorld(worldId: string, name: string): Promise<World> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.renameWorld(worldId, name)
   const cleanName = name.trim()
   if (!cleanName) throw new Error('Informe um nome para o Codex.')
   const worldDir = await resolveWorldDir(worldId)
@@ -132,6 +180,8 @@ export async function renameWorld(worldId: string, name: string): Promise<World>
 }
 
 export async function deleteWorld(worldId: string): Promise<World | null> {
+  const sqlite = getSqliteWorldRepository()
+  if (sqlite) return sqlite.deleteWorld(worldId)
   const worlds = await getWorldRepository().listWorlds()
   const target = worlds.find((world) => world.id === worldId)
   if (!target) throw new Error('Codex não encontrado.')

@@ -16,11 +16,13 @@ describe('aparições de Linha do Tempo', () => {
 
   beforeEach(async () => {
     temporary = await mkdtemp(path.join(tmpdir(), 'canon-timeline-test-'))
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     process.env.WIKI_WORKSPACE_DIR = temporary
     repo = new FileSystemWorldRepository()
     worldId = (await repo.listWorlds())[0].id
   })
   afterEach(async () => {
+    vi.unstubAllEnvs()
     delete process.env.WIKI_WORKSPACE_DIR
     await rm(temporary, { recursive: true, force: true })
   })

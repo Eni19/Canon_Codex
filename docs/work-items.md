@@ -1,11 +1,20 @@
 # Trabalho em andamento e lacunas verificáveis
 
-Última verificação: **15/10/2026** (Cosmic Canvas; TL-10/TL-11/TL-12 preservados como histórico). Tickets de implementação da linha do tempo ficam em
+Última revisão: **17/11/2026** (pastas e validação do grafo). Tickets de implementação da linha do tempo ficam em
 `.scratch/linha-do-tempo-implementacao/issues/`; os demais itens abaixo registram lacunas
 comprovadas por código/configuração.
 
 | ID | Resultado esperado | Estado | Evidência | Próximo passo ou bloqueio | Última verificação |
 | --- | --- | --- | --- | --- | --- |
+| REL-01 | Executar o [plano de relacionamentos](relationship-graph-plan.md) em etapas | base e redesenho implementados | [guia](user-guide/entities.md#referências-e-relações) e [perfil](performance/relationship-graph.md) | Concluir a validação antes de migrar outros canvas | 16/11/2026 |
+| REL-02 | Ocupar toda a área útil ao lado do menu | implementado e medido em Chrome | [dimensões](performance/relationship-graph.md) em quatro viewports | Conferir zoom do navegador e dispositivos adicionais | 16/11/2026 |
+| REL-03 | Refinar visual e mostrar controles sob demanda | implementado e inspecionado em temas claro/escuro | [contrato visual](relationship-graph-plan.md#contrato-visual-obrigatório) e [perfil](performance/relationship-graph.md) | Ampliar a revisão em hardware móvel | 16/11/2026 |
+| REL-04 | Preservar câmera e estabilizar gestos | implementado; verificação parcial | `relationship-scene.ts` e testes de zoom/resize em `graphGeometry.test.ts` | Verificar trackpad e toque físicos | 16/11/2026 |
+| REL-05 | Criar relações no canvas e salvar vista automaticamente | implementado; validação sintética | `graph-relation-forms.tsx`, `use-graph-autosave.ts`, `graphRelations.test.ts` e `graphSettings.test.ts` | Completar validação de leitor de tela e falhas em navegador | 16/11/2026 |
+| REL-06 | Organizar grafo e comprovar fluidez | p95 headless acima da meta nos três gestos | [perfil 500/1.500](performance/relationship-graph.md) | Atingir a meta de fluidez e medir resposta em tela física | 17/11/2026 |
+| REL-07 | Validar visual, fluxos e acessibilidade antes da migração | build, suíte e fluxos em Chrome verificados | [critérios](relationship-graph-plan.md#rel-07--validar-antes-de-migrar) e [evidências](performance/relationship-graph.md) | Validar leitor de tela, zoom nativo, dispositivos físicos e orçamento de desempenho | 17/11/2026 |
+| REL-09 | Criar e organizar pastas diretamente no grafo | implementado e verificado em Chrome com dados sintéticos | [guia](user-guide/entities.md#referências-e-relações) e [aceite](relationship-graph-plan.md#rel-09--pastas-no-grafo) | Completar verificação física e com leitor de tela em REL-07 | 17/11/2026 |
+| REL-08 | Migrar outros canvas somente ao final | aguardando o portão REL-07 | [etapa final](relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas) | Conversor/backup → Quadros → Cenas → Linha do Tempo → retirada de tldraw | 16/11/2026 |
 | CAL-VIS-01 | Executar o [plano do calendário visual](calendar-visual-plan.md) | build e suíte verificados; revisão e perfil de produção em Chrome e Edge | [relatório de produção](performance/calendar-production.md) e [plano visual](calendar-visual-plan.md) | Confirmar fala em leitor de tela e medir a agenda em mundos grandes; acompanhar `EPERM` intermitente no filesystem | 13/11/2026 |
 | DOC-GAP-001 | Definir se o catálogo de tipos continuará híbrido ou voltará a ser totalmente genérico | aguardando decisão externa | `src/components/entities/entity-page.tsx` contém renderizadores específicos; `EntityTypeDefinition` continua dirigindo layouts genéricos | decisão de produto/arquitetura; registrar novo ADR se a regra mudar | 23/09/2026 |
 | DOC-GAP-002 | Definir política de restauração e descarte permanente | não implementado | repositórios movem registros para `trash/`, mas não há ação/UI de restauração ou purge | especificar e implementar antes de prometer recuperação pela interface | 23/09/2026 |

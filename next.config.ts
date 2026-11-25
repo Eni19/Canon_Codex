@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingExcludes: {
+    '/*': ['./workspace/**/*', './**/*.sqlite', './**/*.sqlite-*'],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",

@@ -1,13 +1,13 @@
 import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ worldId: 'world-a', importFromBuffer: vi.fn(), prepareCalendarBackground: vi.fn(), removeAsset: vi.fn() }))
+const mocks = vi.hoisted(() => ({ worldId: 'world-a', importFromBuffer: vi.fn() }))
 vi.mock('@/services/worlds/getCurrentWorld', () => ({ getCurrentWorld: async () => ({ id: mocks.worldId }) }))
-vi.mock('@/repositories', () => ({ getAssetStore: () => ({ importFromBuffer: mocks.importFromBuffer, prepareCalendarBackground: mocks.prepareCalendarBackground, removeAsset: mocks.removeAsset }) }))
+vi.mock('@/repositories', () => ({ getAssetStore: () => ({ importFromBuffer: mocks.importFromBuffer }) }))
 import { POST } from './route'
 
 describe('calendar background upload', () => {
-  beforeEach(() => { mocks.worldId = 'world-a'; mocks.importFromBuffer.mockReset(); mocks.prepareCalendarBackground.mockReset(); mocks.removeAsset.mockReset() })
+  beforeEach(() => { mocks.worldId = 'world-a'; mocks.importFromBuffer.mockReset() })
   async function request(worldId: string) {
     const bytes = await sharp({ create: { width: 10, height: 10, channels: 3, background: '#123456' } }).png().toBuffer()
     const form = new FormData()
@@ -22,16 +22,13 @@ describe('calendar background upload', () => {
   })
   it('creates the asset and both calendar variants', async () => {
     mocks.importFromBuffer.mockResolvedValue({ id: 'asset-a' })
-    mocks.prepareCalendarBackground.mockResolvedValue(undefined)
     const response = await POST(await request('world-a'))
     expect(response.status).toBe(200)
-    expect(mocks.prepareCalendarBackground).toHaveBeenCalledWith('world-a', 'asset-a')
+    expect(await response.json()).toEqual({ assetId: 'asset-a' })
+    expect(mocks.importFromBuffer).toHaveBeenCalledWith('world-a', expect.any(Buffer), 'sintetico.png', 'image/png', 'calendar-background')
   })
-  it('moves an unsuccessful import to the trash', async () => {
-    mocks.importFromBuffer.mockResolvedValue({ id: 'asset-a' })
-    mocks.prepareCalendarBackground.mockRejectedValue(new Error('processing failed'))
-    mocks.removeAsset.mockResolvedValue(undefined)
+  it('returns an error when the combined import fails', async () => {
+    mocks.importFromBuffer.mockRejectedValue(new Error('processing failed'))
     expect((await POST(await request('world-a'))).status).toBe(500)
-    expect(mocks.removeAsset).toHaveBeenCalledWith('world-a', 'asset-a')
   })
 })
