@@ -8,6 +8,8 @@ Se encontrar a árvore legada no caminho padrão, pede a migração explícita a
 O arquivo padrão fica dentro de `WIKI_WORKSPACE_DIR`. Para apontar para outro banco, defina
 `SQLITE_DATABASE_PATH` em `.env.local` e reinicie. O aplicativo usa `node:sqlite`. Use Node 24 LTS
 atualizado, com versão mínima 24.15.0.
+Em sistemas que oferecem permissões POSIX, novos bancos e arquivos publicados pela CLI são criados
+com leitura e gravação para o proprietário.
 
 ## Migrar uma biblioteca de arquivos
 

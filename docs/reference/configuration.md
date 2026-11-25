@@ -33,6 +33,7 @@ pnpm start. As opções de migração, backup e restauração estão em [SQLite]
 
 O next.config.ts configura:
 
+- exclusão do workspace e arquivos SQLite do rastreamento de dependências do build;
 - limite de corpo de 2mb para Server Actions;
 - imagens Next sem otimização (unoptimized: true) porque o optimizer não encaminha o cookie do
   mundo ativo aos assets locais;

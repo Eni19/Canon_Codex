@@ -207,10 +207,10 @@ const originHistory = z.object({
 async function readHistories(directory: string, worldId: string): Promise<LegacyWorld['histories']> {
   const histories: LegacyWorld['histories'] = []
   for (const [kind, folder] of [['date', 'date-migrations'], ['origin', 'origin-backups']] as const) {
-    const historyDir = path.join(directory, folder)
+    const historyDir = path.join(/* turbopackIgnore: true */ directory, folder)
     for (const entry of await entries(historyDir)) {
       if (!entry.name.endsWith('.json')) continue
-      const file = path.join(historyDir, entry.name)
+      const file = path.join(/* turbopackIgnore: true */ historyDir, entry.name)
       const id = z.uuid().safeParse(entry.name.slice(0, -5))
       if (!id.success) throw invalid(file, 'O nome do backup deve conter seu UUID.')
       const document = await parseFile(file, (value) => {

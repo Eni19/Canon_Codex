@@ -1,5 +1,5 @@
 import 'server-only'
-import { mkdirSync } from 'node:fs'
+import { closeSync, mkdirSync, openSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { backup, DatabaseSync } from 'node:sqlite'
 import { migrations } from './schema'
@@ -9,7 +9,14 @@ export class SqliteDatabase {
   private transactionMode: 'read' | 'write' | undefined
 
   constructor(file: string, { readOnly = false }: { readOnly?: boolean } = {}) {
-    if (!readOnly && file !== ':memory:') mkdirSync(dirname(file), { recursive: true })
+    if (!readOnly && file !== ':memory:') {
+      mkdirSync(dirname(file), { recursive: true })
+      try {
+        closeSync(openSync(/* turbopackIgnore: true */ file, 'wx', 0o600))
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+      }
+    }
     this.connection = new DatabaseSync(file, { enableForeignKeyConstraints: true, timeout: 1000, readOnly })
     if (readOnly) return
     try {

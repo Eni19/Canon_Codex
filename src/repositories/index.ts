@@ -42,9 +42,11 @@ function sqliteRepositories() {
   if (driver !== 'sqlite') throw new Error(`Unknown PERSISTENCE_DRIVER: ${driver}`)
 
   const configuredFile = process.env.SQLITE_DATABASE_PATH
-  const file = path.resolve(configuredFile || path.join(getWorkspaceRoot(), 'canon-codex.sqlite'))
+  const file = path.resolve(/* turbopackIgnore: true */ configuredFile || path.join(getWorkspaceRoot(), 'canon-codex.sqlite'))
+  const legacyTrash = path.join(/* turbopackIgnore: true */ getWorkspaceRoot(), 'trash', 'worlds')
   if (sqlite?.file === file) return sqlite
-  if (!configuredFile && !statSync(file, { throwIfNoEntry: false }) && statSync(getWorldsRootDir(), { throwIfNoEntry: false })) {
+  if (!configuredFile && !runtimePathExists(file)
+    && (runtimePathExists(getWorldsRootDir()) || runtimePathExists(legacyTrash))) {
     throw new LegacyMigrationRequiredError()
   }
   const database = new SqliteDatabase(file)
@@ -58,6 +60,10 @@ function sqliteRepositories() {
     playlists: new SqlitePlaylistRepository(database),
   }
   return sqlite
+}
+
+function runtimePathExists(file: string): boolean {
+  return Boolean(statSync(/* turbopackIgnore: true */ file, { throwIfNoEntry: false }))
 }
 
 const legacy = {
