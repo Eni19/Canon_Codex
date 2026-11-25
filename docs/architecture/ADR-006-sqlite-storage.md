@@ -40,6 +40,6 @@ modelo e do formato vetorial para a implementação da recuperação semântica.
 
 ## Estado
 
-O schema relacional inicial e a infraestrutura de conexão, migração, transações e backup
-estão implementados. A integração com as rotas e o procedimento de importação são trabalho
-da feature.
+SQLite é o driver padrão. As rotas usam os repositórios SQLite e os comandos de prévia,
+importação e backup estão disponíveis em `pnpm storage`. Para o procedimento de ativação e
+restauração, veja [Armazenamento em SQLite](../data/sqlite.md).

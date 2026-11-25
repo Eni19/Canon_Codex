@@ -57,5 +57,5 @@ volta a tocar sozinho. O volume é o do controle do mestre.
 
 ## Onde ficam os dados
 
-`workspace/worlds/<mundo>/playlists/<id>/playlist.json` (versão de esquema 1). Excluir uma
-playlist a move para `trash/` do mundo. Ver [armazenamento](../data/storage.md).
+A playlist fica no banco do mundo, com exclusão lógica em SQLite. No formato legado, excluir uma
+playlist a move para a lixeira. Ver [armazenamento SQLite](../data/sqlite.md).

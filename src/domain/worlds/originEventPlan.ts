@@ -4,7 +4,17 @@ import { exactDateAtOrdinal, exactDateToOrdinal } from '@/domain/worlds/calendar
 import { EntitySchema, type Entity } from '@/domain/entities/entity'
 import { TimelineDataSchema, type TimelineData } from '@/domain/timelines/timeline'
 import { WorldSchema, type World } from '@/domain/worlds/world'
-import type { OriginEventPreview } from '@/repositories/contracts/worldRepository'
+export interface OriginEventPreview {
+  fingerprint: string
+  eventId: string
+  eventTitle: string
+  shiftDays: number
+  affectedEntities: number
+  affectedDates: number
+  precisionChanges: number
+  examples: { title: string; field: string; before: string; after: string; precisionChanged: boolean }[]
+  worldDates: { title: string; field: string; before: string; after: string }[]
+}
 
 export interface OriginEntry {
   active: boolean

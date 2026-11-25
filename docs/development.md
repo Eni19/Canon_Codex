@@ -31,7 +31,7 @@ Comece identificando a camada afetada:
 - contrato e schema em src/domain/ e src/repositories/contracts/;
 - regra de uso em src/services/ ou src/app/actions/;
 - página e interação em src/app/ e src/components/;
-- arquivo, migração ou escrita em src/repositories/filesystem/ e src/lib/;
+- schema SQL e persistência em src/repositories/sqlite/; arquivos legados em src/repositories/filesystem/;
 - upload e leitura HTTP em src/app/api/.
 
 Componentes React não devem importar node:fs diretamente nem montar caminhos de workspace.
@@ -57,9 +57,9 @@ do catálogo em docs/user-guide/entities.md.
 
 ## Mudança de persistência
 
-Preserve os contratos e atualize as quatro áreas relevantes. O driver atual rejeita qualquer valor
-que não seja filesystem; não documente Postgres, S3 ou outro backend antes de existir uma
-implementação verificável. Mudanças de arquivo precisam manter validação Zod e escrita atômica.
+Preserve os contratos. Mudanças de schema SQL devem acrescentar uma migração em
+`src/repositories/sqlite/schema.ts`. Atualize [armazenamento SQLite](data/sqlite.md) e verifique a
+importação e o backup usando bancos temporários.
 
 ## Mudança de interface ou API
 

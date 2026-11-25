@@ -13,6 +13,9 @@ import type { CalendarDateValue } from '@/domain/worlds/calendar-date'
 import type { TimelineAppearance, TimelineAppearanceFields, TimelineData } from '@/domain/timelines/timeline'
 import type { TimelineScale } from '@/domain/timelines/timelineScale'
 import type { DateMigrationPreview } from '@/domain/worlds/dateMigration'
+import type { OriginEventPreview } from '@/domain/worlds/originEventPlan'
+
+export type { OriginEventPreview } from '@/domain/worlds/originEventPlan'
 
 export interface EntityListFilter {
   type?: string
@@ -73,16 +76,4 @@ export interface WorldRepository {
   removeRelation(worldId: string, sourceId: string, relationId: string): Promise<void>
   /** Derived data: computed by scanning every entity's `relations` array for this target. */
   getBacklinks(worldId: string, entityId: string): Promise<Backlink[]>
-}
-
-export interface OriginEventPreview {
-  fingerprint: string
-  eventId: string
-  eventTitle: string
-  shiftDays: number
-  affectedEntities: number
-  affectedDates: number
-  precisionChanges: number
-  examples: { title: string; field: string; before: string; after: string; precisionChanged: boolean }[]
-  worldDates: { title: string; field: string; before: string; after: string }[]
 }

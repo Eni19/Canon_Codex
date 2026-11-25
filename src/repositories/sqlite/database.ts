@@ -8,9 +8,10 @@ export class SqliteDatabase {
   readonly connection: DatabaseSync
   private transactionMode: 'read' | 'write' | undefined
 
-  constructor(file: string) {
-    if (file !== ':memory:') mkdirSync(dirname(file), { recursive: true })
-    this.connection = new DatabaseSync(file, { enableForeignKeyConstraints: true, timeout: 1000 })
+  constructor(file: string, { readOnly = false }: { readOnly?: boolean } = {}) {
+    if (!readOnly && file !== ':memory:') mkdirSync(dirname(file), { recursive: true })
+    this.connection = new DatabaseSync(file, { enableForeignKeyConstraints: true, timeout: 1000, readOnly })
+    if (readOnly) return
     try {
       this.write(() => {
         const version = Number(this.connection.prepare('PRAGMA user_version').get()?.user_version)

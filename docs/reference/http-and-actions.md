@@ -1,6 +1,7 @@
 # Referência HTTP e Server Actions
 
-Estas são interfaces internas da aplicação, verificadas em 28/09/2026. Elas usam o mundo ativo
+Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
+escritas de arquivos nesta referência descrevem o driver legado. Elas usam o mundo ativo
 selecionado pelo cookie canon-codex-world; não há autenticação, versionamento ou promessa de
 compatibilidade para consumidores externos.
 
@@ -157,7 +158,7 @@ handler, sem envelope/status específico implementado.
 openWorldAction valida o ID e grava o cookie antes de redirecionar para /codex.
 createWorldAction cria com seed e abre o mundo. importWorldAction descobre/copia uma ou mais
 pastas, rejeita inválidos/IDs duplicados e abre o primeiro importado. manageWorldAction renomeia
-ou move para trash/worlds/; se o removido era ativo, seleciona outro ou limpa o cookie.
+ou exclui logicamente; se o removido era ativo, seleciona outro ou limpa o cookie.
 
 `updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
 valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de
@@ -220,7 +221,8 @@ de calendário ou uma string ISO legada, validando precisão, existência de mê
 antes de gravar. O editor envia valores novos como JSON e valores legados como ISO no campo oculto; a leitura usa o mesmo formatador
 do domínio, inclusive na apresentação especial de Evento e Organização. Strings ISO antigas são
 mantidas como strings quando o registro é salvo. Dados inválidos são devolvidos como `{ error }` e não
-são gravados. Se houver content, a action também salva as páginas Tiptap. Os campos `coverAssetId` e
+são gravados. Se houver content, a action passa as páginas Tiptap junto dos metadados para o repositório.
+No SQLite, a operação salva ambos na mesma transação. Os campos `coverAssetId` e
 `symbolAssetId` distinguem ausente (mantém), vazio (remove) e UUID (define); quando a imagem muda,
 `updateEntityAction` apaga a anterior se nenhum registro a referencia.
 `deleteEntityAction` move a pasta para a lixeira e redireciona ao catálogo.

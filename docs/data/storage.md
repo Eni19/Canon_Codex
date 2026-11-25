@@ -1,7 +1,7 @@
 # Armazenamento e modelo de dados
 
-O Canon Codex atual não usa banco relacional, ORM, SQL ou storage remoto. A fonte da verdade é a
-árvore de arquivos JSON e binários sob `WIKI_WORKSPACE_DIR`.
+Para o driver atual, consulte [armazenamento, migração e backup do SQLite](sqlite.md).
+Esta página descreve a árvore JSON do driver legado `filesystem`, ainda aceita para importação.
 
 O diretório local `workspace/` é privado: permanece ignorado pelo Git e pela política de contexto da
 IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintéticos fora dele.
@@ -227,8 +227,6 @@ atomicamente; não existe transação entre arquivos nem backup automático dess
 durante as gravações pode deixar parte das linhas limpa; a próxima consulta retoma de forma
 idempotente. Recuperar aparições já removidas exige um backup anterior à limpeza.
 
-## Banco futuro
+## Driver SQLite
 
-Quando um banco relacional for introduzido, a mesma mudança deverá atualizar esta referência com
-entidades, chaves, índices, restrições, acesso/autorização, migrações, backup e rollback. Até lá,
-qualquer documento que descreva SQL ou Postgres seria planejamento, não estado implementado.
+A estrutura SQL e os procedimentos de conversão e recuperação estão em [SQLite](sqlite.md).

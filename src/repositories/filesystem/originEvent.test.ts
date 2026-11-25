@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dateToOrdinal } from '@/domain/worlds/calendar'
 import { exactDateToOrdinal } from '@/domain/worlds/calendar-exact-date'
 import { createWorld } from '@/services/worlds/worldLibrary'
@@ -15,11 +15,13 @@ describe('Evento de origem', () => {
 
   beforeEach(async () => {
     temporary = await mkdtemp(path.join(tmpdir(), 'canon-origin-test-'))
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     process.env.WIKI_WORKSPACE_DIR = temporary
     repo = new FileSystemWorldRepository()
     worldId = (await repo.listWorlds())[0].id
   })
   afterEach(async () => {
+    vi.unstubAllEnvs()
     delete process.env.WIKI_WORKSPACE_DIR
     await rm(temporary, { recursive: true, force: true })
   })
