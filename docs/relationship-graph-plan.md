@@ -194,6 +194,30 @@ confirmou o fluxo de pastas, os controles e avisos na árvore de acessibilidade 
 teclado. O p95 de pan, zoom e arraste no cenário denso ficou acima de 20 ms. Leitor de tela e gestos
 em dispositivos físicos seguem pendentes.
 
+### Roteiro manual para fechar REL-07
+
+Estes passos precisam de uma pessoa com o dispositivo real; o ambiente automatizado não substitui
+leitor de tela, trackpad ou tela de toque físicos. Use um mundo sintético (veja o
+[perfil do grafo](performance/relationship-graph.md)) e registre falhas em [bugs.md](bugs.md).
+
+1. **Leitor de tela (NVDA no Windows ou VoiceOver no macOS).** Abra **Relacionamentos**, navegue
+   com Tab até a barra de ferramentas e confirme que cada botão é lido com nome e estado
+   (pressionado/expandido). Abra a lista acessível, busque um registro e confirme que a contagem
+   de resultados é anunciada. Abra a ficha pelo teclado, feche com Esc e confirme que o foco volta
+   ao botão de origem. Simule uma falha de salvamento (servidor parado) e confirme que o aviso é
+   lido sem mover o foco.
+2. **Zoom nativo do navegador.** Com Ctrl + e Ctrl − (até 200%), confirme que barras, painéis e a
+   navegação de pastas continuam utilizáveis e que nenhum controle cobre o registro focado.
+3. **Trackpad.** Dois dedos deslocam a câmera; pinça aproxima e afasta em torno do cursor; um
+   clique seleciona; arrastar um cartão move só o cartão. Confirme que a página não rola junto.
+4. **Tela de toque.** Toque seleciona; arrastar o fundo desloca; pinça com dois dedos aproxima;
+   arrastar um cartão até uma pasta o move; o aviso de salvamento aparece e some.
+5. **Desempenho percebido.** No mundo de 500 registros, desloque, aproxime e arraste por alguns
+   segundos e anote travadas visíveis, com o modelo do dispositivo e o navegador.
+
+Em 25/11/2026, com o Chrome emulando toque pelo CDP, o toque em um cartão abriu a ficha e a pinça
+aproximou a câmera no mundo de 500 registros. Isso não conta como validação física.
+
 ## REL-09 — Pastas no grafo
 
 **Implementado.** Organizar cartões de qualquer tipo em pastas diretamente em **Relacionamentos**.
