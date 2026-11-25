@@ -123,6 +123,11 @@ dois cartões por clique/toque. Também é possível pesquisar origem e destino 
 Depois de marcar a origem, digite o nome do próximo cartão. A busca esmaece os demais durante a
 digitação, mantém a origem visível e oferece os resultados no grafo e em uma lista.
 Digite um tipo, escolha uma das sugestões ou use **Novo tipo de seta** no próprio formulário.
+As sugestões começam pelos tipos mais usados entre os mesmos tipos de registro (por exemplo,
+personagem → organização) e depois seguem os mais usados no mundo. O botão entre os campos troca
+origem e destino. Se já existir um vínculo do mesmo tipo entre os dois registros, o formulário
+avisa, bloqueia a duplicata e oferece **Abrir vínculo existente**; sem sentido único, a ordem
+das pontas não importa para essa conferência.
 Você pode alterar o sentido para este vínculo e adicionar um rótulo. Na criação e na edição,
 o formulário mostra uma prévia quando o tipo tem um estilo no catálogo. **Criar relação** grava o vínculo na ficha de
 origem e a referência aparece na ficha de destino. Selecione um vínculo no canvas ou na lista para editá-lo ou removê-lo;

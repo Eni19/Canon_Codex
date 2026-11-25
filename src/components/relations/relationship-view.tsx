@@ -609,7 +609,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
         })}</ul>
         <Pager page={current} total={total} setPage={setPage} />
       </>}
-      {panel === 'connect' && <CreateGraphRelation worldId={initialSettings.worldId} entities={entities} styles={styles} typeLabels={typeLabels} source={source} target={target} setSource={setSource} setTarget={setTarget} onCreated={saveRelation} onStyleCreated={updateStyle} />}
+      {panel === 'connect' && <CreateGraphRelation worldId={initialSettings.worldId} entities={entities} relations={relations} onOpenRelation={selectRelation} styles={styles} typeLabels={typeLabels} source={source} target={target} setSource={setSource} setTarget={setTarget} onCreated={saveRelation} onStyleCreated={updateStyle} />}
       {panel === 'card' && card && <>
         <div><h3 className="text-lg">{card.title}</h3><p className="text-muted-foreground">{typeLabels[card.type] ?? card.type}</p></div>
         <div className="flex flex-wrap gap-2">
