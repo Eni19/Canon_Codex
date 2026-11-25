@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import type { ReactNode } from 'react'
+import { cloneElement, type ReactElement, type ReactNode } from 'react'
 import { formatRecordCount, pageNumbers, seededRandom, type NotebookRecord, type Spread } from './notebook-contents'
 import {
-  CutoutTitle, HandArrow, HandLink, Handwriting, Paperclip, Polaroid, Postmark, StarSticker, StickyFlags, Tape,
+  CutoutTitle, HandLink, Handwriting, Paperclip, Polaroid, Postmark, StarSticker, StickyFlags, Tape,
   Ticket, TornNote, TypeLabel, type TapeColor,
 } from './scraps'
 import styles from './notebook.module.css'
@@ -26,51 +26,74 @@ export interface SpreadPages {
 const thumbnail = (record: NotebookRecord) => record.coverAssetId ? `/api/assets/${record.coverAssetId}/thumbnail` : undefined
 
 /** A notebook sheet: paper, ruling, the gutter shadow and the page number. */
-export function Sheet({ side, paper = 'grid', number, children }: { side: 'left' | 'right'; paper?: 'grid' | 'lined' | 'plain'; number?: number; children: ReactNode }) {
+interface PageArrow {
+  dir: 'prev' | 'next'
+  label: string
+  onClick: () => void
+}
+
+interface SheetProps {
+  side: 'left' | 'right'
+  paper?: 'grid' | 'lined' | 'plain'
+  number?: number
+  /** Hand-drawn arrow in the bottom corner that turns the page. */
+  arrow?: PageArrow
+  children: ReactNode
+}
+
+/** A notebook sheet: paper, ruling, the gutter shadow, the page number and the turning arrow. */
+export function Sheet({ side, paper = 'grid', number, arrow, children }: SheetProps) {
   return <div className={styles.sheet} data-side={side} data-paper={paper}>
     {children}
     {number !== undefined && <span className={styles.pageNumber}>{number}</span>}
+    {arrow && <button type="button" className={styles.pageArrow} data-dir={arrow.dir} onClick={arrow.onClick} aria-label={arrow.dir === 'next' ? 'Próxima página' : 'Página anterior'}>
+      {arrow.dir === 'prev' && <ArrowMark/>}
+      <span>{arrow.label}</span>
+      {arrow.dir === 'next' && <ArrowMark/>}
+    </button>}
   </div>
 }
 
-/** The closed notebook. Its pasted index is the table of contents of the whole Codex. */
-export function Cover({ world, spreads, onOpen }: { world: NotebookWorld; spreads: Spread[]; onOpen: (index: number) => void }) {
-  return <div className={styles.cover}>
-    <span aria-hidden className={styles.coverCorner} data-corner="tl"/>
-    <span aria-hidden className={styles.coverCorner} data-corner="bl"/>
-    <span aria-hidden className={styles.coverCorner} data-corner="tr"/>
-    <span aria-hidden className={styles.coverCorner} data-corner="br"/>
-    <span aria-hidden className={styles.coverBand}/>
-    <div className={styles.coverLabel}>
-      <small>Canon Codex</small>
-      <strong>{world.name}</strong>
-      <span>{formatRecordCount(world.recordCount)}</span>
-    </div>
-    <StarSticker x={112} y={92} r={-12} tone="brass"/>
-    <StarSticker x={470} y={150} r={18} tone="paper"/>
-    <StarSticker x={96} y={640} r={8} tone="red"/>
-    <div className={styles.coverIndex}>
-      <p className={styles.coverIndexTitle}>Índice</p>
-      <ol>
-        {spreads.map((spread, index) => <li key={spread.id}>
-          <button type="button" onClick={() => onOpen(index)}>
-            <span>{spread.tab}</span>
-            <i aria-hidden/>
-            <small>{pageNumbers(index)[0]}</small>
-          </button>
-        </li>)}
-      </ol>
-    </div>
-    <Handwriting x={472} y={760} r={-8} size={28} tone="soft">abrir</Handwriting>
-    <HandArrow x={496} y={700} r={-30}/>
+function ArrowMark() {
+  return <svg aria-hidden viewBox="0 0 90 60">
+    <path d="M4 40 C 26 46, 52 40, 74 22" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/>
+    <path d="M60 22 L 75 20 L 74 36" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+}
+
+/**
+ * The index card. Closed, it lies on the cover; as the notebook opens it is pulled out onto the desk
+ * beside the book, where each line opens its spread.
+ */
+export function IndexCard({ spreads, current, onOpen }: { spreads: Spread[]; current: number; onOpen: (index: number) => void }) {
+  return <div className={styles.indexCard}>
+    <span aria-hidden className={styles.indexTape}/>
+    <p className={styles.coverIndexTitle}>Índice</p>
+    <ol>
+      {spreads.map((spread, index) => <li key={spread.id}>
+        <button type="button" onClick={() => onOpen(index)} aria-current={index === current ? 'page' : undefined} data-current={index === current || undefined}>
+          <span>{spread.tab}</span>
+          <i aria-hidden/>
+          <small>{pageNumbers(index)[0]}</small>
+        </button>
+      </li>)}
+    </ol>
   </div>
 }
 
 export function renderSpread(spread: Spread, index: number, world: NotebookWorld, spreads: Spread[], onTurnTo: (index: number) => void): SpreadPages {
   const [leftNumber, rightNumber] = pageNumbers(index)
-  if (spread.kind === 'preface') return prefacePages(world, spreads, leftNumber, rightNumber, onTurnTo)
-  if (spread.kind === 'tools') return toolsPages(leftNumber, rightNumber)
-  return typePages(spread, leftNumber, rightNumber, spreads.length)
+  const pages = spread.kind === 'preface' ? prefacePages(world, spreads, leftNumber, rightNumber, onTurnTo)
+    : spread.kind === 'tools' ? toolsPages(leftNumber, rightNumber)
+    : typePages(spread, leftNumber, rightNumber, spreads.length)
+  // Every spread gets its turning arrows: back on the left (closing the book from the first page),
+  // forward on the right (except on the last spread).
+  const back: PageArrow = { dir: 'prev', label: index === 0 ? 'fechar' : 'voltar', onClick: () => onTurnTo(index - 1) }
+  const forward: PageArrow = { dir: 'next', label: 'continue', onClick: () => onTurnTo(index + 1) }
+  return {
+    left: cloneElement(pages.left as ReactElement<SheetProps>, { arrow: back }),
+    right: index < spreads.length - 1 ? cloneElement(pages.right as ReactElement<SheetProps>, { arrow: forward }) : pages.right,
+  }
 }
 
 function prefacePages(world: NotebookWorld, spreads: Spread[], leftNumber: number, rightNumber: number, onTurnTo: (index: number) => void): SpreadPages {
@@ -118,10 +141,6 @@ function prefacePages(world: NotebookWorld, spreads: Spread[], leftNumber: numbe
           : <p className={styles.noteText}>Nada por aqui ainda.</p>}
       </TornNote>
       <Paperclip x={512} y={110} r={8}/>
-      <Handwriting x={300} y={640} size={27} r={-4}>continue</Handwriting>
-      <button type="button" className={`${styles.piece} ${styles.turnHint}`} style={{ left: 420, top: 600 }} onClick={() => onTurnTo(1)} aria-label="Próxima página">
-        <HandArrow x={0} y={0} r={-8}/>
-      </button>
     </Sheet>,
   }
 }

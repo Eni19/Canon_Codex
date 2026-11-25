@@ -29,8 +29,10 @@ describe('leafPose', () => {
 
 describe('dragProgress', () => {
   it('turns the leaf linearly with the pull, in the direction of the turn', () => {
-    expect(dragProgress(-310, 1000, 'next')).toBeCloseTo(0.5)
-    expect(dragProgress(310, 1000, 'prev')).toBeCloseTo(0.5)
+    expect(dragProgress(-400, 1000, 'next')).toBeCloseTo(Math.pow(0.5, 1.35))
+    expect(dragProgress(400, 1000, 'prev')).toBeCloseTo(Math.pow(0.5, 1.35))
+    // The start of a pull moves the leaf less than its share: lifting a page takes effort.
+    expect(dragProgress(-200, 1000, 'next')).toBeLessThan(0.25)
     expect(dragProgress(200, 1000, 'next')).toBe(0)
     expect(dragProgress(-2000, 1000, 'next')).toBe(1)
   })
@@ -40,7 +42,8 @@ describe('shouldComplete', () => {
   it('completes past 42% of the way or on a quick throw', () => {
     expect(shouldComplete(0.5, 0)).toBe(true)
     expect(shouldComplete(0.3, 0)).toBe(false)
-    expect(shouldComplete(0.1, 1.5)).toBe(true)
+    expect(shouldComplete(0.1, 2)).toBe(true)
+    expect(shouldComplete(0.1, 1.2)).toBe(false)
   })
 })
 

@@ -1,7 +1,6 @@
-/* Codex notebook: a scrapbook diary on a walnut desk. Pages are laid out on a 600 × 820 sheet and
-   the book is scaled to fit (--scale). Colours come from the --nb-* tokens in globals.css. */
-
-/* ---------------------------------------------------------------- desk */
+/* Codex notebook: a 3D notebook (three.js) on a desk. While pages lie still, their HTML is laid
+   exactly over the 3D pages (sharp and clickable); while they move, the 3D pages wear pictures of
+   that HTML. Pages are composed on a 600 × 820 sheet. Colours come from the --nb-* tokens. */
 
 .stage {
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -12,110 +11,188 @@
   isolation: isolate;
   touch-action: none;
   user-select: none;
-  perspective: 4200px;
-  background: var(--nb-desk-deep);
+  background: radial-gradient(75% 70% at 50% 48%, var(--nb-backdrop), var(--nb-backdrop-deep));
 }
 
-/* A dark, warm desk mat: fine woven texture and a soft pool of lamp light, nothing that competes
-   with the paper. */
-.desk {
-  --weave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M0 0h3v3H0zM3 3h3v3H3z' fill='%23000' fill-opacity='.07'/%3E%3C/svg%3E");
+.canvas {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(60% 55% at 50% 46%, color-mix(in oklch, var(--nb-brass) 14%, transparent), transparent 75%),
-    radial-gradient(120% 95% at 50% 50%, transparent 40%, color-mix(in oklch, var(--nb-desk-deep) 90%, transparent) 100%),
-    var(--grain),
-    var(--weave),
-    var(--nb-desk);
 }
 
-/* ---------------------------------------------------------------- book */
+/* ---------------------------------------------------------------- overlays */
 
-.bookFrame {
+.overlays {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  inset: 0;
   z-index: 1;
-  width: 1200px;
-  height: 820px;
-  transform: translate(-50%, -50%) scale(var(--scale, 0.6));
+  overflow: hidden;
+  pointer-events: none;
 }
 
-/* The book itself is flat (2D): 3D transforms on large, layered content make Firefox tile, drop
-   blend modes and misplace clicks. Only the turning leaf, in .turnLayer, is 3D. */
-.book {
-  position: relative;
-  isolation: isolate;
-  width: 100%;
-  height: 100%;
-  transform: translateX(var(--slide, 0));
-}
-
-/* Open, the cover shows around the pages, and a few page edges show the book's thickness. */
-.book::before {
-  content: '';
-  position: absolute;
-  inset: -16px -14px -18px -14px;
-  border-radius: 10px;
-  background: var(--grain), linear-gradient(160deg, var(--nb-cover), var(--nb-cover-deep));
-  box-shadow: 0 40px 70px -24px var(--nb-shadow), inset 0 0 0 1px color-mix(in oklch, var(--nb-cover-deep) 80%, black);
-  z-index: -2;
-}
-
-.book::after {
-  content: '';
-  position: absolute;
-  inset: 4px -5px -7px -5px;
-  border-radius: 6px;
-  background: repeating-linear-gradient(var(--nb-paper-shade) 0 2px, var(--nb-paper-aged) 2px 3px);
-  z-index: -1;
-}
-
-/* Closed, only the right half (the cover itself) is on the desk; the left board unfolds as it opens. */
-.book::before,
-.book::after {
-  clip-path: inset(-40px -40px -40px calc(var(--closed, 0) * 50% + (1 - var(--closed, 0)) * -40px));
-}
-
-.page {
+.overlayPage,
+.overlayIndex {
   position: absolute;
   top: 0;
-  z-index: 1;
+  left: 0;
+  transform-origin: 0 0;
+  visibility: hidden;
+}
+
+.overlayPage {
   width: 600px;
   height: 820px;
 }
 
-.page[data-side='left'] {
-  left: 0;
+.overlayPage[data-visible],
+.overlayIndex[data-visible] {
+  visibility: visible;
+  pointer-events: auto;
 }
 
-.page[data-side='right'] {
-  left: 600px;
+/* The 3D book already draws the page's edge and shadow; the HTML copy only needs no shadow of its own. */
+.overlayPage .sheet {
+  box-shadow: none;
+  border-radius: 0;
 }
 
-.book[data-turning] .page {
-  pointer-events: none;
+/* ---------------------------------------------------------------- index card */
+
+.indexCard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 26px 26px 20px;
+  background-color: var(--nb-card);
+  background-image: repeating-linear-gradient(transparent 0 27px, var(--nb-rule) 27px 28px);
+  background-position: 0 62px;
+  color: var(--nb-ink);
 }
 
-/* The lifted leaf casts a soft shadow across the pages near the spine. */
-.book[data-turning] .page::after {
-  content: '';
+.indexTape {
   position: absolute;
-  inset: 0;
-  z-index: 20;
+  top: -10px;
+  left: 50%;
+  width: 96px;
+  height: 26px;
+  background: var(--nb-tape);
+  translate: -50% 0;
+  rotate: -3deg;
+}
+
+.indexCard ol {
+  display: grid;
+}
+
+.indexCard button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  color: var(--nb-ink);
+  font: 22px/28px var(--font-hand);
+  text-align: left;
+}
+
+.indexCard button i {
+  flex: 1;
+  border-bottom: 2px dotted color-mix(in oklch, var(--nb-ink) 35%, transparent);
+}
+
+.indexCard button small {
+  font: 13px var(--font-type);
+}
+
+.indexCard button:hover span,
+.indexCard button[data-current] span {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.indexCard button[data-current] {
+  font-weight: 700;
+}
+
+.indexCard button:focus-visible,
+.pageArrow:focus-visible,
+.openHint:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+/* Hand-drawn arrows in the bottom corners of each page: the next page on the right, the previous on the left. */
+.pageArrow {
+  position: absolute;
+  bottom: 40px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  color: var(--nb-ink);
+  font: 26px var(--font-hand);
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms ease;
+}
+
+.pageArrow svg {
+  width: 64px;
+  height: 40px;
+}
+
+.pageArrow[data-dir='next'] {
+  right: 70px;
+}
+
+.pageArrow[data-dir='prev'] {
+  left: 70px;
+}
+
+.pageArrow[data-dir='prev'] svg {
+  scale: -1 1;
+}
+
+.pageArrow[data-dir='next']:hover {
+  translate: 6px 0;
+}
+
+.pageArrow[data-dir='prev']:hover {
+  translate: -6px 0;
+}
+
+
+.openHint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  z-index: 2;
+  padding: 8px 16px;
+  color: var(--nb-paper);
+  font: 26px var(--font-hand);
+  translate: -50% 0;
+  opacity: 0.8;
+  transition: opacity 160ms ease;
+}
+
+.openHint:hover {
+  opacity: 1;
+}
+
+/* Off-screen copies of the pages, photographed into the 3D book's textures. */
+.snapshots {
+  position: fixed;
+  top: 0;
+  left: -20000px;
   pointer-events: none;
-  opacity: calc(var(--lift, 0) * 0.62);
 }
 
-.book[data-turning] .page[data-side='right']::after {
-  background: linear-gradient(90deg, color-mix(in oklch, var(--nb-desk) 45%, transparent), transparent 46%);
+.snapshot {
+  position: relative;
+  overflow: hidden;
 }
 
-.book[data-turning] .page[data-side='left']::after {
-  background: linear-gradient(270deg, color-mix(in oklch, var(--nb-desk) 45%, transparent), transparent 46%);
-}
+/* ---------------------------------------------------------------- sheet */
 
 .sheet {
   position: absolute;
@@ -192,324 +269,10 @@
   right: 34px;
 }
 
-/* ---------------------------------------------------------------- turning leaf */
-
-.turnLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  perspective: 2300px;
-  perspective-origin: 50% 46%;
-}
-
-.leaf {
-  position: absolute;
-  left: 600px;
-  top: 0;
-  height: 820px;
-  transform-style: preserve-3d;
-}
-
-.strip {
-  position: absolute;
-  top: 0;
-  left: 100%;
-  height: 820px;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  transform: rotateY(var(--step, 0deg));
-}
-
-.strip[data-first] {
-  left: 0;
-  transform: rotateY(var(--spine, 0deg));
-}
-
-.face {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  /* 1px overlap with the next strip, so no hairline seam shows between them. */
-  width: calc(100% + 1px);
-  overflow: hidden;
-  background: var(--nb-paper);
-  visibility: var(--front, visible);
-}
-
-.face[data-face='back'] {
-  left: -1px;
-  transform: rotateY(180deg);
-  visibility: var(--back, hidden);
-}
-
-.faceContent {
-  position: absolute;
-  top: 0;
-  width: 600px;
-  height: 820px;
-}
-
-/* Warm shadow across each strip, darker as it turns edge-on to the light. */
-.faceShade {
-  position: absolute;
-  inset: 0;
-  z-index: 50;
-  background: linear-gradient(90deg,
-    color-mix(in oklch, var(--nb-desk) calc(var(--near, 0) * 100%), transparent),
-    color-mix(in oklch, var(--nb-desk) calc(var(--far, 0) * 100%), transparent));
-}
-
-.face[data-face='back'] .faceShade {
-  background: linear-gradient(270deg,
-    color-mix(in oklch, var(--nb-desk) calc(var(--near, 0) * 100%), transparent),
-    color-mix(in oklch, var(--nb-desk) calc(var(--far, 0) * 100%), transparent));
-}
-
-/* A soft sheen where the lifted paper faces the light. */
-.faceGloss {
-  position: absolute;
-  inset: 0;
-  z-index: 51;
-  background: var(--nb-card);
-  opacity: calc(var(--lift, 0) * var(--lit, 1) * var(--lit, 1) * 0.2);
-}
-
-/* ---------------------------------------------------------------- tabs */
-
-.tabs {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Post-it bookmarks tucked under the page edge, labelled horizontally so they can be read. Tabs for
-   spreads ahead stick out on the right; once turned past, they move to the left. */
-.tab {
-  position: absolute;
-  display: flex;
-  width: 218px;
-  align-items: center;
-  padding: 0 12px 2px;
-  color: var(--nb-ink);
-  font: 23px/1 var(--font-hand);
-  text-align: left;
-  box-shadow: 3px 4px 8px -3px var(--nb-shadow), inset 0 -10px 12px -12px color-mix(in oklch, var(--nb-ink) 35%, transparent);
-  pointer-events: auto;
-  transition: translate 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease;
-}
-
-.tab span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tab[data-tone='0'] { background: color-mix(in oklch, var(--nb-highlight) 85%, var(--nb-card)); }
-.tab[data-tone='1'] { background: color-mix(in oklch, var(--nb-tape-rose) 90%, var(--nb-card)); }
-.tab[data-tone='2'] { background: color-mix(in oklch, var(--nb-tape-blue) 90%, var(--nb-card)); }
-.tab[data-tone='3'] { background: color-mix(in oklch, var(--nb-tape-green) 90%, var(--nb-card)); }
-
-.tab[data-long] {
-  font-size: 20px;
-}
-
-.tab[data-side='right'] {
-  left: 1164px;
-  padding-left: 46px;
-}
-
-.tab[data-side='left'] {
-  left: -182px;
-  justify-content: flex-end;
-  padding-right: 46px;
-}
-
-.tab[data-side='right']:hover:not(:disabled) {
-  translate: 10px 0;
-}
-
-.tab[data-side='left']:hover:not(:disabled) {
-  translate: -10px 0;
-}
-
-/* The open spread's bookmark: underlined like a ticked line in the margin. */
-.tab[data-current] {
-  translate: -8px 0;
-  font-weight: 700;
-  box-shadow: 4px 6px 10px -3px var(--nb-shadow);
-}
-
-.tab[data-current] span {
-  text-decoration: underline 2px color-mix(in oklch, var(--nb-red) 70%, transparent);
-  text-underline-offset: 4px;
-}
-
-.tab:focus-visible,
-.indexTag:focus-visible,
-.coverIndex button:focus-visible,
-.interactive:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
-}
-
-/* Paper tag in the corner that closes the notebook back to its index. */
-.indexTag {
-  position: absolute;
-  top: 24px;
-  right: 34px;
-  z-index: 3;
-  padding: 10px 18px 10px 26px;
-  border-radius: 4px;
-  background: var(--nb-paper-aged);
-  color: var(--nb-ink);
-  font: 15px var(--font-type);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-  box-shadow: 6px 8px 14px var(--nb-shadow);
-  rotate: 6deg;
-  transition: rotate 200ms cubic-bezier(0.23, 1, 0.32, 1), scale 160ms ease;
-}
-
-.indexTag::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--nb-desk-deep);
-  translate: 0 -50%;
-}
-
-.indexTag:hover {
-  rotate: 2deg;
-}
-
-.indexTag:active {
-  scale: 0.97;
-}
-
-/* ---------------------------------------------------------------- cover */
-
-.cover {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 4px 14px 14px 4px;
-  background:
-    var(--grain),
-    radial-gradient(90% 70% at 40% 30%, color-mix(in oklch, var(--nb-cover) 80%, var(--nb-brass)), transparent 70%),
-    linear-gradient(160deg, var(--nb-cover), var(--nb-cover-deep));
-  box-shadow: inset 10px 0 18px -8px var(--nb-shadow), 0 34px 60px -20px var(--nb-shadow);
-}
-
-.coverCorner {
-  position: absolute;
-  width: 54px;
-  height: 54px;
-  background: linear-gradient(135deg, var(--nb-brass), color-mix(in oklch, var(--nb-brass) 60%, var(--nb-desk-deep)));
-}
-
-.coverCorner[data-corner='tl'] { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
-.coverCorner[data-corner='tr'] { top: 0; right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-.coverCorner[data-corner='bl'] { bottom: 0; left: 0; clip-path: polygon(0 0, 100% 100%, 0 100%); }
-.coverCorner[data-corner='br'] { right: 0; bottom: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
-
-/* The elastic band that keeps the notebook shut. */
-.coverBand {
-  position: absolute;
-  top: 0;
-  right: 64px;
-  bottom: 0;
-  width: 14px;
-  background: linear-gradient(90deg, var(--nb-desk-deep), color-mix(in oklch, var(--nb-desk-deep) 70%, var(--nb-paper)) 45%, var(--nb-desk-deep));
-  box-shadow: -4px 0 8px var(--nb-shadow);
-}
-
-.coverLabel {
-  position: absolute;
-  top: 120px;
-  left: 90px;
-  display: grid;
-  width: 360px;
-  gap: 6px;
-  padding: 22px 26px;
-  background: var(--nb-paper);
-  color: var(--nb-ink);
-  box-shadow: 0 6px 14px var(--nb-shadow);
-  rotate: -1.5deg;
-}
-
-.coverLabel small {
-  color: var(--nb-red);
-  font: 13px var(--font-type);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.coverLabel strong {
-  font-family: var(--font-serif);
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 1.05;
-  text-wrap: balance;
-}
-
-.coverLabel span {
-  color: var(--nb-ink-soft);
-  font: 15px var(--font-type);
-}
-
-.coverIndex {
-  position: absolute;
-  top: 330px;
-  left: 110px;
-  width: 340px;
-  padding: 18px 22px 20px;
-  background-color: var(--nb-card);
-  background-image: repeating-linear-gradient(transparent 0 27px, var(--nb-rule) 27px 28px);
-  background-position: 0 44px;
-  box-shadow: 0 8px 18px var(--nb-shadow);
-  rotate: 1deg;
-}
-
 .coverIndexTitle {
   margin-bottom: 6px;
   color: var(--nb-red);
   font: 26px var(--font-hand);
-}
-
-.coverIndex ol {
-  display: grid;
-}
-
-.coverIndex button {
-  display: flex;
-  width: 100%;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0;
-  color: var(--nb-ink);
-  font: 22px/28px var(--font-hand);
-  text-align: left;
-}
-
-.coverIndex button i {
-  flex: 1;
-  border-bottom: 2px dotted color-mix(in oklch, var(--nb-ink) 35%, transparent);
-}
-
-.coverIndex button small {
-  font: 13px var(--font-type);
-}
-
-.coverIndex button:hover span {
-  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
 }
 
 /* ---------------------------------------------------------------- collage pieces */
@@ -872,7 +635,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .interactive,
-  .tab,
   .indexTag,
   .handLink,
   .turnHint {

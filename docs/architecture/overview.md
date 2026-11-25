@@ -31,8 +31,10 @@ cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepos
 ## Caderno do Codex (experimental)
 
 `/codex` é um Server Component que reúne contagens e registros recentes por tipo e entrega ao
-`Notebook` (`src/components/codex-notebook/`). A lista de páginas duplas, a geometria da virada e
-as peças de colagem ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+`Notebook` (`src/components/codex-notebook/`). O caderno e a mesa são uma cena three.js carregada
+só no navegador; as páginas são HTML posicionado sobre as páginas 3D quando paradas e fotografado em
+textura quando se movem. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
+ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
 ## Canvas de relacionamentos
 

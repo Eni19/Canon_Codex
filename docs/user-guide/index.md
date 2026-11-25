@@ -24,8 +24,12 @@ continuam acessíveis por referências ou pela URL direta quando existem.
 
 ## Caderno do Codex (experimental)
 
-O início do mundo (`/codex`) é um caderno sobre a mesa. Fechado, a capa mostra o índice: clique numa
-linha para abrir aquela parte. Aberto, cada página dupla é uma área:
+O início do mundo (`/codex`) é um caderno em 3D. Fechado, ele mostra a capa com o
+nome do mundo e, por cima, o papel do índice. Clique no caderno (ou em **Abrir o Codex**, ou tecle
+`Enter`) para abri-lo: o índice desliza para o lado do livro e a capa se abre, levando a primeira
+página junto.
+
+Cada página dupla é uma área:
 
 - **Prefácio**: a descrição do mundo, a contagem de registros, os registros recentes e os tipos com
   mais registros.
@@ -33,11 +37,11 @@ linha para abrir aquela parte. Aberto, cada página dupla é uma área:
   **+ novo registro** e polaroids dos quatro registros mais recentes, com a imagem de capa.
 - **Ferramentas**: Calendário, Relacionamentos, Quadros, Cenas, Trilha sonora e Todos os conteúdos.
 
-Para virar, arraste a página com o mouse, clique na página (fora dos links), use as setas do teclado
-ou clique num marcador. Os marcadores são post-its com o nome de cada parte; os das páginas já
-viradas passam para a esquerda. Clicar na mesa, fora do caderno, ou na etiqueta **Índice** fecha o
-caderno na capa. A página aberta fica na URL (`/codex?pagina=character`), então o botão voltar do
-navegador, depois de abrir um registro, retorna à mesma página do caderno.
+Para virar, arraste a página, clique nela (fora dos links), use as setas desenhadas nos cantos
+(**continue** e **voltar**), as setas do teclado ou uma linha do índice ao lado do livro. Clicar fora
+do caderno, a seta **fechar** da primeira página ou `Esc` fecham o caderno. Depois de abrir um
+registro a partir do caderno, o botão voltar do navegador reabre o caderno na mesma página. Para
+abrir direto numa página, use `/codex?pagina=<tipo>` (por exemplo, `?pagina=character`).
 
 ## Fluxo recomendado
 

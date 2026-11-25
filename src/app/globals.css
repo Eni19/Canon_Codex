@@ -70,6 +70,9 @@
   /* Codex notebook (world home): cream paper on a dark walnut desk, in both themes. */
   --nb-desk: oklch(0.25 0.035 50);
   --nb-desk-deep: oklch(0.16 0.025 45);
+  /* Backdrop behind the notebook until the desk returns: a quiet graphite with a soft vignette. */
+  --nb-backdrop: oklch(0.24 0.006 250);
+  --nb-backdrop-deep: oklch(0.15 0.005 250);
   --nb-paper: oklch(0.93 0.022 85);
   --nb-paper-shade: oklch(0.86 0.03 80);
   --nb-paper-aged: oklch(0.82 0.045 75);

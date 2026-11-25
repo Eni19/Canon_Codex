@@ -1,4 +1,4 @@
-import { Notebook } from '@/components/codex-notebook/notebook'
+import { NotebookLoader } from '@/components/codex-notebook/notebook-loader'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
@@ -28,7 +28,7 @@ export default async function HomePage(props: PageProps<'/codex'>) {
     })
   const labelByType = new Map(world.entityTypes.map((type) => [type.id, type.label]))
 
-  return <Notebook
+  return <NotebookLoader
     initialSpread={typeof pagina === 'string' ? pagina : undefined}
     types={types}
     world={{

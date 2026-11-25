@@ -26,6 +26,11 @@ Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo s
 `Canon Codex` quando a biblioteca SQLite é inicializada. Para configurar o local dos dados ou
 importar uma biblioteca existente, veja [SQLite local](docs/data/sqlite.md).
 
+No Windows, `Iniciar Canon Codex.cmd` faz o mesmo com um duplo clique: instala as dependências se
+`node_modules/` não existir, roda `pnpm dev --port 3000` e abre o navegador quando a porta
+responde. Se o servidor já estiver rodando, apenas abre o navegador. Fechar a janela encerra o
+servidor.
+
 ### Já tem uma biblioteca em arquivos?
 
 Desde a adoção do SQLite, uma biblioteca antiga (pastas de mundos em JSON no `workspace/`) não é

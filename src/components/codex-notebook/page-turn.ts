@@ -36,26 +36,31 @@ export function leafPose(p: number, strips = STRIPS, curl = CURL): LeafPose {
 }
 
 /**
- * How far a drag has turned the leaf, from 0 (not at all) to 1 (all the way). The mapping is linear:
- * pulling the pointer 62% of the book's width across turns the page completely. Linear feels like
- * pulling paper; an angle that tracks the pointer makes the leaf jump up at the start of a drag.
+ * How far a drag has turned the leaf, from 0 (not at all) to 1 (all the way). Pulling the pointer
+ * 80% of the book's width across turns the page completely, and the first part of the pull moves
+ * the leaf less than the rest (an ease-in), so lifting a page takes a little effort, like paper.
  */
 export function dragProgress(dx: number, bookWidth: number, direction: 'next' | 'prev'): number {
-  const pulled = direction === 'next' ? -dx : dx
-  return clamp(pulled / (bookWidth * 0.62), 0, 1)
+  const pulled = clamp((direction === 'next' ? -dx : dx) / (bookWidth * 0.8), 0, 1)
+  return Math.pow(pulled, 1.35)
 }
 
 /**
  * Whether a released drag completes the turn: past 42% of the way, or thrown faster than `flick`
  * turns per second toward completion, even if it has barely moved.
  */
-export function shouldComplete(turned: number, speed: number, threshold = 0.42, flick = 1.1): boolean {
+export function shouldComplete(turned: number, speed: number, threshold = 0.42, flick = 1.8): boolean {
   return turned > threshold || speed > flick
 }
 
-/** Spring settings: completing a turn is quick and lands without overshoot; cancelling is softer. */
-export const COMMIT_SPRING = { stiffness: 170, damping: 26 }
-export const CANCEL_SPRING = { stiffness: 150, damping: 24 }
+/**
+ * Spring settings, critically damped so a page lands without bouncing. They are soft on purpose:
+ * a page has weight, and a turn takes about half a second.
+ */
+export const COMMIT_SPRING = { stiffness: 95, damping: 19.5 }
+export const CANCEL_SPRING = { stiffness: 85, damping: 18.5 }
+/** How quickly a dragged leaf catches up with the pointer (per second); lower feels heavier. */
+export const DRAG_FOLLOW = 11
 
 /** One step of a damped spring toward `target`; returns the new position and velocity. */
 export function springStep(position: number, velocity: number, target: number, dt: number, stiffness = 150, damping = 22) {
