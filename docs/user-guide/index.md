@@ -33,8 +33,11 @@ linha para abrir aquela parte. Aberto, cada página dupla é uma área:
   **+ novo registro** e polaroids dos quatro registros mais recentes, com a imagem de capa.
 - **Ferramentas**: Calendário, Relacionamentos, Quadros, Cenas, Trilha sonora e Todos os conteúdos.
 
-Para virar, arraste a página com o mouse, use as setas do teclado ou clique numa aba. As abas das
-páginas já viradas passam para a esquerda. A etiqueta **Índice** fecha o caderno na capa.
+Para virar, arraste a página com o mouse, clique na página (fora dos links), use as setas do teclado
+ou clique num marcador. Os marcadores são post-its com o nome de cada parte; os das páginas já
+viradas passam para a esquerda. Clicar na mesa, fora do caderno, ou na etiqueta **Índice** fecha o
+caderno na capa. A página aberta fica na URL (`/codex?pagina=character`), então o botão voltar do
+navegador, depois de abrir um registro, retorna à mesma página do caderno.
 
 ## Fluxo recomendado
 

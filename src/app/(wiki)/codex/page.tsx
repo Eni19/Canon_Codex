@@ -6,7 +6,8 @@ import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 const RECENT_PER_TYPE = 4
 const RECENT_OVERALL = 6
 
-export default async function HomePage() {
+export default async function HomePage(props: PageProps<'/codex'>) {
+  const { pagina } = await props.searchParams
   const world = await getCurrentWorld()
   const entities = await getWorldRepository().listEntities(world.id)
   const newestFirst = [...entities].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
@@ -28,6 +29,7 @@ export default async function HomePage() {
   const labelByType = new Map(world.entityTypes.map((type) => [type.id, type.label]))
 
   return <Notebook
+    initialSpread={typeof pagina === 'string' ? pagina : undefined}
     types={types}
     world={{
       name: world.name,

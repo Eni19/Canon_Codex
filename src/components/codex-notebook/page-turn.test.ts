@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leafPose, progressFromPointer, settleTarget, springStep } from './page-turn'
+import { COMMIT_SPRING, dragProgress, leafPose, shouldComplete, springStep } from './page-turn'
 
 describe('leafPose', () => {
   it('lies flat at both ends of the turn', () => {
@@ -27,26 +27,20 @@ describe('leafPose', () => {
   })
 })
 
-describe('progressFromPointer', () => {
-  it('keeps the free edge under the pointer', () => {
-    expect(progressFromPointer(500, 100, 400)).toBeCloseTo(0)
-    expect(progressFromPointer(100, 100, 400)).toBeCloseTo(0.5)
-    expect(progressFromPointer(-300, 100, 400)).toBeCloseTo(1)
-    expect(progressFromPointer(-900, 100, 400)).toBeCloseTo(1)
+describe('dragProgress', () => {
+  it('turns the leaf linearly with the pull, in the direction of the turn', () => {
+    expect(dragProgress(-310, 1000, 'next')).toBeCloseTo(0.5)
+    expect(dragProgress(310, 1000, 'prev')).toBeCloseTo(0.5)
+    expect(dragProgress(200, 1000, 'next')).toBe(0)
+    expect(dragProgress(-2000, 1000, 'next')).toBe(1)
   })
 })
 
-describe('settleTarget', () => {
-  it('follows a fast flick even when the leaf has barely moved', () => {
-    expect(settleTarget(0.1, 2, 'next')).toBe(1)
-    expect(settleTarget(0.9, -2, 'prev')).toBe(0)
-  })
-
-  it('completes a turn dragged a third of the way, in either direction', () => {
-    expect(settleTarget(0.4, 0, 'next')).toBe(1)
-    expect(settleTarget(0.2, 0, 'next')).toBe(0)
-    expect(settleTarget(0.6, 0, 'prev')).toBe(0)
-    expect(settleTarget(0.8, 0, 'prev')).toBe(1)
+describe('shouldComplete', () => {
+  it('completes past 42% of the way or on a quick throw', () => {
+    expect(shouldComplete(0.5, 0)).toBe(true)
+    expect(shouldComplete(0.3, 0)).toBe(false)
+    expect(shouldComplete(0.1, 1.5)).toBe(true)
   })
 })
 
@@ -55,5 +49,15 @@ describe('springStep', () => {
     let state = { position: 0, velocity: 0 }
     for (let frame = 0; frame < 240; frame += 1) state = springStep(state.position, state.velocity, 1, 1 / 60)
     expect(state.position).toBeCloseTo(1, 2)
+  })
+
+  it('lands a completing turn without overshooting', () => {
+    let state = { position: 0, velocity: 0 }
+    let peak = 0
+    for (let frame = 0; frame < 240; frame += 1) {
+      state = springStep(state.position, state.velocity, 1, 1 / 60, COMMIT_SPRING.stiffness, COMMIT_SPRING.damping)
+      peak = Math.max(peak, state.position)
+    }
+    expect(peak).toBeLessThan(1.005)
   })
 })

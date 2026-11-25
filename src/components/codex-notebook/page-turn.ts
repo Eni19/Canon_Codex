@@ -16,8 +16,8 @@ export interface LeafPose {
   step: number
   /** 0..1, how lifted the leaf is; drives the cast shadow on the pages beneath. */
   lift: number
-  /** Per strip, how much light its two edges lose (0 lit, ~0.6 in shadow). */
-  shading: { near: number; far: number }[]
+  /** Per strip: light lost at its two edges (0 lit, ~0.6 in shadow), and how squarely it faces the light. */
+  shading: { near: number; far: number; lit: number }[]
 }
 
 export function leafPose(p: number, strips = STRIPS, curl = CURL): LeafPose {
@@ -26,34 +26,36 @@ export function leafPose(p: number, strips = STRIPS, curl = CURL): LeafPose {
   const bend = curl * Math.sin(Math.PI * t)
   const spine = swing + bend
   const step = (2 * bend) / strips
-  const shading = Array.from({ length: strips }, (_, index) => ({
-    near: (1 - Math.abs(Math.cos(spine - index * step))) * 0.6,
-    far: (1 - Math.abs(Math.cos(spine - (index + 1) * step))) * 0.6,
-  }))
+  const shading = Array.from({ length: strips }, (_, index) => {
+    const near = Math.abs(Math.cos(spine - index * step))
+    const far = Math.abs(Math.cos(spine - (index + 1) * step))
+    return { near: (1 - near) * 0.62, far: (1 - far) * 0.62, lit: near }
+  })
   const degrees = 180 / Math.PI
   return { spine: spine * degrees, step: step * degrees, lift: Math.sin(Math.PI * t), shading }
 }
 
 /**
- * Where the leaf should be for a pointer at `x`: its free edge follows the pointer, so the pointer's
- * distance from the spine, as a fraction of the page width, is the cosine of the leaf's angle.
+ * How far a drag has turned the leaf, from 0 (not at all) to 1 (all the way). The mapping is linear:
+ * pulling the pointer 62% of the book's width across turns the page completely. Linear feels like
+ * pulling paper; an angle that tracks the pointer makes the leaf jump up at the start of a drag.
  */
-export function progressFromPointer(x: number, spineX: number, pageWidth: number): number {
-  const reach = clamp((x - spineX) / pageWidth, -1, 1)
-  return Math.acos(reach) / Math.PI
+export function dragProgress(dx: number, bookWidth: number, direction: 'next' | 'prev'): number {
+  const pulled = direction === 'next' ? -dx : dx
+  return clamp(pulled / (bookWidth * 0.62), 0, 1)
 }
 
 /**
- * Where a released leaf settles. A quick flick wins over position, so a short fast throw still turns
- * the page. Otherwise the turn completes once the leaf has travelled `commit` of the way in the
- * direction it was dragged; a halfway rule makes ordinary drags spring back, which reads as a bug.
+ * Whether a released drag completes the turn: past 42% of the way, or thrown faster than `flick`
+ * turns per second toward completion, even if it has barely moved.
  */
-export function settleTarget(p: number, velocity: number, direction: 'next' | 'prev', commit = 0.35, flick = 1.2): 0 | 1 {
-  if (velocity > flick) return 1
-  if (velocity < -flick) return 0
-  if (direction === 'next') return p >= commit ? 1 : 0
-  return p <= 1 - commit ? 0 : 1
+export function shouldComplete(turned: number, speed: number, threshold = 0.42, flick = 1.1): boolean {
+  return turned > threshold || speed > flick
 }
+
+/** Spring settings: completing a turn is quick and lands without overshoot; cancelling is softer. */
+export const COMMIT_SPRING = { stiffness: 170, damping: 26 }
+export const CANCEL_SPRING = { stiffness: 150, damping: 24 }
 
 /** One step of a damped spring toward `target`; returns the new position and velocity. */
 export function springStep(position: number, velocity: number, target: number, dt: number, stiffness = 150, damping = 22) {

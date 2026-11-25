@@ -34,9 +34,16 @@ Referências estudadas:
   imagens de capa reais dos registros.
 - A virada (`page-turn.ts`) usa 12 tiras aninhadas; cada uma mostra, numa face, uma fatia da página
   da frente e, na outra, da página de trás. A curvatura máxima acontece no meio da virada. Arrastar
-  faz a borda da folha seguir o ponteiro; a virada só começa depois de 10 px de movimento
-  principalmente horizontal, para que um clique nunca vire a página. Ao soltar, um movimento
-  rápido vira a página; sem ele, a virada se completa a partir de 35% do caminho.
+  avança a folha linearmente (puxar 62% da largura do livro vira a página inteira), como no
+  sketchbook; um mapeamento angular fazia a folha saltar no começo do arrasto. Ao soltar, a virada
+  se completa a partir de 42% do caminho ou com um arremesso rápido, com molas amortecidas que não
+  ultrapassam o destino (170/26 ao completar, 150/24 ao cancelar). Um toque na página, fora dos
+  links, vira a página; um toque na mesa fecha o caderno na capa.
+- A página aberta fica na URL (`?pagina=<id>`), gravada com `router.replace` para que o botão voltar
+  do navegador reabra o caderno na mesma página. Um `history.replaceState` direto era sobrescrito
+  pelo roteador assim que o leitor seguia um link.
+- Os marcadores são post-its com o nome na horizontal, presos sob a borda da página.
+- Cada tira tem uma sombra quente e um brilho suave que seguem o ângulo da folha em relação à luz.
 - Só a folha que vira é 3D. O livro, as páginas e as abas são planos, e a folha fica numa camada
   com perspectiva própria, sempre montada. A face visível de cada tira é escolhida pelo ângulo em
   JavaScript, em vez de `backface-visibility`. Motivo: no Firefox (e no Zen, baseado nele), o livro

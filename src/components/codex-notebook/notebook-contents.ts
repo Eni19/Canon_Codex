@@ -42,6 +42,12 @@ export function buildSpreads(types: NotebookType[]): Spread[] {
   ]
 }
 
+/** The spread named in the URL (`?pagina=<id>`), or the cover (-1) when there is none or it is unknown. */
+export function spreadIndexFromParam(spreads: Spread[], param: string | string[] | undefined): number {
+  const id = Array.isArray(param) ? param[0] : param
+  return id ? spreads.findIndex((spread) => spread.id === id) : -1
+}
+
 /** Page numbers as printed in the corners: the preface opens on pages 1–2. */
 export function pageNumbers(spreadIndex: number): [number, number] {
   return [spreadIndex * 2 + 1, spreadIndex * 2 + 2]
