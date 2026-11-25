@@ -66,11 +66,17 @@ async function directories(directory: string, rejectLinks = true): Promise<strin
   })
 }
 
-async function activeWorlds(root: string, requireMetadata: boolean): Promise<Folder[]> {
+type SkipHandler = (directory: string, reason: string) => void
+
+async function activeWorlds(root: string, libraryRoot: boolean, onSkip?: SkipHandler): Promise<Folder[]> {
   const worlds: Folder[] = []
-  for (const directory of await directories(root, requireMetadata)) {
+  for (const directory of await directories(root, libraryRoot)) {
     if (await getStats(path.join(directory, 'world.json'), 'file')) worlds.push({ directory, deletedAt: null })
-    else if (requireMetadata) throw invalid(directory, 'Falta o arquivo world.json.')
+    else if (libraryRoot) {
+      // Como na biblioteca em arquivos, uma pasta sem world.json não bloqueia os demais mundos.
+      if (!onSkip) throw invalid(directory, 'Falta o arquivo world.json.')
+      onSkip(directory, 'Falta o arquivo world.json.')
+    }
   }
   return worlds
 }
@@ -92,7 +98,7 @@ async function trashedWorlds(root: string): Promise<Folder[]> {
     .map((directory) => ({ directory, deletedAt: trashDate(directory) }))
 }
 
-async function discover(sourcePath: string, mode: 'folder' | 'library'): Promise<Folder[]> {
+async function discover(sourcePath: string, mode: 'folder' | 'library', onSkip?: SkipHandler): Promise<Folder[]> {
   const input = sourcePath.trim().replace(/^["']|["']$/g, '')
   if (!input.trim()) throw new Error('Informe a pasta que deseja carregar.')
   const requested = path.resolve(input)
@@ -110,12 +116,12 @@ async function discover(sourcePath: string, mode: 'folder' | 'library'): Promise
   for (const root of roots) {
     const worldsRoot = path.join(root, 'worlds')
     if (!await getStats(worldsRoot, 'directory')) continue
-    const worlds = await activeWorlds(worldsRoot, mode === 'library')
+    const worlds = await activeWorlds(worldsRoot, mode === 'library', onSkip)
     if (mode === 'library') return [...worlds, ...await trashedWorlds(root)]
     if (worlds.length) return worlds
   }
 
-  const worlds = await activeWorlds(source, mode === 'library' && path.basename(source) === 'worlds')
+  const worlds = await activeWorlds(source, mode === 'library' && path.basename(source) === 'worlds', onSkip)
   if (mode === 'library' && path.basename(source) === 'worlds') {
     return [...worlds, ...await trashedWorlds(path.dirname(source))]
   }
@@ -331,11 +337,15 @@ async function readGraphSettings(directory: string, worldId: string): Promise<Gr
   return settings
 }
 
-export async function readLegacySource(sourcePath: string, mode: 'folder' | 'library'): Promise<LegacyWorld[]> {
+/**
+ * Lê uma pasta legada. No modo `library`, pastas de mundo sem `world.json` fazem a leitura falhar,
+ * a menos que `onSkip` seja informado: nesse caso a pasta é ignorada, intacta, e reportada.
+ */
+export async function readLegacySource(sourcePath: string, mode: 'folder' | 'library', onSkip?: SkipHandler): Promise<LegacyWorld[]> {
   const candidates = []
   const seen = new Map<string, string>()
   const activeSlugs = new Map<string, string>()
-  for (const folder of await discover(sourcePath, mode)) {
+  for (const folder of await discover(sourcePath, mode, onSkip)) {
     const file = path.join(folder.directory, 'world.json')
     const world = await parseFile(file, parseVersioned(WorldSchema, worldMigrations.currentVersion, worldMigrations))
     checkDuplicate(seen, world.id, file)

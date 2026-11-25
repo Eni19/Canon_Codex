@@ -91,3 +91,23 @@ describe('readLegacySource', () => {
     await expect(readLegacySource(project, 'folder')).rejects.toThrow('operação de calendário pendente')
   })
 })
+
+describe('readLegacySource com pastas incompletas', () => {
+  let project: string
+
+  beforeEach(async () => { project = await mkdtemp(path.join(tmpdir(), 'canon-legacy-incomplete-')) })
+  afterEach(async () => { await rm(project, { recursive: true, force: true }) })
+
+  it('recusa por padrão e, com onSkip, ignora a pasta sem world.json mantendo os demais mundos', async () => {
+    const root = path.join(project, 'workspace', 'worlds')
+    const world = { ...createDefaultWorldSeed(), id: crypto.randomUUID(), slug: 'completo' }
+    await atomicWriteJson(path.join(root, 'completo', 'world.json'), world)
+    await atomicWriteText(path.join(root, 'incompleto', 'entities', 'nota.txt'), 'sem metadados')
+
+    await expect(readLegacySource(project, 'library')).rejects.toThrow('Falta o arquivo world.json.')
+    const skipped: string[] = []
+    const worlds = await readLegacySource(project, 'library', (directory) => skipped.push(path.basename(directory)))
+    expect(worlds.map(({ world: item }) => item.id)).toEqual([world.id])
+    expect(skipped).toEqual(['incompleto'])
+  })
+})

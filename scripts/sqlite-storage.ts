@@ -108,6 +108,15 @@ async function publishDatabase(destination: string, prepare: (staged: string) =>
   }
 }
 
+function skippedFolders() {
+  const skipped: { pasta: string; motivo: string }[] = []
+  const onSkip = (directory: string, reason: string) => {
+    skipped.push({ pasta: directory, motivo: reason })
+    console.warn(`Aviso: pasta ignorada, sem alterações: ${directory}. ${reason}`)
+  }
+  return { skipped, onSkip }
+}
+
 async function main(args: string[]) {
   const [command, input, output] = args
   if (args.length === 1 && (command === '--help' || command === '-h')) {
@@ -115,7 +124,9 @@ async function main(args: string[]) {
     return
   }
   if (command === 'preview' && input && args.length === 2) {
-    console.log(JSON.stringify(summarize(await readLegacySource(input, 'library')), null, 2))
+    const { skipped, onSkip } = skippedFolders()
+    const worlds = await readLegacySource(input, 'library', onSkip)
+    console.log(JSON.stringify({ ...summarize(worlds), ignoradas: skipped }, null, 2))
     return
   }
   if ((command !== 'import' && command !== 'backup') || !input || !output || args.length !== 3) {
@@ -133,7 +144,8 @@ async function main(args: string[]) {
       throw new Error('Escolha um destino fora da pasta de origem.')
     }
     await requireNew(destination)
-    const worlds = await readLegacySource(source, 'library')
+    const { skipped, onSkip } = skippedFolders()
+    const worlds = await readLegacySource(source, 'library', onSkip)
     await publishDatabase(destination, async (staged) => {
       const db = new SqliteDatabase(staged)
       try {
@@ -142,7 +154,7 @@ async function main(args: string[]) {
         db.close()
       }
     })
-    console.log(JSON.stringify({ destino: destination, ...summarize(worlds) }, null, 2))
+    console.log(JSON.stringify({ destino: destination, ...summarize(worlds), ignoradas: skipped }, null, 2))
     return
   }
 
