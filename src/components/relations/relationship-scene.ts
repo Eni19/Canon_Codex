@@ -49,11 +49,23 @@ function readPalette(host: HTMLElement) {
 }
 
 type CurveConfig = ShapeConfig & { points?: number[] }
-type BatchedStroke = { path: Path2D; color: string; dash: number[]; opacity: number }
+type BatchedStroke = { path: Path2D; tips: Path2D; color: string; dash: number[]; opacity: number }
 function appendCurve(context: Pick<Path2D, 'moveTo' | 'bezierCurveTo'>, p: number[]) {
   context.moveTo(p[0], p[1])
   context.bezierCurveTo(p[2], p[3], p[4], p[5], p[6], p[7])
 }
+function appendTip(path: Path2D, x: number, y: number, angle: number) {
+  const back = 11, side = 5
+  const cos = Math.cos(angle), sin = Math.sin(angle)
+  path.moveTo(x, y)
+  path.lineTo(x - back * cos + side * sin, y - back * sin - side * cos)
+  path.lineTo(x - back * cos - side * sin, y - back * sin + side * cos)
+  path.closePath()
+}
+// Batched view: many connections share one path per style, so the stage draws a few strokes
+// instead of one Konva group per connection. It enters above OVERVIEW_ENTER connections in
+// the viewport and leaves below OVERVIEW_EXIT, so small zoom steps don't flip modes.
+const OVERVIEW_ENTER = 300, OVERVIEW_EXIT = 220, LABEL_SCALE = 1.05
 function traceCurve(context: K.Context, shape: K.Shape) {
   const p = shape.getAttr('points') as number[]
   if (!p?.length) return
@@ -113,6 +125,18 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   const targetRing = new K.Rect({ visible: false, listening: false, width: CARD_WIDTH, height: CARD_HEIGHT, cornerRadius: 8, strokeWidth: 3 })
   cardsLayer.add(targetRing, preview)
   stage.add(edgesLayer, cardsLayer)
+  // Konva redraws the hit graph of a layer on every frame. Pan, zoom and drags change the scene
+  // every frame while hit testing only happens on pointer input, so the hit graph is redrawn
+  // on demand, once per scene change, right before a hit test reads it.
+  let hitDirty = true
+  for (const layer of [edgesLayer, cardsLayer]) {
+    layer.draw = function draw() { this.drawScene(); hitDirty = true; return this }
+  }
+  const refreshHit = () => {
+    if (!hitDirty) return
+    hitDirty = false
+    edgesLayer.drawHit(); cardsLayer.drawHit()
+  }
   const cards = new Map<string, ReturnType<typeof createCard>>()
   const edges = new Map<string, ReturnType<typeof createEdge>>()
   const arrows = new Map<string, ReturnType<typeof createArrow>>()
@@ -134,16 +158,20 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
         const opacity = state.dimmedRelationIds.has(id) ? 0.17 : 0.7
         const key = color + '/' + dash.join(',') + '/' + opacity
         let group = groups.get(key)
-        if (!group) { group = { color, dash, path: new Path2D(), opacity }; groups.set(key, group) }
+        if (!group) { group = { color, dash, path: new Path2D(), tips: new Path2D(), opacity }; groups.set(key, group) }
         appendCurve(group.path, points)
+        const sense = edges.get(id)?.group.getAttr('sense') as string | undefined
+        if (sense !== 'none') appendTip(group.tips, points[6], points[7], Math.atan2(points[7] - points[5], points[6] - points[4]))
+        if (sense === 'both') appendTip(group.tips, points[0], points[1], Math.atan2(points[1] - points[3], points[0] - points[2]))
       }
       overviewPaths = [...groups.values()]
     }
     context.save()
     context.setAttr('lineWidth', 2.5)
-    for (const { path, color, dash, opacity } of overviewPaths) {
+    for (const { path, tips, color, dash, opacity } of overviewPaths) {
       context.setAttr('globalAlpha', opacity)
       context.setAttr('strokeStyle', color); context.setLineDash(dash); context.stroke(path)
+      context.setAttr('fillStyle', color); context.fill(tips)
     }
     context.restore()
   } })
@@ -152,6 +180,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   let incident = new Map<string, Relation[]>()
   let lanes = new Map<string, number>()
   let camera: Camera = { x: 0, y: 0, scale: 1 }
+  let lowDetail = false
   let state: SceneState | undefined
   let palette = readPalette(host)
   let frame = 0
@@ -169,6 +198,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   }
   const hitAt = (p: Point, includeBatchedEdge = true): Hit | null => {
     if (p.x < 0 || p.x >= stage.width() || p.y < 0 || p.y >= stage.height()) return null
+    refreshHit()
     let shape: K.Node | null = stage.getIntersection(p)
     while (shape) {
       const hit = shape.getAttr('graphHit') as Hit | undefined
@@ -232,11 +262,26 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   }
   function cull() {
     if (!state) return
+    let attached = false
+    // Culled nodes leave the layer instead of being hidden: Konva walks every descendant to clear
+    // transform caches on each camera change, so detached nodes cost nothing while off screen.
+    const show = (layer: K.Layer, node: K.Group, visible: boolean) => {
+      const parent = node.getParent()
+      if (visible && parent !== layer) { layer.add(node); attached = true }
+      else if (!visible && parent) node.remove()
+    }
     const { x, y } = dimensions()
     const min = world({ x: -120, y: -120 }), max = world({ x: x + 120, y: y + 120 })
     const viewport = { left: min.x, top: min.y, right: max.x, bottom: max.y }
     const active = drag && !drag.pan ? drag.hit?.id : undefined
-    const lowDetail = state.visibleRelationIds.size >= 350 && camera.scale < 0.42
+    let inView = 0
+    if (camera.scale < LABEL_SCALE && state.visibleRelationIds.size >= OVERVIEW_EXIT) {
+      for (const id of state.visibleRelationIds) {
+        const edge = edges.get(id)
+        if (edge && intersects(edge.bounds, viewport) && ++inView >= OVERVIEW_ENTER) break
+      }
+    }
+    lowDetail = camera.scale < LABEL_SCALE && inView >= (lowDetail ? OVERVIEW_EXIT : OVERVIEW_ENTER)
     if (lowDetail) {
       const draggedCard = drag?.moved && !drag.pan && drag.hit?.kind === 'card' ? drag.hit.id : ''
       if (draggedCard !== overviewDrag) {
@@ -249,7 +294,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     for (const [id, { group, title, type, port }] of cards) {
       const x = group.x(), y = group.y()
       const visible = state.visibleIds.has(id) && (active === id || (x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y))
-      group.visible(visible)
+      show(cardsLayer, group, visible)
       if (visible) {
         const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
         title.visible(camera.scale >= 0.47 || selected)
@@ -260,9 +305,9 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     for (const [id, edge] of edges) {
       const selected = id === state.selectedEdge
       const visible = state.visibleRelationIds.has(id) && (selected || (lowDetail ? movingEdges.has(id) : intersects(edge.bounds, viewport)))
-      edge.group.visible(visible)
+      show(edgesLayer, edge.group, visible)
       if (visible) {
-        edge.label.visible(selected || camera.scale >= 1.05)
+        edge.label.visible(selected || camera.scale >= LABEL_SCALE)
         edge.line.hitStrokeWidth(Math.min(32, 10 / camera.scale))
       }
     }
@@ -271,6 +316,10 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       arrow.group.visible(visible)
       arrow.start.visible(visible && state.selectedArrow === id)
       arrow.end.visible(visible && state.selectedArrow === id)
+    }
+    if (attached) {
+      for (const arrow of arrows.values()) if (arrow.start.visible()) { arrow.start.moveToTop(); arrow.end.moveToTop() }
+      targetRing.moveToTop(); preview.moveToTop()
     }
   }
   function schedule() {
@@ -357,7 +406,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     for (const item of next.entities) {
       const point = next.positions[item.id] ?? { x: 0, y: 0 }
       let node = cards.get(item.id)
-      if (!node) { node = createCard(item, point); cards.set(item.id, node); cardsLayer.add(node.group) }
+      if (!node) { node = createCard(item, point); cards.set(item.id, node) }
       if (!(drag?.moved && !drag.pan && drag.hit?.kind === 'card' && drag.hit.id === item.id)) node.group.position(point)
       const active = item.id === next.selectedCard || item.id === next.source || item.id === next.target || item.id === next.arrowStart?.cardId || item.id === next.arrowEnd?.cardId
       node.group.opacity(next.dimmedIds.has(item.id) ? 0.22 : 1)
@@ -383,7 +432,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       const style = styles.get(relation.type)
       if (!style) continue
       let edge = edges.get(relation.id)
-      if (!edge) { edge = createEdge(relation.id); edges.set(relation.id, edge); edgesLayer.add(edge.group) }
+      if (!edge) { edge = createEdge(relation.id); edges.set(relation.id, edge) }
       const selected = relation.id === next.selectedEdge
       const color = selected ? palette.accent : style.color
       edge.group.opacity(next.dimmedRelationIds.has(relation.id) ? 0.2 : 1)
@@ -601,6 +650,8 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       window.removeEventListener('pointercancel', cancelPointer, true)
       host.removeEventListener('pointerleave', leave); host.removeEventListener('wheel', wheel)
       window.removeEventListener('keydown', keydown); window.removeEventListener('keyup', keyup); window.removeEventListener('blur', blur)
+      for (const node of cards.values()) node.group.destroy()
+      for (const edge of edges.values()) edge.group.destroy()
       stage.destroy()
     },
   }
