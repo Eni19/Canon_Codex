@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 
 export function CalendarDayNavigation({ children, className, firstWeekday, previousHref, nextHref }: {
@@ -12,7 +11,6 @@ export function CalendarDayNavigation({ children, className, firstWeekday, previ
   nextHref?: string
 }) {
   const grid = useRef<HTMLDivElement>(null)
-  const router = useRouter()
   // Após trocar de mês pelo teclado, o foco volta à grade nova em vez de ficar no documento.
   const refocus = useRef(false)
 
@@ -34,7 +32,12 @@ export function CalendarDayNavigation({ children, className, firstWeekday, previ
     if (event.key === 'PageUp' || event.key === 'PageDown') {
       const href = event.key === 'PageUp' ? previousHref : nextHref
       event.preventDefault()
-      if (href) { refocus.current = true; router.push(href, { scroll: false }) }
+      if (!href) return
+      refocus.current = true
+      // Reusa o link do período (next/link) para navegar no cliente sem rolar a página.
+      const link = [...document.querySelectorAll<HTMLAnchorElement>('a')].find((item) => item.getAttribute('href') === href)
+      if (link) link.click()
+      else window.location.assign(href)
       return
     }
     const column = (firstWeekday + index) % 7
