@@ -40,7 +40,7 @@ export interface WorldRepository {
   updateCalendarLandmarks(worldId: string, landmarks: CalendarLandmarks, expectedLandmarks: string, expectedCalendar: string): Promise<World>
   updateCalendarAppearance(worldId: string, appearance: CalendarAppearance, expectedAppearance: string): Promise<World>
   updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World>
-  createOriginEvent(worldId: string, input: NewEntityInput): Promise<Entity>
+  createOriginEvent(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity>
   previewOriginEvent(worldId: string, eventId: string): Promise<OriginEventPreview>
   replaceOriginEvent(worldId: string, eventId: string, fingerprint: string): Promise<World>
   previewDateMigration(worldId: string): Promise<DateMigrationPreview>
@@ -61,8 +61,8 @@ export interface WorldRepository {
   removeTimelineAppearance(worldId: string, timelineId: string, appearanceId: string, expectedUpdatedAt: string): Promise<{ timeline: TimelineData; removed: TimelineAppearance; index: number }>
   restoreTimelineAppearance(worldId: string, timelineId: string, appearance: TimelineAppearance, index: number, expectedUpdatedAt: string): Promise<TimelineData>
   getOriginEvent(worldId: string): Promise<{ id: string; title: string; trashed: boolean } | null>
-  createEntity(worldId: string, input: NewEntityInput): Promise<Entity>
-  updateEntity(worldId: string, entityId: string, patch: EntityPatch): Promise<Entity>
+  createEntity(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity>
+  updateEntity(worldId: string, entityId: string, patch: EntityPatch, content?: ContentDocument): Promise<Entity>
   /** Soft-delete: moves the entity's folder into `trash/`. */
   deleteEntity(worldId: string, entityId: string): Promise<void>
 

@@ -47,17 +47,33 @@ Exemplo seguro, sem arquivo real:
 
 ### GET /api/assets/[assetId]/[variant]
 
-Consumidores: assetVariantUrl, páginas de entidade, galerias, quadros e cenas. variant deve ser
-original ou thumbnail.
+Consumidores incluem `assetVariantUrl`, páginas de entidade, galerias, quadros, cenas e o
+calendário. A rota aceita `original`, `thumbnail`, `calendar-mobile` e `calendar-desktop`.
 
 - 400 Invalid variant se a variante não for reconhecida;
 - 404 Not found se o asset não existir no mundo ativo, a variante não existir ou não houver
   thumbnail gerada;
-- 200 com bytes da imagem, Content-Type igual ao MIME original ou image/webp para thumbnail;
+- 200 com os bytes da imagem e `Content-Type` igual ao MIME informado pelo repositório.
+  As variantes derivadas usam `image/webp`;
 - resposta inclui Cache-Control: public, max-age=31536000, immutable.
 
-O handler lê o asset pelo store e transmite o caminho resolvido; a URL não é um path de disco. O
-cookie do mundo é apenas seleção de contexto, não controle de acesso.
+O handler chama `AssetStore.getVariant(worldId, assetId, variant)` para obter os bytes e o MIME.
+No SQLite, a consulta lê o BLOB da variante associado ao asset ativo no mundo selecionado. O
+cookie do mundo seleciona o contexto.
+
+### POST /api/calendar-background
+
+Recebe `multipart/form-data` com `file` e `worldId`. Aceita PNG, JPEG, WebP, GIF e AVIF de até
+8 MB e 40 milhões de pixels. Em sucesso, retorna `200 {"assetId":"<uuid>"}`.
+
+- 400 para arquivo ausente, incompatível ou inválido, inclusive se exceder os limites do arquivo.
+- 409 se `worldId` divergir do mundo ativo.
+- 413 quando o `Content-Length` ultrapassa o limite de 8 MB mais a margem de 64 KiB para o multipart.
+- 500 quando a importação ou a geração das variantes falha.
+
+Uma chamada a `AssetStore.importFromBuffer` com a finalidade `calendar-background` importa o
+original e gera as variantes responsivas de até 768 e 1600 px. No SQLite, a importação grava as
+variantes e os metadados em uma transação.
 
 ### GET /api/entities/search
 

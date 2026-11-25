@@ -42,12 +42,10 @@ describe('FileSystemAssetStore', () => {
     expect(asset.hasThumbnail).toBe(true)
     expect(asset.sizeBytes).toBe(png.byteLength)
 
-    const originalPath = await store.getVariantPath(worldId, asset.id, 'original')
-    const thumbnailPath = await store.getVariantPath(worldId, asset.id, 'thumbnail')
-    expect(originalPath).toMatch(/original\.png$/)
-    expect(thumbnailPath).toMatch(/thumbnail\.webp$/)
-    expect(await readFile(originalPath!)).toEqual(png)
-    await expect(readFile(thumbnailPath!)).resolves.toBeInstanceOf(Buffer)
+    expect(await store.getVariant(worldId, asset.id, 'original')).toEqual({ bytes: png, mimeType: 'image/png' })
+    const thumbnail = await store.getVariant(worldId, asset.id, 'thumbnail')
+    expect(thumbnail?.mimeType).toBe('image/webp')
+    expect((await sharp(thumbnail!.bytes).metadata()).format).toBe('webp')
   })
 
   it('imports from a source path by copying it, leaving the source untouched', async () => {
@@ -59,8 +57,7 @@ describe('FileSystemAssetStore', () => {
     const asset = await store.importFromPath(worldId, sourcePath)
 
     expect(asset.originalFilename).toBe('Amadeus Final (2).png')
-    const originalPath = await store.getVariantPath(worldId, asset.id, 'original')
-    expect(await readFile(originalPath!)).toEqual(png)
+    expect(await store.getVariant(worldId, asset.id, 'original')).toEqual({ bytes: png, mimeType: 'image/png' })
     expect(await readFile(sourcePath)).toEqual(png) // source preserved, never moved
 
     await rm(sourceDir, { recursive: true, force: true })
@@ -72,9 +69,9 @@ describe('FileSystemAssetStore', () => {
     )
   })
 
-  it('returns null from getAsset/getVariantPath for an unknown asset', async () => {
+  it('returns null from getAsset/getVariant for an unknown asset', async () => {
     expect(await store.getAsset(worldId, crypto.randomUUID())).toBeNull()
-    expect(await store.getVariantPath(worldId, crypto.randomUUID(), 'original')).toBeNull()
+    expect(await store.getVariant(worldId, crypto.randomUUID(), 'original')).toBeNull()
   })
 
   it('soft-deletes an asset into trash/', async () => {
@@ -104,14 +101,12 @@ describe('FileSystemAssetStore', () => {
     expect(await store.getAsset(worldId, asset.id)).toBeNull()
   })
 
-  it('creates calendar background variants and keeps them scoped to their world', async () => {
-    const asset = await store.importFromBuffer(worldId, await makeTestPng(), 'synthetic.png', 'image/png')
-    await store.prepareCalendarBackground(worldId, asset.id)
-    const mobile = await store.getVariantPath(worldId, asset.id, 'calendar-mobile')
-    const desktop = await store.getVariantPath(worldId, asset.id, 'calendar-desktop')
-    expect(mobile).toMatch(/calendar-mobile\.webp$/)
-    expect(desktop).toMatch(/calendar-desktop\.webp$/)
-    expect((await sharp(await readFile(mobile!)).metadata()).format).toBe('webp')
-    await expect(store.prepareCalendarBackground(worldId, crypto.randomUUID())).rejects.toThrow('não existe neste mundo')
+  it('imports both calendar background variants with the original', async () => {
+    const asset = await store.importFromBuffer(worldId, await makeTestPng(), 'synthetic.png', 'image/png', 'calendar-background')
+    for (const name of ['calendar-mobile', 'calendar-desktop'] as const) {
+      const variant = await store.getVariant(worldId, asset.id, name)
+      expect(variant?.mimeType).toBe('image/webp')
+      expect((await sharp(variant!.bytes).metadata()).format).toBe('webp')
+    }
   })
 })
