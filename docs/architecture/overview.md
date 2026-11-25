@@ -35,8 +35,12 @@ mundo. `RelationshipView` mantém filtros, ferramentas, painéis HTML e formulá
 mantém câmera, alvos do ponteiro e nós por ID em duas camadas. Armazenamento e formulários
 continuam delegando às [Server Actions](../reference/http-and-actions.md).
 
-Máscaras de IDs preservam posições ao filtrar ou recolher pastas. O estado das pastas pertence à
-vista do mundo; `RelationshipView` deriva seu indicador externo dos vínculos do recorte atual.
+Máscaras de IDs preservam posições ao filtrar ou abrir uma pasta. A navegação de pastas fica em
+HTML no canto do canvas; a cena informa as coordenadas do ponteiro durante o arraste para
+destacar e resolver o destino no HTML, inclusive com captura de ponteiro. Ao soltar sobre uma
+pasta, a associação muda e o cartão conserva sua posição anterior. A pasta aberta é estado
+local da tela; membros e posições pertencem à vista persistida do mundo. O painel de gestão
+oferece a lista de vínculos externos da pasta.
 A cena verifica limites de cartões e de curvas
 contra o viewport e atualiza apenas as conexões incidentes no arraste. Na visão geral densa,
 curvas com o mesmo estilo são desenhadas em lote; vínculos selecionados ou em movimento

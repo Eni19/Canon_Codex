@@ -54,8 +54,10 @@ indica relação sem direção, `directional: true` indica ida e o campo opciona
 vínculo. Setas livres guardam posições, cor e traço, além dos UUIDs opcionais
 `startCardId` e `endCardId`. Uma ponta presa segue o cartão; se o registro estiver indisponível, a
 vista usa a posição gravada. Esses IDs não criam vínculos nas entidades. Anotações v3 sem os
-IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), estado recolhido
-(`collapsed`) e UUIDs dos membros (`members`) de cada pasta. Um registro pertence a no máximo
+IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), campo legado
+`collapsed` e UUIDs dos membros (`members`) de cada pasta. A interface atual abre pastas pelo
+navegador no canto da tela; `collapsed` continua aceito no formato v4 e é preservado ao editar
+pastas antigas. A pasta aberta fica no estado local da tela. Um registro pertence a no máximo
 uma pasta. A inclusão e movimentação validam os registros ativos do mundo. Membros indisponíveis
 ficam ocultos e preservam sua pasta em caso de restauração. Excluir uma pasta descarta somente o
 agrupamento da vista.

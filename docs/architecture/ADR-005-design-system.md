@@ -56,6 +56,11 @@ A entrada dos painéis e a revelação de controles usam transições CSS curtas
 preferência de movimento reduzido. O sentido dos vínculos usa um grupo de opções nativas do
 tipo rádio, com ícones e texto.
 
+Em 18/11/2026, as pastas passaram a usar navegação HTML fixa no canto inferior esquerdo.
+Selecionar uma pasta abre seus registros na área inteira do canvas. Os destinos têm foco de
+teclado e destaque de borda e superfície durante o arraste de um cartão. A alternativa
+**Mover para** continua disponível na ficha e na lista de seleção em lote.
+
 ### Atualização: temas locais do calendário (12/11/2026)
 
 O calendário oferece Codex, Celeste e Pergaminho e permite paletas personalizadas por mundo. A página

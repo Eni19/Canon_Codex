@@ -136,16 +136,24 @@ abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotaç
 e acompanha o cartão a que estiver presa. A prévia mostra a cor e o traço escolhidos antes de
 salvar. Selecione uma seta para mover as pontas, mudar o estilo ou apagar.
 
-Use **Pastas** na barra do grafo para criar, renomear e abrir pastas. Uma pasta pode reunir eventos,
-personagens, locais, itens e registros personalizados. Para mover um só registro, clique no cartão
-e use **Mover para**. Para mover vários, abra **Mais → Registros e vínculos → Selecionar para mover**,
-marque os registros e escolha o destino. Selecione **Vista principal** para tirar registros da pasta.
+As **Pastas** ficam no canto inferior esquerdo do grafo. Clique no nome de uma pasta para
+mostrar seus registros no canvas inteiro. **Vista principal** mostra os registros que estão
+fora das pastas. O nome da vista aberta aparece acima do canvas; a lista no canto informa a
+quantidade de registros em cada destino. Abrir uma pasta limpa os filtros e enquadra seus cartões.
+Uma pasta pode reunir eventos, personagens, locais, itens e registros personalizados.
 
-Clique na pasta no grafo ou use **Recolher pasta** no painel para esconder seus cartões. O indicador
-de vínculos externos abre a lista de vínculos que cruzam os limites da pasta no recorte atual.
-A busca ainda encontra cartões em pastas recolhidas. Na lista, o nome da pasta aparece junto ao
-registro; **Ver no grafo** expande a pasta e centraliza o cartão. Ao excluir a pasta, os registros
-voltam à vista principal nas mesmas posições e conservam seus vínculos.
+Com **Selecionar e mover** ativo, arraste um cartão até o nome da pasta no canto. O destino fica
+destacado; solte para mover o registro. Arrastar até **Vista principal** retira o registro da pasta.
+Soltar sobre o canvas ajusta a posição do cartão. A movimentação entre pastas conserva a posição
+e os vínculos do registro. Use **+** no navegador de pastas ou **Pastas** na barra para criar uma.
+O botão **Gerenciar pasta**, ao lado do nome, oferece renomeação, vínculos externos e exclusão.
+
+Pelo teclado, abra a ficha de um cartão na lista e use **Mover para**. Para mover vários,
+abra **Mais → Registros e vínculos → Selecionar para mover**, marque os registros e escolha
+o destino. A busca no canvas se aplica à vista aberta. A lista **Registros e vínculos** permite
+pesquisar registros de todas as pastas, inclusive pelo nome da pasta. Escolher um registro na
+lista ou usar **Ver no grafo** abre sua pasta e centraliza o cartão. Ao excluir uma pasta,
+seus registros voltam à vista principal nas mesmas posições e conservam seus vínculos.
 
 A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo, anotação ou pasta.
 **Mais → Restaurar organização** pede confirmação antes de descartar posições fixadas. Em caso de

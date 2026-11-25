@@ -199,13 +199,14 @@ em dispositivos físicos seguem pendentes.
 **Implementado.** Organizar cartões de qualquer tipo em pastas diretamente em **Relacionamentos**.
 Cada pasta pertence ao mundo atual e agrupa os mesmos registros que já aparecem no grafo.
 
-1. Adicionar um painel **Pastas** para criar, renomear e abrir pastas. Permitir mover um cartão
-   pelo menu do cartão e mover vários pela lista acessível. Cada cartão fica em uma pasta ou na
-   vista principal. Uma pasta aceita tipos misturados, como um Evento, um Local e um Personagem.
-2. Permitir recolher e expandir a pasta pelo canvas e pelo painel. Recolher agrega as conexões
-   com cartões externos em um indicador que leva à lista de vínculos. Expandir restaura os
-   cartões em suas posições. Busca e filtros encontram cartões dentro das pastas e indicam a
-   pasta onde cada resultado está. **Ver no grafo** abre a pasta e focaliza o registro.
+1. Exibir pastas em um navegador no canto do grafo. Clicar no nome abre os registros dessa
+   pasta no canvas inteiro; **Vista principal** mostra os registros sem pasta. Oferecer criação
+   e gestão por botões próximos aos nomes. Uma pasta aceita tipos misturados.
+2. Permitir arrastar um cartão do canvas até uma pasta ou **Vista principal**, com destaque do
+   destino antes de soltar. Oferecer também **Mover para** na ficha e movimentação em lote na
+   lista acessível. A busca do canvas consulta a vista aberta; a lista pesquisa os registros
+   de todas as pastas. **Ver no grafo** abre a pasta correspondente e focaliza o registro.
+   A gestão da pasta oferece seus vínculos externos.
 3. Persistir a organização da vista por mundo, com IDs de pasta e de registro. Validar
    no servidor se os registros pertencem ao mundo e manter as posições e os vínculos
    ao mover cartões. Excluir uma pasta devolve os cartões à vista principal.
@@ -214,16 +215,18 @@ Cada pasta pertence ao mundo atual e agrupa os mesmos registros que já aparecem
 
 **Critérios de aceite**
 
-Criar uma pasta pela tela, mover registros de tipos diferentes, recarregar e
-verificar que a organização foi preservada. Recolher, expandir, buscar um cartão de dentro
-da pasta e abrir sua ficha por teclado e toque. Excluir a pasta e confirmar que os registros,
+Criar uma pasta pela tela, mover registros de tipos diferentes por arraste e pela lista, recarregar e
+verificar que a organização foi preservada. Abrir pastas pelo navegador no canto, buscar um cartão
+na lista e abrir sua ficha por teclado e toque. Cancelar um arraste e conferir sua posição original.
+Excluir a pasta e confirmar que os registros,
 vínculos e posições estão disponíveis na vista principal. Verificar o isolamento entre mundos.
 
 O [teste de persistência](../src/repositories/filesystem/graphSettings.test.ts) cobre leitura de
 vistas v1–v3, membros de tipos diferentes, isolamento entre mundos e preservação de posições e
 vínculos ao excluir a pasta. Em Chrome com dados sintéticos, foram verificados criação, renomeação,
 movimentação em lote, indicador de vínculos externos, busca, recarregamento, abertura da ficha por
-teclado, exclusão e recolhimento/expansão com toque emulado. A validação em dispositivo físico e
+teclado, exclusão e recolhimento/expansão com toque emulado. Essa verificação registra a interface
+anterior à navegação por pastas de 18/11. A validação em dispositivo físico e
 com leitor de tela permanece em REL-07.
 
 ## REL-08 — Etapa final: migrar os outros canvas
