@@ -66,6 +66,8 @@ function appendTip(path: Path2D, x: number, y: number, angle: number) {
 // instead of one Konva group per connection. It enters above OVERVIEW_ENTER connections in
 // the viewport and leaves below OVERVIEW_EXIT, so small zoom steps don't flip modes.
 const OVERVIEW_ENTER = 300, OVERVIEW_EXIT = 220, LABEL_SCALE = 1.05
+// Below this zoom titles are hidden, so idle cards are drawn as plain shapes in one batch.
+const TITLE_SCALE = 0.47, PORT_SCALE = 0.23
 function traceCurve(context: K.Context, shape: K.Shape) {
   const p = shape.getAttr('points') as number[]
   if (!p?.length) return
@@ -123,7 +125,26 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   const cardsLayer = new K.Layer()
   const preview = new K.Arrow({ visible: false, listening: false, pointerLength: 12, pointerWidth: 10, strokeWidth: 2.5, dash: [7, 4] })
   const targetRing = new K.Rect({ visible: false, listening: false, width: CARD_WIDTH, height: CARD_HEIGHT, cornerRadius: 8, strokeWidth: 3 })
-  cardsLayer.add(targetRing, preview)
+  let batchedCards: (Point & { id: string; faded?: boolean })[] = []
+  let batchedPorts = false
+  const cardBatch = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc(context) {
+    if (!batchedCards.length) return
+    const solid = new Path2D(), faded = new Path2D(), ports = new Path2D()
+    for (const point of batchedCards) {
+      const path = point.faded ? faded : solid
+      path.roundRect(point.x, point.y, CARD_WIDTH, CARD_HEIGHT, 8)
+      if (batchedPorts) { ports.moveTo(point.x + CARD_WIDTH + 6, point.y + CARD_HEIGHT / 2); ports.arc(point.x + CARD_WIDTH - 1, point.y + CARD_HEIGHT / 2, 7, 0, Math.PI * 2) }
+    }
+    context.save()
+    context.setAttr('lineWidth', 1.5)
+    context.setAttr('fillStyle', palette.card); context.setAttr('strokeStyle', palette.border)
+    for (const [path, alpha] of [[solid, 1], [faded, 0.22]] as const) {
+      context.setAttr('globalAlpha', alpha); context.fill(path); context.stroke(path)
+    }
+    if (batchedPorts) { context.setAttr('globalAlpha', 1); context.setAttr('fillStyle', palette.accent); context.fill(ports) }
+    context.restore()
+  } })
+  cardsLayer.add(cardBatch, targetRing, preview)
   stage.add(edgesLayer, cardsLayer)
   // Konva redraws the hit graph of a layer on every frame. Pan, zoom and drags change the scene
   // every frame while hit testing only happens on pointer input, so the hit graph is redrawn
@@ -199,12 +220,17 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   const hitAt = (p: Point, includeBatchedEdge = true): Hit | null => {
     if (p.x < 0 || p.x >= stage.width() || p.y < 0 || p.y >= stage.height()) return null
     refreshHit()
-    let shape: K.Node | null = stage.getIntersection(p)
-    while (shape) {
-      const hit = shape.getAttr('graphHit') as Hit | undefined
-      if (hit) return hit
-      shape = shape.getParent()
+    const layerHit = (layer: K.Layer) => {
+      let shape: K.Node | null = layer.getIntersection(p)
+      while (shape) {
+        const hit = shape.getAttr('graphHit') as Hit | undefined
+        if (hit) return hit
+        shape = shape.getParent()
+      }
+      return null
     }
+    const found = layerHit(cardsLayer) ?? batchedCardAt(world(p)) ?? layerHit(edgesLayer)
+    if (found) return found
     if (includeBatchedEdge && overview.visible() && hitContext && state) {
       const point = world(p)
       const area = { left: point.x, right: point.x, top: point.y, bottom: point.y }
@@ -218,6 +244,14 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
         appendCurve(curve, points)
         if (hitContext.isPointInStroke(curve, point.x, point.y)) return { kind: 'edge', id }
       }
+    }
+    return null
+  }
+  function batchedCardAt(point: Point): Hit | null {
+    for (let i = batchedCards.length - 1; i >= 0; i--) {
+      const card = batchedCards[i]
+      if (batchedPorts && Math.hypot(point.x - (card.x + CARD_WIDTH - 1), point.y - (card.y + CARD_HEIGHT / 2)) <= 15) return { kind: 'port', id: card.id }
+      if (point.x >= card.x && point.x <= card.x + CARD_WIDTH && point.y >= card.y && point.y <= card.y + CARD_HEIGHT) return { kind: 'card', id: card.id }
     }
     return null
   }
@@ -291,15 +325,20 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       }
     }
     overview.visible(lowDetail)
+    const batch = camera.scale < TITLE_SCALE
+    batchedCards = []
+    batchedPorts = batch && camera.scale >= PORT_SCALE && state.tool === 'connect'
     for (const [id, { group, title, type, port }] of cards) {
       const x = group.x(), y = group.y()
       const visible = state.visibleIds.has(id) && (active === id || (x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y))
-      show(cardsLayer, group, visible)
-      if (visible) {
-        const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
-        title.visible(camera.scale >= 0.47 || selected)
+      const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
+      const batched = visible && batch && !selected && active !== id
+      if (batched) batchedCards.push(Object.assign({ x, y, id }, state.dimmedIds.has(id) ? { faded: true } : {}))
+      show(cardsLayer, group, visible && !batched)
+      if (visible && !batched) {
+        title.visible(camera.scale >= TITLE_SCALE || selected)
         type.visible(camera.scale >= 0.72 || selected)
-        port.visible((camera.scale >= 0.23 && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
+        port.visible((camera.scale >= PORT_SCALE && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
       }
     }
     for (const [id, edge] of edges) {
@@ -321,6 +360,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       for (const arrow of arrows.values()) if (arrow.start.visible()) { arrow.start.moveToTop(); arrow.end.moveToTop() }
       targetRing.moveToTop(); preview.moveToTop()
     }
+    cardsLayer.batchDraw()
   }
   function schedule() {
     if (!frame) frame = requestAnimationFrame(() => { frame = 0; cull() })
