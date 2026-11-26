@@ -23,7 +23,7 @@ src/lib/migrations/              aplicação lazy de versões
 Bibliotecas com uso localizado: Konva desenha a cena do grafo de relações, pdf-lib gera o PDF do
 calendário em `src/services/worlds/calendarPdf.ts`, sharp processa imagens no repositório de assets e
 no upload de fundo do calendário, e animejs anima fichas e o editor de entidades. A lista completa
-fica em [PROJECT.md](../../PROJECT.md#stack-e-execução).
+fica em [PROJECT.md](../../PROJECT.md#stack).
 
 `domain/` não faz I/O. Componentes não devem conhecer nomes de arquivos. A factory em
 `src/repositories/index.ts` mantém a escolha do driver em um único lugar. No estado atual existem
@@ -47,6 +47,8 @@ cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro p
 A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
 ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
 formulário de um vínculo gravado na ficha de origem.
+A escolha do Konva e a migração planejada de Quadros e Cenas estão em
+[ADR-007](ADR-007-konva-canvas.md).
 O [guia de entidades](../user-guide/entities.md) explica os fluxos. A migração de
 Quadros, Cenas e Linha do Tempo depende das verificações do
 [plano de relacionamentos](../plans/relationship-graph-plan.md).

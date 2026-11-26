@@ -12,6 +12,7 @@ específicos para vários tipos (`location`, `evidence`, `organization`, `creatu
 `artifact`, `cosmology`, `tale`, `concept`, `species`, `naturalScience` e `timeline`), e personagem usa um
 layout de retrato. Portanto, a afirmação histórica de “nenhum componente específico” foi
 revogada pelo código atual; a decisão original e sua motivação continuam registradas abaixo.
+Manter o híbrido ou voltar ao genérico é uma decisão em aberto (#49).
 
 ## Contexto
 

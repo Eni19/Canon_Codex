@@ -28,10 +28,12 @@ exposto fora de `localhost` ([operação e privacidade](docs/reference/operation
 - Tiptap/ProseMirror para conteúdo rico, isolado por `ContentDocument` ([ADR-004](docs/architecture/ADR-004-editor.md));
 - Fuse.js para busca local;
 - Konva para o canvas de relacionamentos (`src/components/relations/relationship-scene.ts`);
-- tldraw para Quadros e Cenas; a troca por Konva está planejada (#17);
-- sharp para variantes de imagem e fundo do calendário (`src/repositories/assetImages.ts`);
+- tldraw para Quadros e Cenas; a troca por Konva está planejada
+  ([ADR-007](docs/architecture/ADR-007-konva-canvas.md), #17);
+- sharp para dimensões, miniaturas e variantes de imagem (`src/repositories/assetImages.ts` e
+  `src/app/api/calendar-background/route.ts`);
 - pdf-lib para o PDF anual do calendário (`src/services/worlds/calendarPdf.ts`);
-- animejs para animações do editor de registros; sonner para avisos;
+- animejs para animações das fichas e do editor de registros; sonner para avisos;
 - Vitest para testes.
 
 O Cache Components do Next.js não está habilitado em `next.config.ts`. Leituras acessam o
