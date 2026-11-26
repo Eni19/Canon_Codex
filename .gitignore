@@ -63,3 +63,5 @@ Desktop.ini
 
 
 /eng_soft/
+# rascunhos locais (especificações, tickets de trabalho)
+.scratch/
