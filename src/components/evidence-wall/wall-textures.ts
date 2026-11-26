@@ -7,26 +7,26 @@ import type { ContentTextBlock } from '@/components/editor/content-text'
  */
 export type WallFonts = { hand: string; type: string }
 
-function seeded(seed: number) {
+export function seeded(seed: number) {
   let s = seed >>> 0
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 }
 }
-const hash = (text: string) => { let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return h >>> 0 }
+export const hash = (text: string) => { let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return h >>> 0 }
 
-function canvas(width: number, height: number) {
+export function canvas(width: number, height: number) {
   const element = document.createElement('canvas')
   element.width = width
   element.height = height
   return { element, c: element.getContext('2d')! }
 }
-function texture(element: HTMLCanvasElement, anisotropy = 4): Texture {
+export function texture(element: HTMLCanvasElement, anisotropy = 4): Texture {
   const t = new CanvasTexture(element)
   t.colorSpace = SRGBColorSpace
   t.anisotropy = anisotropy
   return t
 }
 
-function grain(c: CanvasRenderingContext2D, w: number, h: number, count: number, seed: number, alpha: number) {
+export function grain(c: CanvasRenderingContext2D, w: number, h: number, count: number, seed: number, alpha: number) {
   const random = seeded(seed)
   for (let i = 0; i < count; i++) {
     const v = random() < 0.5 ? 0 : 255
@@ -34,7 +34,7 @@ function grain(c: CanvasRenderingContext2D, w: number, h: number, count: number,
     c.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2)
   }
 }
-function stains(c: CanvasRenderingContext2D, w: number, h: number, count: number, seed: number, rgb: string, alpha: number, size: number) {
+export function stains(c: CanvasRenderingContext2D, w: number, h: number, count: number, seed: number, rgb: string, alpha: number, size: number) {
   const random = seeded(seed)
   for (let i = 0; i < count; i++) {
     const x = random() * w, y = random() * h, r = size * (0.4 + random())
@@ -95,7 +95,7 @@ export function paintLeafGobo(size = 1024): Texture {
   return t
 }
 
-function wrap(c: CanvasRenderingContext2D, text: string, width: number): string[] {
+export function wrap(c: CanvasRenderingContext2D, text: string, width: number): string[] {
   const lines: string[] = []
   for (const paragraph of text.split('\n')) {
     let line = ''
@@ -109,7 +109,7 @@ function wrap(c: CanvasRenderingContext2D, text: string, width: number): string[
 }
 
 /** Escreve linhas até o espaço acabar; a última que não cabe termina em reticências. */
-function writeLines(c: CanvasRenderingContext2D, lines: string[], x: number, y: number, lineHeight: number, bottom: number) {
+export function writeLines(c: CanvasRenderingContext2D, lines: string[], x: number, y: number, lineHeight: number, bottom: number) {
   let cursor = y
   for (let i = 0; i < lines.length; i++) {
     if (cursor + lineHeight > bottom) {
@@ -228,7 +228,7 @@ export function paginateSheet(blocks: ContentTextBlock[], fonts: WallFonts): She
 }
 
 /** Folha de relatório datilografada, com cabeçalho, linhas e número da folha. */
-export function paintSheet(title: string, lines: SheetLine[], page: number, total: number, fonts: WallFonts, seedText: string): Texture {
+export function paintSheet(title: string, lines: SheetLine[], page: number, total: number, fonts: WallFonts, seedText: string, heading = 'RELATÓRIO DE EVIDÊNCIA'): Texture {
   const { width, height } = SHEET_PX
   const { element, c } = canvas(width, height)
   c.fillStyle = '#f1ece1'
@@ -240,7 +240,7 @@ export function paintSheet(title: string, lines: SheetLine[], page: number, tota
   c.fillStyle = '#26231f'
   c.textBaseline = 'top'
   c.font = `${SHEET_FONT * 0.8}px ${fonts.type}`
-  c.fillText('RELATÓRIO DE EVIDÊNCIA', SHEET_MARGIN, SHEET_MARGIN * 0.6)
+  c.fillText(heading, SHEET_MARGIN, SHEET_MARGIN * 0.6)
   c.textAlign = 'right'
   c.fillText(`fl. ${page}/${total}`, width - SHEET_MARGIN, SHEET_MARGIN * 0.6)
   c.textAlign = 'left'
