@@ -228,6 +228,38 @@ describe('world calendar migration', () => {
     expect(migrated.calendar.intercalaryRules[1].name).toBe('Extra')
   })
 })
+describe('object fields migration (v26)', () => {
+  it('drops registration number and materials from the artifact type only', () => {
+    const world = createDefaultWorldSeed()
+    const extra = [{ key: 'registrationNumber', label: 'Número de registro', kind: 'text' as const }, { key: 'materials', label: 'Materiais', kind: 'tags' as const }]
+    const legacy = {
+      ...world,
+      schemaVersion: 25,
+      entityTypes: world.entityTypes.map((type) => type.id === 'artifact' || type.id === 'concept' ? { ...type, properties: [...extra, ...type.properties] } : type),
+    }
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
+    const keys = (id: string) => migrated.entityTypes.find((type) => type.id === id)!.properties.map((property) => property.key)
+    expect(keys('artifact')).toEqual(world.entityTypes.find((type) => type.id === 'artifact')!.properties.map((property) => property.key))
+    expect(keys('concept')).toContain('materials')
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+  })
+})
+
+describe('object labels migration (v25)', () => {
+  it('renames the default artifact labels and keeps customized ones', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = (label: string, pluralLabel: string) => ({
+      ...world,
+      schemaVersion: 24,
+      entityTypes: world.entityTypes.map((type) => type.id === 'artifact' ? { ...type, label, pluralLabel } : type),
+    })
+    const artifact = (data: Record<string, unknown>) => WorldSchema.parse(migrateToLatest(worldMigrations, data)).entityTypes.find((type) => type.id === 'artifact')!
+    expect(artifact(legacy('Objeto / Artefato', 'Objetos / Artefatos'))).toMatchObject({ label: 'Objeto', pluralLabel: 'Objetos' })
+    expect(artifact(legacy('Relíquia', 'Objetos / Artefatos'))).toMatchObject({ label: 'Relíquia', pluralLabel: 'Objetos' })
+    expect(WorldSchema.parse(migrateToLatest(worldMigrations, legacy('Objeto / Artefato', 'Objetos / Artefatos'))).schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+  })
+})
+
 describe('card picker reference cleanup migration', () => {
   it('drops the unused location fields and makes leaders come from members', () => {
     const world = createDefaultWorldSeed()

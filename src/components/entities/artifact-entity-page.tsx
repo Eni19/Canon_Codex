@@ -15,7 +15,7 @@ import { assetVariantUrl } from '@/lib/assetUrl'
 import type { EntityPageProps } from './entity-page'
 import styles from './artifact-catalog.module.css'
 
-const FIELD_KEYS = ['artifactType', 'origin', 'period', 'materials', 'dimensions', 'condition', 'acquisition', 'currentLocation', 'owner', 'knownEffect']
+const FIELD_KEYS = ['artifactType', 'origin', 'period', 'dimensions', 'condition', 'acquisition', 'currentLocation', 'owner', 'knownEffect']
 
 function displayValue(value: unknown, titleById: Record<string, string>, kind: string, calendar: EntityPageProps['calendar']) {
   if (kind === 'date') return formatDateFieldValue(calendar, value)

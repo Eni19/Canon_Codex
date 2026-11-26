@@ -45,6 +45,29 @@ invisível do HTML por cima para os cliques. Abrir um registro a partir do cader
 máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
 ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
+## Parede de evidências
+
+A página de Evidência (`src/components/entities/evidence-board-page.tsx`) monta no servidor os dados
+da parede e os painéis de leitura em HTML (conteúdo, relações e referências) e os entrega a
+`EvidenceWall` (`src/components/evidence-wall/`), carregado só no navegador. A cena é three.js
+(React Three Fiber): parede, polaroides, folhas e notas são texturas desenhadas em canvas, sem
+fotografar HTML, e o texto das folhas vem de `contentTextBlocks` (`src/components/editor/content-text.ts`),
+que conhece o formato Tiptap. Posições iniciais, limites da parede, linhas entre peças e leitura da
+arrumação salva são regras puras em `src/domain/evidence/evidenceWall.ts`. A arrumação fica no
+`localStorage` do navegador. Sem WebGL, a página mostra o quadro em HTML.
+
+## Bancada de Objetos
+
+A página de Objeto (`src/components/entities/object-bench-page.tsx`) segue o mesmo desenho: o
+servidor monta os dados e os painéis de leitura e os entrega a `ObjectBench`
+(`src/components/object-bench/`), carregado só no navegador. A base comum das superfícies 3D com
+peças (câmera com limites e paralaxe, arraste com peso, foco numa peça) fica em
+`src/components/surface-3d/surface-board.tsx`; cada página traz a superfície, as luzes e os modelos
+próprios. A bancada desenha as ferramentas em geometria (paquímetro e lupa) e reage a elas sobre a
+foto do objeto: a lente mostra uma cópia ampliada da textura da foto e os detalhes que caem dentro dela. Arrumação inicial, limites e a leitura do paquímetro a partir do texto de
+"Dimensões" são regras puras em `src/domain/objects/objectBench.ts`; leitura e gravação da arrumação
+ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem a própria cena.
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do

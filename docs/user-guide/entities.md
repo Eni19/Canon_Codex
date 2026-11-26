@@ -57,7 +57,7 @@ em outra aba não altera o que já estava preenchido.
 - **Criatura** — Comportamento típico.
 - **Evento** — Consequências.
 - **Fenômeno** — Condições de manifestação.
-- **Objeto / Artefato** — Efeito conhecido.
+- **Objeto** — Efeito conhecido.
 
 Na Pista, selecione evidências do mundo atual. Fichas antigas podem receber os novos valores ao editar.
 
@@ -80,7 +80,7 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `creature` | Criatura | natureza, apresentação da imagem, classificação, habitat e perigo |
 | `naturalScience` | Natureza / Medicina | disciplina, subtipo, habitat, sintomas, toxicidade e tratamento |
 | `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados |
-| `artifact` | Objeto / Artefato | catálogo, registro, materiais, conservação e detalhes posicionáveis |
+| `artifact` | Objeto | bancada de estudo, tipo, origem, dimensões, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
 | `timeline` | Linha do Tempo | escopo, início e fim; página com vistas vertical e horizontal de aparições |
@@ -96,7 +96,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
-- evidências aceitam até 24 descobertas;
+- evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
 - artefatos aceitam até 24 detalhes com posição, rótulo e descrição;
 - conceitos aceitam até 40 blocos entre visão geral, operação, estrutura, regras, exemplos,
@@ -105,6 +105,41 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 - linhas do tempo exibem aparições datadas em ordem cronológica e itens sem data em seção própria;
 - tipos que não possuem composição específica usam o compositor de header, propriedades, conteúdo,
   relações e backlinks conforme o layout do mundo.
+
+
+### Parede da Evidência
+
+A página de uma Evidência é uma parede com as peças pregadas e ligadas por linha vermelha: a
+polaroide da evidência, as polaroides dos personagens relacionados, o conteúdo como folhas de
+relatório datilografadas (texto que não cabe vira folha nova) e notas adesivas com propriedades,
+apresentação, cada descoberta, notas contextuais, relações e referências.
+
+- **Arraste** uma peça para reorganizá-la; ela não sai da parede. A arrumação fica salva neste
+  navegador; **Reorganizar** volta à arrumação inicial.
+- **Clique** numa peça para chegar perto e abrir a leitura completa ao lado; **Esc** ou um clique na
+  parede fecha.
+- **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
+- A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
+- Sem WebGL, a página mostra o quadro em HTML.
+
+### Bancada do Objeto
+
+A página de um Objeto é uma bancada de estudo: a foto técnica do objeto num tapete de corte, com
+ferramentas, notas adesivas (identificação, proveniência, efeito conhecido, outros nomes, relações e
+referências), etiquetas (tipo e marcadores) e o conteúdo como folhas do relatório de conservação.
+
+- **Paquímetro:** leve-o até a foto e ele abre os bicos e mostra no visor a medida de **Dimensões**
+  (o primeiro número e a unidade). Clique nele para ler o texto completo.
+- **Lupa:** sobre a foto, o vidro amplia o que está embaixo. Os detalhes marcados na edição só
+  aparecem dentro da lente, como adesivos numerados; clique num deles para ler aquele detalhe.
+  Clique na lupa para a lista de todos.
+- **Clique** numa peça para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na bancada
+  fecha.
+- **Arraste** peças e ferramentas para reorganizar; nada sai da bancada. A arrumação fica salva
+  neste navegador; **Reorganizar** volta à inicial. Arraste a bancada para movê-la e use a roda do
+  mouse para aproximar.
+- O texto guia na barra de baixo tem um **×** para fechá-lo; fechado, não volta neste navegador.
+- Sem WebGL, a página mostra a ficha de catalogação em HTML.
 
 ## Referências e relações
 

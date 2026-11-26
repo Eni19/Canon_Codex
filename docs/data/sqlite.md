@@ -56,7 +56,10 @@ O aplicativo ainda não oferece exportação de um mundo isolado em formato lega
 
 ## Schema e leitura de artigos
 
-O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Mundos e registros
+O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Uma migração SQL pode
+alterar documentos quando o JSON gravado precisa mudar; a terceira renomeia o tipo `artifact` para
+"Objeto" nos mundos que ainda usam o nome padrão e os leva ao mundo v25; a quarta tira número de
+registro e materiais da ficha de Objeto e os leva ao mundo v26. Mundos e registros
 preservam seus IDs. Relações e aparições ficam em tabelas com escopo de mundo e ordem explícita.
 O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap, o canvas
 dos quadros e das cenas. Imagens e variantes são BLOBs separados dos metadados.
