@@ -89,6 +89,40 @@ A Agenda usa `WorldRepository.listCalendarAgenda` para obter os Eventos ativos a
 o mês. A implementação em filesystem mantém uma projeção em memória conferida com os metadados
 a cada consulta. Consulte [armazenamento legado](../data/storage.md#calendário-por-mundo).
 
+## Linha do Tempo
+
+Linhas do Tempo têm canvas espacial com aparições datadas ou sem data armazenadas separadamente.
+Cartões têm título, nota, data, escala mínima e opção de capa próprios. Biblioteca, inclusão em
+lote, remoção/Desfazer e Eventos rápidos permanecem disponíveis. Filtros
+cronológicos/categorias/busca usam a URL; ampliação espacial e posição da câmera são locais à
+página. O mapa inicial é horizontal, com opção vertical.
+
+O ciclo de vida das aparições distingue registros ativos, na lixeira e ausentes definitivamente.
+Consultas de linha e origem, além da criação de origem, reconciliam referências no repositório.
+Cartões na lixeira mantêm campos próprios e aviso de indisponibilidade; ausência definitiva remove
+todas as aparições nas linhas ativas e na lixeira e limpa somente o vínculo de origem, preservando
+o calendário. Erros de leitura impedem a limpeza. O SQLite grava a reconciliação em transação. O
+filesystem legado faz escritas atômicas por arquivo com retomada idempotente. Veja [SQLite
+local](../data/sqlite.md) e [ciclo de vida no
+filesystem](../data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+
+O Cosmic Canvas (15/10/2026) substitui a paginação visual TL-11/TL-12 por coordenadas fixas para a
+coleção inteira e cartões limitados ao viewport (teto 96; abaixo de 28%, visão geral por pontos).
+As faixas cronológicas não codificam duração proporcional. Biblioteca e navegador mantêm listas de
+50; URLs antigas com page são interpretadas como localização inicial. Há um único editor modal.
+Filtros alteram visibilidade sem mover a câmera nem reconstruir o layout; detalhes e demais
+painéis ficam sobrepostos. Orientação e alterações reais de datas podem redistribuir coordenadas.
+A câmera usa Pointer Events, wheel e requestAnimationFrame, sem nova dependência. SVG memoizado
+mantém pontos/conexões; cartões são reutilizados. A câmera transforma o plano, único elemento com
+will-change explícito. O fundo anima duas camadas de estrelas e uma névoa por CSS,
+independentemente da câmera e sem interceptar ponteiros. Três camadas separam estrelas, mapa e UI
+fixa. Tokens cósmicos centralizados aplicam preto profundo, texto pergaminho/cinza quente e acento
+âmbar/latão do aplicativo, com fundo e superfícies escurecidos apenas à linha/painéis, conforme a
+atualização do ADR-005. CSS usa transições de 180 ms, controles de câmera 200 ms e movimento
+reduzido imediato. Não há mudança de schema, persistência ou contratos das actions. Referências,
+uso e limites: [pesquisa](../research/timeline-cosmic-canvas.md),
+[guia](../user-guide/timelines.md) e [perfil](../performance/timeline-cosmic-canvas.md).
+
 ## Leitura e gravação de entidade
 
 ```mermaid
