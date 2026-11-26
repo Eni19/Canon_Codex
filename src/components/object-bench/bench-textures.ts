@@ -3,7 +3,7 @@ import { canvas, grain, hash, seeded, stains, texture, wrap, writeLines, type Wa
 
 /**
  * Texturas da bancada de Objetos, desenhadas em código: tapete de corte com grade, chapa de metal da
- * mesa, foto técnica do objeto, visor do paquímetro, etiquetas e o cartão de leitura da lupa.
+ * mesa, foto técnica do objeto, visor do paquímetro e etiquetas.
  */
 
 /** Tapete de corte escuro com grade fina, réguas nas bordas e marcas de uso. */
@@ -76,12 +76,12 @@ export const SPECIMEN_PHOTO: PhotoRect = { x: 0.05, y: 0.06, w: 0.9, h: 0.9 * (1
  * Prancha fotográfica do objeto: fundo cinza de estúdio, foto inteira (sem corte, como na ficha,
  * para os pontos de detalhe caírem no lugar certo), escala e legenda técnica.
  */
-export function paintSpecimen(image: HTMLImageElement | null, title: string, registration: string, fonts: WallFonts): Texture {
+export function paintSpecimen(image: HTMLImageElement | null, title: string, figure: string, fonts: WallFonts): Texture {
   const { width, height } = SPECIMEN_PX
   const { element, c } = canvas(width, height)
   c.fillStyle = '#eceae4'
   c.fillRect(0, 0, width, height)
-  grain(c, width, height, 6000, hash(registration), 0.08)
+  grain(c, width, height, 6000, hash(title), 0.08)
   const px = SPECIMEN_PHOTO.x * width, py = SPECIMEN_PHOTO.y * height, pw = SPECIMEN_PHOTO.w * width, ph = SPECIMEN_PHOTO.h * height
   const backdrop = c.createRadialGradient(px + pw / 2, py + ph * 0.42, 0, px + pw / 2, py + ph * 0.42, pw * 0.7)
   backdrop.addColorStop(0, '#d3d3cc'); backdrop.addColorStop(0.55, '#afb0ab'); backdrop.addColorStop(1, '#8d8f8c')
@@ -110,7 +110,7 @@ export function paintSpecimen(image: HTMLImageElement | null, title: string, reg
   c.font = `${width * 0.02}px ${fonts.type}`
   c.fillText('escala de referência', px, below + 18)
   c.textAlign = 'right'
-  c.fillText(`FIG. ${registration}`, px + pw, below)
+  c.fillText(`FIG. ${figure}`, px + pw, below)
   c.font = `bold ${width * 0.026}px ${fonts.type}`
   const name = title.length > 34 ? `${title.slice(0, 33)}…` : title
   c.fillText(name.toUpperCase(), px + pw, below + 26)
@@ -136,7 +136,7 @@ export function paintLcd(value: string, unit: string, width = 512, height = 200)
   return texture(element)
 }
 
-/** Etiqueta de catalogação: papel branco com borda vermelha, título e linhas datilografadas. */
+/** Etiqueta: papel branco com borda vermelha, título e linhas datilografadas. */
 export function paintLabel(title: string, lines: string[], fonts: WallFonts, width = 640, height = 282): Texture {
   const { element, c } = canvas(width, height)
   c.fillStyle = '#f4f1ea'
@@ -160,35 +160,3 @@ export function paintLabel(title: string, lines: string[], fonts: WallFonts, wid
   return texture(element)
 }
 
-/** Cartão que sai da lupa quando ela passa sobre o objeto: os materiais em amostras coloridas. */
-export function paintMaterialCard(materials: string[], condition: string, fonts: WallFonts, width = 560, height = 560): Texture {
-  const { element, c } = canvas(width, height)
-  c.fillStyle = '#f1efe8'
-  c.fillRect(0, 0, width, height)
-  grain(c, width, height, 3000, 77, 0.08)
-  c.fillStyle = '#26231f'
-  c.textBaseline = 'top'
-  c.font = `bold 30px ${fonts.type}`
-  c.fillText('ANÁLISE DE MATERIAIS', 36, 32)
-  c.fillRect(36, 74, width - 72, 2)
-  const swatches = ['#8c6e4e', '#9aa3a8', '#b48a3c', '#5d6b57', '#7d4b3b', '#c9c2b2']
-  let y = 98
-  const list = materials.length ? materials : ['não identificado']
-  for (let i = 0; i < list.length && y < height - 120; i++) {
-    c.fillStyle = materials.length ? swatches[hash(list[i]) % swatches.length] : '#c9c2b2'
-    c.beginPath(); c.arc(56, y + 22, 18, 0, Math.PI * 2); c.fill()
-    c.fillStyle = '#26231f'
-    c.font = `40px ${fonts.hand}`
-    c.fillText(list[i].length > 24 ? `${list[i].slice(0, 23)}…` : list[i], 92, y)
-    y += 54
-  }
-  if (condition) {
-    c.font = `22px ${fonts.type}`
-    c.fillStyle = '#6b5d4b'
-    c.fillText('ESTADO', 36, height - 96)
-    c.font = `38px ${fonts.hand}`
-    c.fillStyle = '#26231f'
-    c.fillText(condition, 36, height - 66)
-  }
-  return texture(element)
-}

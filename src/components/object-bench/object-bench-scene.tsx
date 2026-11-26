@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { CatmullRomCurve3, Object3D, PMREMGenerator, TubeGeometry, Vector3, type Group, type Mesh, type MeshStandardMaterial, type PerspectiveCamera, type SpotLight, type Texture } from 'three'
+import { Object3D, PMREMGenerator, Vector3, type Group, type Mesh, type MeshStandardMaterial, type Texture } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { SurfaceBoard, SurfaceCanvas, useSurface, type PieceHandlers, type SurfacePiece } from '@/components/surface-3d/surface-board'
 import { BENCH, BENCH_SIZE, clampToBench, isOverSpecimen, type BenchItemKind } from '@/domain/objects/objectBench'
@@ -20,7 +20,6 @@ export interface ObjectBenchSceneProps {
   details: BenchDetail[]
   /** Visores das ferramentas: em repouso e medindo o objeto. */
   caliperDisplay: { idle: Texture; reading: Texture }
-  materialCard: Texture
   onDrop: (id: string, x: number, y: number) => void
   onSelect: (id: string) => void
   onDetail: (id: string) => void
@@ -33,7 +32,7 @@ export default function ObjectBenchScene(props: ObjectBenchSceneProps) {
   return <SurfaceCanvas background="#2a2d2f"><BenchScene {...props}/></SurfaceCanvas>
 }
 
-function BenchScene({ pieces, layout, focusId, reduced, details, caliperDisplay, materialCard, onDrop, onSelect, onDetail, onBackground, onShown, onCursor }: ObjectBenchSceneProps) {
+function BenchScene({ pieces, layout, focusId, reduced, details, caliperDisplay, onDrop, onSelect, onDetail, onBackground, onShown, onCursor }: ObjectBenchSceneProps) {
   const mat = useMemo(() => paintMat(), [])
   const table = useMemo(() => { const t = paintTable(); t.wrapS = t.wrapT = 1000; t.repeat.set(3, 2); return t }, [])
   useEffect(() => () => { mat.dispose(); table.dispose() }, [mat, table])
@@ -41,11 +40,10 @@ function BenchScene({ pieces, layout, focusId, reduced, details, caliperDisplay,
 
   const renderPiece = (piece: SurfacePiece, handlers: PieceHandlers) => {
     if (piece.kind === 'caliper') return <Caliper handlers={handlers} display={caliperDisplay}/>
-    if (piece.kind === 'loupe') return <Loupe handlers={handlers} card={materialCard} reduced={reduced} specimen={pieces.find((item) => item.kind === 'specimen')?.texture}/>
+    if (piece.kind === 'loupe') return <Loupe handlers={handlers} reduced={reduced} specimen={pieces.find((item) => item.kind === 'specimen')?.texture} details={details} onDetail={onDetail}/>
     return null
   }
   const renderAttachment = (piece: SurfacePiece) => {
-    if (piece.kind === 'specimen') return details.map((detail) => <DetailSticker key={detail.id} detail={detail} piece={piece} onDetail={onDetail}/>)
     if (piece.kind === 'note' || piece.kind === 'label' || piece.kind === 'sheet') return <Tape piece={piece}/>
     return null
   }
@@ -89,28 +87,13 @@ function Steel(props: { color?: string; roughness?: number; metalness?: number }
   return <meshStandardMaterial color="#868d92" metalness={0.9} roughness={0.38} envMap={environment} envMapIntensity={0.16} {...props}/>
 }
 
+/** Luz de teto, fria e larga, de cima e da esquerda; sem lanterna (a bancada não é investigação). */
 function Lights() {
-  const { camera } = useThree()
-  const { pointer, focusId, groups, reduced } = useSurface()
-  const lamp = useRef<SpotLight>(null)
-  const lampTarget = useMemo(() => new Object3D(), [])
   const keyTarget = useMemo(() => new Object3D(), [])
-  useFrame((_, delta) => {
-    // Luminária de bancada: um foco que segue o ponteiro; com uma peça em estudo, aponta para ela.
-    const perspective = camera as PerspectiveCamera
-    const focus = focusId ? groups.current.get(focusId)?.position : null
-    const ray = new Vector3(pointer.current.x, pointer.current.y, 0.5).unproject(perspective).sub(perspective.position).normalize()
-    const aim = perspective.position.clone().add(ray.multiplyScalar(-perspective.position.z / ray.z))
-    lampTarget.position.lerp(new Vector3(focus ? focus.x : aim.x, focus ? focus.y : aim.y, 0), reduced ? 1 : 1 - Math.exp(-delta * 8))
-    lamp.current?.position.set(lampTarget.position.x * 0.5 - 0.6, lampTarget.position.y * 0.5 + 0.9, 2.6)
-  })
   return <>
-    <hemisphereLight args={['#e2e8eb', '#1a1d1f', 1.5]}/>
-    {/* Luz de teto, fria e larga, de cima e da esquerda. */}
-    <spotLight color="#eef1f2" intensity={52} decay={2} distance={0} position={[-2.4, 2.4, 4.4]} angle={0.7} penumbra={0.85} target={keyTarget} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}/>
+    <hemisphereLight args={['#e2e8eb', '#1a1d1f', 1.6]}/>
+    <spotLight color="#eef1f2" intensity={62} decay={2} distance={0} position={[-2.4, 2.4, 4.4]} angle={0.75} penumbra={0.85} target={keyTarget} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}/>
     <primitive object={keyTarget} position={[0.3, -0.2, 0]}/>
-    <spotLight ref={lamp} color="#fff3df" intensity={20} decay={2} distance={0} angle={0.34} penumbra={0.9} target={lampTarget} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004}/>
-    <primitive object={lampTarget}/>
   </>
 }
 
@@ -195,16 +178,18 @@ function Caliper({ handlers, display }: { handlers: PieceHandlers; display: { id
 const LENS_RADIUS = 0.13
 const LENS_ZOOM = 2.4
 
+/** Onde a lente está sobre a foto (em coordenadas da foto) e quanto girar o que ela mostra. */
+type LensView = { x: number; y: number; rotation: number; shown: number }
+
 /**
  * Lupa: aro escuro, vidro e cabo. Sobre a foto do objeto, o vidro mostra a foto ampliada (a parte
- * que está embaixo dele) e abre o cartão de análise dos materiais.
+ * que está embaixo dele) e revela os detalhes marcados: eles só aparecem dentro da lente.
  */
-function Loupe({ handlers, card, reduced, specimen }: { handlers: PieceHandlers; card: Texture; reduced: boolean; specimen?: Texture }) {
+function Loupe({ handlers, reduced, specimen, details, onDetail }: { handlers: PieceHandlers; reduced: boolean; specimen?: Texture; details: BenchDetail[]; onDetail: (id: string) => void }) {
   const over = useOverSpecimen('loupe')
   const { groups } = useSurface()
-  const cardGroup = useRef<Group>(null)
   const lens = useRef<Mesh>(null)
-  const shown = useRef(0)
+  const view = useRef<LensView>({ x: 0, y: 0, rotation: 0, shown: 0 })
   // Cópia da textura da foto com recorte próprio: o vidro mostra só o pedaço ampliado.
   const magnified = useMemo(() => {
     if (!specimen) return null
@@ -215,36 +200,34 @@ function Loupe({ handlers, card, reduced, specimen }: { handlers: PieceHandlers;
   useEffect(() => () => magnified?.dispose(), [magnified])
   const world = useMemo(() => new Vector3(), [])
   useFrame((_, delta) => {
-    shown.current += ((over ? 1 : 0) - shown.current) * (reduced ? 1 : 1 - Math.exp(-delta * 8))
-    const g = cardGroup.current
-    if (g) {
-      g.visible = shown.current > 0.02
-      g.scale.setScalar(0.6 + shown.current * 0.4)
-      g.position.set(0.3 + shown.current * 0.12, 0.12 + shown.current * 0.14, 0.05)
-    }
+    const v = view.current
+    v.shown += ((over ? 1 : 0) - v.shown) * (reduced ? 1 : 1 - Math.exp(-delta * 8))
     const mesh = lens.current, photo = groups.current.get('specimen'), self = groups.current.get('loupe')
     if (!mesh || !magnified || !photo || !self) return
-    mesh.visible = shown.current > 0.02
-    ;(mesh.material as MeshStandardMaterial).opacity = shown.current
-    // Ponto da foto sob o centro da lente, em coordenadas de textura.
+    mesh.visible = v.shown > 0.02
+    ;(mesh.material as MeshStandardMaterial).opacity = v.shown
+    // Ponto da foto sob o centro da lente, em coordenadas da foto.
     mesh.getWorldPosition(world)
     photo.worldToLocal(world)
+    v.x = world.x
+    v.y = world.y
     const { w, h } = BENCH_SIZE.specimen
     const span = (2 * LENS_RADIUS) / LENS_ZOOM
     magnified.repeat.set(span / w, span / h)
     magnified.offset.set(world.x / w + 0.5 - span / w / 2, world.y / h + 0.5 - span / h / 2)
     // O conteúdo ampliado fica alinhado com a foto, mesmo com a lupa girada.
-    mesh.rotation.z = photo.rotation.z - self.rotation.z
+    v.rotation = photo.rotation.z - self.rotation.z
+    mesh.rotation.z = v.rotation
   })
   return (
     <group {...handlers}>
       <group position={[-0.15, 0, 0.03]}>
         <mesh castShadow>
-          <torusGeometry args={[0.13, 0.014, 16, 64]}/>
+          <torusGeometry args={[LENS_RADIUS, 0.014, 16, 64]}/>
           <Steel color="#1f2224" roughness={0.35} metalness={0.6}/>
         </mesh>
         <mesh>
-          <circleGeometry args={[0.13, 48]}/>
+          <circleGeometry args={[LENS_RADIUS, 48]}/>
           <meshStandardMaterial color="#d6e6ec" transparent opacity={0.16} roughness={0.05} metalness={0.1}/>
         </mesh>
         {magnified && (
@@ -253,46 +236,59 @@ function Loupe({ handlers, card, reduced, specimen }: { handlers: PieceHandlers;
             <meshStandardMaterial map={magnified} roughness={0.35} transparent opacity={0}/>
           </mesh>
         )}
+        {details.map((detail) => <LensSticker key={detail.id} detail={detail} view={view} onDetail={onDetail}/>)}
         {/* Brilho do vidro. */}
-        <mesh position={[-0.04, 0.05, 0.001]} rotation={[0, 0, 0.6]}>
+        <mesh position={[-0.04, 0.05, 0.003]} rotation={[0, 0, 0.6]}>
           <planeGeometry args={[0.1, 0.018]}/>
           <meshBasicMaterial color="#ffffff" transparent opacity={0.22}/>
         </mesh>
       </group>
-      <mesh castShadow position={[0.1, 0, 0.03]} rotation={[0, 0, Math.PI / 2]}>
+      {/* Haste de metal presa ao aro e cabo de madeira. */}
+      <mesh castShadow position={[0.04, 0, 0.03]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.012, 0.012, 0.1, 16]}/>
         <Steel/>
       </mesh>
-      <mesh castShadow position={[0.24, 0, 0.03]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh castShadow position={[0.19, 0, 0.03]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.024, 0.02, 0.2, 24]}/>
         <meshStandardMaterial color="#5a3a26" roughness={0.6}/>
       </mesh>
-      <group ref={cardGroup} visible={false}>
-        <mesh castShadow rotation={[0, 0, -0.5]}>
-          <planeGeometry args={[0.34, 0.34]}/>
-          <meshStandardMaterial map={card} roughness={0.9}/>
-        </mesh>
-      </group>
     </group>
   )
 }
 
-/** Adesivo numerado sobre um ponto de detalhe da foto; clicar abre a leitura daquele detalhe. */
-function DetailSticker({ detail, piece, onDetail }: { detail: BenchDetail; piece: SurfacePiece; onDetail: (id: string) => void }) {
-  const { w, h } = piece.size
-  const u = SPECIMEN_PHOTO.x + SPECIMEN_PHOTO.w * detail.x / 100, v = SPECIMEN_PHOTO.y + SPECIMEN_PHOTO.h * detail.y / 100
+const STICKER_RADIUS = 0.04
+
+/**
+ * Adesivo numerado de um detalhe, visto pela lente: fica no ponto ampliado correspondente e só
+ * aparece quando cabe dentro do vidro. Clicar abre a leitura daquele detalhe.
+ */
+function LensSticker({ detail, view, onDetail }: { detail: BenchDetail; view: RefObject<LensView>; onDetail: (id: string) => void }) {
+  const mesh = useRef<Mesh>(null)
   const down = useRef<{ x: number; y: number } | null>(null)
+  const { w, h } = BENCH_SIZE.specimen
+  const px = (SPECIMEN_PHOTO.x + SPECIMEN_PHOTO.w * detail.x / 100 - 0.5) * w
+  const py = (0.5 - (SPECIMEN_PHOTO.y + SPECIMEN_PHOTO.h * detail.y / 100)) * h
+  useFrame(() => {
+    const m = mesh.current, v = view.current
+    if (!m) return
+    const dx = (px - v.x) * LENS_ZOOM, dy = (py - v.y) * LENS_ZOOM
+    m.visible = Math.hypot(dx, dy) < LENS_RADIUS - STICKER_RADIUS * 0.6 && v.shown > 0.5
+    const cos = Math.cos(v.rotation), sin = Math.sin(v.rotation)
+    m.position.set(dx * cos - dy * sin, dx * sin + dy * cos, 0.002)
+    m.scale.setScalar(Math.max(0.01, (v.shown - 0.5) * 2))
+  })
   return (
     <mesh
-      position={[(u - 0.5) * w, (0.5 - v) * h, 0.006]}
-      onPointerDown={(event: ThreeEvent<PointerEvent>) => { event.stopPropagation(); down.current = { x: event.clientX, y: event.clientY } }}
+      ref={mesh} visible={false}
+      onPointerDown={(event: ThreeEvent<PointerEvent>) => { if (!event.object.visible) return; event.stopPropagation(); down.current = { x: event.clientX, y: event.clientY } }}
       onPointerUp={(event: ThreeEvent<PointerEvent>) => {
+        if (!down.current) return
         event.stopPropagation()
-        if (down.current && Math.hypot(event.clientX - down.current.x, event.clientY - down.current.y) < 5) onDetail(detail.id)
+        if (Math.hypot(event.clientX - down.current.x, event.clientY - down.current.y) < 5) onDetail(detail.id)
         down.current = null
       }}
     >
-      <circleGeometry args={[0.03, 32]}/>
+      <circleGeometry args={[STICKER_RADIUS, 32]}/>
       <meshStandardMaterial map={detail.texture} roughness={0.6} transparent alphaTest={0.5}/>
     </mesh>
   )
@@ -309,48 +305,20 @@ function Tape({ piece }: { piece: SurfacePiece }) {
   )
 }
 
-/** Enfeites fixos nas bordas da bancada: rolo de fita, parafusos e fios (não interagem). */
+/** Enfeite fixo na borda da bancada: um rolo de fita crepe (não interage). */
 function Decor(): ReactNode {
-  const wires = useMemo(() => [
-    { color: '#b3332b', points: [[2.0, -0.62], [1.62, -0.86], [1.42, -1.05], [1.3, -1.6]] },
-    { color: '#d9b43a', points: [[2.0, -0.78], [1.7, -0.95], [1.55, -1.2], [1.5, -1.6]] },
-    { color: '#222426', points: [[2.0, -0.92], [1.8, -1.1], [1.7, -1.6]] },
-  ].map(({ color, points }) => ({
-    color,
-    geometry: new TubeGeometry(new CatmullRomCurve3(points.map(([x, y]) => new Vector3(x, y, 0.012))), 40, 0.009, 8, false),
-  })), [])
-  useEffect(() => () => { for (const wire of wires) wire.geometry.dispose() }, [wires])
-  return <group>
-    <group position={[-1.45, -0.98, 0.025]}>
-      <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.17, 0.17, 0.05, 48, 1, true]}/>
-        <meshStandardMaterial color="#d6cba8" roughness={0.9} side={2}/>
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.105, 0.105, 0.052, 48, 1, true]}/>
-        <meshStandardMaterial color="#9b8a68" roughness={0.9} side={2}/>
-      </mesh>
-      <mesh position={[0, 0, 0.026]}>
-        <ringGeometry args={[0.105, 0.17, 48]}/>
-        <meshStandardMaterial color="#cbbf9a" roughness={0.95}/>
-      </mesh>
-    </group>
-    {[[1.42, 0.98, 0.4], [1.28, 1.08, -0.3]].map(([x, y, r], i) => (
-      <group key={i} position={[x, y, 0.008]} rotation={[0, 0, r]}>
-        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.008, 0.008, 0.11, 10]}/>
-          <Steel/>
-        </mesh>
-        <mesh castShadow position={[-0.06, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.012, 16]}/>
-          <Steel color="#2b2e31" metalness={0.6} roughness={0.4}/>
-        </mesh>
-      </group>
-    ))}
-    {wires.map((wire) => (
-      <mesh key={wire.color} geometry={wire.geometry} castShadow>
-        <meshStandardMaterial color={wire.color} roughness={0.5}/>
-      </mesh>
-    ))}
+  return <group position={[-1.45, -0.98, 0.025]}>
+    <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
+      <cylinderGeometry args={[0.17, 0.17, 0.05, 48, 1, true]}/>
+      <meshStandardMaterial color="#d6cba8" roughness={0.9} side={2}/>
+    </mesh>
+    <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <cylinderGeometry args={[0.105, 0.105, 0.052, 48, 1, true]}/>
+      <meshStandardMaterial color="#9b8a68" roughness={0.9} side={2}/>
+    </mesh>
+    <mesh position={[0, 0, 0.026]}>
+      <ringGeometry args={[0.105, 0.17, 48]}/>
+      <meshStandardMaterial color="#cbbf9a" roughness={0.95}/>
+    </mesh>
   </group>
 }

@@ -64,7 +64,7 @@ servidor monta os dados e os painéis de leitura e os entrega a `ObjectBench`
 peças (câmera com limites e paralaxe, arraste com peso, foco numa peça) fica em
 `src/components/surface-3d/surface-board.tsx`; cada página traz a superfície, as luzes e os modelos
 próprios. A bancada desenha as ferramentas em geometria (paquímetro e lupa) e reage a elas sobre a
-foto do objeto. Arrumação inicial, limites e a leitura do paquímetro a partir do texto de
+foto do objeto: a lente mostra uma cópia ampliada da textura da foto e os detalhes que caem dentro dela. Arrumação inicial, limites e a leitura do paquímetro a partir do texto de
 "Dimensões" são regras puras em `src/domain/objects/objectBench.ts`; leitura e gravação da arrumação
 ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem a própria cena.
 

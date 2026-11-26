@@ -80,7 +80,7 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `creature` | Criatura | natureza, apresentação da imagem, classificação, habitat e perigo |
 | `naturalScience` | Natureza / Medicina | disciplina, subtipo, habitat, sintomas, toxicidade e tratamento |
 | `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados |
-| `artifact` | Objeto | bancada de estudo, registro, materiais, dimensões, conservação e detalhes posicionáveis |
+| `artifact` | Objeto | bancada de estudo, tipo, origem, dimensões, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
 | `timeline` | Linha do Tempo | escopo, início e fim; página com vistas vertical e horizontal de aparições |
@@ -126,18 +126,19 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 
 A página de um Objeto é uma bancada de estudo: a foto técnica do objeto num tapete de corte, com
 ferramentas, notas adesivas (identificação, proveniência, efeito conhecido, outros nomes, relações e
-referências), etiquetas (registro e marcadores) e o conteúdo como folhas do relatório de
-conservação. Os detalhes marcados na edição aparecem como adesivos numerados sobre a foto.
+referências), etiquetas (tipo e marcadores) e o conteúdo como folhas do relatório de conservação.
 
 - **Paquímetro:** leve-o até a foto e ele abre os bicos e mostra no visor a medida de **Dimensões**
   (o primeiro número e a unidade). Clique nele para ler o texto completo.
-- **Lupa:** sobre a foto, o vidro amplia o que está embaixo e sai um cartão com os **Materiais** e o
-  estado de conservação. Clique nela para a lista completa.
-- **Clique** numa peça ou num adesivo numerado para chegar perto e abrir a leitura ao lado; **Esc**
-  ou um clique na bancada fecha.
+- **Lupa:** sobre a foto, o vidro amplia o que está embaixo. Os detalhes marcados na edição só
+  aparecem dentro da lente, como adesivos numerados; clique num deles para ler aquele detalhe.
+  Clique na lupa para a lista de todos.
+- **Clique** numa peça para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na bancada
+  fecha.
 - **Arraste** peças e ferramentas para reorganizar; nada sai da bancada. A arrumação fica salva
   neste navegador; **Reorganizar** volta à inicial. Arraste a bancada para movê-la e use a roda do
   mouse para aproximar.
+- O texto guia na barra de baixo tem um **×** para fechá-lo; fechado, não volta neste navegador.
 - Sem WebGL, a página mostra a ficha de catalogação em HTML.
 
 ## Referências e relações

@@ -13,7 +13,10 @@
 .titleLabel h1 { font-family: var(--font-serif); font-size: clamp(1.05rem, 1.8vw, 1.5rem); line-height: 1.1; }
 
 .toolbar { position: absolute; z-index: 10; left: 50%; bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0.4rem 0.35rem 0.9rem; transform: translateX(-50%); border: 1px solid var(--border); background: color-mix(in oklch, var(--sidebar) 92%, transparent); backdrop-filter: blur(12px); box-shadow: 0 0.7rem 2rem rgb(0 0 0 / 45%); }
-.hint { color: var(--muted-foreground); font-family: var(--font-type); font-size: 0.7rem; letter-spacing: 0.04em; white-space: nowrap; }
+.hint { display: flex; align-items: center; gap: 0.35rem; color: var(--muted-foreground); font-family: var(--font-type); font-size: 0.7rem; letter-spacing: 0.04em; white-space: nowrap; }
+.toolbar .hintClose { padding: 0.25rem; color: var(--muted-foreground); }
+.toolbar .hintClose:hover { color: var(--foreground); }
+.toolbar .hintClose svg { width: 0.75rem; }
 .toolbar button { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.7rem; color: var(--foreground); font-size: 0.72rem; white-space: nowrap; }
 .toolbar button:hover { background: var(--accent); }
 .toolbar svg { width: 0.85rem; }

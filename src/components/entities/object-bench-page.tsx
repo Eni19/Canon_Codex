@@ -21,15 +21,15 @@ import type { EntityPageProps } from './entity-page'
 
 /** Notas adesivas da bancada: grupos de campos do Objeto, cada um numa nota. */
 const NOTE_GROUPS = [
-  { id: 'identificacao', title: 'Identificação', keys: ['artifactType', 'origin', 'period'] },
+  { id: 'identificacao', title: 'Identificação', keys: ['artifactType', 'origin', 'period', 'condition'] },
   { id: 'proveniencia', title: 'Proveniência', keys: ['acquisition', 'currentLocation', 'owner'] },
   { id: 'efeito', title: 'Efeito conhecido', keys: ['knownEffect'] },
 ]
 
 /**
  * Página de Objeto: uma bancada de estudo em 3D. A foto técnica fica no centro; o paquímetro mede
- * as dimensões e a lupa analisa os materiais quando levados até ela; notas, etiquetas e as folhas do
- * relatório completam o resto. Sem WebGL, mostra a ficha de catalogação em HTML.
+ * as dimensões e a lupa revela os detalhes marcados quando levados até ela; notas, etiquetas e as
+ * folhas do relatório completam o resto. Sem WebGL, mostra a ficha de catalogação em HTML.
  */
 export function ObjectBenchPage(props: EntityPageProps) {
   const { entity, entityType, worldName, content, entityTitleById, calendar, backlinks, relationTargetOptions } = props
@@ -44,10 +44,8 @@ export function ObjectBenchPage(props: EntityPageProps) {
     return ''
   }
   const label = (key: string) => entityType.properties.find((property) => property.key === key)?.label ?? key
-  const registration = text('registrationNumber') || `CC-${entity.id.slice(0, 8).toUpperCase()}`
+  const kind = text('artifactType')
   const dimensions = text('dimensions')
-  const materials = Array.isArray(entity.properties.materials) ? entity.properties.materials.filter((item): item is string => typeof item === 'string' && item.trim() !== '') : []
-  const condition = text('condition')
   const reading = caliperReading(dimensions)
 
   const groups = NOTE_GROUPS.map((group) => ({ ...group, fields: group.keys.filter((key) => entityType.properties.some((property) => property.key === key)).map((key) => ({ key, label: label(key), value: text(key) })) }))
@@ -57,11 +55,9 @@ export function ObjectBenchPage(props: EntityPageProps) {
   const data: ObjectBenchData = {
     entityId: entity.id,
     title: entity.title,
-    registration,
+    figure: kind || entityType.label,
     coverAssetId: entity.coverAssetId,
     dimensions,
-    materials,
-    condition,
     details: details.map(({ id, label: name, x, y }) => ({ id, label: name, x, y })),
     notes: [
       ...groups.map((group) => ({ id: group.id, title: group.title, lines: group.fields.filter((field) => field.value).map((field) => group.fields.length > 1 ? { label: field.label, text: field.value } : { text: field.value }) })),
@@ -70,7 +66,7 @@ export function ObjectBenchPage(props: EntityPageProps) {
       ...(backlinks.length ? [{ id: 'referencias', title: 'Citado em', lines: backlinks.map((backlink) => ({ text: backlink.entity.title })) }] : []),
     ],
     labels: [
-      { id: 'registro', title: 'Registro', lines: [registration, ...(text('artifactType') ? [text('artifactType')] : [])] },
+      ...(kind ? [{ id: 'tipo', title: label('artifactType'), lines: [kind] }] : []),
       ...(entity.tags.length ? [{ id: 'marcadores', title: 'Marcadores', lines: [entity.tags.join(' · ')] }] : []),
     ],
     pages: content.pages.map((page) => ({ id: page.id, title: page.title, blocks: contentTextBlocks(page.body) })),
@@ -82,8 +78,8 @@ export function ObjectBenchPage(props: EntityPageProps) {
       {entity.coverAssetId && <div className={benchStyles.panelPhoto}><Image src={assetVariantUrl(entity.coverAssetId, 'original')} alt="" fill sizes="480px" className="object-contain p-4"/></div>}
       <h2>{entity.title}</h2>
       {entity.aliases.length > 0 && <p>{entity.aliases.join(' · ')}</p>}
-      {fieldList(['registrationNumber', 'artifactType', 'origin', 'period', 'condition', 'currentLocation', 'owner'])}
-      {details.length > 0 && <><h3>Detalhes marcados</h3>{details.map((detail, i) => <p key={detail.id}><strong>{i + 1}. {detail.label}</strong>{detail.description && ` — ${detail.description}`}</p>)}</>}
+      {fieldList(['artifactType', 'origin', 'period', 'condition', 'currentLocation', 'owner'])}
+      {details.length > 0 && <p><em>Leve a lupa até a foto para encontrar {details.length === 1 ? 'o detalhe marcado' : `os ${details.length} detalhes marcados`}.</em></p>}
     </>,
     caliper: <>
       <h2>Dimensões</h2>
@@ -91,11 +87,12 @@ export function ObjectBenchPage(props: EntityPageProps) {
       <p className="whitespace-pre-wrap">{dimensions || 'Nenhuma dimensão registrada. Acrescente em "Dimensões", na edição do objeto.'}</p>
     </>,
     loupe: <>
-      <h2>Materiais</h2>
-      {materials.length ? <div className={benchStyles.chips}>{materials.map((material) => <span key={material}>{material}</span>)}</div> : <p>Nenhum material registrado.</p>}
-      {condition && <><h3>{label('condition')}</h3><p>{condition}</p></>}
+      <h2>Detalhes</h2>
+      {details.length
+        ? <><p>Passe a lupa sobre a foto: cada detalhe aparece dentro da lente.</p>{details.map((detail, i) => <div key={detail.id}><h3>{i + 1}. {detail.label}</h3><p className="whitespace-pre-wrap">{detail.description || 'Sem anotação adicional.'}</p></div>)}</>
+        : <p>Nenhum detalhe marcado. Marque pontos da foto na edição do objeto.</p>}
     </>,
-    'label:registro': <><h2>Registro</h2>{fieldList(['registrationNumber', 'artifactType'])}</>,
+    'label:tipo': <><h2>{label('artifactType')}</h2><p>{kind}</p></>,
     'label:marcadores': <><h2>Marcadores</h2><div className={benchStyles.chips}>{entity.tags.map((tag) => <span key={tag}>{tag}</span>)}</div></>,
     'note:nomes': <><h2>Também chamado</h2>{entity.aliases.map((alias) => <p key={alias}>{alias}</p>)}</>,
     'note:relacoes': <><h2>Relações</h2><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={relationTargetOptions}/></>,
@@ -110,7 +107,7 @@ export function ObjectBenchPage(props: EntityPageProps) {
   const header = <>
     <div>
       <Breadcrumbs items={[{ label: worldName, href: '/' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]}/>
-      <div className={benchStyles.titleLabel}><small>{registration}</small><h1>{entity.title}</h1></div>
+      <div className={benchStyles.titleLabel}><small>{kind || entityType.label}</small><h1>{entity.title}</h1></div>
     </div>
     <Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4"/>Editar</Link></Button>
   </>

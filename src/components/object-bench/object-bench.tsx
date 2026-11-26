@@ -9,7 +9,7 @@ import { NOTE_COLORS, canvas, paginateSheet, paintNote, paintSheet, texture, typ
 import { bringToFront, readSurfaceLayout, serializeSurfaceLayout, type SurfaceLayout } from '@/domain/canvas/surfaceLayout'
 import { BENCH_SIZE, caliperReading, clampToBench, defaultBenchLayout, type BenchItemKind } from '@/domain/objects/objectBench'
 import { assetVariantUrl } from '@/lib/assetUrl'
-import { paintLabel, paintLcd, paintMaterialCard, paintSpecimen } from './bench-textures'
+import { paintLabel, paintLcd, paintSpecimen } from './bench-textures'
 import type { BenchDetail, BenchPiece } from './object-bench-scene'
 import styles from './object-bench.module.css'
 
@@ -18,11 +18,10 @@ const Scene = dynamic(() => import('./object-bench-scene'), { ssr: false })
 export type ObjectBenchData = {
   entityId: string
   title: string
-  registration: string
+  /** Legenda da prancha (o tipo do objeto, quando há). */
+  figure: string
   coverAssetId?: string
   dimensions: string
-  materials: string[]
-  condition: string
   details: Array<{ id: string; label: string; x: number; y: number }>
   notes: Array<{ id: string; title: string; lines: Array<{ label?: string; text: string }> }>
   labels: Array<{ id: string; title: string; lines: string[] }>
@@ -36,6 +35,12 @@ type PieceInfo = BenchPiece & { panel: ObjectPanelKey }
 type Selection = { pieceId: string; panel: ObjectPanelKey }
 
 const storageKey = (entityId: string) => `canon-codex:object-bench:${entityId}`
+/** O texto guia vale para todas as bancadas: fechado uma vez, não volta neste navegador. */
+const HINT_KEY = 'canon-codex:object-bench:hint-closed'
+
+function hintClosed() {
+  try { return window.localStorage.getItem(HINT_KEY) === '1' } catch { return false }
+}
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement | null>((resolve) => {
@@ -74,12 +79,11 @@ type Painted = {
   pieces: PieceInfo[]
   details: BenchDetail[]
   caliperDisplay: { idle: ReturnType<typeof texture>; reading: ReturnType<typeof texture> }
-  materialCard: ReturnType<typeof texture>
 }
 
 /**
  * Bancada de estudo em 3D: a foto técnica do objeto num tapete de corte, com ferramentas para
- * estudá-lo (o paquímetro mede as dimensões, a lupa analisa os materiais), notas, etiquetas e o
+ * estudá-lo (o paquímetro mede as dimensões, a lupa revela os detalhes marcados), notas, etiquetas e o
  * relatório. Peças e ferramentas são arrastáveis (a arrumação fica salva neste navegador) e clicar
  * numa peça abre a leitura. Sem WebGL, mostra `fallback`.
  */
@@ -92,6 +96,11 @@ export function ObjectBench({ data, panels, header, fallback }: { data: ObjectBe
   const [layout, setLayout] = useState<SurfaceLayout | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [shown, setShown] = useState(false)
+  const [hintHidden, setHintHidden] = useState(hintClosed)
+  const closeHint = () => {
+    setHintHidden(true)
+    try { window.localStorage.setItem(HINT_KEY, '1') } catch { /* armazenamento indisponível: fecha só nesta visita */ }
+  }
 
   // As texturas são pintadas depois que as fontes e a foto chegam, para nada sair em fonte errada.
   useEffect(() => {
@@ -108,9 +117,9 @@ export function ObjectBench({ data, panels, header, fallback }: { data: ObjectBe
         return { id, kind, label, panel, size: BENCH_SIZE[kind], ...extra }
       }
       const pieces: PieceInfo[] = [
-        piece('specimen', 'specimen', data.title, 'specimen', { texture: paintSpecimen(photo, data.title, data.registration, fonts), roughness: 0.6, curl: 'paper' }),
+        piece('specimen', 'specimen', data.title, 'specimen', { texture: paintSpecimen(photo, data.title, data.figure, fonts), roughness: 0.6, curl: 'paper' }),
         piece('caliper', 'caliper', 'Paquímetro: dimensões', 'caliper', { focusHeight: 1.1 }),
-        piece('loupe', 'loupe', 'Lupa: materiais', 'loupe', { focusHeight: 1.1 }),
+        piece('loupe', 'loupe', 'Lupa: detalhes', 'loupe', { focusHeight: 1.1 }),
       ]
       data.notes.forEach((note, i) => pieces.push(piece(`note:${note.id}`, 'note', note.title, `note:${note.id}`, { texture: paintNote(note.title, note.lines, NOTE_COLORS[i % NOTE_COLORS.length], fonts), curl: 'note' })))
       data.labels.forEach((label) => pieces.push(piece(`label:${label.id}`, 'label', label.title, `label:${label.id}`, { texture: paintLabel(label.title, label.lines, fonts), curl: 'none', roughness: 0.8 })))
@@ -128,13 +137,12 @@ export function ObjectBench({ data, panels, header, fallback }: { data: ObjectBe
       })
       const reading = caliperReading(data.dimensions)
       const caliperDisplay = { idle: paintLcd('0,00', reading?.unit ?? 'mm'), reading: paintLcd(reading?.value ?? '- - -', reading?.unit ?? '') }
-      const materialCard = paintMaterialCard(data.materials, data.condition, fonts)
-      disposables.push(caliperDisplay.idle, caliperDisplay.reading, materialCard)
+      disposables.push(caliperDisplay.idle, caliperDisplay.reading)
 
       let saved: unknown = null
       try { saved = JSON.parse(window.localStorage.getItem(storageKey(data.entityId)) ?? 'null') } catch { saved = null }
       setLayout(readSurfaceLayout(saved, pieces, defaultBenchLayout(pieces), (item, x, y) => clampToBench(item.kind, x, y)))
-      setPainted({ pieces, details, caliperDisplay, materialCard })
+      setPainted({ pieces, details, caliperDisplay })
     })()
     return () => { alive = false; for (const item of disposables) item.dispose() }
   }, [data, supported])
@@ -175,7 +183,7 @@ export function ObjectBench({ data, panels, header, fallback }: { data: ObjectBe
       <div className={styles.stage} style={{ cursor }} aria-hidden="true">
         {painted && layout && <Scene
           pieces={painted.pieces} layout={layout} focusId={selection?.pieceId ?? null} reduced={reduced}
-          details={painted.details} caliperDisplay={painted.caliperDisplay} materialCard={painted.materialCard}
+          details={painted.details} caliperDisplay={painted.caliperDisplay}
           onDrop={onDrop} onSelect={select} onDetail={(id) => setSelection({ pieceId: 'specimen', panel: `detail:${id}` })}
           onBackground={() => setSelection(null)} onShown={() => setShown(true)} onCursor={setCursor}
         />}
@@ -183,7 +191,10 @@ export function ObjectBench({ data, panels, header, fallback }: { data: ObjectBe
       {!shown && <div className={styles.loading}><span>Acendendo a bancada…</span></div>}
       <header className={styles.header}>{header}</header>
       <div className={styles.toolbar}>
-        <span className={styles.hint}>Leve o paquímetro ou a lupa até o objeto · clique para ler · roda para aproximar</span>
+        {!hintHidden && <span className={styles.hint}>
+          Leve o paquímetro ou a lupa até o objeto · clique para ler · roda para aproximar
+          <button type="button" className={styles.hintClose} onClick={closeHint} aria-label="Fechar o texto guia" title="Fechar o texto guia"><X/></button>
+        </span>}
         <button type="button" onClick={reset} title="Voltar à arrumação inicial"><RotateCcw/> Reorganizar</button>
       </div>
       {/* Alternativa acessível: cada peça da bancada como um botão que abre a leitura. */}
