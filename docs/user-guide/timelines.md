@@ -48,7 +48,7 @@ de 50 correspondente; o mapa atual não tem paginação. Os filtros da bibliotec
 
 ## Incluir, editar e remover
 
-Crie a entidade **Linha do Tempo** no catálogo. **Sobre esta linha** abre conteúdo, propriedades,
+Crie o registro **Linha do Tempo** no catálogo. **Sobre esta linha** abre conteúdo, propriedades,
 relações, backlinks, padrões de escala do mundo e **Editar linha e conteúdo**, sem deslocar o mapa.
 O botão de projeção continua disponível acima dos controles inferiores.
 

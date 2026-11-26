@@ -4,15 +4,15 @@
 
 1. Abra `/boards`.
 2. Preencha título, descrição e tags e escolha **Criar quadro**.
-3. No canvas, adicione entidades pela busca, pelo botão ou arrastando-as para a mesa.
+3. No canvas, adicione registros pela busca, pelo botão ou arrastando-os para a mesa.
 4. Selecione um cartão para escolher visualização mínima, cartão, retrato, dossiê ou, para locais,
    local amplo; altere imagem, tipo, status, tags e rótulo personalizado.
 5. O estado do canvas é salvo automaticamente por `PUT /api/boards/<boardId>` após uma pequena
    espera; o indicador mostra salvo, salvando ou erro.
 
 O quadro mantém um snapshot tldraw e uma sessão auxiliar no `localStorage` do navegador. O cartão
-continua guardando o ID mesmo se a entidade for movida para a lixeira; nesse caso o canvas sinaliza
-que ela está indisponível. Excluir um quadro move sua pasta para a lixeira do mundo.
+continua guardando o ID mesmo se o registro for movido para a lixeira; nesse caso o canvas mostra
+**Entidade indisponível**. Excluir um quadro move sua pasta para a lixeira do mundo.
 
 ## Criar uma cena
 
@@ -39,7 +39,7 @@ para `trash/` e não oferece restauração na interface.
 
 Há dois fluxos:
 
-- Em uma entidade, clique **Projetar** para abrir `/display/entity/<entityId>` em uma janela popup.
+- Em um registro, clique **Projetar** para abrir `/display/entity/<entityId>` em uma janela popup.
 - Em uma cena, clique **Projetar cena**. O mestre abre uma janela `/projection/<sessionId>` e
   transmite ao vivo por `BroadcastChannel` do navegador. A janela do jogador também pode ser
   simulada por **Prévia do jogador**.
