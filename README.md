@@ -89,6 +89,8 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 - [Armazenamento legado](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
 - [Conversão de datas antigas](docs/data/migrations.md#datas-de-propriedades-durante-a-transição): prévia, backup e recuperação por mundo.
 - [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
+- [Como documentar](docs/contributing/documentation.md): tipos de documento, cabeçalho de estado e
+  quando atualizar cada página.
 - [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
   [operação e privacidade](docs/operations-and-privacy.md).
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
