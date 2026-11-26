@@ -25,7 +25,12 @@ revisão de segurança, operação e documentação.
 - Zod para validar dados persistidos e entradas de domínio;
 - Fuse.js para busca fuzzy local;
 - Vitest para testes;
-- tldraw para quadros e cenas.
+- tldraw para quadros e cenas;
+- Konva para a cena do grafo de relações (`src/components/relations/relationship-scene.ts`);
+- pdf-lib para o PDF anual do calendário (`src/services/worlds/calendarPdf.ts`);
+- sharp para dimensões, miniaturas e variantes de imagem (`src/repositories/assetImages.ts` e
+  `src/app/api/calendar-background/route.ts`);
+- animejs para animações das fichas e do editor de entidades (`src/components/entities/`).
 
 O Cache Components do Next.js não foi habilitado em `next.config.ts`. Leituras dinâmicas acessam
 o repositório; mutações usam Server Actions ou Route Handlers e revalidam quando necessário.

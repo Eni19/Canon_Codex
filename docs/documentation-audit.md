@@ -10,7 +10,7 @@ ignorada pelo Git.
 
 | Rota | Fonte |
 | --- | --- |
-| `/` | `src/app/(wiki)/page.tsx` |
+| `/` | `src/app/page.tsx` |
 | `/codex` | `src/app/(wiki)/codex/page.tsx` |
 | `/calendar` | `src/app/(wiki)/calendar/page.tsx` |
 | `/all` | `src/app/(wiki)/all/page.tsx` |
@@ -69,14 +69,14 @@ política de compatibilidade versionada.
 | Quadros | `src/domain/boards/board.ts` |
 | Cenas e grade | `src/domain/scenes/scene.ts` |
 | Projeção | `src/domain/projection/projection.ts` |
-| Dados específicos | `src/domain/entities/{locationPoint,evidenceFinding,organizationGroup,artifactDetail,conceptBlock}.ts` |
+| Dados específicos | `locationPoint.ts`, `evidenceFinding.ts`, `organizationGroup.ts`, `artifactDetail.ts` e `conceptBlock.ts` em `src/domain/entities/` |
 
 Versões atuais verificadas: `World` 18, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
 e `Scene` 1. As fontes canônicas são os esquemas Zod, não esta tabela.
 
 ### Testes
 
-Os testes incluídos por `vitest.config.mts` são `src/**/*.test.ts`:
+Os testes incluídos por `vitest.config.mts` seguem o padrão glob `src/**/*.test.ts`:
 
 - `src/services/worlds/worldLibrary.test.ts` — criação, renomeação, exclusão em `trash` e importação;
 - `src/repositories/filesystem/fileSystemWorldRepository.test.ts` — entidades, conteúdo,
@@ -102,7 +102,7 @@ Os testes incluídos por `vitest.config.mts` são `src/**/*.test.ts`:
 | Conteúdo tem um único `body` | ADR-004 | desatualizada | documentar `pages[]` e migração v1→v2 em ADR-004 e `docs/data/migrations.md` |
 | Só existem `WorldRepository` e `AssetStore` | ADR-001 e `PROJECT.md` | desatualizada | documentar também `BoardRepository` e `SceneRepository` |
 | `workspace/` pode ser versionado em Git | `PROJECT.md` | contraditória com `.gitignore` | corrigir `PROJECT.md`, README e operações |
-| A escrita fica em `src/lib/fs/atomicWriteJson.ts` | `PROJECT.md` e ADR-001 | caminho desatualizado | apontar para `src/lib/fs/atomicWrite.ts` |
+| A escrita fica em um arquivo `atomicWriteJson.ts` (inexistente) | `PROJECT.md` e ADR-001 | caminho desatualizado | apontar para `src/lib/fs/atomicWrite.ts` |
 | Todos os componentes e ações passam por contratos | `PROJECT.md`, `src/repositories/index.ts` | parcialmente correta | manter como regra arquitetural; registrar exceções de `worldLibrary` e handlers que usam filesystem auxiliar |
 | Exclusão é sempre soft-delete e há ação separada permanente | `PROJECT.md` | parcialmente verificável | documentar que o código atual só expõe soft-delete; não há ação permanente/restauração |
 | Assets são protegidos por cookie/autenticação | comentário em `next.config.ts` e ADR-003 | cookie verificado, autenticação não existente | qualificar em `docs/operations-and-privacy.md` e ADR-003 |

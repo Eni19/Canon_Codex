@@ -63,7 +63,7 @@ fora da suíte normal. ESLint foi executado em `src/` e `scripts/`.
     pnpm test
     pnpm build
 
-O script test executa Vitest em modo run com ambiente Node e inclui somente src/**/*.test.ts,
+O script test executa Vitest em modo run com ambiente Node e inclui somente arquivos que seguem o padrão glob `src/**/*.test.ts`,
 conforme vitest.config.mts. Para uma área específica:
 
     pnpm exec vitest run src/services/worlds/worldLibrary.test.ts
