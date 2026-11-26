@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { directionFields } from '@/domain/relations/relation'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
@@ -21,15 +22,21 @@ export async function addRelationAction(entityId: string, formData: FormData): P
     targetId,
     type,
     label: label || undefined,
-    directional: !formData.has('mutual'),
+    ...directionFields(formData.has('mutual') ? 'both' : 'forward'),
   })
 
   revalidatePath(`/entity/${entityId}`)
   revalidatePath(`/entity/${targetId}`)
+  revalidatePath('/relationships')
 }
 
 export async function removeRelationAction(entityId: string, relationId: string): Promise<void> {
   const world = await getCurrentWorld()
-  await getWorldRepository().removeRelation(world.id, entityId, relationId)
+  const repo = getWorldRepository()
+  const entity = await repo.getEntity(world.id, entityId)
+  const targetId = entity?.relations.find((relation) => relation.id === relationId)?.targetId
+  await repo.removeRelation(world.id, entityId, relationId)
   revalidatePath(`/entity/${entityId}`)
+  if (targetId) revalidatePath(`/entity/${targetId}`)
+  revalidatePath('/relationships')
 }

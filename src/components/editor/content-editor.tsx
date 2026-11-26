@@ -54,7 +54,7 @@ export function ContentEditor({
               className={styles.pageTab} onClick={() => setActiveId(page.id)}>{page.title}</button>
           ))}
         </div>
-        {pages.length < maxPages && <button type="button" className={styles.addPageButton} onClick={addPage}><Plus aria-hidden="true" /> Novo {pageNoun}</button>}
+        {pages.length < maxPages && <button type="button" className={styles.addPageButton} onClick={addPage}><Plus aria-hidden="true" /> {pageNoun === 'página' ? 'Nova página' : 'Novo capítulo'}</button>}
       </div>
       <div className={styles.pageNameRow}>
         <label htmlFor={`content-page-${activePage.id}`}>Nome do {pageNoun}</label>

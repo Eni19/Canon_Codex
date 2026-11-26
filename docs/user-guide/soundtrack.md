@@ -1,5 +1,8 @@
 # Trilha sonora
 
+O player do YouTube é preparado ao abrir a área da trilha sonora, abrir o seletor de playlists
+ou iniciar uma fila. Navegar pela wiki sem usar a trilha não abre o player.
+
 A trilha sonora (`/soundtrack`) reúne playlists de links do YouTube que tocam dentro do site, para
 ambientar mistério, investigação, combate, melancolia e o que mais a mesa precisar. Só os links (id,
 título e autor) são guardados; nenhuma música é baixada e a reprodução exige internet.
@@ -57,5 +60,5 @@ volta a tocar sozinho. O volume é o do controle do mestre.
 
 ## Onde ficam os dados
 
-`workspace/worlds/<mundo>/playlists/<id>/playlist.json` (versão de esquema 1). Excluir uma
-playlist a move para `trash/` do mundo. Ver [armazenamento](../data/storage.md).
+A playlist fica no banco do mundo, com exclusão lógica em SQLite. No formato legado, excluir uma
+playlist a move para a lixeira. Ver [armazenamento SQLite](../data/sqlite.md).

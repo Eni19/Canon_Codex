@@ -3,7 +3,7 @@ import { readFile, readdir, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { ContentDocumentSchema, emptyContentDocument, type ContentDocument } from '@/domain/content/contentDocument'
 import { EntityPatchSchema, EntitySchema, ENTITY_SCHEMA_VERSION, NewEntityInputSchema, type Entity, type EntityPatch, type NewEntityInput } from '@/domain/entities/entity'
-import { NewRelationInputSchema, RelationSchema, type NewRelationInput, type Relation } from '@/domain/relations/relation'
+import { NewRelationInputSchema, RelationChangesSchema, RelationSchema, type NewRelationInput, type Relation, type RelationChanges } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
 import { CalendarSchema, changesCalendarStructure } from '@/domain/worlds/calendar'
 import { CalendarMoonsSchema, validateCalendarMoon, type CalendarMoon } from '@/domain/worlds/calendar-moon'
@@ -41,6 +41,7 @@ import { addAllAppearances, addAppearance, createQuickEvent, getTimelineData, re
 import { buildNewEntity, writeInitialEntityFiles } from './entityCreation'
 import { reconcileEntityLifecycle } from './entityLifecycle'
 import { listCalendarAgenda } from './calendarAgenda'
+import { getGraphSettings, saveGraphSettings } from './graphSettings'
 
 export class ConcurrentModificationError extends Error {
   constructor(entityId: string) {
@@ -93,6 +94,8 @@ async function listTrashedEntitiesByDir(worldDir: string, worldId: string): Prom
 }
 
 export class FileSystemWorldRepository implements WorldRepository {
+  getGraphSettings = getGraphSettings
+  saveGraphSettings = saveGraphSettings
   async getTimeline(worldId: string, timelineId: string): Promise<TimelineData> {
     const worldDir = await resolveWorldDir(worldId)
     return getTimelineData(worldDir, worldId, timelineId)
@@ -138,7 +141,8 @@ export class FileSystemWorldRepository implements WorldRepository {
     return withWorldWriteLock(worldDir, () => replaceOriginEvent(worldDir, eventId, fingerprint))
   }
 
-  async createOriginEvent(worldId: string, input: NewEntityInput): Promise<Entity> {
+  async createOriginEvent(worldId: string, input: NewEntityInput, content = emptyContentDocument()): Promise<Entity> {
+    const document = ContentDocumentSchema.parse(content)
     const parsed = NewEntityInputSchema.parse(input)
     if (parsed.type !== 'event') throw new Error('A origem precisa ser um Evento.')
     const worldDir = await resolveWorldDir(worldId)
@@ -157,7 +161,7 @@ export class FileSystemWorldRepository implements WorldRepository {
       const next = WorldSchema.parse({ ...world, originEventId: entity.id, calendar: { ...world.calendar, origin: { ...world.calendar.origin, month: originDate.month, day: originDate.day } }, updatedAt: now })
       try {
         await writeEntity(worldDir, entity)
-        await atomicWriteJson(getEntityContentPath(worldDir, entity.id), emptyContentDocument())
+        await atomicWriteJson(getEntityContentPath(worldDir, entity.id), document)
         await atomicWriteJson(getWorldJsonPath(worldDir), next)
       } catch (error) {
         await rm(getEntityDir(worldDir, entity.id), { recursive: true, force: true })
@@ -364,17 +368,18 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
   }
 
-  async createEntity(worldId: string, input: NewEntityInput): Promise<Entity> {
+  async createEntity(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity> {
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const entity = buildNewEntity(worldId, input)
-    await writeInitialEntityFiles(worldDir, entity)
+    await writeInitialEntityFiles(worldDir, entity, content)
     return entity
     })
   }
 
-  async updateEntity(worldId: string, entityId: string, patch: EntityPatch): Promise<Entity> {
+  async updateEntity(worldId: string, entityId: string, patch: EntityPatch, content?: ContentDocument): Promise<Entity> {
     const parsedPatch = EntityPatchSchema.parse(patch)
+    const document = content === undefined ? undefined : ContentDocumentSchema.parse(content)
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const current = await readEntityByDir(worldDir, entityId)
@@ -405,6 +410,7 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
 
     await writeEntity(worldDir, next)
+    if (document) await atomicWriteJson(getEntityContentPath(worldDir, entityId), document)
     return next
     })
   }
@@ -434,14 +440,26 @@ export class FileSystemWorldRepository implements WorldRepository {
     await withWorldWriteLock(worldDir, () => atomicWriteJson(getEntityContentPath(worldDir, entityId), parsed))
   }
 
-  async addRelation(worldId: string, sourceId: string, relationInput: NewRelationInput): Promise<Relation> {
+  async addRelation(worldId: string, sourceId: string, relationInput: NewRelationInput, requestId?: string): Promise<Relation> {
     const parsedInput = NewRelationInputSchema.parse(relationInput)
+    if (parsedInput.sourceId !== sourceId) throw new Error('A origem da relação não corresponde ao registro.')
+    const relationId = requestId ? RelationSchema.shape.id.parse(requestId) : newId()
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const source = await readEntityByDir(worldDir, sourceId)
-    if (!source) throw new EntityNotFoundError(sourceId)
+    if (!source || source.worldId !== worldId) throw new EntityNotFoundError(sourceId)
+    const target = await readEntityByDir(worldDir, parsedInput.targetId)
+    if (!target || target.worldId !== worldId) throw new EntityNotFoundError(parsedInput.targetId)
 
-    const relation = RelationSchema.parse({ ...parsedInput, id: newId() })
+    const bidirectional = parsedInput.directional && parsedInput.bidirectional
+    const relation = RelationSchema.parse({ ...parsedInput, bidirectional: bidirectional || undefined, id: relationId })
+    if (requestId) {
+      const existing = (await listEntitiesByDir(worldDir)).flatMap((item) => item.relations).find((item) => item.id === relationId)
+      if (existing) {
+        if (JSON.stringify(existing) === JSON.stringify(relation)) return existing
+        throw new Error('Esta solicitação já foi usada para outra relação.')
+      }
+    }
     const next: Entity = EntitySchema.parse({
       ...source,
       relations: [...source.relations, relation],
@@ -453,11 +471,38 @@ export class FileSystemWorldRepository implements WorldRepository {
     })
   }
 
-  async removeRelation(worldId: string, sourceId: string, relationId: string): Promise<void> {
+  async updateRelation(worldId: string, expectedInput: Relation, changes: RelationChanges): Promise<Relation> {
+    const expected = RelationSchema.parse(expectedInput)
+    const parsedChanges = RelationChangesSchema.parse(changes)
+    const bidirectional = parsedChanges.directional && (parsedChanges.bidirectional ?? expected.bidirectional)
+    const updated = RelationSchema.parse({ ...expected, ...parsedChanges, bidirectional: bidirectional || undefined })
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const source = await readEntityByDir(worldDir, expected.sourceId)
+      if (!source || source.worldId !== worldId) throw new EntityNotFoundError(expected.sourceId)
+      const target = await readEntityByDir(worldDir, expected.targetId)
+      if (!target || target.worldId !== worldId) throw new EntityNotFoundError(expected.targetId)
+      const current = source.relations.find((relation) => relation.id === expected.id)
+      if (!current) throw new Error('A relação não está mais disponível.')
+      if (JSON.stringify(current) === JSON.stringify(updated)) return current
+      if (JSON.stringify(current) !== JSON.stringify(expected)) throw new Error('A relação foi alterada em outra aba. Recarregue a página.')
+      await writeEntity(worldDir, EntitySchema.parse({ ...source, relations: source.relations.map((relation) => relation.id === expected.id ? updated : relation), updatedAt: new Date().toISOString() }))
+      return updated
+    })
+  }
+
+  async removeRelation(worldId: string, sourceId: string, relationId: string, expectedInput?: Relation): Promise<void> {
+    const expected = expectedInput && RelationSchema.parse(expectedInput)
+    if (expected && (expected.sourceId !== sourceId || expected.id !== relationId)) throw new Error('A relação não corresponde ao registro.')
+    RelationSchema.shape.sourceId.parse(sourceId)
+    RelationSchema.shape.id.parse(relationId)
     const worldDir = await resolveWorldDir(worldId)
     return withWorldWriteLock(worldDir, async () => {
     const source = await readEntityByDir(worldDir, sourceId)
-    if (!source) throw new EntityNotFoundError(sourceId)
+    if (!source || source.worldId !== worldId) throw new EntityNotFoundError(sourceId)
+    const current = source.relations.find((relation) => relation.id === relationId)
+    if (!current) return
+    if (expected && JSON.stringify(current) !== JSON.stringify(expected)) throw new Error('A relação foi alterada em outra aba. Recarregue a página.')
 
     const next: Entity = EntitySchema.parse({
       ...source,

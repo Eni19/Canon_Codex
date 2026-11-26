@@ -1,0 +1,258 @@
+{
+  "date": "2026-11-16",
+  "machine": "Windows 11 10.0.26200, AMD Ryzen 7 5700U",
+  "browser": "Chrome/157.0.8103.78",
+  "mode": "headless, Next.js 16.3.4 production",
+  "viewport": [
+    1440,
+    900
+  ],
+  "devicePixelRatio": 1,
+  "fixture": {
+    "records": 500,
+    "relations": 1500
+  },
+  "repetitionMs": 10000,
+  "metric": "Intervals in milliseconds between DrawFrame events on the compositor track; DroppedFrame events on the same track.",
+  "baselineRevision": "0219e44",
+  "baseline": [
+    {
+      "kind": "pan",
+      "rep": 1,
+      "inputs": 193,
+      "drawFrames": 192,
+      "droppedFrames": 408,
+      "p50": 47.48,
+      "p95": 80.11
+    },
+    {
+      "kind": "pan",
+      "rep": 2,
+      "inputs": 204,
+      "drawFrames": 203,
+      "droppedFrames": 404,
+      "p50": 45.48,
+      "p95": 64.46
+    },
+    {
+      "kind": "pan",
+      "rep": 3,
+      "inputs": 183,
+      "drawFrames": 181,
+      "droppedFrames": 425,
+      "p50": 48.63,
+      "p95": 73.97
+    },
+    {
+      "kind": "zoom",
+      "rep": 1,
+      "inputs": 104,
+      "drawFrames": 103,
+      "droppedFrames": 393,
+      "p50": 94.42,
+      "p95": 132.2
+    },
+    {
+      "kind": "zoom",
+      "rep": 2,
+      "inputs": 131,
+      "drawFrames": 130,
+      "droppedFrames": 342,
+      "p50": 74.05,
+      "p95": 98.11
+    },
+    {
+      "kind": "zoom",
+      "rep": 3,
+      "inputs": 99,
+      "drawFrames": 98,
+      "droppedFrames": 401,
+      "p50": 94,
+      "p95": 161.97
+    },
+    {
+      "kind": "drag",
+      "rep": 1,
+      "inputs": 200,
+      "drawFrames": 199,
+      "droppedFrames": 404,
+      "p50": 46.39,
+      "p95": 70.55
+    },
+    {
+      "kind": "drag",
+      "rep": 2,
+      "inputs": 245,
+      "drawFrames": 244,
+      "droppedFrames": 356,
+      "p50": 39.63,
+      "p95": 49.08
+    },
+    {
+      "kind": "drag",
+      "rep": 3,
+      "inputs": 242,
+      "drawFrames": 241,
+      "droppedFrames": 376,
+      "p50": 39.96,
+      "p95": 50.46
+    }
+  ],
+  "fullSurfaceBeforeBatching": [
+    {
+      "kind": "pan",
+      "rep": 1,
+      "inputs": 147,
+      "drawFrames": 146,
+      "p50": 65.03,
+      "p95": 89.67
+    },
+    {
+      "kind": "pan",
+      "rep": 2,
+      "inputs": 149,
+      "drawFrames": 148,
+      "p50": 66.33,
+      "p95": 81.66
+    },
+    {
+      "kind": "pan",
+      "rep": 3,
+      "inputs": 137,
+      "drawFrames": 136,
+      "p50": 70.56,
+      "p95": 105.71
+    },
+    {
+      "kind": "zoom",
+      "rep": 1,
+      "inputs": 178,
+      "drawFrames": 177,
+      "p50": 53.89,
+      "p95": 70.93
+    },
+    {
+      "kind": "zoom",
+      "rep": 2,
+      "inputs": 157,
+      "drawFrames": 156,
+      "p50": 58.47,
+      "p95": 98.16
+    },
+    {
+      "kind": "zoom",
+      "rep": 3,
+      "inputs": 155,
+      "drawFrames": 154,
+      "p50": 59.21,
+      "p95": 100.07
+    },
+    {
+      "kind": "drag",
+      "rep": 1,
+      "inputs": 168,
+      "drawFrames": 168,
+      "p50": 58.68,
+      "p95": 70.95
+    },
+    {
+      "kind": "drag",
+      "rep": 2,
+      "inputs": 151,
+      "drawFrames": 150,
+      "p50": 63.66,
+      "p95": 92.41
+    },
+    {
+      "kind": "drag",
+      "rep": 3,
+      "inputs": 169,
+      "drawFrames": 169,
+      "p50": 58.33,
+      "p95": 70.92
+    }
+  ],
+  "fullSurfaceBatched": [
+    {
+      "kind": "pan",
+      "rep": 1,
+      "inputs": 431,
+      "drawFrames": 430,
+      "droppedFrames": 61,
+      "p50": 19.4,
+      "p95": 34.14
+    },
+    {
+      "kind": "pan",
+      "rep": 2,
+      "inputs": 447,
+      "drawFrames": 446,
+      "droppedFrames": 19,
+      "p50": 17.67,
+      "p95": 33.82
+    },
+    {
+      "kind": "pan",
+      "rep": 3,
+      "inputs": 454,
+      "drawFrames": 453,
+      "droppedFrames": 16,
+      "p50": 17.39,
+      "p95": 33.67
+    },
+    {
+      "kind": "zoom",
+      "rep": 1,
+      "inputs": 257,
+      "drawFrames": 257,
+      "droppedFrames": 18,
+      "p50": 34.06,
+      "p95": 51.24
+    },
+    {
+      "kind": "zoom",
+      "rep": 2,
+      "inputs": 254,
+      "drawFrames": 254,
+      "droppedFrames": 3,
+      "p50": 34.05,
+      "p95": 51
+    },
+    {
+      "kind": "zoom",
+      "rep": 3,
+      "inputs": 254,
+      "drawFrames": 253,
+      "droppedFrames": 3,
+      "p50": 33.93,
+      "p95": 51.48
+    },
+    {
+      "kind": "drag",
+      "rep": 1,
+      "inputs": 541,
+      "drawFrames": 540,
+      "droppedFrames": 2,
+      "p50": 16.74,
+      "p95": 33.11
+    },
+    {
+      "kind": "drag",
+      "rep": 2,
+      "inputs": 541,
+      "drawFrames": 540,
+      "droppedFrames": 1,
+      "p50": 16.77,
+      "p95": 33.12
+    },
+    {
+      "kind": "drag",
+      "rep": 3,
+      "inputs": 536,
+      "drawFrames": 535,
+      "droppedFrames": 5,
+      "p50": 16.79,
+      "p95": 33.14
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Armazenamento e modelo de dados
 
-O Canon Codex atual não usa banco relacional, ORM, SQL ou storage remoto. A fonte da verdade é a
-árvore de arquivos JSON e binários sob `WIKI_WORKSPACE_DIR`.
+Para o driver atual, consulte [armazenamento, migração e backup do SQLite](sqlite.md).
+Esta página descreve a árvore JSON do driver legado `filesystem`, ainda aceita para importação.
 
 O diretório local `workspace/` é privado: permanece ignorado pelo Git e pela política de contexto da
 IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintéticos fora dele.
@@ -13,6 +13,7 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 ├── worlds/
 │   └── <world-dir>/                  # hoje, o slug do mundo; não é a identidade
 │       ├── world.json                # World + tipos + calendário + escalas da linha + origem?
+│       ├── relationship-graph.json   # opcional: posições, filtros, estilos, setas livres e pastas, versão 4
 │       ├── entities/
 │       │   └── <entity-id>/          # UUID da entidade
 │       │       ├── metadata.json     # Entity, inclusive relations[]
@@ -40,6 +41,31 @@ IA registrada em `.aiignore` e `AGENTS.md`. Testes e exemplos usam dados sintét
 
 `src/lib/fs/paths.ts` também define `settings/app.json` e `indexes/`, mas a auditoria não encontrou
 consumidor ativo que grave esses caminhos; eles não são parte necessária da recuperação atual.
+
+### Organização do grafo de relacionamentos
+
+`relationship-graph.json` é opcional e pertence ao mundo que o contém. Na ausência do arquivo,
+o grafo usa posições automáticas e filtros vazios. A versão 4 guarda UUID do mundo, revisão,
+posições fixadas por UUID de entidade, filtros e um catálogo de estilos por tipo de relação.
+O catálogo inclui cor, traço, ponta, símbolo, significado, visibilidade e sentido padrão
+opcional por tipo. O sentido efetivo fica na relação do registro de origem. `directional: false`
+indica relação sem direção, `directional: true` indica ida e o campo opcional
+`bidirectional: true` acrescenta a volta. A ficha de destino deriva a referência desse mesmo
+vínculo. Setas livres guardam posições, cor e traço, além dos UUIDs opcionais
+`startCardId` e `endCardId`. Uma ponta presa segue o cartão; se o registro estiver indisponível, a
+vista usa a posição gravada. Esses IDs não criam vínculos nas entidades. Anotações v3 sem os
+IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), campo legado
+`collapsed` e UUIDs dos membros (`members`) de cada pasta. A interface atual abre pastas pelo
+navegador no canto da tela; `collapsed` continua aceito no formato v4 e é preservado ao editar
+pastas antigas. A pasta aberta fica no estado local da tela. Um registro pertence a no máximo
+uma pasta. A inclusão e movimentação validam os registros ativos do mundo. Membros indisponíveis
+ficam ocultos e preservam sua pasta em caso de restauração. Excluir uma pasta descarta somente o
+agrupamento da vista.
+A tela salva mudanças concluídas da vista automaticamente. A gravação usa o lock do mundo e
+escrita atômica; uma revisão desatualizada não sobrescreve uma organização diferente.
+Reenviar o mesmo conteúdo é idempotente. Posições de registros ocultos ou indisponíveis são
+preservadas até o usuário restaurar a organização automática. O arquivo é incluído na cópia
+integral do mundo; não contém os vínculos, que continuam nos metadados das entidades.
 
 ### Calendário por mundo
 
@@ -188,7 +214,9 @@ imagem no editor volta o enquadramento ao padrão.
   `SceneSchema` diretamente.
 - Arquivo ausente de entidade ou asset resulta em `null`; conteúdo ausente de entidade recebe
   `emptyContentDocument()`. Uma pasta de mundo sem `world.json` não entra na listagem de mundos;
-  a biblioteca informa seu nome, preservando o conteúdo. Um mundo ausente falha a resolução.
+  a biblioteca informa seu nome, preservando o conteúdo. Após confirmação do usuário, a pasta
+  incompleta pode ser movida inteira para `trash/worlds/`. A ação verifica novamente a ausência
+  de `world.json` antes de mover. Um mundo ausente falha a resolução.
 - A exclusão de mundo move sua pasta para a lixeira interna sob o bloqueio do mundo. Gravações
   de entidades, conteúdo, imagens, quadros, cenas e playlists usam o mesmo bloqueio; depois de
   obtê-lo, a operação exige que `world.json` ainda exista, evitando recriar uma pasta já removida
@@ -227,8 +255,6 @@ atomicamente; não existe transação entre arquivos nem backup automático dess
 durante as gravações pode deixar parte das linhas limpa; a próxima consulta retoma de forma
 idempotente. Recuperar aparições já removidas exige um backup anterior à limpeza.
 
-## Banco futuro
+## Driver SQLite
 
-Quando um banco relacional for introduzido, a mesma mudança deverá atualizar esta referência com
-entidades, chaves, índices, restrições, acesso/autorização, migrações, backup e rollback. Até lá,
-qualquer documento que descreva SQL ou Postgres seria planejamento, não estado implementado.
+A estrutura SQL e os procedimentos de conversão e recuperação estão em [SQLite](sqlite.md).

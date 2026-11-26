@@ -1,9 +1,10 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getWorldRepository } from '@/repositories'
-import { createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from '@/services/worlds/worldLibrary'
+import { archiveIncompleteWorld, createWorld, deleteWorld, importWorldsFromFolder, IncompleteWorldArchiveError, renameWorld, WorldImportError } from '@/services/worlds/worldLibrary'
 
 const ACTIVE_WORLD_COOKIE = 'canon-codex-world'
 
@@ -20,6 +21,16 @@ export async function openWorldAction(formData: FormData): Promise<void> {
 }
 
 export type WorldLibraryActionState = { error?: string }
+
+export async function archiveIncompleteWorldAction(_: WorldLibraryActionState, formData: FormData): Promise<WorldLibraryActionState> {
+  try {
+    await archiveIncompleteWorld(String(formData.get('folder') ?? ''))
+  } catch (error) {
+    return { error: error instanceof IncompleteWorldArchiveError ? error.message : 'Não foi possível arquivar a pasta. Os arquivos não foram apagados.' }
+  }
+  revalidatePath('/')
+  return {}
+}
 
 export async function createWorldAction(_: WorldLibraryActionState, formData: FormData): Promise<WorldLibraryActionState> {
   try {

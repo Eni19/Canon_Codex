@@ -20,6 +20,7 @@ describe('reconciliação do ciclo de vida de registros', () => {
     const actual = await vi.importActual<typeof fs>('node:fs/promises')
     vi.mocked(fs.readdir).mockImplementation(actual.readdir)
     temporary = await mkdtemp(path.join(tmpdir(), 'canon-lifecycle-'))
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     process.env.WIKI_WORKSPACE_DIR = temporary
     repo = new FileSystemWorldRepository()
     const world = (await repo.listWorlds())[0]
@@ -28,6 +29,7 @@ describe('reconciliação do ciclo de vida de registros', () => {
   })
   afterEach(async () => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
     delete process.env.WIKI_WORKSPACE_DIR
     await rm(temporary, { recursive: true, force: true })
   })

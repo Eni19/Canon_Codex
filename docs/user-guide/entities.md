@@ -111,9 +111,84 @@ esperado. Essas referências guardam IDs; renomear o alvo não quebra a seleçã
 Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e marque **Relação mútua** quando o vínculo valer nos dois sentidos. Com a caixa desmarcada, o vínculo vai da origem ao alvo. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
 por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
 
+**Relacionamentos** ocupa a área ao lado do menu ou abaixo da navegação móvel. Arraste o fundo
+para mover a câmera ou o cartão para fixar sua posição. Use a roda, pinça ou os botões de zoom;
+**Enquadrar** ajusta a câmera ao recorte atual. **Ver no grafo**, na ficha, abre a vizinhança do registro.
+Na vista do mundo inteiro, aparecem registros ativos de todos os tipos, inclusive personalizados
+e registros que ainda não têm vínculos.
+Em um grafo denso, aproxime para ver rótulos e pontas das conexões ou selecione um vínculo para
+realçá-lo.
+
+Abra **Busca e filtros** direto na barra do grafo. Ao buscar por nome, os cartões sem correspondência
+ficam esmaecidos enquanto você digita. Eles saem do recorte com **Enter** ou uma pausa na digitação.
+Escolha um registro de referência para filtrar **Ida** (vínculos que saem), **Volta** (que chegam)
+ou **Ambos**. Vínculos de duas direções e sem direção aparecem nos três modos. **Expandir conexões** acrescenta um
+passo no sentido escolhido. Os filtros preservam a câmera e as posições; **Enquadrar resultados**
+aproxima o recorte. **Mais → Registros e vínculos** oferece uma alternativa HTML pesquisável, com até 25
+resultados por página. Selecione um registro para ir até ele ou um vínculo para editá-lo.
+Em **Mais → Legenda e estilos → Novo tipo de seta**, escolha um nome, cor, traço contínuo,
+tracejado ou pontilhado, formato da ponta, símbolo opcional e sentido padrão. A prévia acompanha
+as mudanças. Use Tab para chegar ao seletor de sentido e as setas do teclado para alternar
+entre uma direção, duas direções e sem direção. O sentido padrão se aplica aos próximos vínculos. Cada vínculo salvo guarda seu
+próprio sentido.
+
+Para criar um vínculo, ative **Conectar** e arraste da porta de um cartão até o destino ou escolha os
+dois cartões por clique/toque. Também é possível pesquisar origem e destino nos campos do painel.
+Depois de marcar a origem, digite o nome do próximo cartão. A busca esmaece os demais durante a
+digitação, mantém a origem visível e oferece os resultados no grafo e em uma lista.
+Digite um tipo, escolha uma das sugestões ou use **Novo tipo de seta** no próprio formulário.
+As sugestões começam pelos tipos mais usados entre os mesmos tipos de registro (por exemplo,
+personagem → organização) e depois seguem os mais usados no mundo. O botão entre os campos troca
+origem e destino. Se já existir um vínculo do mesmo tipo entre os dois registros, o formulário
+avisa, bloqueia a duplicata e oferece **Abrir vínculo existente**; sem sentido único, a ordem
+das pontas não importa para essa conferência.
+Você pode alterar o sentido para este vínculo e adicionar um rótulo. Na criação e na edição,
+o formulário mostra uma prévia quando o tipo tem um estilo no catálogo. **Criar relação** grava o vínculo na ficha de
+origem e a referência aparece na ficha de destino. Selecione um vínculo no canvas ou na lista para editá-lo ou removê-lo;
+a remoção exige confirmação. Os backlinks vêm da ficha de origem. Fichas de Local, Evidência e
+Organização também exibem suas referências vindas de outros registros. Se o alvo deixa de estar ativo,
+o vínculo fica oculto sem ser apagado da origem.
+
+Em **Seta livre**, clique em um cartão ou no fundo para marcar cada ponta. Depois do primeiro
+clique, você também pode digitar para buscar o próximo cartão. Se as duas pontas forem cartões,
+abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotação da vista
+e acompanha o cartão a que estiver presa. A prévia mostra a cor e o traço escolhidos antes de
+salvar. Selecione uma seta para mover as pontas, mudar o estilo ou apagar.
+
+As **Pastas** ficam no canto inferior esquerdo do grafo. Clique no nome de uma pasta para
+mostrar seus registros no canvas inteiro. **Vista principal** mostra os registros que estão
+fora das pastas. O nome da vista aberta aparece acima do canvas; a lista no canto informa a
+quantidade de registros em cada destino. Abrir uma pasta limpa os filtros e enquadra seus cartões.
+Uma pasta pode reunir eventos, personagens, locais, itens e registros personalizados.
+
+Com **Selecionar e mover** ativo, arraste um cartão até o nome da pasta no canto. O destino fica
+destacado; solte para mover o registro. Arrastar até **Vista principal** retira o registro da pasta.
+Soltar sobre o canvas ajusta a posição do cartão. A movimentação entre pastas conserva a posição
+e os vínculos do registro. Use **+** no navegador de pastas ou **Pastas** na barra para criar uma.
+O botão **Gerenciar pasta**, ao lado do nome, oferece renomeação, vínculos externos e exclusão.
+
+Pelo teclado, abra a ficha de um cartão na lista e use **Mover para**. Para mover vários,
+abra **Mais → Registros e vínculos → Selecionar para mover**, marque os registros e escolha
+o destino. A busca no canvas se aplica à vista aberta. A lista **Registros e vínculos** permite
+pesquisar registros de todas as pastas, inclusive pelo nome da pasta. Escolher um registro na
+lista ou usar **Ver no grafo** abre sua pasta e centraliza o cartão. Ao excluir uma pasta,
+seus registros voltam à vista principal nas mesmas posições e conservam seus vínculos.
+
+A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo, anotação ou pasta.
+**Mais → Restaurar organização** pede confirmação antes de descartar posições fixadas. Em caso de
+falha, use **Repetir**; se outra aba tiver salvo uma revisão mais recente, **Recarregar** descarta
+as alterações locais após aviso.
+
 ## Buscar e organizar catálogos
 
 Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+
+**Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
+encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com
+busca pelo nome. A comparação ignora maiúsculas e acentos. Em **Todos os conteúdos**, as etiquetas
+do mundo aparecem com a contagem de registros; escolher uma ou mais filtra a lista (todas as
+escolhidas precisam estar presentes) e o endereço guarda o filtro, como `/all?tag=nobreza`.
+Na ficha, cada etiqueta leva a essa lista filtrada.
 
 As telas também agrupam ou ordenam os resultados conforme o tipo. Personagens podem ser agrupados por nome, organização ou local atual; locais, por hierarquia ou nome; criaturas, por natureza ou nome; espécies, por tipo de registro ou nome; e ciências naturais, por disciplina, subtipo ou nome. Os demais catálogos usam principalmente o nome/título.
 

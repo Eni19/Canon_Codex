@@ -28,9 +28,11 @@ describe('calendar moon display', () => {
     vi.mocked(getCurrentWorld).mockResolvedValue(world)
     const initial = JSON.stringify(await CalendarPage({ searchParams: Promise.resolve({}) }))
     expect(initial).toContain('year=3&month=2&day=4&view=month')
+    expect(initial).toContain(`/api/calendar-pdf?worldId=${world.id}&year=3`)
     expect(initial).toContain('Hoje da campanha')
     const otherMonth = JSON.stringify(await CalendarPage({ searchParams: Promise.resolve({ year: '1', month: '1', day: '1' }) }))
     expect(otherMonth).toContain('year=3&month=2&day=4&view=month')
+    expect(otherMonth).toContain(`/api/calendar-pdf?worldId=${world.id}&year=1`)
   })
 
   it('renders each moon with accessible phases and selected-day illumination', async () => {

@@ -146,8 +146,10 @@ describe('formulário único de entidade', () => {
     form.set('content', JSON.stringify(pages))
 
     await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
-    expect(mocks.createEntity).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ title: 'Ilsa', coverAssetId: NEW, theme: 'green' }))
-    expect(mocks.saveContent).toHaveBeenCalledWith(expect.any(String), 'char-1', expect.objectContaining({ pages }))
+    expect(mocks.createEntity).toHaveBeenCalledWith(expect.any(String),
+      expect.objectContaining({ title: 'Ilsa', coverAssetId: NEW, theme: 'green' }),
+      expect.objectContaining({ pages }))
+    expect(mocks.saveContent).not.toHaveBeenCalled()
   })
 
   it('remove a imagem anterior quando trocada e não usada por outro registro', async () => {

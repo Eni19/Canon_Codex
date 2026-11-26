@@ -1,57 +1,99 @@
 import 'server-only'
-import type { AssetStore } from '@/repositories/contracts/assetStore'
-import type { BoardRepository } from '@/repositories/contracts/boardRepository'
-import type { PlaylistRepository } from '@/repositories/contracts/playlistRepository'
-import type { SceneRepository } from '@/repositories/contracts/sceneRepository'
-import type { WorldRepository } from '@/repositories/contracts/worldRepository'
+import { statSync } from 'node:fs'
+import path from 'node:path'
+import { getWorkspaceRoot, getWorldsRootDir } from '@/lib/fs/paths'
 import { FileSystemAssetStore } from '@/repositories/filesystem/fileSystemAssetStore'
 import { FileSystemBoardRepository } from '@/repositories/filesystem/fileSystemBoardRepository'
 import { FileSystemPlaylistRepository } from '@/repositories/filesystem/fileSystemPlaylistRepository'
 import { FileSystemSceneRepository } from '@/repositories/filesystem/fileSystemSceneRepository'
 import { FileSystemWorldRepository } from '@/repositories/filesystem/fileSystemWorldRepository'
+import type { AssetStore } from '@/repositories/contracts/assetStore'
+import type { BoardRepository } from '@/repositories/contracts/boardRepository'
+import type { PlaylistRepository } from '@/repositories/contracts/playlistRepository'
+import type { SceneRepository } from '@/repositories/contracts/sceneRepository'
+import type { WorldRepository } from '@/repositories/contracts/worldRepository'
+import { SqliteDatabase } from '@/repositories/sqlite/database'
+import { SqliteAssetStore } from '@/repositories/sqlite/sqliteAssetStore'
+import { SqliteBoardRepository } from '@/repositories/sqlite/sqliteBoardRepository'
+import { SqlitePlaylistRepository } from '@/repositories/sqlite/sqlitePlaylistRepository'
+import { SqliteSceneRepository } from '@/repositories/sqlite/sqliteSceneRepository'
+import { SqliteWorldRepository } from '@/repositories/sqlite/sqliteWorldRepository'
 
-/**
- * Single place that knows which persistence implementation is active. Everything else in the app
- * (Server Components, Server Actions, Route Handlers) depends only on the contracts — see
- * ADR-001. Swapping in a `PostgresWorldRepository`/`S3AssetStore` later means adding a case here.
- */
-function getPersistenceDriver(): 'filesystem' {
-  const driver = process.env.PERSISTENCE_DRIVER ?? 'filesystem'
-  if (driver !== 'filesystem') throw new Error(`Unknown PERSISTENCE_DRIVER: ${driver}`)
-  return driver
+let sqlite: {
+  file: string
+  database: SqliteDatabase
+  world: SqliteWorldRepository
+  assets: AssetStore
+  boards: BoardRepository
+  scenes: SceneRepository
+  playlists: PlaylistRepository
+} | undefined
+
+export class LegacyMigrationRequiredError extends Error {
+  constructor() {
+    super('Biblioteca em arquivos encontrada. Use pnpm storage preview e pnpm storage import antes de abrir o SQLite.')
+    this.name = 'LegacyMigrationRequiredError'
+  }
 }
 
-let worldRepository: WorldRepository | undefined
+function sqliteRepositories() {
+  const driver = process.env.PERSISTENCE_DRIVER ?? 'sqlite'
+  if (driver === 'filesystem') return null
+  if (driver !== 'sqlite') throw new Error(`Unknown PERSISTENCE_DRIVER: ${driver}`)
+
+  const configuredFile = process.env.SQLITE_DATABASE_PATH
+  const file = path.resolve(/* turbopackIgnore: true */ configuredFile || path.join(getWorkspaceRoot(), 'canon-codex.sqlite'))
+  const legacyTrash = path.join(/* turbopackIgnore: true */ getWorkspaceRoot(), 'trash', 'worlds')
+  if (sqlite?.file === file) return sqlite
+  if (!configuredFile && !runtimePathExists(file)
+    && (runtimePathExists(getWorldsRootDir()) || runtimePathExists(legacyTrash))) {
+    throw new LegacyMigrationRequiredError()
+  }
+  const database = new SqliteDatabase(file)
+  sqlite?.database.close()
+  sqlite = {
+    file, database,
+    world: new SqliteWorldRepository(database),
+    assets: new SqliteAssetStore(database),
+    boards: new SqliteBoardRepository(database),
+    scenes: new SqliteSceneRepository(database),
+    playlists: new SqlitePlaylistRepository(database),
+  }
+  return sqlite
+}
+
+function runtimePathExists(file: string): boolean {
+  return Boolean(statSync(/* turbopackIgnore: true */ file, { throwIfNoEntry: false }))
+}
+
+const legacy = {
+  world: new FileSystemWorldRepository(),
+  assets: new FileSystemAssetStore(),
+  boards: new FileSystemBoardRepository(),
+  scenes: new FileSystemSceneRepository(),
+  playlists: new FileSystemPlaylistRepository(),
+}
+
+export function getSqliteWorldRepository(): SqliteWorldRepository | null {
+  return sqliteRepositories()?.world ?? null
+}
+
 export function getWorldRepository(): WorldRepository {
-  getPersistenceDriver()
-  worldRepository ??= new FileSystemWorldRepository()
-  return worldRepository
+  return getSqliteWorldRepository() ?? legacy.world
 }
 
-let assetStore: AssetStore | undefined
 export function getAssetStore(): AssetStore {
-  getPersistenceDriver()
-  assetStore ??= new FileSystemAssetStore()
-  return assetStore
+  return sqliteRepositories()?.assets ?? legacy.assets
 }
 
-let boardRepository: BoardRepository | undefined
 export function getBoardRepository(): BoardRepository {
-  getPersistenceDriver()
-  boardRepository ??= new FileSystemBoardRepository()
-  return boardRepository
+  return sqliteRepositories()?.boards ?? legacy.boards
 }
 
-let sceneRepository: SceneRepository | undefined
 export function getSceneRepository(): SceneRepository {
-  getPersistenceDriver()
-  sceneRepository ??= new FileSystemSceneRepository()
-  return sceneRepository
+  return sqliteRepositories()?.scenes ?? legacy.scenes
 }
 
-let playlistRepository: PlaylistRepository | undefined
 export function getPlaylistRepository(): PlaylistRepository {
-  getPersistenceDriver()
-  playlistRepository ??= new FileSystemPlaylistRepository()
-  return playlistRepository
+  return sqliteRepositories()?.playlists ?? legacy.playlists
 }

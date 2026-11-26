@@ -1,10 +1,10 @@
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultWorldSeed } from '@/domain/worlds/defaultWorldSeed'
 import { getWorldRepository } from '@/repositories'
-import { createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from './worldLibrary'
+import { archiveIncompleteWorld, createWorld, deleteWorld, importWorldsFromFolder, renameWorld, WorldImportError } from './worldLibrary'
 import { withWorldWriteLock } from '@/repositories/filesystem/worldWriteLock'
 import { atomicWriteJson } from '@/lib/fs/atomicWrite'
 
@@ -13,6 +13,7 @@ describe('world library', () => {
   let externalRoot: string
 
   beforeEach(async () => {
+    vi.stubEnv('PERSISTENCE_DRIVER', 'filesystem')
     workspaceDir = await mkdtemp(path.join(tmpdir(), 'codex-library-'))
     externalRoot = await mkdtemp(path.join(tmpdir(), 'external-codex-'))
     process.env.WIKI_WORKSPACE_DIR = workspaceDir
@@ -20,6 +21,7 @@ describe('world library', () => {
   })
 
   afterEach(async () => {
+    vi.unstubAllEnvs()
     delete process.env.WIKI_WORKSPACE_DIR
     await Promise.all([
       rm(workspaceDir, { recursive: true, force: true }),
@@ -88,6 +90,36 @@ describe('world library', () => {
 
     expect(nextWorld).toBeNull()
     expect(await getWorldRepository().listWorlds()).toEqual([])
+  })
+
+  it('takes an incomplete folder out of the warning and preserves its files in the internal trash', async () => {
+    const repo = getWorldRepository()
+    const [available] = await repo.listWorlds()
+    const incomplete = path.join(workspaceDir, 'worlds', 'incompleto')
+    await mkdir(incomplete)
+    await writeFile(path.join(incomplete, 'teste.txt'), 'conteúdo sintético')
+    expect(await repo.listMissingWorldMetadata()).toEqual(['incompleto'])
+
+    await archiveIncompleteWorld('incompleto')
+
+    expect(await repo.listMissingWorldMetadata()).toEqual([])
+    expect((await repo.listWorlds()).map((world) => world.id)).toEqual([available.id])
+    const trash = path.join(workspaceDir, 'trash', 'worlds')
+    const [archived] = await readdir(trash)
+    expect(await readFile(path.join(trash, archived, 'teste.txt'), 'utf8')).toBe('conteúdo sintético')
+  })
+
+  it('rejects an archive request after metadata has been restored, and names outside the library', async () => {
+    const repo = getWorldRepository()
+    const world = await createWorld('Mundo recuperado')
+    const metadata = path.join(workspaceDir, 'worlds', world.slug, 'world.json')
+    await rm(metadata)
+    expect(await repo.listMissingWorldMetadata()).toContain(world.slug)
+    await writeFile(metadata, JSON.stringify(world))
+
+    await expect(archiveIncompleteWorld(world.slug)).rejects.toThrow('não está mais sem metadados')
+    await expect(archiveIncompleteWorld('../worlds/' + world.slug)).rejects.toThrow('Pasta não encontrada')
+    expect((await repo.getWorld(world.id)).id).toBe(world.id)
   })
 
   it('rejects a delayed write to a world after its folder has been moved to trash', async () => {

@@ -13,13 +13,18 @@ ID do mundo.
 
 ## Dados e exposição
 
-O workspace contém texto, relações, imagens, quadros, cenas e a lixeira. Ele está em
-WIKI_WORKSPACE_DIR ou em workspace/ e é ignorado pelo Git. O processo lê e grava esses dados
+O arquivo SQLite contém texto, relações, imagens, quadros, cenas e a lixeira. Ele fica em
+`WIKI_WORKSPACE_DIR` por padrão. Mantenha bancos configurados por `SQLITE_DATABASE_PATH` e backups
+em locais privados. Consulte [backup e restauração](data/sqlite.md#backup-e-restauração). O processo lê e grava esses dados
 localmente; não há cliente de banco remoto, storage externo ou sincronização implementados.
 
 Assets são servidos por Route Handler e o browser recebe cache immutable. O handler consulta o mundo
 selecionado pelo cookie, mas isso não constitui autenticação. Qualquer pessoa com acesso ao
 processo/host deve ser considerada capaz de acessar os dados disponíveis naquele contexto.
+
+A [trilha sonora](user-guide/soundtrack.md) usa o YouTube. O navegador prepara o player quando o
+usuário abre a área ou o seletor de trilha, ou inicia uma fila. A navegação pela wiki com a trilha
+ociosa não inicializa esse player.
 
 ## Uploads
 

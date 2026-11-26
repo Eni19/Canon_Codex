@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { ArrowRight, X } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, Minus, X } from 'lucide-react'
 import { addRelationAction, removeRelationAction } from '@/app/actions/relations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { Relation } from '@/domain/relations/relation'
+import { relationDirection, type Relation } from '@/domain/relations/relation'
 
 export interface RelationTargetOption {
   id: string
@@ -29,16 +29,19 @@ export function RelationsPanel({
 
   return (
     <div className="flex flex-col gap-3">
+      <Link href={`/relationships?entity=${encodeURIComponent(entityId)}`} className="self-start text-sm text-primary hover:underline">Ver no grafo</Link>
       {relations.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma relação ainda.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {relations.map((relation) => {
             const boundRemove = removeRelationAction.bind(null, entityId, relation.id)
+            const direction = relationDirection(relation)
+            const Icon = direction === 'both' ? ArrowLeftRight : direction === 'none' ? Minus : ArrowRight
             return (
               <li key={relation.id} className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">{relation.label ?? relation.type}</span>
-                <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-label={direction === 'both' ? 'Duas direções' : direction === 'none' ? 'Sem direção' : 'Uma direção'} role="img" />
                 <Link href={`/entity/${relation.targetId}`} className="truncate font-medium text-primary hover:underline">
                   {entityTitleById[relation.targetId] ?? relation.targetId}
                 </Link>

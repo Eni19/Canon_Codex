@@ -1,5 +1,7 @@
 import { dateToOrdinal, getMonthLength, isIntercalaryRuleActive, type Calendar } from './calendar'
 
+export const MAX_CALENDAR_EXPORT_DAYS = 5_000
+
 /** A bounded window into a month, including the continuous weekday position. */
 export function projectMonth(calendar: Calendar, year: number, month: number, day = 1) {
   const length = getMonthLength(calendar, year, month)
