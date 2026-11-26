@@ -91,6 +91,8 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 - [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
 - [Como documentar](docs/contributing/documentation.md): tipos de documento, cabeçalho de estado e
   quando atualizar cada página.
+- [Commits e branches](docs/contributing/commits.md): formato das mensagens, tamanho dos commits,
+  rebase e PRs.
 - [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
   [operação e privacidade](docs/operations-and-privacy.md).
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
