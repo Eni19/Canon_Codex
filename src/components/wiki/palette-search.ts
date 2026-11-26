@@ -11,7 +11,7 @@ export function schedulePaletteSearch(query: string, update: (results: SearchRes
       // A failed current request displays an empty list.
     }
     if (!controller.signal.aborted) update(results)
-  }, 150)
+  }, 100)
   return () => {
     clearTimeout(timer)
     controller.abort()
