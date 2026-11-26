@@ -50,6 +50,7 @@ pnpm start      # servidor local de produção, depois de pnpm build
 pnpm typecheck  # TypeScript sem emissão
 pnpm lint       # ESLint
 pnpm test       # Vitest em modo run
+pnpm storage    # preview/import da biblioteca JSON legada e backup do SQLite (veja docs/data/sqlite.md)
 ```
 
 ## Dados e privacidade

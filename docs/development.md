@@ -23,6 +23,9 @@ Comandos do package.json:
 | pnpm lint | ESLint |
 | pnpm test | vitest run |
 | pnpm test:watch | Vitest interativo |
+| pnpm storage preview <origem> | prévia da importação de uma biblioteca JSON legada, sem gravar |
+| pnpm storage import <origem> <novo-banco> | importa a biblioteca legada para um novo arquivo SQLite |
+| pnpm storage backup <banco> <novo-backup> | copia o banco SQLite para um novo arquivo de backup |
 
 ## Organização do trabalho
 

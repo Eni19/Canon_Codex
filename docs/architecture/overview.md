@@ -10,15 +10,20 @@ src/app/                         entrada HTTP e navegação Next App Router
   (wiki)/                        calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
-src/components/                  UI client/server, Tiptap, tldraw e projeção
+src/components/                  UI client/server, Tiptap, tldraw, Konva e projeção
 src/services/                    casos de uso: mundos, busca e referência de assets
 src/domain/                      schemas Zod, tipos e formatos persistidos
 src/repositories/contracts/      fronteiras de persistência
 src/repositories/sqlite/        driver SQLite padrão
 src/repositories/filesystem/    driver JSON legado
-src/lib/fs/                      caminhos, existência e escrita atômica
+src/lib/fs/                      caminhos (paths.ts) e escrita atômica (atomicWrite.ts)
 src/lib/migrations/              aplicação lazy de versões
 ```
+
+Bibliotecas com uso localizado: Konva desenha a cena do grafo de relações, pdf-lib gera o PDF do
+calendário em `src/services/worlds/calendarPdf.ts`, sharp processa imagens no repositório de assets e
+no upload de fundo do calendário, e animejs anima fichas e o editor de entidades. A lista completa
+fica em [PROJECT.md](../../PROJECT.md#stack-e-execução).
 
 `domain/` não faz I/O. Componentes não devem conhecer nomes de arquivos. A factory em
 `src/repositories/index.ts` mantém a escolha do driver em um único lugar. No estado atual existem
