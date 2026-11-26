@@ -20,12 +20,10 @@ Exemplo seguro:
 Use .env.local, que é ignorado pelo Git. Não coloque conteúdo de usuário, tokens ou chaves reais
 em .env.example, README, testes ou commits.
 
-## Variáveis referenciadas mas não declaradas
+## Variáveis que não são mais lidas
 
-O tldraw dos Quadros lê NEXT_PUBLIC_TLDRAW_LICENSE_KEY (as Cenas não usam mais tldraw), mas a variável não está em
-.env.example e o código não documenta se ela é necessária para a versão instalada. O valor não é
-reproduzido aqui; confirmar essa necessidade é acompanhada no
-[#16](https://github.com/Eni19/Canon_Codex/issues/16).
+`NEXT_PUBLIC_TLDRAW_LICENSE_KEY` era a chave do tldraw de Quadros e Cenas. Os dois canvas usam
+Konva e nenhum código lê mais a variável; ela pode sair do `.env.local`.
 
 ## Desenvolvimento e produção local
 

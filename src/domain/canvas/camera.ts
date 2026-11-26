@@ -1,7 +1,7 @@
 /**
- * Câmera do canvas de Cenas. Reproduz o comportamento que a cena tinha no tldraw
- * (`constraints` com `behavior: 'contain'`, `origin` central, zoom base `fit-max` e os passos de
- * zoom padrão), para que pan, zoom e enquadramento tenham a mesma sensação.
+ * Câmera dos canvas de Cenas e Quadros, portada do tldraw. Nas Cenas, com limites
+ * (`behavior: 'contain'`, `origin` central, zoom base `fit-max`); nos Quadros, infinita. Os passos
+ * de zoom são os padrões, para que pan, zoom e enquadramento tenham a mesma sensação.
  *
  * Convenção: ponto na tela = (ponto na página + câmera) × zoom.
  */
@@ -24,23 +24,33 @@ export function baseZoom(viewport: Size, { bounds, padding }: CameraConstraints)
   return Number.isFinite(zoom) && zoom > 0 ? zoom : 1
 }
 
-/** Aplica limites de zoom e de posição; `reset` volta ao enquadramento inicial. */
-export function constrainCamera(next: CameraState, current: CameraState, viewport: Size, constraints: CameraConstraints, reset = false): CameraState {
+/** Mantém o ponto focal quando o zoom pedido passa do limite. */
+function clampZoom(next: CameraState, current: CameraState, minZ: number, maxZ: number): CameraState {
+  let { x, y, z } = next
+  if (z < minZ || z > maxZ) {
+    const requested = z
+    z = clamp(z, minZ, maxZ)
+    const keep = (from: number, to: number) => requested === current.z ? from : from + (to - from) * (1 / z - 1 / current.z) / (1 / requested - 1 / current.z)
+    x = keep(current.x, x)
+    y = keep(current.y, y)
+  }
+  return { x, y, z }
+}
+
+/**
+ * Aplica limites de zoom e de posição; `reset` volta ao enquadramento inicial. Sem `constraints`
+ * (canvas infinito dos Quadros), só o zoom é limitado, entre 5% e 800%, como no tldraw.
+ */
+export function constrainCamera(next: CameraState, current: CameraState, viewport: Size, constraints: CameraConstraints | null, reset = false): CameraState {
+  if (!constraints) return clampZoom(next, current, ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.length - 1])
   let { x, y, z } = next
   const { bounds } = constraints
   const px = Math.min(constraints.padding, viewport.w / 2), py = Math.min(constraints.padding, viewport.h / 2)
   const zx = (viewport.w - px * 2) / bounds.w, zy = (viewport.h - py * 2) / bounds.h
   const base = baseZoom(viewport, constraints)
   const minZ = ZOOM_STEPS[0] * base, maxZ = ZOOM_STEPS[ZOOM_STEPS.length - 1] * base
-  if (reset) z = base
-  if (z < minZ || z > maxZ) {
-    const requested = z
-    z = clamp(z, minZ, maxZ)
-    // Mantém o ponto focal quando o zoom pedido passa do limite.
-    const keep = (from: number, to: number) => requested === current.z ? from : from + (to - from) * (1 / z - 1 / current.z) / (1 / requested - 1 / current.z)
-    x = keep(current.x, x)
-    y = keep(current.y, y)
-  }
+  if (reset) z = base;
+  ({ x, y, z } = clampZoom({ x, y, z }, current, minZ, maxZ))
   const minX = px / z - bounds.x, minY = py / z - bounds.y
   const freeW = (viewport.w - px * 2) / z - bounds.w, freeH = (viewport.h - py * 2) / z - bounds.h
   const originX = minX + freeW * 0.5, originY = minY + freeH * 0.5
@@ -93,4 +103,11 @@ export function interpolateCamera(from: CameraState, to: CameraState, viewport: 
   const z = from.z + (to.z - from.z) * k
   const cx = a.x + (b.x - a.x) * k, cy = a.y + (b.y - a.y) * k
   return { x: viewport.w / 2 / z - cx, y: viewport.h / 2 / z - cy, z }
+}
+
+/** Próximo passo de zoom (botões e atalhos de aproximar/afastar do tldraw). */
+export function stepZoom(z: number, direction: 1 | -1, base = 1) {
+  const steps = ZOOM_STEPS.map((step) => step * base)
+  if (direction > 0) return steps.find((step) => step > z + 1e-9) ?? steps[steps.length - 1]
+  return [...steps].reverse().find((step) => step < z - 1e-9) ?? steps[0]
 }

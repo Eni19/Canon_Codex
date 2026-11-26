@@ -13,7 +13,40 @@
 5. O estado do canvas é salvo automaticamente por `PUT /api/boards/<boardId>` após uma pequena
    espera; o indicador mostra salvo, salvando ou erro.
 
-O quadro mantém um snapshot tldraw e uma sessão auxiliar no `localStorage` do navegador. O cartão
+### Mexer no canvas do quadro
+
+O canvas é infinito e funciona como o editor anterior (tldraw). Ferramentas na barra de baixo:
+
+| Ferramenta | Atalho | Uso |
+| --- | --- | --- |
+| Selecionar | **V** | clique, **Shift** + clique, arraste numa área vazia para selecionar várias |
+| Mão | **H** | arrasta a vista (também: espaço + arraste ou botão do meio) |
+| Seta | **A** | arraste de um ponto a outro; sobre um cartão, a ponta fica ligada a ele |
+| Texto | **T** | clique para escrever; clique duplo numa área vazia também cria texto |
+
+| Ação | Como |
+| --- | --- |
+| Mover | arraste; **Shift** trava em um eixo; **Alt** ao arrastar duplica; setas do teclado movem 1 px (10 px com **Shift**) |
+| Redimensionar e girar | alças dos cantos e bordas (**Shift** mantém a proporção, **Alt** escala pelo centro); arraste logo fora de um canto para girar |
+| Seta | arraste as pontas para ligar ou soltar; a alça do meio curva a seta; clique duplo ou **Enter** edita o rótulo |
+| Texto | clique duplo ou **Enter** edita; **Esc** termina; texto vazio some |
+| Desfazer, refazer | **Ctrl Z**, **Ctrl Shift Z** (ou **Ctrl Y**), também pelos botões no alto |
+| Duplicar, copiar, recortar, colar | **Ctrl D**, **Ctrl C**, **Ctrl X**, **Ctrl V**; texto comum colado vira uma caixa de texto |
+| Excluir | **Delete** ou **Backspace**; setas ligadas ao item apagado ficam com a ponta solta |
+| Ordem | **]** traz para a frente, **[** manda para trás, com **Alt** um passo |
+| Travar | **Shift L** trava os itens selecionados, que deixam de ser selecionáveis |
+| Selecionar tudo | **Ctrl A** |
+| Zoom | **Ctrl** + roda ou pinça; **Ctrl =** e **Ctrl -** (ou **=** e **-**); **Shift 1** enquadra tudo, **Shift 2** a seleção, **Shift 0** volta a 100% |
+| Ficha rápida | clique duplo num cartão |
+
+Ainda não há notas, formas, desenho livre, marca-texto, linha, borracha, laser, moldura, imagens
+nem painel de estilo: chegam nas próximas etapas da migração. Formas desses tipos criadas no
+editor anterior aparecem como uma caixa tracejada e são preservadas.
+
+O quadro guarda o canvas por `PUT /api/boards/<boardId>` e a posição da câmera no `localStorage`
+do navegador. Quadros do editor anterior abrem normalmente e passam ao formato novo no primeiro
+salvamento, com o original guardado dentro do próprio quadro
+([detalhes](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1)). O cartão
 continua guardando o ID mesmo se o registro for movido para a lixeira; nesse caso o canvas mostra
 **Entidade indisponível**. Excluir um quadro move sua pasta para a lixeira do mundo.
 
@@ -86,7 +119,4 @@ está conectada, a [trilha sonora](soundtrack.md) toca por ela (ver abaixo).
 
 - O recurso depende de popup permitido pelo navegador e de duas janelas na mesma origem.
 - Não há gravação de uma sessão de narração, controle remoto ou presença de jogadores.
-- O canvas das cenas não usa tldraw e funciona fora de `localhost` sem chave.
-- `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` é lida pelo tldraw dos Quadros, mas não está declarada em
-  `.env.example`; sua necessidade/licenciamento permanece uma lacuna de configuração registrada em
-  [#16](https://github.com/Eni19/Canon_Codex/issues/16).
+- Os canvas de quadros e cenas não usam tldraw e funcionam fora de `localhost` sem chave.

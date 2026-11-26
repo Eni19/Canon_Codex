@@ -122,21 +122,20 @@ Não há consumidor local encontrado na auditoria. Sem corpo ou query string.
 
 ### PUT /api/boards/[boardId]
 
-Consumidor: InvestigationBoard. Recebe JSON com propriedade obrigatória snapshot; o valor pode ser
-qualquer JSON, inclusive null se enviado explicitamente.
+Consumidor: InvestigationBoard. Recebe JSON com a propriedade obrigatória snapshot, o canvas no
+formato `canon-board-canvas` validado por `BoardCanvasSchema`
+([formato](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1)).
 
     {
-      "snapshot": {
-        "document": {
-          "store": {}
-        }
-      }
+      "snapshot": {"format": "canon-board-canvas", "version": 1, "shapes": []}
     }
 
 - 400 {"error":"Snapshot ausente"} se a propriedade estiver ausente;
+- 400 {"error":"Canvas inválido"} se o snapshot não passar no schema; nada é gravado. Snapshots
+  antigos do tldraw também são recusados: a conversão só acontece na leitura;
 - 200 {"updatedAt":"2026-09-23T12:00:00.000Z"} após validação e escrita atômica;
-- JSON inválido, board inexistente ou erro de schema não têm tratamento próprio no handler e
-  dependem da resposta de erro do Next.js.
+- JSON inválido ou board inexistente não têm tratamento próprio no handler e dependem da resposta
+  de erro do Next.js.
 
 ### PUT /api/scenes/[sceneId]
 

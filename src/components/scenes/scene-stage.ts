@@ -9,7 +9,7 @@ import type { SceneGrid } from '@/domain/scenes/scene'
 import {
   SCENE_CAMERA_PADDING, cameraForBounds, constrainCamera, interpolateCamera, screenToPage, viewportPageBounds, wheelCamera, zoomAt,
   type CameraState, type Rect, type Size,
-} from '@/domain/scenes/sceneCamera'
+} from '@/domain/canvas/camera'
 import { TOKEN_DEFAULT, type SceneCanvas, type SceneCanvasShape, type ScenePoiMarker, type SceneToken } from '@/domain/scenes/sceneCanvas'
 import {
   boundsOf, canResize, frameCenter, frameIntersectsRect, hitsFrame, resizeShapes, rotateShapes, selectionFrame, shapeFrame, snapToGrid, toLocal, toPage,

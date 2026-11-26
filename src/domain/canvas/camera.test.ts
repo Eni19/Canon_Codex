@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { baseZoom, cameraForBounds, constrainCamera, interpolateCamera, pageToScreen, screenToPage, viewportPageBounds, wheelCamera } from './sceneCamera'
+import { baseZoom, cameraForBounds, constrainCamera, interpolateCamera, pageToScreen, screenToPage, viewportPageBounds, wheelCamera } from '@/domain/canvas/camera'
 
 const viewport = { w: 1000, h: 600 }
 const constraints = { bounds: { x: 0, y: 0, w: 2000, h: 1000 }, padding: 40 }

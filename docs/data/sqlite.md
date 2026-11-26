@@ -58,8 +58,8 @@ O aplicativo ainda não oferece exportação de um mundo isolado em formato lega
 
 O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Mundos e registros
 preservam seus IDs. Relações e aparições ficam em tabelas com escopo de mundo e ordem explícita.
-O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap, snapshots
-tldraw dos quadros e o canvas das cenas. Imagens e variantes são BLOBs separados dos metadados.
+O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap, o canvas
+dos quadros e das cenas. Imagens e variantes são BLOBs separados dos metadados.
 
 Operações compostas usam uma transação SQLite. A lixeira é representada por exclusão lógica.
 A remoção de um registro da lista ativa preserva suas aparições enquanto o registro existir na lixeira.

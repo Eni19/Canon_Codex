@@ -1,9 +1,9 @@
 # ADR-007: Canvas próprio em Konva para relações e, depois, para os outros canvas
 
-> **Estado:** parcial (o grafo de relações e as Cenas usam Konva; a migração de Quadros e a
-> retirada do tldraw estão planejadas) · **Última verificação:** 26/11/2026, `package.json`,
-> `src/components/relations/relationship-scene.ts`, `src/components/boards/investigation-board.tsx`,
-> `src/components/scenes/scene-stage.ts` e `src/domain/scenes/`.
+> **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam as ferramentas de criação e o
+> painel de estilo dos Quadros e a retirada do pacote tldraw) · **Última verificação:** 26/11/2026,
+> `package.json`, `src/components/boards/board-stage.ts`, `src/components/scenes/scene-stage.ts` e
+> `src/domain/canvas/`.
 
 ## Contexto
 
@@ -61,12 +61,17 @@ motor, não o motor.
   seleção, as alças, a rotação pelos cantos, a seleção por área e os atalhos que a cena tinha no
   tldraw, com as mesmas cores de seleção. A câmera e a geometria foram portadas como funções puras
   em `src/domain/scenes/`. Funcionam fora de `localhost` sem chave.
-- Enquanto a migração não acontece, os Quadros continuam com as limitações do tldraw. Para
-  abri-los fora de `localhost`, é preciso definir `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
+- **Quadros migrados, etapa 1 (26/11/2026):** canvas infinito com a câmera do tldraw, cartões de
+  registro nas cinco visualizações, texto e setas vinculadas, seleção, alças, desfazer/refazer,
+  copiar/colar e os atalhos do tldraw. As fontes do tldraw (Shantell Sans e IBM Plex) são servidas
+  pelo app. A base comum (câmera, geometria, histórico) foi extraída para `src/domain/canvas/`,
+  agora que há dois consumidores. **Pendente:** ferramentas de nota, formas, desenho livre, marca-texto,
+  linha, borracha, laser, moldura e imagem (etapa 2) e o painel de estilo (etapa 3).
+- Nenhum canvas depende mais de `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
 - Câmera, seleção, toque, culling e desenho em lote passam a ser responsabilidade do projeto, e
   cada canvas migrado precisa de um perfil de desempenho próprio.
-- A migração exige converter snapshots tldraw para um formato Canon versionado. Para as Cenas, o
-  formato `canon-scene-canvas` e a conversão estão em
-  [migrações](../data/migrations.md#canvas-da-cena-snapshot-tldraw--canon-scene-canvas-v1); o
-  documento tldraw original fica guardado na própria cena.
+- A migração exige converter snapshots tldraw para um formato Canon versionado. Os formatos
+  `canon-scene-canvas` e `canon-board-canvas` e as conversões estão em
+  [migrações](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1); o
+  documento tldraw original fica guardado no próprio registro.
 - Não verificado: latência real em tela física, trackpad e toque, e o comportamento com leitor de tela.
