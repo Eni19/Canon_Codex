@@ -28,7 +28,8 @@ roda do mouse para aproximar (o ponto sob o cursor fica parado) ou os controles 
 apresentação original e `Esc` cancela. A prévia usa os valores atuais do formulário, inclusive os
 ainda não salvos.
 
-O título é obrigatório. O ID é um UUID e não muda quando o título muda; o slug é derivado novamente
+Na criação e na edição, o campo **Nome (obrigatório)** aparece no início da ficha. Para criar um
+Personagem, basta preencher o nome e escolher **Criar registro**. O ID é um UUID e não muda quando o título muda; o slug é derivado novamente
 do título e não deve ser usado para links. O formulário revalida campos estruturados com Zod antes
 de gravar.
 

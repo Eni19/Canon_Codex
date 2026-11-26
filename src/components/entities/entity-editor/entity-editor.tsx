@@ -210,7 +210,10 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             <section aria-label="Identificação" data-reveal={0}>
               {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
               <label className="group/title relative block">
-                <span className="sr-only">Título</span>
+                <span className="mb-2 flex items-baseline gap-2 text-sm font-medium">
+                  Nome
+                  <span aria-hidden="true" className="font-normal text-muted-foreground">(obrigatório)</span>
+                </span>
                 <input
                   name="title"
                   aria-required="true"

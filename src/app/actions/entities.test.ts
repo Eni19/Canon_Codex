@@ -124,6 +124,17 @@ describe('formulário único de entidade', () => {
     expect(mocks.updateEntity).toHaveBeenCalledWith(fixedWorld.id, 'char-1', record)
   })
 
+  it('permite criar um personagem preenchendo somente o nome', async () => {
+    const form = new FormData()
+    form.set('type', 'character')
+    form.set('worldId', fixedWorld.id)
+    form.set('title', 'Lia')
+    await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
+    expect(mocks.createEntity).toHaveBeenCalledWith(fixedWorld.id, expect.objectContaining({
+      type: 'character', title: 'Lia', aliases: [], tags: [],
+    }))
+  })
+
   it('cria com imagem, cor e conteúdo de uma só vez', async () => {
     const pages = [{ id: 'principal', title: 'Principal', body: { type: 'doc', content: [] } }]
     const form = new FormData()
