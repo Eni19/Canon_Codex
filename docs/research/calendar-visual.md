@@ -1,5 +1,8 @@
 # Pesquisa sobre calendários visuais de campanha
 
+> **Estado:** histórico · **Última verificação:** 11/11/2026, pesquisa de referências; o
+> comportamento entregue está no [guia de mundos](../user-guide/worlds.md).
+
 Pesquisa em **11/11/2026** para a aba Calendário do Canon Codex. As recomendações são propostas para implementação. O comportamento e o desempenho ainda precisam ser verificados no aplicativo.
 
 ## Referências de produto
