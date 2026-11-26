@@ -26,7 +26,7 @@ Comandos do package.json:
 | pnpm lint | ESLint |
 | pnpm test | vitest run |
 | pnpm test:watch | Vitest interativo |
-| pnpm docs:check | verifica links relativos, âncoras e caminhos `src/` citados entre crases nos arquivos Markdown |
+| pnpm docs:check | verifica links relativos, âncoras, caminhos `src/` citados entre crases e o cabeçalho de estado das páginas de `docs/` |
 | pnpm storage preview <origem> | prévia da importação de uma biblioteca JSON legada, sem gravar |
 | pnpm storage import <origem> <novo-banco> | importa a biblioteca legada para um novo arquivo SQLite |
 | pnpm storage backup <banco> <novo-backup> | copia o banco SQLite para um novo arquivo de backup |

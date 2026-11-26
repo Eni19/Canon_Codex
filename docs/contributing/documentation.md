@@ -60,7 +60,8 @@ Valores de **Estado**:
   substituídos, perfis antigos).
 
 **Última verificação** traz a data e *o que* foi conferido. Atualize quando revisar a página
-contra o código, mesmo que o texto não mude.
+contra o código, mesmo que o texto não mude. Nos ADRs, a seção `## Estado atual em DD/MM/AAAA`
+faz o papel do bloco. `pnpm docs:check` falha quando uma página de `docs/` não tem nenhum dos dois.
 
 ## Implementado, planejado e não verificado no texto
 
