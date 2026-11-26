@@ -90,7 +90,7 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 - [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
   [operação e privacidade](docs/operations-and-privacy.md).
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
-- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md),
+- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](https://github.com/Eni19/Canon_Codex/issues),
   [ideias de evolução](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abacklog) e [bugs abertos](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
 ## Arquitetura em uma frase

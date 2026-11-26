@@ -1,6 +1,6 @@
 # Plano de implementação do calendário visual
 
-**Estado da proposta** · 13/11/2026 · Etapa 7 com build, testes, revisão em Chrome e Edge e medição em produção com dados sintéticos. A fala de leitor de tela permanece sem verificação. Após a medição, o Celeste estendeu a paleta azul-noturna da capa às vistas internas e aos formulários. Acompanhe [CAL-VIS-01](work-items.md).
+**Estado da proposta** · 13/11/2026 · Etapa 7 com build, testes, revisão em Chrome e Edge e medição em produção com dados sintéticos. A fala de leitor de tela permanece sem verificação. Após a medição, o Celeste estendeu a paleta azul-noturna da capa às vistas internas e aos formulários. Acompanhe as pendências no [#47](https://github.com/Eni19/Canon_Codex/issues/47).
 
 A aba **Calendário** abre no mês da campanha e permite consultar o ano, editar o calendário do mundo e registrar o que aconteceu em um dia. Cada mundo tem sua própria configuração e seu próprio **Hoje da campanha**. A linha do tempo continua usando o mesmo cálculo de datas para ordenar suas aparições.
 
@@ -105,6 +105,6 @@ workers (239 testes, 1 ignorado), após um timeout no teste das 500 aparições 
 
 ## 7. Documentação afetada na entrega
 
-Atualizar `README.md`, `PROJECT.md`, o guia de mundos e o índice do guia com as vistas e a data de campanha. Atualizar o guia de linhas do tempo com a sugestão de data na criação rápida e o guia de entidades com os atalhos de data. Registrar os novos campos, migrações e regras de recuperação em `docs/data/`. Atualizar ADR-003 e ADR-005 conforme a decisão implementada para variantes, referências e tokens. Registrar os resultados do perfil em `docs/performance/` e o estado das etapas em `docs/work-items.md` conforme forem verificadas.
+Atualizar `README.md`, `PROJECT.md`, o guia de mundos e o índice do guia com as vistas e a data de campanha. Atualizar o guia de linhas do tempo com a sugestão de data na criação rápida e o guia de entidades com os atalhos de data. Registrar os novos campos, migrações e regras de recuperação em `docs/data/`. Atualizar ADR-003 e ADR-005 conforme a decisão implementada para variantes, referências e tokens. Registrar os resultados do perfil em `docs/performance/` e o estado das etapas nos issues do GitHub conforme forem verificadas.
 
 O escopo assume um calendário por mundo e a semana de sete dias do schema atual. A compatibilidade de semanas com outra duração exigiria uma mudança estrutural própria. As metas foram medidas no [perfil de produção](performance/calendar-production.md).

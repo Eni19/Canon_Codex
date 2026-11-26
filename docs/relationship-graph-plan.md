@@ -290,6 +290,6 @@ chave hobby se o app precisar abrir fora de `localhost`.
 ## Impacto documental
 
 O guia de entidades, README, PROJECT e a arquitetura descrevem a versão implementada. O
-[acompanhamento](work-items.md) registra o que falta para a migração. O arquivo da vista passa
+[#17](https://github.com/Eni19/Canon_Codex/issues/17) registra a ordem para a migração. O arquivo da vista passa
 à versão 4 quando salvo com alterações; versões 1 a 3 são lidas com pastas vazias. Os fluxos
 de vínculo continuam usando as mesmas Server Actions.
