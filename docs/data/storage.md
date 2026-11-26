@@ -1,5 +1,8 @@
 # Armazenamento e modelo de dados
 
+> **Estado:** implementado (driver legado) · **Última verificação:** 26/11/2026, árvore de pastas em
+> `src/lib/fs/paths.ts` e schemas em `src/domain/`.
+
 Para o driver atual, consulte [armazenamento, migração e backup do SQLite](sqlite.md).
 Esta página descreve a árvore JSON do driver legado `filesystem`, ainda aceita para importação.
 

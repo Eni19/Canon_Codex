@@ -1,5 +1,9 @@
 # Armazenamento em SQLite
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, tabelas em
+> `src/repositories/sqlite/schema.ts` e comandos `preview`, `import` e `backup` de
+> `scripts/sqlite-storage.ts`.
+
 SQLite é o driver padrão. Uma biblioteca usa um arquivo `canon-codex.sqlite`, que reúne os
 mundos, registros, documentos, imagens, quadros, cenas, playlists, lixeira e históricos de conversão
 e troca de origem. O servidor cria um mundo inicial na primeira abertura de uma biblioteca nova.

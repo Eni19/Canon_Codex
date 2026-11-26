@@ -1,5 +1,8 @@
 # Referência HTTP e Server Actions
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, todas as rotas de `src/app/api/` e
+> todas as actions exportadas de `src/app/actions/` têm seção aqui.
+
 Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
 escritas de arquivos nesta referência descrevem o driver legado. Elas usam o mundo ativo
 selecionado pelo cookie canon-codex-world; não há autenticação, versionamento ou promessa de

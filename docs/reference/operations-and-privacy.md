@@ -1,5 +1,8 @@
 # Operação, segurança e privacidade
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, ausência de autenticação em `src/`
+> e cookie de mundo ativo em `src/services/worlds/`.
+
 ## Limite operacional atual
 
 Canon Codex é uma aplicação local single-user. A execução verificada é pnpm dev ou
@@ -25,6 +28,13 @@ processo/host deve ser considerada capaz de acessar os dados disponíveis naquel
 A [trilha sonora](../user-guide/soundtrack.md) usa o YouTube. O navegador prepara o player quando o
 usuário abre a área ou o seletor de trilha, ou inicia uma fila. A navegação pela wiki com a trilha
 ociosa não inicializa esse player.
+
+O app faz duas requisições externas conhecidas:
+
+- ao adicionar vídeos a uma playlist, o servidor consulta o oEmbed do YouTube com os IDs dos
+  vídeos para obter título e autor (`src/services/soundtrack/youtubeInfo.ts`);
+- sem `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` e fora de `localhost`, o tldraw de Quadros e Cenas envia o
+  endereço da página ao serviço dele ([levantamento](../research/tldraw-license.md)).
 
 ## Uploads
 
