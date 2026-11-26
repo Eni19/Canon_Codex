@@ -47,7 +47,16 @@ export async function searchEntities(
   const entities = allEntities.filter((entity) => (!options?.type || entity.type === options.type) && matchesTagPrefixes(entity.tags, tagPrefixes))
   if (!text) return entities.slice(0, limit).map(toSearchResult)
 
-  const fuse = new Fuse(entities, {
+  const normalizedTerm = text.toLowerCase()
+  const exact: Entity[] = []
+  const remaining: Entity[] = []
+  for (const entity of entities) {
+    if (entity.title.trim().toLowerCase() === normalizedTerm) exact.push(entity)
+    else remaining.push(entity)
+  }
+  if (exact.length >= limit) return exact.slice(0, limit).map(toSearchResult)
+
+  const fuse = new Fuse(remaining, {
     keys: [
       { name: 'title', weight: 0.5 },
       { name: 'aliases', weight: 0.3 },
@@ -57,8 +66,6 @@ export async function searchEntities(
     ignoreLocation: true,
   })
 
-  return fuse
-    .search(text)
-    .slice(0, limit)
-    .map((result) => toSearchResult(result.item))
+  const approximate = fuse.search(text, { limit: limit - exact.length })
+  return [...exact, ...approximate.map(result => result.item)].map(toSearchResult)
 }
