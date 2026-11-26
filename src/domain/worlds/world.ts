@@ -8,7 +8,7 @@ import { CalendarLandmarksSchema } from '@/domain/worlds/calendar-landmarks'
 import { CalendarAppearanceSchema } from '@/domain/worlds/calendar-appearance'
 import { TimelineScaleSchema } from '@/domain/timelines/timelineScale'
 
-export const WORLD_SCHEMA_VERSION = 24
+export const WORLD_SCHEMA_VERSION = 25
 
 export const WorldSchema = z.object({
   id: z.uuid(),

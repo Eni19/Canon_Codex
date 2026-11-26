@@ -294,8 +294,8 @@ const DEFAULT_ENTITY_TYPES: EntityTypeDefinition[] = [
   },
   {
     id: 'artifact',
-    label: 'Objeto / Artefato',
-    pluralLabel: 'Objetos / Artefatos',
+    label: 'Objeto',
+    pluralLabel: 'Objetos',
     icon: 'KeyRound',
     color: 'accent',
     layout: narrativeLayout,

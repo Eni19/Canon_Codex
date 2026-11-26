@@ -228,6 +228,21 @@ describe('world calendar migration', () => {
     expect(migrated.calendar.intercalaryRules[1].name).toBe('Extra')
   })
 })
+describe('object labels migration (v25)', () => {
+  it('renames the default artifact labels and keeps customized ones', () => {
+    const world = createDefaultWorldSeed()
+    const legacy = (label: string, pluralLabel: string) => ({
+      ...world,
+      schemaVersion: 24,
+      entityTypes: world.entityTypes.map((type) => type.id === 'artifact' ? { ...type, label, pluralLabel } : type),
+    })
+    const artifact = (data: Record<string, unknown>) => WorldSchema.parse(migrateToLatest(worldMigrations, data)).entityTypes.find((type) => type.id === 'artifact')!
+    expect(artifact(legacy('Objeto / Artefato', 'Objetos / Artefatos'))).toMatchObject({ label: 'Objeto', pluralLabel: 'Objetos' })
+    expect(artifact(legacy('Relíquia', 'Objetos / Artefatos'))).toMatchObject({ label: 'Relíquia', pluralLabel: 'Objetos' })
+    expect(WorldSchema.parse(migrateToLatest(worldMigrations, legacy('Objeto / Artefato', 'Objetos / Artefatos'))).schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+  })
+})
+
 describe('card picker reference cleanup migration', () => {
   it('drops the unused location fields and makes leaders come from members', () => {
     const world = createDefaultWorldSeed()

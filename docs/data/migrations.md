@@ -23,7 +23,7 @@ linkam para cá em vez de repetir o número. Ao subir uma constante, atualize es
 
 | Registro | Versão atual | Constante no código |
 | --- | ---: | --- |
-| `World` | 24 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
+| `World` | 25 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
 | `Entity` | 4 | `ENTITY_SCHEMA_VERSION` em [`src/domain/entities/entity.ts`](../../src/domain/entities/entity.ts) |
 | `ContentDocument` | 2 | `CONTENT_SCHEMA_VERSION` em [`src/domain/content/contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
 | Linha do tempo | 2 | `TIMELINE_SCHEMA_VERSION` em [`src/domain/timelines/timeline.ts`](../../src/domain/timelines/timeline.ts) |
@@ -129,7 +129,7 @@ com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds
 podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
 original de `directional`.
 
-## Mundo: v1 → v24
+## Mundo: v1 → v25
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -159,6 +159,7 @@ Registry: `worldMigrations` em
 | 21 | 22 | adiciona `calendarMoons` vazio, preservando calendário e demais dados |
 | 22 | 23 | adiciona estações e marcos vazios, Hoje em aberto e aparência padrão Codex, preservando o calendário e as luas |
 | 23 | 24 | acrescenta sete definições opcionais às fichas, preservando definições com a mesma chave e os dados das entidades |
+| 24 | 25 | renomeia o tipo `artifact` de "Objeto / Artefato" para "Objeto" (plural "Objetos"); nomes personalizados ficam |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
@@ -167,7 +168,11 @@ Ao editar uma ficha, propriedades antigas fora do formulário continuam nas chav
 
 A migração v23 → v24 acrescenta sete definições opcionais às fichas. Preserva definições com a mesma chave e os dados das entidades.
 
-O seed atual já é v24, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
+A migração v24 → v25 troca só os nomes padrão do tipo `artifact` (`renameObjectType` em
+`src/domain/worlds/objectLabelsV25.ts`). O ID continua `artifact`, então registros, links e rotas
+não mudam. No SQLite, a mesma regra roda uma vez como migração do schema SQL.
+
+O seed atual já é v25, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
