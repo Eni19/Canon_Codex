@@ -13,11 +13,11 @@ contratos. Refaça esta página quando uma nova rodada de padronização termina
 | Critério | Antes (25/11) | Agora | O que falta para 10 |
 | --- | ---: | ---: | --- |
 | Cobertura | 8,5 | 10 | nada: guias de uso, contribuição, commits, documentação, referência, dados, ADRs e glossário |
-| Fidelidade ao código | 7 | 9 | 32 páginas ainda não foram reconferidas uma a uma contra o código; isso acontece ao dar a elas o cabeçalho de estado (#57) |
-| Organização | 5,5 | 9,5 | as mesmas 32 páginas sem o cabeçalho de estado padrão (#57) |
+| Fidelidade ao código | 7 | 9,5 | todas as páginas foram conferidas; nos guias de uso a conferência foi por rotas e rótulos da interface, não frase a frase |
+| Organização | 5,5 | 10 | nada: toda página de `docs/` tem cabeçalho de estado |
 | Onboarding | 4 | 10 | nada: CONTRIBUTING, guias de commits e documentação, modelos de issue e AGENTS.md apontando para eles |
-| Governança | 7,5 | 9,5 | `pnpm docs:check` ainda não acusa página sem cabeçalho (#57) |
-| **Geral** | **6,5** | **9,6** | um issue de acompanhamento (#57) |
+| Governança | 7,5 | 10 | nada: `pnpm docs:check` também acusa página sem cabeçalho |
+| **Geral** | **6,5** | **9,9** | reler os guias de uso frase a frase na próxima auditoria |
 
 ## O que foi conferido contra o código
 
