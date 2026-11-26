@@ -215,6 +215,23 @@ abertura do formulário ou quando uma alteração estrutural encontra campos de 
 mundo, inclusive na lixeira. Não é uma API pública; o `worldId` enviado pelo navegador é conferido contra
 o mundo selecionado pelo cookie ativo.
 
+As seções de configuração do calendário têm uma action cada, todas com o mesmo contrato:
+`(estadoAnterior, formData) → CalendarActionState`. O formulário envia `worldId`, o valor novo
+serializado em JSON e o valor esperado (o que a página leu) para detectar edição concorrente.
+A action valida com o schema da seção, confere o mundo ativo, grava pelo `WorldRepository` e
+revalida `/calendar`. Erros voltam como mensagem para o formulário, sem exceção.
+
+| Action | Campo com o valor novo | Valores esperados | Schema |
+| --- | --- | --- | --- |
+| `updateCampaignTodayAction` | `date` e `operation` (`set` ou `advance`) | `expectedToday`, `expectedCalendar` | `CalendarExactDateSchema` |
+| `updateCalendarAppearanceAction` | `appearance` | `expectedAppearance` | `CalendarAppearanceSchema` |
+| `updateCalendarLandmarksAction` | `landmarks` | `expectedLandmarks`, `expectedCalendar` | `CalendarLandmarksSchema` |
+| `updateCalendarSeasonsAction` | `seasons` | `expectedSeasons`, `expectedCalendar` | `CalendarSeasonsSchema` |
+| `updateCalendarMoonsAction` | `moons` | `expectedMoons`, `expectedCalendar` | `CalendarMoonsSchema` |
+
+`updateCampaignTodayAction` recusa `advance` quando o Hoje da campanha mudou desde a leitura e
+datas com ano além de ±1.000.000. Além de `/calendar`, ela revalida o layout raiz.
+
 `startDateMigrationAction` confirma a prévia de `/calendar/migration` por fingerprint dos arquivos,
 do calendário e das definições de tipos do mundo ativo. `recoverDateMigrationAction` retoma uma execução interrompida ou
 restaura o backup pelo ID. Ambas delegam ao `WorldRepository`; erros de conflito são exibidos na
