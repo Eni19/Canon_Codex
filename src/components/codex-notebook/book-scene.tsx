@@ -7,7 +7,7 @@ import {
   Quaternion, RepeatWrapping, Vector3, type DirectionalLight, type Group, type Mesh, type MeshBasicMaterial, type Texture,
 } from 'three'
 import { bendProfile, BEND_SEGMENTS, blockHeights, BOARD, BLOCK, PAGE_DEPTH, PAGE_WIDTH } from './book-geometry'
-import { paintCover, paintEndpaper, paintLeather, paintPageEdges, type NotebookPalette } from './book-textures'
+import { paintCover, paintDesk, paintEndpaper, paintLeather, paintPageEdges, type NotebookPalette } from './book-textures'
 
 /** Size of the index paper on the desk, in world units and in CSS pixels of its HTML. */
 export const INDEX_WIDTH = 0.34
@@ -72,6 +72,7 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
   const cover = useMemo(() => paintCover(palette, worldName, recordLine, fonts.serif, fonts.type), [palette, worldName, recordLine, fonts])
   const endpaper = useMemo(() => paintEndpaper(palette), [palette])
   const leather = useMemo(() => paintLeather(palette), [palette])
+  const desk = useMemo(() => paintDesk(palette), [palette])
   const edges = useMemo(() => paintPageEdges(palette), [palette])
 
   const book = useRef<Group>(null)
@@ -128,10 +129,10 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
     />
     <pointLight color={color.brass} intensity={0.35} position={[0.4, 0.9, -0.6]} distance={3} decay={1.6}/>
 
-    {/* No desk for now: an invisible floor that only catches the book's soft shadow. */}
+    {/* The walnut desk the notebook lies on; it also catches the book's soft shadow. */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={(event) => event.stopPropagation()}>
       <planeGeometry args={[8, 8]}/>
-      <shadowMaterial transparent opacity={0.4}/>
+      <meshStandardMaterial map={desk} roughness={0.85}/>
     </mesh>
 
     <group ref={book}>

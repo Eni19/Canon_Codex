@@ -27,8 +27,8 @@ Referências estudadas:
 - `/codex` mostra o caderno ocupando a área de conteúdo, com a barra lateral mantida.
 - O caderno é uma cena three.js (React Three Fiber), como o livro do Stripe Press (*Nomad Letters*),
   carregada só no navegador (`book-scene.tsx`): capas de couro, guardas, blocos de páginas, luz quente
-  e sombras sobre um fundo
-  grafite com vinheta (`--nb-backdrop`). A mesa 3D foi retirada por enquanto; ela voltará decorada. Capa, guardas e bordas das páginas são texturas
+  e sombras sobre uma mesa de nogueira (ainda sem objetos; ela será decorada depois). Capa, mesa,
+  guardas e bordas das páginas são texturas
   pintadas em canvas com as cores dos tokens `--nb-*` (`book-textures.ts`).
 - Fechado, o caderno fica em vista 3/4 e gira um pouco com o ponteiro; o papel do índice está sobre
   a capa. Ao abrir, o índice desliza para o lado do livro, a capa gira na lombada levando a primeira
@@ -66,6 +66,24 @@ Referências estudadas:
   imagem intermediária ser decodificada; numa página opaca, essa foto transparente aparecia preta.
   Conferir só alguns pontos não bastava: em páginas com pouco conteúdo eles caíam no papel liso, a
   foto boa era descartada e a página virava em branco.
+- Com o caderno parado, as páginas em HTML continuam sobre as 3D para receber cliques, mas ficam
+  invisíveis assim que a foto da página está pronta: o leitor vê sempre a mesma foto, parada ou
+  virando, então nada muda de nitidez nem pisca quando a virada termina. O preço é que os efeitos de
+  hover das peças não aparecem; o cursor de link continua. As fotos são tiradas na escala 1 (ver abaixo). Links e setas em texto não quebram linha (`white-space: nowrap`): a foto mede o texto
+  um pouco mais largo, e "ver todos →" chegava a descer a seta para a linha de baixo.
+- A fila de fotografias descarta as páginas que deixaram a vizinhança da página aberta e nunca
+  fotografa uma cópia já removida do documento. Antes, cada pedido antigo ocupava a fila (uma foto
+  por vez) tentando fotografar uma cópia de 0 × 0; no Firefox/Zen esses atrasos se acumulavam e, por
+  volta da 10ª virada (página 23), as páginas viravam antes de ter foto, em branco. Uma página que
+  volta a ser pedida assume o lugar do pedido antigo com a cópia nova. A fila segue a ordem de
+  proximidade (a página aberta, depois a seguinte e a anterior, depois as duas além).
+- Nenhuma virada começa sem as fotos das suas quatro páginas. Com as setas ou o teclado, a virada
+  espera por elas (até 3 s); num arrasto, a folha só se solta quando elas ficam prontas e então
+  alcança o ponteiro. No Firefox/Zen uma foto leva de 0,3 a 0,6 s: virando sem parar, o arrasto
+  pode esperar cerca de 0,4 s; no ritmo de leitura as fotos já estão prontas. As fotos são tiradas
+  na escala 1 (600 × 820), porque o custo delas cresce com os pixels.
+- A mesa de nogueira (pranchas largas com veio suave, pintada em canvas) voltou sob o caderno e
+  recebe a sombra dele.
 - A capa, a contracapa e a lombada usam um couro gasto pintado em canvas (manchas em três escalas,
   bordas mais claras e grão), na linha da capa do OWARI DIARY, com um friso dourado junto à lombada.
 - Setas desenhadas nos cantos de cada página (**continue** e **voltar**; **fechar** na primeira) e as

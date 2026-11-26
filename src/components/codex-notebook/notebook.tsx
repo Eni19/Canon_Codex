@@ -50,6 +50,8 @@ interface Drag {
   /** What the press landed on: one of the pages, or the desk around the book. */
   region: 'left' | 'right' | 'outside'
   started: boolean
+  /** The spread the drag turns to, while its pictures are still being taken (the leaf waits). */
+  waitingFor?: number
   turned: number
   speed: number
   lastT: number
@@ -166,25 +168,26 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
   // Pictures are taken one at a time, while the browser is idle and no page is moving: taking them
   // all at once right after a turn made the next drag stutter.
   const elements = useRef(new Map<string, HTMLElement>())
-  /** Device pixels per CSS pixel of a page as it is shown, so pictures match the HTML one to one. */
-  const pictureScale = useCallback(() => {
-    const width = overlays.current.right?.getBoundingClientRect().width ?? PAGE_W
-    return Math.min(2.5, Math.max(1, (width / PAGE_W) * window.devicePixelRatio))
-  }, [])
+  /**
+   * Pictures are taken at the page's own size (one pixel per CSS pixel of the 600 × 820 sheet). In
+   * Firefox a picture's cost grows with its pixels, and sharper pictures could not keep up with a
+   * reader turning page after page; the pages are shown at about that size anyway.
+   */
+  const pictureScale = useCallback(() => 1, [])
   /** Paper colour drawn behind every picture, so none can come out transparent (black on screen). */
   const paperColor = useCallback(() => (stage.current ? getComputedStyle(stage.current).getPropertyValue('--nb-paper').trim() : '') || 'white', [])
-  /** Takes any missing pictures right away and resolves when they are ready (or after 0.9 s). */
+  /** Takes any missing pictures right away and resolves when they are ready (or after 3 s at most). */
   const ensure = useCallback((keys: string[]) => {
     const jobs = keys.flatMap((key) => {
       if (pictures.get(key)) return []
       const element = elements.current.get(key)
-      if (!element) return []
+      if (!element?.isConnected) return []
       return [pictures.capture(key, element, pictureScale(), paperColor()).then((texture) => {
         if (texture) setTextures((all) => withPicture(all, key, texture, pictures))
       })]
     })
     if (jobs.length === 0) return Promise.resolve()
-    return Promise.race([Promise.all(jobs), new Promise((done) => window.setTimeout(done, 900))])
+    return Promise.race([Promise.all(jobs), new Promise((done) => window.setTimeout(done, 3000))])
   }, [paperColor, pictureScale, pictures])
 
   const queue = useRef<CaptureQueue | null>(null)
@@ -208,7 +211,11 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
   useEffect(() => {
     const keep = new Set(['index', ...wanted.flatMap((at) => [pageKey(spreads[at].id, 'left'), pageKey(spreads[at].id, 'right')])])
     for (const key of pictures.retain(keep)) elements.current.delete(key)
-  }, [pictures, spreads, wanted])
+    // Nearest first: the open spread, then the next and previous ones, then the two beyond.
+    const nearest = index < 0 ? [0, 1] : [index, index + 1, index - 1, index + 2, index - 2]
+    const order = nearest.filter((at) => wanted.includes(at)).flatMap((at) => [pageKey(spreads[at].id, 'left'), pageKey(spreads[at].id, 'right')])
+    queue.current?.prioritize([...order.slice(0, 2), 'index', ...order.slice(2)])
+  }, [index, pictures, spreads, wanted])
 
   /** A picture, only while it is still held by the cache (a released one has been freed). */
   const picture = (key: string | undefined) => {
@@ -397,7 +404,19 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
       m.target = null
       m.progress = forward ? 0 : 1
       m.dragGoal = m.progress
-      setTurn({ from: index, to: target, dir: forward ? 'next' : 'prev', mode: 'drag' })
+      const next: Turn = { from: index, to: target, dir: forward ? 'next' : 'prev', mode: 'drag' }
+      const keys = turnKeys(spreads, next)
+      if (keys.every((key) => pictures.get(key))) setTurn(next)
+      else {
+        // Its pictures are not ready yet (Firefox takes them slowly): the leaf waits for them rather
+        // than turning blank, and then catches up with the pointer.
+        drag.waitingFor = target
+        void ensure(keys).then(() => {
+          if (motion.current.drag !== drag) return
+          drag.waitingFor = undefined
+          setTurn(next)
+        })
+      }
     }
     const direction = turn?.dir ?? (drag.region === 'right' ? 'next' : 'prev')
     const spreadWidth = (overlays.current.left?.getBoundingClientRect().width ?? 300) * 2
@@ -420,6 +439,11 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
       // A tap on the desk closes the notebook; a tap on a page turns it, like a real book.
       if (drag.region === 'outside') closeBook()
       else turnTo(drag.region === 'right' ? index + 1 : index - 1)
+      return
+    }
+    if (drag.waitingFor !== undefined) {
+      // Let go before its pictures were ready: a real pull still turns the page, once they are.
+      if (shouldComplete(drag.turned, drag.speed)) turnTo(drag.waitingFor)
       return
     }
     if (!turn) return
@@ -464,10 +488,12 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
         />
       </div>}
 
-      {/* The real pages, laid exactly over the 3D ones while they lie still: sharp and clickable. */}
+      {/* The real pages, laid exactly over the 3D ones while they lie still, so they can be clicked.
+          Once a page's picture is ready they stay invisible (data-ghost): the reader always sees the
+          same picture, still or turning, so nothing changes sharpness or blinks when a turn ends. */}
       <div className={styles.overlays} onClickCapture={rememberSpread}>
-        <div ref={(element) => { overlays.current.left = element }} data-page="left" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined}>{current.left}</div>
-        <div ref={(element) => { overlays.current.right = element }} data-page="right" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined}>{current.right}</div>
+        <div ref={(element) => { overlays.current.left = element }} data-page="left" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(settled && picture(underKeys?.left) !== null) || undefined}>{current.left}</div>
+        <div ref={(element) => { overlays.current.right = element }} data-page="right" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(settled && picture(underKeys?.right) !== null) || undefined}>{current.right}</div>
         <div ref={(element) => { overlays.current.index = element }} data-index-card className={styles.overlayIndex} data-visible={phase === 'open' || undefined} style={{ width: INDEX_PX.width, height: INDEX_PX.height }}>{indexCard}</div>
       </div>
 
@@ -489,8 +515,9 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
 
 /** Takes page pictures one by one, in idle time, and waits while the notebook is moving. */
 class CaptureQueue {
-  private readonly jobs: { key: string; element: HTMLElement }[] = []
+  private readonly jobs: { key: string; element: HTMLElement; tries?: number }[] = []
   private running = false
+  private order: string[] = []
 
   constructor(
     private readonly pictures: PageTextures,
@@ -500,10 +527,24 @@ class CaptureQueue {
     private readonly paper: () => string,
   ) {}
 
+  /** Queues a page; a page queued again (its copy was re-created) keeps its place with the new copy. */
   add(key: string, element: HTMLElement) {
-    if (this.pictures.has(key) || this.jobs.some((job) => job.key === key)) return
-    this.jobs.push({ key, element })
+    if (this.pictures.get(key)) return
+    const queued = this.jobs.find((job) => job.key === key)
+    if (queued) queued.element = element
+    else this.jobs.push({ key, element })
     this.next()
+  }
+
+  /**
+   * Orders the queue by `order` (nearest pages first) and drops the pages not in it. Pages no longer
+   * wanted used to stay queued, each costing the queue a turn on a copy that no longer existed; and
+   * far pages were taken before near ones. In Firefox, where a picture takes up to half a second,
+   * the queue fell behind until pages turned before their pictures were ready (blank).
+   */
+  prioritize(order: string[]) {
+    this.order = order
+    for (let i = this.jobs.length - 1; i >= 0; i -= 1) if (!order.includes(this.jobs[i].key)) this.jobs.splice(i, 1)
   }
 
   private next() {
@@ -512,16 +553,23 @@ class CaptureQueue {
       window.setTimeout(() => this.next(), 250)
       return
     }
-    const job = this.jobs.shift()
+    const rank = (key: string) => { const at = this.order.indexOf(key); return at === -1 ? this.order.length : at }
+    this.jobs.sort((a, b) => rank(a.key) - rank(b.key))
+    let job = this.jobs.shift()
+    while (job && (!job.element.isConnected || this.pictures.get(job.key))) job = this.jobs.shift()
     if (!job) return
     this.running = true
     const run = () => void this.pictures.capture(job.key, job.element, this.scale(), this.paper())
-      .then((texture) => { if (texture) this.onReady(job.key, texture) })
+      .then((texture) => {
+        if (texture) this.onReady(job.key, texture)
+        // It may have joined a picture of the copy it replaced, which failed: take it again, once.
+        else if (job.element.isConnected && !this.pictures.has(job.key) && (job.tries ?? 0) < 1) this.jobs.push({ ...job, tries: (job.tries ?? 0) + 1 })
+      })
       .finally(() => {
         this.running = false
         this.next()
       })
-    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(run, { timeout: 600 })
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(run, { timeout: 200 })
     else window.setTimeout(run, 60)
   }
 }

@@ -50,6 +50,11 @@
   pointer-events: auto;
 }
 
+/* Still clickable, but the 3D page's picture is what shows. */
+.overlayPage[data-ghost] {
+  opacity: 0;
+}
+
 /* The 3D book already draws the page's edge and shadow; the HTML copy only needs no shadow of its own. */
 .overlayPage .sheet {
   box-shadow: none;
@@ -125,6 +130,7 @@
 /* Hand-drawn arrows in the bottom corners of each page: the next page on the right, the previous on the left. */
 .pageArrow {
   position: absolute;
+  white-space: nowrap;
   bottom: 40px;
   z-index: 5;
   display: flex;
@@ -621,6 +627,8 @@
 .stickyFlags span[data-color='blue'] { background: var(--nb-tape-blue); }
 
 .handLink {
+  /* The page picture lays text out slightly wider; without this, "ver todos →" broke its arrow onto a new line. */
+  white-space: nowrap;
   color: var(--nb-ink);
   font-family: var(--font-hand);
   line-height: 1.1;

@@ -193,6 +193,53 @@ export function paintEndpaper({ css }: NotebookPalette) {
   })
 }
 
+/**
+ * Walnut desk: a few broad planks, each a slightly different tone, with long soft grain. Kept low in
+ * contrast and large in scale, so it reads as wood at a glance and never as stripes or noise.
+ */
+export function paintDesk({ css }: NotebookPalette) {
+  const texture = paint(2048, 2048, (c, w, h) => {
+    c.fillStyle = css.desk
+    c.fillRect(0, 0, w, h)
+    const next = seeded(11)
+    const planks = 5
+    const plank = h / planks
+    for (let p = 0; p < planks; p += 1) {
+      const top = p * plank
+      const tone = (next() - 0.5) * 0.12
+      c.fillStyle = tone > 0 ? `rgba(255,236,210,${tone})` : `rgba(0,0,0,${-tone})`
+      c.fillRect(0, top, w, plank)
+      // Long, gently wavy grain, plus a soft sheen down the middle of each plank.
+      for (let i = 0; i < 46; i += 1) {
+        const y = top + next() * plank
+        const amplitude = 3 + next() * 9
+        const phase = next() * Math.PI * 2
+        const wave = 260 + next() * 140
+        c.strokeStyle = next() > 0.35 ? `rgba(0,0,0,${0.05 + next() * 0.06})` : `rgba(255,236,210,${0.025 + next() * 0.03})`
+        c.lineWidth = 1 + next() * 2.4
+        c.beginPath()
+        for (let x = 0; x <= w; x += 32) {
+          const yy = y + Math.sin(x / wave + phase) * amplitude
+          if (x === 0) c.moveTo(x, yy)
+          else c.lineTo(x, yy)
+        }
+        c.stroke()
+      }
+      const sheen = c.createLinearGradient(0, top, 0, top + plank)
+      sheen.addColorStop(0, 'rgba(0,0,0,0.12)')
+      sheen.addColorStop(0.5, 'rgba(255,236,210,0.04)')
+      sheen.addColorStop(1, 'rgba(0,0,0,0.14)')
+      c.fillStyle = sheen
+      c.fillRect(0, top, w, plank)
+      c.fillStyle = 'rgba(0,0,0,0.5)'
+      c.fillRect(0, top, w, 3)
+    }
+  })
+  texture.wrapS = texture.wrapT = RepeatWrapping
+  texture.repeat.set(3, 3)
+  return texture
+}
+
 /** Page edges seen on the side of the page block: fine horizontal lines of paper. */
 export function paintPageEdges({ css }: NotebookPalette) {
   const texture = paint(64, 256, (c, w, h) => {

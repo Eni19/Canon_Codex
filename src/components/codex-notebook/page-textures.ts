@@ -54,6 +54,9 @@ export class PageTextures {
   capture(key: string, element: HTMLElement, scale: number, paper: string): Promise<CanvasTexture | null> {
     const existing = this.pending.get(key)
     if (existing) return existing
+    // A copy that has left the page cannot be pictured (it measures 0 × 0); the caller retries with
+    // the copy that replaced it.
+    if (!element.isConnected) return Promise.resolve(null)
     const ticket = Symbol(key)
     this.tickets.set(key, ticket)
     const job = (async () => {
@@ -66,7 +69,7 @@ export class PageTextures {
         // Firefox (and Zen) sometimes paints the page's SVG snapshot before it has decoded, giving an
         // empty picture: on a page it looked black. Such pictures are retaken, a little later each time.
         let canvas: HTMLCanvasElement | null = null
-        for (let attempt = 0; attempt < 4 && !canvas; attempt += 1) {
+        for (let attempt = 0; attempt < 4 && !canvas && element.isConnected; attempt += 1) {
           if (attempt > 0) await new Promise((done) => window.setTimeout(done, 120 * attempt))
           const shot = await domToCanvas(element, { scale, width: element.offsetWidth, height: element.offsetHeight, backgroundColor: paper })
           if (hasContent(shot)) canvas = shot
