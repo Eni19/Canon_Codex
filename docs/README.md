@@ -23,7 +23,7 @@ ficam nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues).
 - [Commits e branches](contributing/commits.md): formato, tamanho e rebase.
 - [Desenvolvimento](contributing/development.md): comandos e organização do trabalho por camada.
 - [Testes e qualidade](contributing/testing.md): o que a suíte cobre e as verificações registradas.
-- [Auditoria documental](contributing/documentation-audit.md): matriz de evidências.
+- [Auditoria documental](contributing/documentation-audit.md): nota por critério e o que foi conferido.
 
 O ponto de partida para quem chega é o [CONTRIBUTING](../CONTRIBUTING.md) na raiz.
 
