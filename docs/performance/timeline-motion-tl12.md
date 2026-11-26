@@ -5,7 +5,7 @@
 
 Verificado em **14/10/2026**, exclusivamente com dados sintéticos fora do diretório privado.
 As [referências primárias](../research/timeline-visual-motion.md) orientaram a composição;
-o [guia](../user-guide/timelines.md#apresentação-e-movimento) descreve o comportamento entregue.
+o [guia](../user-guide/timelines.md#centenas-de-acontecimentos-e-movimento) descreve o comportamento entregue.
 
 ## Ambiente e método
 
