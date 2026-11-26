@@ -7,7 +7,7 @@ repositório. Este roteiro diz o que exercitar e onde registrar o que aparecer.
 ## Antes de começar
 
 1. Faça uma cópia da pasta da biblioteca antes de qualquer migração.
-2. Se a biblioteca ainda estiver em arquivos, siga [SQLite local](data/sqlite.md):
+2. Se a biblioteca ainda estiver em arquivos, siga [SQLite local](../data/sqlite.md):
    `pnpm storage preview <pasta>` e `pnpm storage import <pasta> <destino>/canon-codex.sqlite`.
    Anote no registro abaixo qualquer aviso da prévia (alvos ausentes, IDs duplicados).
 3. Abra o app com `pnpm dev` e confira se todos os mundos e registros aparecem.

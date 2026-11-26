@@ -81,8 +81,8 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 
 - [Biblioteca de mundos](docs/user-guide/worlds.md): criar, importar e arquivar pastas incompletas.
 
-- [Canvas de relacionamentos](docs/user-guide/entities.md#referências-e-relações): área útil inteira, ferramentas contextuais, pastas no canto com navegação e movimentação por arraste, e salvamento automático por mundo. O [plano](docs/relationship-graph-plan.md) mantém a migração dos outros canvas condicionada à validação do grafo.
-- [Validar com uma campanha real](docs/campaign-validation.md): roteiro do fluxo do mestre e onde registrar bugs e ideias.
+- [Canvas de relacionamentos](docs/user-guide/entities.md#referências-e-relações): área útil inteira, ferramentas contextuais, pastas no canto com navegação e movimentação por arraste, e salvamento automático por mundo. O [plano](docs/plans/relationship-graph-plan.md) mantém a migração dos outros canvas condicionada à validação do grafo.
+- [Validar com uma campanha real](docs/user-guide/campaign-validation.md): roteiro do fluxo do mestre e onde registrar bugs e ideias.
 - [Índice do guia de uso](docs/user-guide/index.md): mundos, calendário, entidades, editor, quadros, cenas e projeção.
 - [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
 - [SQLite local](docs/data/sqlite.md): configuração, importação e backup.
@@ -94,10 +94,10 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
   quando atualizar cada página.
 - [Commits e branches](docs/contributing/commits.md): formato das mensagens, tamanho dos commits,
   rebase e PRs.
-- [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
-  [operação e privacidade](docs/operations-and-privacy.md).
+- [Desenvolvimento](docs/contributing/development.md), [testes](docs/contributing/testing.md) e
+  [operação e privacidade](docs/reference/operations-and-privacy.md).
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
-- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](https://github.com/Eni19/Canon_Codex/issues),
+- [Auditoria documental](docs/contributing/documentation-audit.md), [trabalho e lacunas](https://github.com/Eni19/Canon_Codex/issues),
   [ideias de evolução](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abacklog) e [bugs abertos](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
 ## Arquitetura em uma frase

@@ -37,7 +37,7 @@ Lido em `@tldraw/editor/src/lib/license/` dentro de `node_modules`:
 - **Abrir o app por outro endereço quebra Quadros e Cenas**, inclusive a projeção de uma cena em
   outro aparelho pelo IP da rede local: o canvas some depois de 5 s sem chave válida.
 - O registro de uso sem licença envia o endereço da página a um serviço externo, o que contraria
-  a política local-first de [operação e privacidade](../operations-and-privacy.md) quando o app
+  a política local-first de [operação e privacidade](../reference/operations-and-privacy.md) quando o app
   é aberto fora de `localhost`.
 - `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` é lida no cliente; por ser `NEXT_PUBLIC_`, a chave fica visível
   no navegador. Isso é esperado pelo tldraw (a chave é validada por domínio), mas não deve ser
@@ -48,6 +48,6 @@ Lido em `@tldraw/editor/src/lib/license/` dentro de `node_modules`:
 1. Curto prazo: se o app for usado só em `localhost`, nada muda. Para usar pela rede local ou
    em outro domínio, obter a licença hobby (ou comercial) e definir
    `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` em `.env.local`, conferindo os domínios aceitos pela chave.
-2. Médio prazo: seguir o [REL-08](../relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas)
+2. Médio prazo: seguir o [REL-08](../plans/relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas)
    para trocar Quadros e Cenas pelo canvas próprio em Konva (licença MIT), já usado no grafo,
    o que elimina a dependência de chave, a marca-d'água e a requisição externa.

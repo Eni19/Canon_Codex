@@ -82,7 +82,7 @@ trata Pointer Events; **não verificado** em toque físico (#N)".
 | Schema SQL (`src/repositories/sqlite/schema.ts`) | `docs/data/sqlite.md`, `docs/data/backup-and-restore.md` |
 | Rota em `src/app/api/` ou Server Action | `docs/reference/http-and-actions.md` |
 | Variável de ambiente | `docs/reference/configuration.md` e `.env.example` |
-| Script em `package.json` | `README.md`, `docs/development.md` |
+| Script em `package.json` | `README.md`, `docs/contributing/development.md` |
 | Dependência relevante (canvas, editor, banco) | `PROJECT.md` (stack) e, se for decisão, um ADR |
 | Fluxo visível ao usuário | guia em `docs/user-guide/` |
 | Termo do domínio novo ou renomeado | `CONTEXT.md` |

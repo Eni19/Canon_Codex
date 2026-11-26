@@ -41,7 +41,7 @@ Comece identificando a camada afetada:
 Componentes React não devem importar node:fs diretamente nem montar caminhos de workspace.
 Mudanças devem usar a factory/contrato adequado. A regra atual é arquitetural, embora alguns
 serviços de biblioteca e handlers tenham I/O auxiliar necessário: consulte
-[visão de arquitetura](architecture/overview.md) antes de ampliar essa exceção.
+[visão de arquitetura](../architecture/overview.md) antes de ampliar essa exceção.
 
 ## Mudança de domínio
 
@@ -52,7 +52,7 @@ Para adicionar ou mudar um campo persistido:
    dados legados suportados;
 3. atualize criação, leitura, patch e qualquer formulário;
 4. adicione teste de registro atual, registro legado e falha de validação;
-5. atualize [storage](data/storage.md), [migrações](data/migrations.md), guias e referência HTTP
+5. atualize [storage](../data/storage.md), [migrações](../data/migrations.md), guias e referência HTTP
    quando o contrato externo mudar.
 6. rode `pnpm docs:check` para conferir links, âncoras e caminhos citados.
 
@@ -63,7 +63,7 @@ do catálogo em docs/user-guide/entities.md.
 ## Mudança de persistência
 
 Preserve os contratos. Mudanças de schema SQL devem acrescentar uma migração em
-`src/repositories/sqlite/schema.ts`. Atualize [armazenamento SQLite](data/sqlite.md) e verifique a
+`src/repositories/sqlite/schema.ts`. Atualize [armazenamento SQLite](../data/sqlite.md) e verifique a
 importação e o backup usando bancos temporários.
 
 ## Mudança de interface ou API

@@ -1,7 +1,7 @@
 # Plano do grafo de relacionamentos e dos novos canvas
 
 Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo usuário e da
-[pesquisa de interface e desempenho](research/relationship-canvas-ux-performance.md).
+[pesquisa de interface e desempenho](../research/relationship-canvas-ux-performance.md).
 **Em validação: REL-02 a REL-07.** A migração dos outros canvas fica por último, depois da
 validação visual, funcional e de fluidez do grafo.
 Pastas no grafo foram implementadas em REL-09.
@@ -13,14 +13,14 @@ câmera preservada durante filtros e resize, arraste de porta, alternativa pesqu
 livres editáveis e autosave da vista após alterações concluídas. A organização inicial é estática,
 reproduzível e usa os vínculos para aproximar registros. As posições fixadas são preservadas.
 O desenho é limitado por viewport e nível de zoom; mover um cartão atualiza as arestas incidentes.
-O [guia de entidades](user-guide/entities.md#referências-e-relações) descreve a interface.
+O [guia de entidades](../user-guide/entities.md#referências-e-relações) descreve a interface.
 
 O grafo recebe todos os registros ativos do mundo, inclusive os que ainda não têm vínculos.
 Eventos, objetos e artefatos, personagens, locais, organizações, linhas do tempo e tipos
 personalizados podem aparecer juntos. Os filtros e a vizinhança só mudam o recorte da vista.
 
 **Em validação:** protocolo de fluidez, memória, gesto em hardware físico e leitor de tela.
-O [relatório](performance/relationship-graph.md) distingue as verificações da versão atual
+O [relatório](../performance/relationship-graph.md) distingue as verificações da versão atual
 da medição HTTP histórica. As setas livres v3 aceitam IDs opcionais dos cartões nas pontas;
 as anotações sem esses campos continuam legíveis.
 
@@ -46,7 +46,7 @@ por ação explícita e se sobrepõem à superfície, sem deslocar o grafo.
 
 Remover do estado inicial breadcrumbs, título editorial, instruções, contagens, formulários,
 legenda e listas expandidas. Manter identificação acessível da página e navegação selecionada.
-Usar os tokens de `globals.css` conforme o [ADR-005](architecture/ADR-005-design-system.md),
+Usar os tokens de `globals.css` conforme o [ADR-005](../architecture/ADR-005-design-system.md),
 inclusive resolvendo cores para o Konva e reagindo à troca de tema. Preservar a variante clara.
 A direção visual é uma adaptação para o Canon; não copiar a decoração da Linha do Tempo.
 
@@ -169,7 +169,7 @@ de schema é pressuposta; se necessária, justificar e documentar antes de alter
 | Ociosidade/memória | Sem redraw contínuo. Após 20 ciclos de abrir/fechar e usar filtros/painéis, sem Stages/listeners acumulados; comparar heap após GC. |
 | Estabilidade | Sem branco ou salto da câmera ao filtrar, salvar, redimensionar ou abrir painel. |
 
-**Aceite:** atualizar [perfil do grafo](performance/relationship-graph.md) com hardware, navegador,
+**Aceite:** atualizar [perfil do grafo](../performance/relationship-graph.md) com hardware, navegador,
 build, dataset, DPR, protocolo, resultados e limites. Metas são orçamento de projeto, não garantia
 da biblioteca ou de hardware universal. Não aprovar fluidez somente com HTTP/testes de domínio.
 
@@ -189,7 +189,7 @@ da biblioteca ou de hardware universal. Não aprovar fluidez somente com HTTP/te
 **Portão de migração:** REL-02 a REL-07 concluídos com evidências visuais, funcionais e de desempenho.
 Até lá, Quadros, Cenas e Linha do Tempo ficam fora da execução.
 
-A [validação em produção de 17/11](performance/relationship-graph.md#validação-da-versão-com-pastas--17112026)
+A [validação em produção de 17/11](../performance/relationship-graph.md#validação-da-versão-com-pastas--17112026)
 confirmou o fluxo de pastas, os controles e avisos na árvore de acessibilidade do Chrome e o uso por
 teclado. O p95 de pan, zoom e arraste no cenário denso ficou acima de 20 ms. Leitor de tela e gestos
 em dispositivos físicos seguem pendentes.
@@ -198,7 +198,7 @@ em dispositivos físicos seguem pendentes.
 
 Estes passos precisam de uma pessoa com o dispositivo real; o ambiente automatizado não substitui
 leitor de tela, trackpad ou tela de toque físicos. Use um mundo sintético (veja o
-[perfil do grafo](performance/relationship-graph.md)) e registre falhas em um [issue com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+[perfil do grafo](../performance/relationship-graph.md)) e registre falhas em um [issue com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
 1. **Leitor de tela (NVDA no Windows ou VoiceOver no macOS).** Abra **Relacionamentos**, navegue
    com Tab até a barra de ferramentas e confirme que cada botão é lido com nome e estado
@@ -245,7 +245,7 @@ na lista e abrir sua ficha por teclado e toque. Cancelar um arraste e conferir s
 Excluir a pasta e confirmar que os registros,
 vínculos e posições estão disponíveis na vista principal. Verificar o isolamento entre mundos.
 
-O [teste de persistência](../src/repositories/filesystem/graphSettings.test.ts) cobre leitura de
+O [teste de persistência](../../src/repositories/filesystem/graphSettings.test.ts) cobre leitura de
 vistas v1–v3, membros de tipos diferentes, isolamento entre mundos e preservação de posições e
 vínculos ao excluir a pasta. Em Chrome com dados sintéticos, foram verificados criação, renomeação,
 movimentação em lote, indicador de vínculos externos, busca, recarregamento, abertura da ficha por
@@ -268,7 +268,7 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
    que itens ocultos não chegam à janela do jogador.
 4. **Linha do Tempo, por último entre as superfícies:** preservar coordenadas cronológicas, cartões
    acessíveis, filtros, criação rápida e câmera. Comparar com o
-   [perfil atual](performance/timeline-cosmic-canvas.md); não aceitar regressão para uniformizar motor.
+   [perfil atual](../performance/timeline-cosmic-canvas.md); não aceitar regressão para uniformizar motor.
 5. **Retirar tldraw:** após conversão, recuperação e paridade validadas, remover pacote e referências
    a `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`. Atualizar README, PROJECT, ADRs e guias de migração, backup,
    quadros/cenas/projeção; verificar produção HTTPS e runtime local sem chave, pagamento, rede
@@ -284,7 +284,7 @@ notas e setas ligadas a formas, que precisariam ser reescritas. Ordem sugerida, 
 maior: (1) conversor de snapshots com prévia e backup; (2) **Cenas**, porque o conjunto de formas
 é fechado e o motor Konva do grafo já cobre câmera, seleção, arraste e toque; (3) **Quadros**, que
 exigem editor de texto no canvas, desenho livre e setas com vínculo. Cada etapa é uma entrega
-separada. Enquanto isso, a [verificação da licença](research/tldraw-license.md) indica usar uma
+separada. Enquanto isso, a [verificação da licença](../research/tldraw-license.md) indica usar uma
 chave hobby se o app precisar abrir fora de `localhost`.
 
 ## Impacto documental

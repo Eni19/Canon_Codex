@@ -99,7 +99,7 @@ pnpm build
 ```
 
 `pnpm build` é obrigatório quando a mudança mexe em rotas, configuração ou dependências. O que a
-suíte cobre e o que não cobre está em [testes](docs/testing.md).
+suíte cobre e o que não cobre está em [testes](docs/contributing/testing.md).
 
 ## 6. Abrir o PR
 
@@ -116,4 +116,4 @@ suíte cobre e o que não cobre está em [testes](docs/testing.md).
 | Bug (algo contradiz o comportamento documentado) | issue com label `bug`, passos mínimos e dados sintéticos |
 | Ideia ou melhoria | issue com label `backlog` |
 | Decisão de arquitetura | ADR em `docs/architecture/` |
-| Validação com uma campanha real | [roteiro de validação](docs/campaign-validation.md) |
+| Validação com uma campanha real | [roteiro de validação](docs/user-guide/campaign-validation.md) |
