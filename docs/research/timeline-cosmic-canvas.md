@@ -1,5 +1,8 @@
 # Linha do Tempo: navegação espacial e Cosmic Minimalism
 
+> **Estado:** histórico · **Última verificação:** 15/10/2026, pesquisa para o redesenho da Linha do
+> Tempo; o comportamento entregue está no [guia](../user-guide/timelines.md).
+
 Pesquisa realizada em **15/10/2026** para o redesenho da linha do tempo existente.
 As fontes abaixo são documentação, código dos próprios projetos e especificações.
 As recomendações são decisões de arquitetura propostas para o Canon; não constituem

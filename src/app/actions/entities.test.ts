@@ -98,8 +98,41 @@ describe('formulário único de entidade', () => {
     form.set('type', 'character')
     form.set('worldId', fixedWorld.id)
     form.set('title', '')
-    await expect(createEntityAction(form)).resolves.toEqual({ error: 'O título é obrigatório.' })
+    const expected = {
+      error: 'Revise os campos indicados antes de salvar.',
+      fieldErrors: { title: 'Informe o título do registro.' },
+    }
+    await expect(createEntityAction(form)).resolves.toEqual(expected)
+    await expect(updateEntityAction('char-1', form)).resolves.toEqual(expected)
+    expect(mocks.updateEntity).not.toHaveBeenCalled()
     expect(mocks.createEntity).not.toHaveBeenCalled()
+  })
+
+  it('salva o apelido na criação e na edição após corrigir somente o nome', async () => {
+    const form = new FormData()
+    form.set('worldId', fixedWorld.id)
+    form.set('type', 'character')
+    form.set('aliases', 'Coruja')
+    await expect(createEntityAction(form)).resolves.toMatchObject({ fieldErrors: { title: expect.any(String) } })
+    await expect(updateEntityAction('char-1', form)).resolves.toMatchObject({ fieldErrors: { title: expect.any(String) } })
+
+    form.set('title', 'Lia')
+    const record = expect.objectContaining({ title: 'Lia', aliases: ['Coruja'] })
+    await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
+    expect(mocks.createEntity).toHaveBeenCalledWith(fixedWorld.id, record)
+    await expect(updateEntityAction('char-1', form)).rejects.toThrow('REDIRECT')
+    expect(mocks.updateEntity).toHaveBeenCalledWith(fixedWorld.id, 'char-1', record)
+  })
+
+  it('permite criar um personagem preenchendo somente o nome', async () => {
+    const form = new FormData()
+    form.set('type', 'character')
+    form.set('worldId', fixedWorld.id)
+    form.set('title', 'Lia')
+    await expect(createEntityAction(form)).rejects.toThrow('REDIRECT')
+    expect(mocks.createEntity).toHaveBeenCalledWith(fixedWorld.id, expect.objectContaining({
+      type: 'character', title: 'Lia', aliases: [], tags: [],
+    }))
   })
 
   it('cria com imagem, cor e conteúdo de uma só vez', async () => {

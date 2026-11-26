@@ -1,6 +1,8 @@
 # Guia de uso
 
-O Canon Codex é uma aplicação local. O fluxo normal é: escolher um Codex na biblioteca, criar
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rotas da tabela contra `src/app/`.
+
+O Canon Codex é uma aplicação local. O fluxo normal é: escolher um mundo na biblioteca, criar
 registros, enriquecer o conteúdo, conectar referências e, quando necessário, preparar um quadro ou
 uma cena para apresentação.
 
@@ -8,7 +10,7 @@ uma cena para apresentação.
 
 | Objetivo | Caminho |
 | --- | --- |
-| Biblioteca de Codex | `/` |
+| Biblioteca de mundos | `/` |
 | Início do mundo ativo | `/codex` |
 | Consulta mensal, anual e agenda de Eventos; configuração do calendário | `/calendar` |
 | Todos os registros | `/all` |
@@ -22,7 +24,7 @@ uma cena para apresentação.
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.
 
-## Caderno do Codex (experimental)
+## Caderno do Codex
 
 O início do mundo (`/codex`) é um caderno em 3D. Fechado, ele mostra a capa com o
 nome do mundo e, por cima, o papel do índice. Clique no caderno (ou em **Abrir o Codex**, ou tecle
@@ -47,7 +49,7 @@ abrir direto numa página, use `/codex?pagina=<tipo>` (por exemplo, `?pagina=cha
 ## Fluxo recomendado
 
 1. [Crie, importe ou selecione um mundo](worlds.md).
-2. [Crie e edite entidades](entities.md), começando pelo título, tags e campos específicos.
+2. [Crie e edite registros](entities.md), começando pelo título, tags e campos específicos.
 3. Use o [editor](editor.md) para páginas, blocos, imagens e links internos.
    Para datas ISO antigas, siga a [conversão por mundo](../data/migrations.md#datas-de-propriedades-durante-a-transição).
 4. Para investigação ou narração, siga [quadros, cenas e projeção](boards-scenes-and-projection.md).

@@ -60,3 +60,8 @@ Desktop.ini
 *.key
 *.p12
 *.pfx
+
+
+/eng_soft/
+# rascunhos locais (especificações, tickets de trabalho)
+.scratch/

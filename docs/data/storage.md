@@ -1,5 +1,8 @@
 # Armazenamento e modelo de dados
 
+> **Estado:** implementado (driver legado) · **Última verificação:** 26/11/2026, árvore de pastas em
+> `src/lib/fs/paths.ts` e schemas em `src/domain/`.
+
 Para o driver atual, consulte [armazenamento, migração e backup do SQLite](sqlite.md).
 Esta página descreve a árvore JSON do driver legado `filesystem`, ainda aceita para importação.
 
@@ -54,8 +57,10 @@ indica relação sem direção, `directional: true` indica ida e o campo opciona
 vínculo. Setas livres guardam posições, cor e traço, além dos UUIDs opcionais
 `startCardId` e `endCardId`. Uma ponta presa segue o cartão; se o registro estiver indisponível, a
 vista usa a posição gravada. Esses IDs não criam vínculos nas entidades. Anotações v3 sem os
-IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), estado recolhido
-(`collapsed`) e UUIDs dos membros (`members`) de cada pasta. Um registro pertence a no máximo
+IDs continuam legíveis. A lista `folders` guarda o UUID (`id`), nome (`name`), campo legado
+`collapsed` e UUIDs dos membros (`members`) de cada pasta. A interface atual abre pastas pelo
+navegador no canto da tela; `collapsed` continua aceito no formato v4 e é preservado ao editar
+pastas antigas. A pasta aberta fica no estado local da tela. Um registro pertence a no máximo
 uma pasta. A inclusão e movimentação validam os registros ativos do mundo. Membros indisponíveis
 ficam ocultos e preservam sua pasta em caso de restauração. Excluir uma pasta descarta somente o
 agrupamento da vista.
@@ -89,7 +94,7 @@ calendário e usa o lock e a escrita atômica do mundo. Alterações estruturais
 houver luas. A troca de origem desloca as referências lunares e apresenta cada mudança na prévia; se o
 destino for um dia intercalar independente, a prévia recusa a troca pois a referência lunar ainda não o representa.
 
-No `World` v23, `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
+Desde o `World` v23 (versão atual em [migrações](migrations.md#versões-atuais)), `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
 intercalar independente, `calendarLandmarks` guarda categorias e marcos únicos ou anuais, e
 `calendarAppearance` guarda o tema ativo e temas personalizados. As mutações por seção usam lock,
 escrita atômica e comparação com o valor e calendário anteriores. Imagens referenciadas por temas são

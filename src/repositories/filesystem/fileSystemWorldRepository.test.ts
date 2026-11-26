@@ -8,6 +8,7 @@ import {
   FileSystemWorldRepository,
 } from '@/repositories/filesystem/fileSystemWorldRepository'
 import { getEntityMetadataPath, getTrashDir } from '@/lib/fs/paths'
+import { parseEntityForm } from '@/services/entities/parseEntityForm'
 import { projectAgenda } from '@/domain/worlds/calendar-agenda'
 
 describe('FileSystemWorldRepository', () => {
@@ -33,6 +34,31 @@ describe('FileSystemWorldRepository', () => {
     expect(worlds).toHaveLength(1)
     expect(worlds[0].entityTypes).toHaveLength(17)
     expect(worlds[0].entityTypes.map((type) => type.id)).toEqual(expect.arrayContaining(['character', 'tale', 'cosmology', 'species', 'naturalScience']))
+  })
+
+  it('creates, edits and reopens the seven optional fields using the form parser', async () => {
+    const world = await repo.getWorld(worldId)
+    const evidence = await repo.createEntity(worldId, { type: 'evidence', title: 'Fotografia' })
+    const other = await repo.createEntity(worldId, { type: 'evidence', title: 'Carta' })
+    for (const [typeId, key] of [
+      ['character', 'currentGoal'], ['case', 'centralQuestion'], ['event', 'consequences'],
+      ['creature', 'typicalBehavior'], ['phenomenon', 'manifestationConditions'],
+      ['artifact', 'knownEffect'], ['clue', 'associatedEvidence'],
+    ]) {
+      const type = world.entityTypes.find((candidate) => candidate.id === typeId)!
+      const form = new FormData()
+      form.set('title', 'Ficha de teste')
+      const isList = typeId === 'clue'
+      form.set(key, isList ? evidence.id : 'Inicial')
+      const initial = parseEntityForm(type, form, world.calendar)
+      const created = await repo.createEntity(worldId, { type: typeId, title: initial.title, properties: initial.properties })
+      expect((await repo.getEntity(worldId, created.id))?.properties[key]).toEqual(isList ? [evidence.id] : 'Inicial')
+      if (isList) form.append(key, other.id)
+      else form.set(key, 'Revisado')
+      const edited = parseEntityForm(type, form, world.calendar)
+      await repo.updateEntity(worldId, created.id, { properties: edited.properties })
+      expect((await repo.getEntity(worldId, created.id))?.properties[key]).toEqual(isList ? [evidence.id, other.id] : 'Revisado')
+    }
   })
 
   it('reports a world folder without metadata while keeping other worlds usable and files intact', async () => {

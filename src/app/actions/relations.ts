@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { directionFields } from '@/domain/relations/relation'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
@@ -21,7 +22,7 @@ export async function addRelationAction(entityId: string, formData: FormData): P
     targetId,
     type,
     label: label || undefined,
-    directional: formData.get('directional') === 'on',
+    ...directionFields(formData.has('mutual') ? 'both' : 'forward'),
   })
 
   revalidatePath(`/entity/${entityId}`)

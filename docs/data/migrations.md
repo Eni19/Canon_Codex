@@ -1,5 +1,8 @@
 # Migrações e compatibilidade
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, constantes de versão em
+> `src/domain/` e registry em `src/repositories/filesystem/migrations.ts`.
+
 Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
 validadas pelo importador. Os procedimentos que citam arquivos descrevem o driver legado.
 No SQLite, a conversão de datas e a recuperação operam em transações, com histórico no banco.
@@ -12,6 +15,23 @@ sequencialmente até `currentVersion` e depois passa o resultado pelo schema Zod
 Uma migração ausente, JSON ilegível, transformação que falha ou resultado que não passa no schema
 interrompe a leitura. A leitura normal não grava de volta o resultado. A exceção documentada é o
 importador de mundos, que copia a pasta e grava o `world.json` já migrado no destino.
+
+## Versões atuais
+
+Esta tabela é a fonte única das versões de schema citadas na documentação. Os outros documentos
+linkam para cá em vez de repetir o número. Ao subir uma constante, atualize esta tabela no mesmo commit.
+
+| Registro | Versão atual | Constante no código |
+| --- | ---: | --- |
+| `World` | 24 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
+| `Entity` | 4 | `ENTITY_SCHEMA_VERSION` em [`src/domain/entities/entity.ts`](../../src/domain/entities/entity.ts) |
+| `ContentDocument` | 2 | `CONTENT_SCHEMA_VERSION` em [`src/domain/content/contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
+| Linha do tempo | 2 | `TIMELINE_SCHEMA_VERSION` em [`src/domain/timelines/timeline.ts`](../../src/domain/timelines/timeline.ts) |
+| Grafo de relacionamentos | 4 | `schemaVersion: 4` em [`src/domain/relations/graphSettings.ts`](../../src/domain/relations/graphSettings.ts) |
+| `Asset` | 1 | `ASSET_SCHEMA_VERSION` em [`src/domain/assets/asset.ts`](../../src/domain/assets/asset.ts) |
+| `BoardDocument` | 1 | `BOARD_SCHEMA_VERSION` em [`src/domain/boards/board.ts`](../../src/domain/boards/board.ts) |
+| `Scene` | 1 | `SCENE_SCHEMA_VERSION` em [`src/domain/scenes/scene.ts`](../../src/domain/scenes/scene.ts) |
+| `Playlist` | 1 | `PLAYLIST_SCHEMA_VERSION` em [`src/domain/playlists/playlist.ts`](../../src/domain/playlists/playlist.ts) |
 
 ## Linha do Tempo: v1 → v2
 
@@ -33,7 +53,7 @@ com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds
 podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
 original de `directional`.
 
-## Mundo: v1 → v23
+## Mundo: v1 → v24
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -62,16 +82,16 @@ Registry: `worldMigrations` em
 | 20 | 21 | remove as definições `profile` (Perfil) e `firstAppearance` (Primeira aparição) de Personagem |
 | 21 | 22 | adiciona `calendarMoons` vazio, preservando calendário e demais dados |
 | 22 | 23 | adiciona estações e marcos vazios, Hoje em aberto e aparência padrão Codex, preservando o calendário e as luas |
+| 23 | 24 | acrescenta sete definições opcionais às fichas, preservando definições com a mesma chave e os dados das entidades |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
 da linha do tempo. Mundos v19 também recebem a limpeza das referências no passo v19→v20.
-Essa limpeza altera definições de campos, sem apagar valores dos metadados de entidades. O mesmo
-vale para v20→v21: valores antigos de `profile` e `firstAppearance` continuam no `metadata.json`
-do personagem até o registro ser salvo de novo; como o formulário só envia campos definidos no
-tipo, salvar o personagem descarta esses valores.
+Ao editar uma ficha, propriedades antigas fora do formulário continuam nas chaves originais de metadata.json. Origem e local atual podem divergir. Perfil e primeira aparição também continuam disponíveis nos metadados após salvar. A matriz aprovada mantém os campos existentes e acrescenta sete opcionais, sem pares para consolidar.
 
-O seed atual já é v23, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
+A migração v23 → v24 acrescenta sete definições opcionais às fichas. Preserva definições com a mesma chave e os dados das entidades.
+
+O seed atual já é v24, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
@@ -140,13 +160,13 @@ aplicação podem impedir a conclusão e exigir restauração seguida de nova pr
 `pages: [{ id: 'principal', title: 'Principal', body }]` e removendo o campo antigo. O documento
 continua limitado a 1–50 páginas e o corpo continua opaco ao domínio.
 
-## Assets, quadros e cenas
+## Assets, quadros, cenas e playlists
 
 - `assetMigrations` tem `currentVersion: 1` e nenhum passo. `AssetSchema` valida a versão atual;
   não existe conversão de assets legados.
 - Quadros usam `BOARD_SCHEMA_VERSION = 1`, e cenas usam `SCENE_SCHEMA_VERSION = 1`, mas seus
   repositórios leem diretamente com `readJsonFile` + schema. Eles ainda não estão conectados ao
-  registry de migrações.
+  registry de migrações. Playlists seguem o mesmo padrão com `PLAYLIST_SCHEMA_VERSION = 1`.
 - Uma alteração futura de `BoardDocument` ou `Scene` precisa adicionar migração (ou registrar
   formalmente por que a compatibilidade não será mantida), testes de arquivos legados e atualização
   de [storage](storage.md) e [backup](backup-and-restore.md).

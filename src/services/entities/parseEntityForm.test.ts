@@ -17,6 +17,31 @@ function form(fields: Record<string, string>) {
 }
 
 describe('parseEntityForm', () => {
+  it.each([
+    [{ originLocation: 'Origem' }, '', { originLocation: 'Origem' }],
+    [{}, ASSET, { currentLocation: ASSET }],
+    [{ originLocation: 'Origem' }, ASSET, { originLocation: 'Origem', currentLocation: ASSET }],
+  ] as const)('preserva valores antigos ao editar e reabrir a ficha', (legacy, location, expected) => {
+    const fields = form({ title: 'Personagem', currentLocation: location })
+    const saved = parseEntityForm(typeOf('character'), fields, world.calendar, { ...legacy, currentLocation: ASSET })
+    const reopened = parseEntityForm(typeOf('character'), fields, world.calendar, saved.properties)
+    expect(reopened.properties).toMatchObject(expected)
+    if (!location) expect(reopened.properties).not.toHaveProperty('currentLocation')
+  })
+
+  it('identifica vários campos inválidos no mesmo envio', () => {
+    const invalid = form({ title: ' ', eventDate: '{', coverAssetId: 'imagem' })
+    expect(() => parseEntityForm(typeOf('event'), invalid, world.calendar)).toThrow(
+      expect.objectContaining({
+        fieldErrors: expect.objectContaining({
+          title: expect.any(String),
+          eventDate: expect.any(String),
+          coverAssetId: expect.any(String),
+        }),
+      }),
+    )
+  })
+
   it('exige título', () => {
     expect(() => parseEntityForm(typeOf('character'), form({ title: '   ' }), world.calendar)).toThrow(EntityFormError)
   })

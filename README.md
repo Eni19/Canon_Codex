@@ -1,19 +1,16 @@
 # Canon Codex
 
-Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais. A aplicação
-Next.js guarda a biblioteca em SQLite e oferece calendário por mundo, linhas do tempo em canvas
-espacial, registros com editor de conteúdo, relações, busca, quadros e cenas projetáveis.
+Canon Codex é uma wiki local para criar, organizar e apresentar universos ficcionais e campanhas
+de RPG. Cada mundo tem seus registros (personagens, locais, eventos e outros tipos), um calendário
+próprio, linhas do tempo, um canvas de relacionamentos, quadros, cenas projetáveis e trilha sonora.
 
-Esta documentação inclui o TL-12, com apresentação editorial, movimento discreto e navegação
-acessível nas duas vistas de Linha do Tempo, verificado em **14/10/2026**. Autenticação,
-colaboração remota, armazenamento em nuvem e publicação pública permanecem fora do escopo local.
+Tudo roda no seu computador: os dados ficam num banco SQLite local, sem conta, nuvem ou
+publicação. Os limites dessa fronteira estão em
+[operação e privacidade](docs/reference/operations-and-privacy.md).
 
-## Começar
+## Instalar
 
-### Requisitos
-
-- Node.js `>=24.15.0`, com a versão 24 LTS recomendada;
-- pnpm, preferencialmente a versão declarada em `package.json` (`12.3.4`).
+Requisitos: Node.js `>=24.15.0` (24 LTS recomendado) e pnpm.
 
 ```bash
 git clone https://github.com/Eni19/Canon_Codex.git
@@ -22,89 +19,48 @@ pnpm install
 pnpm dev
 ```
 
-Abra <http://localhost:3000>. Na primeira leitura, a aplicação cria um mundo semente chamado
-`Canon Codex` quando a biblioteca SQLite é inicializada. Para configurar o local dos dados ou
-importar uma biblioteca existente, veja [SQLite local](docs/data/sqlite.md).
+Abra <http://localhost:3000>. Num banco novo, o app cria o mundo inicial `Canon Codex`. Daí em
+diante, siga o [guia de uso](docs/user-guide/index.md).
 
 No Windows, `Iniciar Canon Codex.cmd` faz o mesmo com um duplo clique: instala as dependências se
 `node_modules/` não existir, roda `pnpm dev --port 3000` e abre o navegador quando a porta
 responde. Se o servidor já estiver rodando, apenas abre o navegador. Fechar a janela encerra o
 servidor.
 
-### Já tem uma biblioteca em arquivos?
+## Onde ficam os dados
 
-Desde a adoção do SQLite, uma biblioteca antiga (pastas de mundos em JSON no `workspace/`) não é
-aberta automaticamente: a página inicial mostra um aviso de migração em vez dos mundos. Nada é
-apagado. Com o servidor parado, faça uma cópia da pasta e rode:
-
-```bash
-pnpm storage preview <pasta-legada>
-pnpm storage import <pasta-legada> <diretório-novo>/canon-codex.sqlite
-```
-
-Depois aponte `SQLITE_DATABASE_PATH` para o banco gerado. Para adiar a migração, defina
-`PERSISTENCE_DRIVER=filesystem` em `.env.local` e o app volta a ler os arquivos. Detalhes em
-[SQLite local](docs/data/sqlite.md).
-
-### Comandos
-
-```bash
-pnpm dev        # desenvolvimento
-pnpm build      # build de produção
-pnpm start      # servidor local de produção, depois de pnpm build
-pnpm typecheck  # TypeScript sem emissão
-pnpm lint       # ESLint
-pnpm test       # Vitest em modo run
-```
-
-## Dados e privacidade
-
-Linhas com centenas de aparições usam páginas de até 50 cartões e editor sob demanda. O
-[perfil com 500 aparições](docs/performance/timeline-500.md) registra medidas e verificações em
-desktop e celular, com dados sintéticos.
-
-Linhas do tempo preservam cartões de registros na lixeira com aviso de indisponibilidade.
-Após ausência definitiva, a reconciliação remove suas aparições e limpa o vínculo de origem
-sem alterar o calendário. Veja [Armazenamento SQLite](docs/data/sqlite.md).
-
-O banco padrão é `workspace/canon-codex.sqlite`. Em um `.env.local` privado,
-`WIKI_WORKSPACE_DIR` troca o diretório-base e `SQLITE_DATABASE_PATH` seleciona diretamente o
-arquivo do banco. O diretório padrão `workspace/` é privado e está excluído pelo Git. Trate
-também o banco, seus backups e sua origem legada como dados privados quando estiverem fora dele.
+O banco padrão é `workspace/canon-codex.sqlite`. A pasta `workspace/` é privada e fica fora do
+Git; trate o banco e seus backups como dados pessoais. Para usar outro lugar, crie um
+`.env.local` a partir do `.env.example`:
 
 ```env
 WIKI_WORKSPACE_DIR=C:\Dados\meus-codex
 ```
 
-Para abrir a biblioteca JSON legada, configure explicitamente `PERSISTENCE_DRIVER=filesystem`.
-Consulte os procedimentos de importação e backup em [SQLite local](docs/data/sqlite.md) e o
-procedimento de cópia da biblioteca em arquivos em [Backup e restauração do filesystem](docs/data/backup-and-restore.md).
+Todas as variáveis estão em [configuração](docs/reference/configuration.md).
 
-## Guias
+**Tem uma biblioteca antiga em arquivos JSON?** A página inicial mostra um aviso de migração e
+nada é apagado. Com o servidor parado e uma cópia da pasta feita, rode `pnpm storage preview` e
+`pnpm storage import`, como descrito em [SQLite local](docs/data/sqlite.md).
 
-- [Biblioteca de mundos](docs/user-guide/worlds.md): criar, importar e arquivar pastas incompletas.
+## Comandos
 
-- [Canvas de relacionamentos](docs/user-guide/entities.md#referências-e-relações): área útil inteira, ferramentas contextuais, pastas recolhíveis e salvamento automático por mundo. O [plano](docs/relationship-graph-plan.md) mantém a migração dos outros canvas condicionada à validação do grafo.
-- [Índice do guia de uso](docs/user-guide/index.md): mundos, calendário, entidades, editor, quadros, cenas e projeção.
-- [Visão de arquitetura](docs/architecture/overview.md): camadas, fluxos e limites.
-- [SQLite local](docs/data/sqlite.md): configuração, importação e backup.
-- [Armazenamento legado](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
-- [Conversão de datas antigas](docs/data/migrations.md#datas-de-propriedades-durante-a-transição): prévia, backup e recuperação por mundo.
-- [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
-- [Desenvolvimento](docs/development.md), [testes](docs/testing.md) e
-  [operação e privacidade](docs/operations-and-privacy.md).
-- [ADRs](docs/architecture/): decisões históricas e estado atual.
-- [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md),
-  [ideias de evolução](docs/ideas.md) e [registro de bugs](docs/bugs.md).
-- [Relatório desta execução](docs/documentation-report.md).
+```bash
+pnpm dev        # desenvolvimento
+pnpm build      # build de produção
+pnpm start      # servidor de produção, depois do build
+pnpm typecheck  # TypeScript sem emissão
+pnpm lint       # ESLint
+pnpm test       # Vitest
+pnpm storage    # prévia, importação e backup do SQLite (pnpm storage --help)
+pnpm docs:check # links, âncoras e caminhos citados na documentação
+```
 
-## Arquitetura em uma frase
+## Documentação
 
-O App Router e as Server Actions orquestram a aplicação; componentes React cuidam da interface;
-`domain/` define esquemas Zod e o cálculo do calendário sem I/O; contratos em `repositories/contracts/` isolam a persistência;
-e `PERSISTENCE_DRIVER` seleciona o SQLite padrão em `repositories/sqlite/` ou o filesystem legado
-em `repositories/filesystem/`.
-
-Para manter essa fronteira, toda mudança de código, dados, APIs ou configuração deve avaliar e
-atualizar a documentação afetada na mesma tarefa. Essa regra também está em
-[`AGENTS.md`](AGENTS.md).
+- [Guia de uso](docs/user-guide/index.md): o que o app faz e como usar cada parte.
+- [Contribuir](CONTRIBUTING.md): do clone ao primeiro PR.
+- [Índice da documentação](docs/README.md): todas as páginas, por pasta.
+- [PROJECT.md](PROJECT.md): regras de arquitetura e convenções de mudança.
+- [Glossário](CONTEXT.md): os termos do domínio.
+- [Issues](https://github.com/Eni19/Canon_Codex/issues): trabalho em andamento, bugs e ideias.

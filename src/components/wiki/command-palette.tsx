@@ -62,7 +62,7 @@ export function CommandPalette() {
         <div className="p-2">
           <Input
             autoFocus
-            placeholder="Buscar personagens, locais, casos..."
+            placeholder="Buscar personagens, locais, casos… (#etiqueta filtra)"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onInputKeyDown}

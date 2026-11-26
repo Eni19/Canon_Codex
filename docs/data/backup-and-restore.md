@@ -1,5 +1,8 @@
 # Backup, restauração, importação e descarte
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, comando `backup` de
+> `scripts/sqlite-storage.ts`; o ensaio de restauração do filesystem é de 23/09/2026.
+
 Para o driver padrão, siga o [backup e a restauração do SQLite](sqlite.md#backup-e-restauração).
 As instruções abaixo se aplicam às bibliotecas legadas em arquivos.
 

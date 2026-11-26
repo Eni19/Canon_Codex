@@ -1,11 +1,13 @@
 # ADR-005: Design system com tokens semânticos, tema "dossiê editorial"
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, tokens semânticos em `src/app/globals.css`.
+
 ## Estado atual em 23/09/2026
 
 Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
 quadros e cenas também usa componentes próprios e tldraw, mas isso não altera a decisão de tokens:
 novos estilos devem continuar referenciando o sistema semântico. A visão e as limitações de
-segurança/operação da aplicação estão em [`docs/operations-and-privacy.md`](../operations-and-privacy.md).
+segurança/operação da aplicação estão em [`docs/reference/operations-and-privacy.md`](../reference/operations-and-privacy.md).
 
 ## Contexto
 
@@ -60,6 +62,11 @@ Os painéis do grafo compartilham tokens de superfície, preenchimento e foco no
 A entrada dos painéis e a revelação de controles usam transições CSS curtas, desativadas pela
 preferência de movimento reduzido. O sentido dos vínculos usa um grupo de opções nativas do
 tipo rádio, com ícones e texto.
+
+Em 18/11/2026, as pastas passaram a usar navegação HTML fixa no canto inferior esquerdo.
+Selecionar uma pasta abre seus registros na área inteira do canvas. Os destinos têm foco de
+teclado e destaque de borda e superfície durante o arraste de um cartão. A alternativa
+**Mover para** continua disponível na ficha e na lista de seleção em lote.
 
 ### Atualização: temas locais do calendário (12/11/2026)
 

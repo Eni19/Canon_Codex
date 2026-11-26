@@ -1,4 +1,7 @@
-# Entidades, tipos e relações
+# Registros, tipos e relações
+
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
 
 ## Criar e editar
 
@@ -9,14 +12,18 @@
    o editor específico do tipo, quando existe; e **Conteúdo**. Imagem principal, símbolo (cosmologia),
    cor e status aparecem à direita em telas largas e abaixo do conteúdo em telas estreitas.
 4. Escolha **Criar registro**. Para alterar depois, use **Editar** na página e **Salvar
-   alterações**. `Ctrl+S` salva nos dois casos.
+   alterações**. O botão de salvar fica no cabeçalho durante a rolagem. `Ctrl+S` salva nos dois casos.
+
+No celular, os campos da **Ficha** aparecem um abaixo do outro. Em telas maiores, os campos
+curtos ocupam duas colunas e as datas e listas de referências ocupam a linha inteira.
+Na criação e na edição, as seções seguem a mesma ordem, com o título logo acima dos campos.
 
 Não há mais uma tela intermediária: imagens, conteúdo e editores específicos podem ser preenchidos
 antes de o registro existir. A imagem é enviada à biblioteca de assets do mundo assim que é
 escolhida (clique ou arraste); se o formulário for abandonado, esse asset fica sem referência no
 mundo. Ao trocar ou remover a imagem de um registro salvo, a imagem anterior é apagada quando
 nenhum outro registro a usa. A cor escolhida retinge o formulário imediatamente. Se a validação
-falhar, a mensagem aparece no topo do formulário e o que foi digitado é mantido. Fechar a aba com
+falhar, a tela leva o foco ao primeiro campo com erro. Por exemplo, se você preencher **Apelidos** e deixar o nome em branco, pode digitar o nome e salvar novamente com os mesmos apelidos. Fechar a aba com
 alterações não salvas pede confirmação, assim como **Cancelar**; a navegação pela barra lateral
 ainda não pede.
 
@@ -28,7 +35,8 @@ roda do mouse para aproximar (o ponto sob o cursor fica parado) ou os controles 
 apresentação original e `Esc` cancela. A prévia usa os valores atuais do formulário, inclusive os
 ainda não salvos.
 
-O título é obrigatório. O ID é um UUID e não muda quando o título muda; o slug é derivado novamente
+Na criação e na edição, o campo **Nome (obrigatório)** aparece no início da ficha. Para criar um
+Personagem, basta preencher o nome e escolher **Criar registro**. O ID é um UUID e não muda quando o título muda; o slug é derivado novamente
 do título e não deve ser usado para links. O formulário revalida campos estruturados com Zod antes
 de gravar.
 
@@ -41,11 +49,21 @@ calendário, usa o dia selecionado. O campo pode ser alterado ou limpo, e **Usar
 preenche novamente uma data. A sugestão é a data apresentada ao abrir o formulário; avançar o Hoje
 em outra aba não altera o que já estava preenchido.
 
+## Campos opcionais da ficha
+
+- **Personagem** — Objetivo atual.
+- **Caso** — Pergunta central.
+- **Pista** — Evidências associadas.
+- **Criatura** — Comportamento típico.
+- **Evento** — Consequências.
+- **Fenômeno** — Condições de manifestação.
+- **Objeto / Artefato** — Efeito conhecido.
+
+Na Pista, selecione evidências do mundo atual. Fichas antigas podem receber os novos valores ao editar.
+
 ## Tipos iniciais
 
-O mundo semente atual define 17 tipos. `showInSidebar = false` em **Caso**, **Documento**,
-**Pista** e **Fenômeno** apenas os oculta da navegação principal; eles continuam sendo tipos
-persistidos e podem ser usados por referências.
+O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam ocultos na navegação principal.
 
 | ID | Nome | Apresentação ou campos destacados |
 | --- | --- | --- |
@@ -61,7 +79,7 @@ persistidos e podem ser usados por referências.
 | `clue` | Pista | evento relacionado e descobridor; apresentação genérica |
 | `creature` | Criatura | natureza, apresentação da imagem, classificação, habitat e perigo |
 | `naturalScience` | Natureza / Medicina | disciplina, subtipo, habitat, sintomas, toxicidade e tratamento |
-| `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados; oculto da barra |
+| `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados |
 | `artifact` | Objeto / Artefato | catálogo, registro, materiais, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
@@ -93,9 +111,8 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 Propriedades `reference` e `referenceList` oferecem candidatos de outros registros do tipo
 esperado. Essas referências guardam IDs; renomear o alvo não quebra a seleção.
 
-Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e se ela é
-direcional. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
-por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
+Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e marque **Relação mútua** quando o vínculo valer nos dois sentidos. Com a caixa desmarcada, o vínculo vai da origem ao alvo. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
+por varredura de todos os registros. Remover a relação altera somente o registro fonte.
 
 **Relacionamentos** ocupa a área ao lado do menu ou abaixo da navegação móvel. Arraste o fundo
 para mover a câmera ou o cartão para fixar sua posição. Use a roda, pinça ou os botões de zoom;
@@ -123,6 +140,11 @@ dois cartões por clique/toque. Também é possível pesquisar origem e destino 
 Depois de marcar a origem, digite o nome do próximo cartão. A busca esmaece os demais durante a
 digitação, mantém a origem visível e oferece os resultados no grafo e em uma lista.
 Digite um tipo, escolha uma das sugestões ou use **Novo tipo de seta** no próprio formulário.
+As sugestões começam pelos tipos mais usados entre os mesmos tipos de registro (por exemplo,
+personagem → organização) e depois seguem os mais usados no mundo. O botão entre os campos troca
+origem e destino. Se já existir um vínculo do mesmo tipo entre os dois registros, o formulário
+avisa, bloqueia a duplicata e oferece **Abrir vínculo existente**; sem sentido único, a ordem
+das pontas não importa para essa conferência.
 Você pode alterar o sentido para este vínculo e adicionar um rótulo. Na criação e na edição,
 o formulário mostra uma prévia quando o tipo tem um estilo no catálogo. **Criar relação** grava o vínculo na ficha de
 origem e a referência aparece na ficha de destino. Selecione um vínculo no canvas ou na lista para editá-lo ou removê-lo;
@@ -136,16 +158,24 @@ abre-se o formulário do vínculo. Com uma ponta no fundo, a seta é uma anotaç
 e acompanha o cartão a que estiver presa. A prévia mostra a cor e o traço escolhidos antes de
 salvar. Selecione uma seta para mover as pontas, mudar o estilo ou apagar.
 
-Use **Pastas** na barra do grafo para criar, renomear e abrir pastas. Uma pasta pode reunir eventos,
-personagens, locais, itens e registros personalizados. Para mover um só registro, clique no cartão
-e use **Mover para**. Para mover vários, abra **Mais → Registros e vínculos → Selecionar para mover**,
-marque os registros e escolha o destino. Selecione **Vista principal** para tirar registros da pasta.
+As **Pastas** ficam no canto inferior esquerdo do grafo. Clique no nome de uma pasta para
+mostrar seus registros no canvas inteiro. **Vista principal** mostra os registros que estão
+fora das pastas. O nome da vista aberta aparece acima do canvas; a lista no canto informa a
+quantidade de registros em cada destino. Abrir uma pasta limpa os filtros e enquadra seus cartões.
+Uma pasta pode reunir eventos, personagens, locais, itens e registros personalizados.
 
-Clique na pasta no grafo ou use **Recolher pasta** no painel para esconder seus cartões. O indicador
-de vínculos externos abre a lista de vínculos que cruzam os limites da pasta no recorte atual.
-A busca ainda encontra cartões em pastas recolhidas. Na lista, o nome da pasta aparece junto ao
-registro; **Ver no grafo** expande a pasta e centraliza o cartão. Ao excluir a pasta, os registros
-voltam à vista principal nas mesmas posições e conservam seus vínculos.
+Com **Selecionar e mover** ativo, arraste um cartão até o nome da pasta no canto. O destino fica
+destacado; solte para mover o registro. Arrastar até **Vista principal** retira o registro da pasta.
+Soltar sobre o canvas ajusta a posição do cartão. A movimentação entre pastas conserva a posição
+e os vínculos do registro. Use **+** no navegador de pastas ou **Pastas** na barra para criar uma.
+O botão **Gerenciar pasta**, ao lado do nome, oferece renomeação, vínculos externos e exclusão.
+
+Pelo teclado, abra a ficha de um cartão na lista e use **Mover para**. Para mover vários,
+abra **Mais → Registros e vínculos → Selecionar para mover**, marque os registros e escolha
+o destino. A busca no canvas se aplica à vista aberta. A lista **Registros e vínculos** permite
+pesquisar registros de todas as pastas, inclusive pelo nome da pasta. Escolher um registro na
+lista ou usar **Ver no grafo** abre sua pasta e centraliza o cartão. Ao excluir uma pasta,
+seus registros voltam à vista principal nas mesmas posições e conservam seus vínculos.
 
 A vista salva automaticamente alterações concluídas de posição, filtros de tipo, estilo, anotação ou pasta.
 **Mais → Restaurar organização** pede confirmação antes de descartar posições fixadas. Em caso de
@@ -154,7 +184,14 @@ as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
 
-Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+
+**Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
+encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com
+busca pelo nome. A comparação ignora maiúsculas e acentos. Em **Todos os conteúdos**, as etiquetas
+do mundo aparecem com a contagem de registros; escolher uma ou mais filtra a lista (todas as
+escolhidas precisam estar presentes) e o endereço guarda o filtro, como `/all?tag=nobreza`.
+Na ficha, cada etiqueta leva a essa lista filtrada.
 
 As telas também agrupam ou ordenam os resultados conforme o tipo. Personagens podem ser agrupados por nome, organização ou local atual; locais, por hierarquia ou nome; criaturas, por natureza ou nome; espécies, por tipo de registro ou nome; e ciências naturais, por disciplina, subtipo ou nome. Os demais catálogos usam principalmente o nome/título.
 
@@ -166,7 +203,7 @@ Na busca, aparecem os locais encontrados e o caminho de regiões até eles; quan
 encontrada, ela aparece com tudo o que contém. Referências circulares (A dentro de B e B dentro de
 A) não somem da lista: o ciclo é quebrado no primeiro local em ordem alfabética.
 
-Essa busca é diferente da navegação por relações: pesquisar encontra entidades existentes, enquanto referências e backlinks mostram como elas se conectam.
+Essa busca é diferente da navegação por relações: pesquisar encontra registros existentes, enquanto referências e backlinks mostram como elas se conectam.
 
 ## Imagens
 
@@ -178,11 +215,13 @@ outra referência encontrada.
 
 ## Excluir e limitações
 
-**Excluir** uma entidade move sua pasta inteira, inclusive `content.json`, para `trash/`; ela some
+**Excluir** um registro move sua pasta inteira, inclusive `content.json`, para `trash/`; ele some
 dos catálogos e não há botão de restaurar. Referências ou cartões de quadro que ainda guardem o ID
-podem mostrar “entidade indisponível”. Não existe exclusão permanente exposta pela aplicação.
+podem mostrar **Entidade indisponível**. Não existe exclusão permanente exposta pela aplicação.
 
 Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, nota e data, com aviso
 **Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira
 provoca a remoção das aparições na próxima consulta de linha ou origem, ou ao criar uma origem. Se o registro era o
 Evento de origem, o vínculo é limpo e o calendário preservado. Veja [linhas do tempo](timelines.md).
+
+Ao tentar salvar uma ficha inválida, confira o aviso no topo e as orientações junto aos campos ou editores que precisam de correção. Os valores digitados continuam no formulário.

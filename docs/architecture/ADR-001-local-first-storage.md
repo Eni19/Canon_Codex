@@ -1,5 +1,7 @@
 # ADR-001: Armazenamento local-first atrás de interfaces de repositório
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, `PERSISTENCE_DRIVER` em `src/repositories/index.ts`.
+
 ## Estado atual em 24/11/2026
 
 O SQLite embarcado é o driver padrão. O adaptador filesystem mantém compatibilidade com

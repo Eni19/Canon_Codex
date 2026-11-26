@@ -9,10 +9,10 @@ import { EntityFormError, parseEntityForm } from '@/services/entities/parseEntit
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
 /** Returned only on failure; success redirects. Errors stay on screen with what was typed. */
-export type EntityFormState = { error?: string }
+export type EntityFormState = { error?: string; fieldErrors?: Record<string, string> }
 
 function formError(error: unknown): EntityFormState {
-  if (error instanceof EntityFormError) return { error: error.message }
+  if (error instanceof EntityFormError) return { error: error.message, fieldErrors: error.fieldErrors }
   // Repository rules (origin event, schema validation) also explain themselves in Portuguese.
   return { error: error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.' }
 }
@@ -81,13 +81,15 @@ export async function updateEntityAction(entityId: string, formData: FormData): 
   const previousSymbol = typeof entity.properties.symbolAssetId === 'string' ? entity.properties.symbolAssetId : undefined
   let replacedAssets: (string | undefined)[] = []
   try {
-    const form = parseEntityForm(entityType, formData, world.calendar)
+    const form = parseEntityForm(entityType, formData, world.calendar, entity.properties)
     const properties = { ...form.properties }
     // `undefined` keeps the stored symbol; `null` clears it.
     const symbol = form.symbolAssetId === undefined ? previousSymbol : form.symbolAssetId ?? undefined
     if (symbol) properties.symbolAssetId = symbol
+    else if (form.symbolAssetId === null) delete properties.symbolAssetId
 
     await repo.updateEntity(world.id, entityId, {
+      expectedUpdatedAt: entity.updatedAt,
       title: form.title,
       aliases: form.aliases,
       tags: form.tags,

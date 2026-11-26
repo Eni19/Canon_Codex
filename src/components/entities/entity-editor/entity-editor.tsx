@@ -71,6 +71,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   const formRef = useRef<HTMLFormElement>(null)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [dirty, setDirty] = useState(false)
   const [theme, setTheme] = useState<CharacterTheme>(entity?.theme ?? 'amber')
   const [coverId, setCoverId] = useState<string | undefined>(entity?.coverAssetId)
@@ -105,11 +106,29 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   }, [])
 
   useEffect(() => {
-    if (!error || !errorRef.current || prefersReducedMotion()) return
-    const animation = animate(errorRef.current, { opacity: { from: 0, to: 1 }, translateY: { from: -6, to: 0 }, duration: 320, ease: 'outCubic' })
-    errorRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-    return () => { animation.revert() }
-  }, [error])
+    const form = formRef.current
+    if (!error || !form) return
+    // Inline messages are in reading order, even when the server validated fields in another order.
+    const message = form.querySelector<HTMLElement>('[data-field-error]')
+    let target = message ?? errorRef.current
+    if (message) {
+      const field = form.elements.namedItem(message.dataset.fieldError!)
+      if (field instanceof RadioNodeList) {
+        const radios = Array.from(field)
+        const radio = radios.find(node => node instanceof HTMLInputElement && node.checked) ?? radios[0]
+        if (radio instanceof HTMLElement) target = radio
+      } else if (field instanceof HTMLInputElement && field.type === 'hidden') {
+        // Composite editors submit JSON through a hidden input. Focus their visible editor.
+        const editor = field.parentElement
+        target = editor?.querySelector<HTMLElement>('input:not([type=hidden], [type=file], :disabled), textarea:not(:disabled), [contenteditable=true], select:not(:disabled)')
+          ?? editor?.querySelector<HTMLElement>('button:not(:disabled)') ?? message
+      } else if (field instanceof HTMLElement) {
+        target = field
+      }
+    }
+    target?.focus({ preventScroll: true })
+    target?.scrollIntoView({ block: 'center', behavior: 'instant' })
+  }, [error, fieldErrors])
 
   // Ctrl/Cmd+S saves from anywhere in the form, as in any editor.
   useEffect(() => {
@@ -152,21 +171,23 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     setError(null)
+    setFieldErrors({})
     startTransition(async () => {
       const result = await action(formData)
       if (result?.error) setError(result.error)
+      setFieldErrors(result?.fieldErrors ?? {})
     })
   }
 
   return (
     <div data-character-theme={themed ? theme : undefined} className="min-h-full">
       <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm lg:min-h-14 lg:gap-6 lg:px-8">
-        <Breadcrumbs items={[
+        <div className="min-w-0 max-w-full overflow-x-auto"><Breadcrumbs items={[
           { label: worldName, href: '/codex' },
           { label: entityType.pluralLabel, href: `/${entityType.id}` },
           ...(entity ? [{ label: entity.title, href: `/entity/${entity.id}` }, { label: 'Editar' }] : [{ label: 'Novo registro' }]),
-        ]}/>
-        <div className="flex shrink-0 items-center gap-2">
+        ]}/></div>
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
           <span className="mr-2 hidden text-xs text-muted-foreground lg:inline">
             <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">Ctrl</kbd> <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">S</kbd> para salvar
           </span>
@@ -185,14 +206,19 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
           <input type="hidden" name="type" value={entityType.id}/>
           <input type="hidden" name="worldId" value={worldId}/>
 
-          <div className="flex min-w-0 flex-col gap-12">
+          <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
             <section aria-label="Identificação" data-reveal={0}>
-              {error && <p ref={errorRef} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
+              {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
               <label className="group/title relative block">
-                <span className="sr-only">Título</span>
+                <span className="mb-2 flex items-baseline gap-2 text-sm font-medium">
+                  Nome
+                  <span aria-hidden="true" className="font-normal text-muted-foreground">(obrigatório)</span>
+                </span>
                 <input
                   name="title"
-                  required
+                  aria-required="true"
+                  aria-invalid={Boolean(fieldErrors.title)}
+                  aria-describedby={fieldErrors.title ? "entity-error-title" : undefined}
                   autoFocus={mode === 'create'}
                   defaultValue={entity?.title ?? initialTitle}
                   placeholder="Dê um nome a este registro"
@@ -202,6 +228,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border"/>
                 <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within/title:scale-x-100"/>
               </label>
+              <FieldError name="title" message={fieldErrors.title}/>
               <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) && 'sm:grid-cols-2')}>
                 {supportsAliases(entityType) && <InlineField icon={<AtSign/>} name="aliases" label="Apelidos" placeholder="Outros nomes, separados por vírgula" defaultValue={entity?.aliases.join(', ')}/>}
                 <InlineField icon={<Tag/>} name="tags" label="Tags" placeholder="Tags, separadas por vírgula" defaultValue={entity?.tags.join(', ')}/>
@@ -209,9 +236,10 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </section>
 
             {(shortFields.length > 0 || (mode === 'create' && entityType.id === 'event')) && <EditorSection title="Ficha" reveal={2}>
-              <div className="grid grid-cols-2 gap-x-5 gap-y-5">
-                {shortFields.map((property) => <div key={property.key} className={isWideField(property) ? 'col-span-2' : undefined}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                {shortFields.map((property) => <div key={property.key} className={cn('min-w-0', isWideField(property) && 'sm:col-span-2')}>
                   <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
+                  <FieldError name={property.key} message={fieldErrors[property.key]}/>
                 </div>)}
               </div>
               {mode === 'create' && entityType.id === 'event' && <label className="mt-5 flex items-start gap-2.5 rounded-md bg-surface px-3 py-3 text-sm">
@@ -221,7 +249,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </EditorSection>}
 
             {longFields.length > 0 && <EditorSection title="Detalhes" reveal={3}>
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4 sm:gap-5">
                 {longFields.map((property) => <div key={property.key} className="flex flex-col gap-1.5">
                   <Label htmlFor={'property-' + property.key}>{property.label}</Label>
                   <textarea
@@ -235,9 +263,13 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </EditorSection>}
 
             <StructuredEditor entityType={entityType} values={values} coverId={coverId} data={data}/>
+            {['pointsOfInterest', 'evidenceFindings', 'organizationGroups', 'artifactDetails', 'conceptBlocks'].map((name) =>
+              <FieldError key={name} name={name} message={fieldErrors[name]}/>,
+            )}
 
             <EditorSection title={content.label} reveal={5}>
               <ContentEditor content={data.content} theme={themed ? theme : entity?.theme} maxPages={content.maxPages} pageNoun={content.pageNoun}/>
+              <FieldError name="content" message={fieldErrors.content}/>
             </EditorSection>
           </div>
 
@@ -250,6 +282,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               onChange={(id) => { setCoverId(id ?? undefined); setFraming(typeFraming); setDirty(true) }}
               aspect={entityType.id === 'tale' ? 'aspect-3/4' : 'aspect-4/3'}
             />}
+            <FieldError name="coverAssetId" message={fieldErrors.coverAssetId}/>
             {supportsCoverFraming(entityType) && <div className="-mt-5 flex items-center justify-between gap-2">
               <input type="hidden" name="coverFraming" value={JSON.stringify(framing)}/>
               <Button ref={framingButtonRef} type="button" variant="outline" size="sm" disabled={!coverId} onClick={openFramingStudio} title={coverId ? undefined : 'Escolha uma imagem primeiro'}>
@@ -257,6 +290,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               </Button>
               <span className="text-xs text-muted-foreground">{isDefaultCoverFraming(framing, typeFraming) ? 'Padrão' : 'Personalizado'}</span>
             </div>}
+            <FieldError name="coverFraming" message={fieldErrors.coverFraming}/>
             {supportsSymbol(entityType) && <ImageField
               name="symbolAssetId"
               label="Selo ou símbolo"
@@ -266,7 +300,9 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
               aspect="aspect-[2/1]"
               contain
             />}
+            <FieldError name="symbolAssetId" message={fieldErrors.symbolAssetId}/>
             {themed && <CharacterThemePicker value={theme} label={themeLabel(entityType)} onChange={(next) => { setTheme(next); setDirty(true) }}/>}
+            <FieldError name="theme" message={fieldErrors.theme}/>
             {supportsStatus(entityType) && <div className="flex flex-col gap-1.5">
               <Label htmlFor="status">Status</Label>
               <Input id="status" name="status" defaultValue={entity?.status ?? ''} placeholder="Ex.: rascunho, canônico"/>
@@ -298,9 +334,14 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   )
 }
 
+function FieldError({ name, message }: { name: string; message?: string }) {
+  if (!message) return null
+  return <p data-field-error={name} tabIndex={-1} id={'entity-error-' + name} className="mt-1 text-sm text-destructive">{message}</p>
+}
+
 function EditorSection({ title, children, reveal }: { title: string; children: ReactNode; reveal: number }) {
-  return <section data-reveal={reveal}>
-    <h2 className="mb-4 font-serif text-xl font-medium">{title}</h2>
+  return <section aria-labelledby={'entity-section-' + reveal} data-reveal={reveal} className="min-w-0 border-t border-border pt-4 sm:pt-5">
+    <h2 id={'entity-section-' + reveal} className="mb-3 font-serif text-xl font-medium sm:mb-4">{title}</h2>
     {children}
   </section>
 }

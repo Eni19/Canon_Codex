@@ -8,21 +8,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Manutenção documental do Canon Codex
+## Canon Codex
 
-- Em toda mudança de código, dados persistidos, migração, API, Server Action, integração ou
-  configuração, avalie o impacto em README, PROJECT.md, ADRs e guias em `docs/`.
-- Atualize as páginas afetadas na mesma tarefa, mantendo afirmações separadas entre implementado,
-  planejado e não verificado.
-- Se a análise concluir que nenhuma página precisa mudar, registre explicitamente o motivo no
-  resumo da tarefa ou no relatório de mudança; não presuma que mudanças de contrato são
-  documentais neutras.
-- Não copie dados reais de `workspace/` para documentação, exemplos ou testes.
+Leia antes de mudar qualquer coisa:
 
-## Privacidade do workspace
+- [PROJECT.md](PROJECT.md): regras de arquitetura e convenções de mudança.
+- [CONTEXT.md](CONTEXT.md): termos do domínio; use-os em código, docs e mensagens.
+- [Como documentar](docs/contributing/documentation.md): toda mudança de código, dados, migração,
+  API, Server Action ou configuração avalia e atualiza as páginas afetadas na mesma tarefa, pela
+  tabela "Quando atualizar". Se nenhuma página mudar, diga o motivo no resumo; não presuma que
+  mudança de contrato é neutra.
+- [Commits e branches](docs/contributing/commits.md): commits pequenos, em português, no formato
+  `tipo(escopo): resumo`, com `Refs #N`.
 
-- `workspace/` e todos os seus descendentes são dados privados do usuário e estão fora do escopo da IA.
-- Trate esse caminho como indisponível: não liste, pesquise, abra, leia, indexe, resuma, copie, cite
-  nem use qualquer conteúdo dele como contexto, exemplo, teste ou evidência.
-- Para testes e exemplos, use somente dados sintéticos em diretórios temporários ou arquivos fora de
-  `workspace/`. A política correspondente também está registrada em `.aiignore`.
+Antes de encerrar uma tarefa que mexeu em `.md`, rode `pnpm docs:check`.
+
+Não copie dados reais de `workspace/` para documentação, exemplos ou testes; use dados sintéticos.
+

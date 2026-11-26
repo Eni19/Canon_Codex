@@ -13,7 +13,11 @@ import { parseStoredDateValue } from '@/domain/worlds/calendar-date'
 import type { Calendar } from '@/domain/worlds/calendar'
 
 /** A problem the person filling the form can fix; actions show it inline instead of crashing. */
-export class EntityFormError extends Error {}
+export class EntityFormError extends Error {
+  constructor(message: string, readonly fieldErrors: Record<string, string> = {}) {
+    super(message)
+  }
+}
 
 /**
  * Asset fields: `undefined` = field not sent (leave as is), `null` = cleared, string = asset id.
@@ -45,7 +49,10 @@ function parsePropertyValue(property: PropertyDefinition, formData: FormData, ca
   switch (property.kind) {
     case 'number': {
       const raw = formData.get(property.key)
-      return raw ? Number(raw) : undefined
+      if (!raw) return undefined
+      const value = Number(raw)
+      if (!Number.isFinite(value)) throw new EntityFormError('Informe um número válido.')
+      return value
     }
     case 'boolean':
       return formData.get(property.key) === 'on'
@@ -112,45 +119,71 @@ function parseAssetField(formData: FormData, key: string): AssetFieldValue {
   return raw
 }
 
-export function parseEntityForm(entityType: EntityTypeDefinition, formData: FormData, calendar: Calendar): ParsedEntityForm {
+export function parseEntityForm(entityType: EntityTypeDefinition, formData: FormData, calendar: Calendar, previousProperties: Record<string, unknown> = {}): ParsedEntityForm {
   const title = String(formData.get('title') ?? '').trim()
-  if (!title) throw new EntityFormError('O título é obrigatório.')
+  const fieldErrors: Record<string, string> = Object.create(null)
+  if (!title) fieldErrors.title = 'Informe o título do registro.'
 
-  const properties: Record<string, unknown> = {}
+  function validate<T>(key: string, read: () => T): T | undefined {
+    try {
+      return read()
+    } catch (error) {
+      if (!(error instanceof EntityFormError)) throw error
+      fieldErrors[key] = error.message
+    }
+  }
+
+  const properties = { ...previousProperties }
   for (const property of entityType.properties) {
-    const value = parsePropertyValue(property, formData, calendar)
-    if (value !== undefined) properties[property.key] = value
+    // Unsupported media fields and legacy keys have no editable control.
+    if (property.kind === 'image' || property.kind === 'gallery') continue
+    const value = validate(property.key, () => parsePropertyValue(property, formData, calendar))
+    if (value === undefined) delete properties[property.key]
+    else properties[property.key] = value
   }
 
   const structured = STRUCTURED_FIELDS[entityType.id]
-  if (structured) {
-    const parsed = structured.schema.safeParse(parseJsonField(formData, structured.key) ?? [])
-    if (!parsed.success) throw new EntityFormError('Há itens incompletos no editor desta página. Revise-os e salve de novo.')
-    properties[structured.key] = parsed.data
+  if (structured && (formData.has(structured.key) || !(structured.key in previousProperties))) {
+    const parsed = structured.schema.safeParse(validate(structured.key, () => parseJsonField(formData, structured.key)) ?? [])
+    if (!parsed.success) fieldErrors[structured.key] = 'Revise os itens incompletos desta seção.'
+    else properties[structured.key] = parsed.data
   }
 
   // Empty or default framing is not stored, so the page keeps following the default presentation.
   if (supportsCoverFraming(entityType)) {
-    const raw = parseJsonField(formData, 'coverFraming')
+    const raw = validate('coverFraming', () => parseJsonField(formData, 'coverFraming'))
     if (raw !== undefined) {
       const framing = CoverFramingSchema.safeParse(raw)
-      if (!framing.success) throw new EntityFormError('O enquadramento da imagem é inválido. Ajuste-o novamente.')
-      if (!isDefaultCoverFraming(framing.data, defaultCoverFraming(entityType))) properties.coverFraming = framing.data
+      if (!framing.success) {
+        fieldErrors.coverFraming = 'Ajuste o enquadramento da imagem novamente.'
+      } else {
+        delete properties.coverFraming
+        if (!isDefaultCoverFraming(framing.data, defaultCoverFraming(entityType))) properties.coverFraming = framing.data
+      }
     }
   }
 
   const rawTheme = formData.get('theme')
-  const rawContent = parseJsonField(formData, 'content')
+  const rawContent = validate('content', () => parseJsonField(formData, 'content'))
+  const theme = supportsTheme(entityType) && typeof rawTheme === 'string'
+    ? CharacterThemeSchema.safeParse(rawTheme) : undefined
+  if (theme && !theme.success) fieldErrors.theme = 'Selecione uma cor disponível.'
+  const coverAssetId = supportsCover(entityType) ? validate('coverAssetId', () => parseAssetField(formData, 'coverAssetId')) : undefined
+  const symbolAssetId = supportsSymbol(entityType) ? validate('symbolAssetId', () => parseAssetField(formData, 'symbolAssetId')) : undefined
+
+  if (Object.keys(fieldErrors).length) {
+    throw new EntityFormError('Revise os campos indicados antes de salvar.', { ...fieldErrors })
+  }
 
   return {
     title,
     aliases: parseListField(formData.get('aliases')),
     tags: parseListField(formData.get('tags')),
     status: supportsStatus(entityType) && formData.has('status') ? String(formData.get('status') ?? '').trim() : undefined,
-    theme: supportsTheme(entityType) && typeof rawTheme === 'string' ? CharacterThemeSchema.parse(rawTheme) : undefined,
+    theme: theme?.data,
     properties,
-    coverAssetId: supportsCover(entityType) ? parseAssetField(formData, 'coverAssetId') : undefined,
-    symbolAssetId: supportsSymbol(entityType) ? parseAssetField(formData, 'symbolAssetId') : undefined,
+    coverAssetId,
+    symbolAssetId,
     content: Array.isArray(rawContent) ? { format: 'tiptap-json', schemaVersion: CONTENT_SCHEMA_VERSION, pages: rawContent } : undefined,
   }
 }

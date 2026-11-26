@@ -1,5 +1,33 @@
 # Grafo de relacionamentos: verificação e desempenho
 
+> **Estado:** histórico · **Última verificação:** 25/11/2026, build de produção em Chrome headless
+> com 500 registros e 1.500 vínculos sintéticos; cada seção traz a própria data e protocolo.
+
+## Desenho em lote e hit graph sob demanda · 25/11/2026
+
+Build de produção Next.js 16.3.4, Windows, Ryzen 7 5700U, Chrome em modo headless a
+1.440 × 900 e DPR 1, com o mundo sintético de 500 registros e 1.500 vínculos gerado por
+`scripts/seed-relationship-stress.test.ts` e `PERSISTENCE_DRIVER=filesystem`. O ensaio usa
+`scripts/relationship-graph-profile.mjs`: três repetições de 10 s por gesto, intervalos de
+`DrawFrame` no trace. O protocolo difere do ensaio de 17/11 (outro gerador de entrada e outro
+ponto de partida de cada gesto), então a comparação vale entre as linhas desta tabela.
+
+| Versão | Pan p95 | Zoom p95 | Arraste p95 |
+| --- | ---: | ---: | ---: |
+| Antes (commit `81f8226`) | 67,0–67,3 ms | 65,1–65,6 ms | 17,2–18,0 ms |
+| Hit graph sob demanda e nós fora da tela removidos da camada | 17,8–18,3 ms | 31,6–33,1 ms | 17,3–17,8 ms |
+| Cartões em lote abaixo do zoom dos títulos | 17,4–17,6 ms | 20,0–20,7 ms | 17,2–17,3 ms |
+
+O perfil de CPU apontou dois custos: o Konva redesenhava o hit graph das duas camadas a cada
+quadro e percorria cerca de 17 mil nós para limpar caches de transformação a cada mudança de
+câmera, inclusive nós escondidos. Agora o hit graph é redesenhado só antes de um teste de ponteiro,
+nós fora da área visível saem da camada, os vínculos usam o desenho em lote quando há mais de 300
+na área visível (saindo abaixo de 220) e os cartões ociosos viram um único caminho abaixo do zoom
+em que os títulos somem. O desenho em lote mantém as pontas de direção.
+
+Pan e arraste ficaram dentro da meta de p95 ≤ 20 ms; o zoom ficou no limite (20,0–20,7 ms). A
+latência entrada → pixel em tela física, trackpad e toque reais continuam sem medição.
+
 ## Validação da versão com pastas · 17/11/2026
 
 Build de produção Next.js 16.3.4 (Webpack), Windows, Ryzen 7 5700U e Chrome

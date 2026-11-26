@@ -1,21 +1,29 @@
 # Editor e conteúdo
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 ## Páginas e salvamento
 
 O conteúdo fica separado dos metadados em `content.json`, no formato `tiptap-json`, com uma lista
 `pages[]`. Cada página tem nome de até 40 caracteres e um corpo JSON Tiptap. Sempre existe ao menos
 uma página.
 
-Na edição de uma entidade:
+Na edição de um registro:
 
 1. escreva na página ativa;
-2. use **Novo página** ou **Novo capítulo** quando o tipo permitir;
+2. use **Nova página** ou **Novo capítulo** quando o tipo permitir;
 3. renomeie a página na linha de nome;
 4. exclua a página ativa somente quando existir outra;
-5. salve o formulário da entidade.
+5. salve o formulário do registro.
 
 O limite visual é de cinco páginas para a maioria dos tipos, uma para conceitos e 50 para contos.
 Esses limites são da tela; o schema de conteúdo aceita de 1 a 50 páginas.
+
+Na leitura, as páginas aparecem como abas; as setas, Home e End trocam de aba pelo teclado.
+Dentro de uma página longa, use **Título 1** e **Título 2** para criar seções: com dois ou mais
+desses títulos, a ficha mostra um índice **Seções** no topo da página, e cada item leva até o
+título correspondente. O índice é derivado do texto e não muda o formato salvo.
 
 ## Datas do calendário do mundo
 
@@ -42,15 +50,15 @@ Digite `/` para abrir o menu de comandos:
 - títulos 1, 2 e 3, parágrafo, listas e citação;
 - callout de informação, aviso ou perigo;
 - divisor horizontal;
-- link para entidade;
+- link para registro;
 - dado `d4`, `d6`, `d8`, `d10`, `d12` ou `d20`.
 
-Digite `@` para buscar uma entidade e inserir um link interno. O nó armazena `entityId` e um rótulo
+Digite `@` para buscar um registro e inserir um link interno. O nó armazena `entityId` e um rótulo
 de exibição; a identidade não depende de título ou slug.
 
 ## Imagens
 
-Na edição de uma entidade, o seletor de capa ou símbolo cosmológico envia a imagem para
+Na edição de um registro, o seletor de capa ou símbolo cosmológico envia a imagem para
 POST /api/assets por meio das Server Actions de assets. Quadros também enviam imagens inseridas no
 canvas pelo mesmo handler. O original do usuário permanece no local de origem durante a importação;
 o Canon Codex trabalha com a cópia interna.
@@ -64,7 +72,7 @@ não declara limite de tamanho próprio; as ações de formulário do Next.js t�
 ## Limitações conhecidas
 
 - O conteúdo Tiptap é opaco para `domain/`; buscas full-text no corpo não são implementadas.
-- O formulário salva o documento inteiro junto com a entidade; não há autosave independente do
-  botão **Salvar** para páginas de entidade.
+- O formulário salva o documento inteiro junto com o registro; não há autosave independente do
+  botão **Salvar** para páginas de registro.
 - A migração de conteúdo legado v1 transforma `body` único em uma página `Principal`; detalhes de
   compatibilidade estão em [migrações](../data/migrations.md).

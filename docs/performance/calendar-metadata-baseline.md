@@ -1,5 +1,8 @@
 # Referência inicial: leitura de metadados do calendário
 
+> **Estado:** histórico · **Última verificação:** 11/11/2026, medição local da leitura de metadados
+> no driver filesystem, com dados sintéticos.
+
 Medição local em **11/11/2026**, com o caminho efetivamente usado pela agenda: `FileSystemWorldRepository.listEntities(worldId, { type: 'event' })`. O repositório lê e valida os metadados de todos os registros e só depois filtra os Eventos. Os dados eram sintéticos, em diretório temporário; nenhuma pasta pessoal foi usada.
 
 | Registros | Eventos | Primeira consulta após gerar os arquivos | Consultas seguintes |

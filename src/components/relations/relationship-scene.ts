@@ -5,18 +5,14 @@ import {
   type ArrowEndpoint, type Camera, type Point,
 } from '@/domain/relations/graphGeometry'
 import type { FreeArrow } from '@/domain/relations/graphSettings'
-import type { GraphFolder } from '@/domain/relations/graphFolders'
 import { strokeDash, type GraphStyle } from '@/domain/relations/graphStyles'
 import { relationDirection, type Relation } from '@/domain/relations/relation'
 import type { GraphEntity } from '@/domain/relations/relationshipGraph'
 
-type Hit = { kind: 'card' | 'port' | 'edge' | 'arrow' | 'start' | 'end' | 'folder' | 'folder-links'; id: string }
+type Hit = { kind: 'card' | 'port' | 'edge' | 'arrow' | 'start' | 'end'; id: string }
 export type GraphTool = 'move' | 'connect' | 'arrow'
-type SceneFolder = { id: string; name: string; position: Point; collapsed: boolean; members: number; links: number }
 export type SceneState = {
   entities: GraphEntity[]; relations: Relation[]; styles: GraphStyle[]; annotations: FreeArrow[]
-  folders: SceneFolder[]
-  membership: ReadonlyMap<string, GraphFolder>
   visibleIds: Set<string>; visibleRelationIds: Set<string>; positions: Record<string, Point>
   dimmedIds: Set<string>; dimmedRelationIds: Set<string>
   typeLabels: Record<string, string>
@@ -27,6 +23,8 @@ type Callbacks = {
   select: (hit: Hit | null, point: Point) => void
   connect: (source: string, target: string) => void
   move: (id: string, point: Point) => void
+  dragCard: (id: string, client: Point | null) => void
+  dropCard: (id: string, client: Point) => boolean
   moveArrow: (id: string, end: 'start' | 'end', endpoint: ArrowEndpoint) => void
   cancel: () => void
 }
@@ -51,11 +49,25 @@ function readPalette(host: HTMLElement) {
 }
 
 type CurveConfig = ShapeConfig & { points?: number[] }
-type BatchedStroke = { path: Path2D; color: string; dash: number[]; opacity: number }
+type BatchedStroke = { path: Path2D; tips: Path2D; color: string; dash: number[]; opacity: number }
 function appendCurve(context: Pick<Path2D, 'moveTo' | 'bezierCurveTo'>, p: number[]) {
   context.moveTo(p[0], p[1])
   context.bezierCurveTo(p[2], p[3], p[4], p[5], p[6], p[7])
 }
+function appendTip(path: Path2D, x: number, y: number, angle: number) {
+  const back = 11, side = 5
+  const cos = Math.cos(angle), sin = Math.sin(angle)
+  path.moveTo(x, y)
+  path.lineTo(x - back * cos + side * sin, y - back * sin - side * cos)
+  path.lineTo(x - back * cos - side * sin, y - back * sin + side * cos)
+  path.closePath()
+}
+// Batched view: many connections share one path per style, so the stage draws a few strokes
+// instead of one Konva group per connection. It enters above OVERVIEW_ENTER connections in
+// the viewport and leaves below OVERVIEW_EXIT, so small zoom steps don't flip modes.
+const OVERVIEW_ENTER = 300, OVERVIEW_EXIT = 220, LABEL_SCALE = 1.05
+// Below this zoom titles are hidden, so idle cards are drawn as plain shapes in one batch.
+const TITLE_SCALE = 0.47, PORT_SCALE = 0.23
 function traceCurve(context: K.Context, shape: K.Shape) {
   const p = shape.getAttr('points') as number[]
   if (!p?.length) return
@@ -74,21 +86,6 @@ function createCard(item: GraphEntity, point: Point) {
   port.setAttr('graphHit', { kind: 'port', id: item.id } satisfies Hit)
   group.add(box, title, type, port)
   return { group, box, title, type, port }
-}
-function createFolder(id: string) {
-  const group = new K.Group()
-  const body = new K.Rect({ y: 8, width: CARD_WIDTH, height: CARD_HEIGHT - 8, cornerRadius: 8, strokeWidth: 1.5, perfectDrawEnabled: false })
-  const tab = new K.Rect({ x: 1, y: 1, width: 54, height: 13, cornerRadius: [5, 5, 0, 0], listening: false })
-  const title = new K.Text({ x: 11, y: 21, width: 154, fontSize: 15, fontStyle: 'bold', fontFamily: 'system-ui', wrap: 'none', ellipsis: true, listening: false })
-  const subtitle = new K.Text({ x: 11, y: 48, width: 153, fontSize: 11, fontFamily: 'system-ui', wrap: 'none', listening: false })
-  const indicator = new K.Group()
-  const indicatorBox = new K.Rect({ x: 5, y: 41, width: CARD_WIDTH - 10, height: 25, cornerRadius: 4 })
-  const indicatorText = new K.Text({ x: 11, y: 48, width: 153, fontSize: 11, fontFamily: 'system-ui', listening: false })
-  group.setAttr('graphHit', { kind: 'folder', id } satisfies Hit)
-  indicator.setAttr('graphHit', { kind: 'folder-links', id } satisfies Hit)
-  indicator.add(indicatorBox, indicatorText)
-  group.add(tab, body, title, subtitle, indicator)
-  return { group, body, tab, title, subtitle, indicator, indicatorBox, indicatorText }
 }
 function createEdge(id: string) {
   const group = new K.Group()
@@ -128,10 +125,40 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   const cardsLayer = new K.Layer()
   const preview = new K.Arrow({ visible: false, listening: false, pointerLength: 12, pointerWidth: 10, strokeWidth: 2.5, dash: [7, 4] })
   const targetRing = new K.Rect({ visible: false, listening: false, width: CARD_WIDTH, height: CARD_HEIGHT, cornerRadius: 8, strokeWidth: 3 })
-  cardsLayer.add(targetRing, preview)
+  let batchedCards: (Point & { id: string; faded?: boolean })[] = []
+  let batchedPorts = false
+  const cardBatch = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc(context) {
+    if (!batchedCards.length) return
+    const solid = new Path2D(), faded = new Path2D(), ports = new Path2D()
+    for (const point of batchedCards) {
+      const path = point.faded ? faded : solid
+      path.roundRect(point.x, point.y, CARD_WIDTH, CARD_HEIGHT, 8)
+      if (batchedPorts) { ports.moveTo(point.x + CARD_WIDTH + 6, point.y + CARD_HEIGHT / 2); ports.arc(point.x + CARD_WIDTH - 1, point.y + CARD_HEIGHT / 2, 7, 0, Math.PI * 2) }
+    }
+    context.save()
+    context.setAttr('lineWidth', 1.5)
+    context.setAttr('fillStyle', palette.card); context.setAttr('strokeStyle', palette.border)
+    for (const [path, alpha] of [[solid, 1], [faded, 0.22]] as const) {
+      context.setAttr('globalAlpha', alpha); context.fill(path); context.stroke(path)
+    }
+    if (batchedPorts) { context.setAttr('globalAlpha', 1); context.setAttr('fillStyle', palette.accent); context.fill(ports) }
+    context.restore()
+  } })
+  cardsLayer.add(cardBatch, targetRing, preview)
   stage.add(edgesLayer, cardsLayer)
+  // Konva redraws the hit graph of a layer on every frame. Pan, zoom and drags change the scene
+  // every frame while hit testing only happens on pointer input, so the hit graph is redrawn
+  // on demand, once per scene change, right before a hit test reads it.
+  let hitDirty = true
+  for (const layer of [edgesLayer, cardsLayer]) {
+    layer.draw = function draw() { this.drawScene(); hitDirty = true; return this }
+  }
+  const refreshHit = () => {
+    if (!hitDirty) return
+    hitDirty = false
+    edgesLayer.drawHit(); cardsLayer.drawHit()
+  }
   const cards = new Map<string, ReturnType<typeof createCard>>()
-  const folders = new Map<string, ReturnType<typeof createFolder>>()
   const edges = new Map<string, ReturnType<typeof createEdge>>()
   const arrows = new Map<string, ReturnType<typeof createArrow>>()
   let arrowsByCard = new Map<string, FreeArrow[]>()
@@ -152,16 +179,20 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
         const opacity = state.dimmedRelationIds.has(id) ? 0.17 : 0.7
         const key = color + '/' + dash.join(',') + '/' + opacity
         let group = groups.get(key)
-        if (!group) { group = { color, dash, path: new Path2D(), opacity }; groups.set(key, group) }
+        if (!group) { group = { color, dash, path: new Path2D(), tips: new Path2D(), opacity }; groups.set(key, group) }
         appendCurve(group.path, points)
+        const sense = edges.get(id)?.group.getAttr('sense') as string | undefined
+        if (sense !== 'none') appendTip(group.tips, points[6], points[7], Math.atan2(points[7] - points[5], points[6] - points[4]))
+        if (sense === 'both') appendTip(group.tips, points[0], points[1], Math.atan2(points[1] - points[3], points[0] - points[2]))
       }
       overviewPaths = [...groups.values()]
     }
     context.save()
     context.setAttr('lineWidth', 2.5)
-    for (const { path, color, dash, opacity } of overviewPaths) {
+    for (const { path, tips, color, dash, opacity } of overviewPaths) {
       context.setAttr('globalAlpha', opacity)
       context.setAttr('strokeStyle', color); context.setLineDash(dash); context.stroke(path)
+      context.setAttr('fillStyle', color); context.fill(tips)
     }
     context.restore()
   } })
@@ -170,6 +201,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   let incident = new Map<string, Relation[]>()
   let lanes = new Map<string, number>()
   let camera: Camera = { x: 0, y: 0, scale: 1 }
+  let lowDetail = false
   let state: SceneState | undefined
   let palette = readPalette(host)
   let frame = 0
@@ -187,12 +219,18 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   }
   const hitAt = (p: Point, includeBatchedEdge = true): Hit | null => {
     if (p.x < 0 || p.x >= stage.width() || p.y < 0 || p.y >= stage.height()) return null
-    let shape: K.Node | null = stage.getIntersection(p)
-    while (shape) {
-      const hit = shape.getAttr('graphHit') as Hit | undefined
-      if (hit) return hit
-      shape = shape.getParent()
+    refreshHit()
+    const layerHit = (layer: K.Layer) => {
+      let shape: K.Node | null = layer.getIntersection(p)
+      while (shape) {
+        const hit = shape.getAttr('graphHit') as Hit | undefined
+        if (hit) return hit
+        shape = shape.getParent()
+      }
+      return null
     }
+    const found = layerHit(cardsLayer) ?? batchedCardAt(world(p)) ?? layerHit(edgesLayer)
+    if (found) return found
     if (includeBatchedEdge && overview.visible() && hitContext && state) {
       const point = world(p)
       const area = { left: point.x, right: point.x, top: point.y, bottom: point.y }
@@ -206,6 +244,14 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
         appendCurve(curve, points)
         if (hitContext.isPointInStroke(curve, point.x, point.y)) return { kind: 'edge', id }
       }
+    }
+    return null
+  }
+  function batchedCardAt(point: Point): Hit | null {
+    for (let i = batchedCards.length - 1; i >= 0; i--) {
+      const card = batchedCards[i]
+      if (batchedPorts && Math.hypot(point.x - (card.x + CARD_WIDTH - 1), point.y - (card.y + CARD_HEIGHT / 2)) <= 15) return { kind: 'port', id: card.id }
+      if (point.x >= card.x && point.x <= card.x + CARD_WIDTH && point.y >= card.y && point.y <= card.y + CARD_HEIGHT) return { kind: 'card', id: card.id }
     }
     return null
   }
@@ -250,11 +296,26 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   }
   function cull() {
     if (!state) return
+    let attached = false
+    // Culled nodes leave the layer instead of being hidden: Konva walks every descendant to clear
+    // transform caches on each camera change, so detached nodes cost nothing while off screen.
+    const show = (layer: K.Layer, node: K.Group, visible: boolean) => {
+      const parent = node.getParent()
+      if (visible && parent !== layer) { layer.add(node); attached = true }
+      else if (!visible && parent) node.remove()
+    }
     const { x, y } = dimensions()
     const min = world({ x: -120, y: -120 }), max = world({ x: x + 120, y: y + 120 })
     const viewport = { left: min.x, top: min.y, right: max.x, bottom: max.y }
     const active = drag && !drag.pan ? drag.hit?.id : undefined
-    const lowDetail = state.visibleRelationIds.size >= 350 && camera.scale < 0.42
+    let inView = 0
+    if (camera.scale < LABEL_SCALE && state.visibleRelationIds.size >= OVERVIEW_EXIT) {
+      for (const id of state.visibleRelationIds) {
+        const edge = edges.get(id)
+        if (edge && intersects(edge.bounds, viewport) && ++inView >= OVERVIEW_ENTER) break
+      }
+    }
+    lowDetail = camera.scale < LABEL_SCALE && inView >= (lowDetail ? OVERVIEW_EXIT : OVERVIEW_ENTER)
     if (lowDetail) {
       const draggedCard = drag?.moved && !drag.pan && drag.hit?.kind === 'card' ? drag.hit.id : ''
       if (draggedCard !== overviewDrag) {
@@ -264,30 +325,28 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       }
     }
     overview.visible(lowDetail)
+    const batch = camera.scale < TITLE_SCALE
+    batchedCards = []
+    batchedPorts = batch && camera.scale >= PORT_SCALE && state.tool === 'connect'
     for (const [id, { group, title, type, port }] of cards) {
       const x = group.x(), y = group.y()
       const visible = state.visibleIds.has(id) && (active === id || (x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y))
-      group.visible(visible)
-      if (visible) {
-        const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
-        title.visible(camera.scale >= 0.47 || selected)
+      const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
+      const batched = visible && batch && !selected && active !== id
+      if (batched) batchedCards.push(Object.assign({ x, y, id }, state.dimmedIds.has(id) ? { faded: true } : {}))
+      show(cardsLayer, group, visible && !batched)
+      if (visible && !batched) {
+        title.visible(camera.scale >= TITLE_SCALE || selected)
         type.visible(camera.scale >= 0.72 || selected)
-        port.visible((camera.scale >= 0.23 && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
+        port.visible((camera.scale >= PORT_SCALE && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
       }
-    }
-    for (const { group, title, subtitle, indicator } of folders.values()) {
-      const { x, y } = group.position()
-      group.visible(x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y)
-      title.visible(camera.scale >= 0.32)
-      subtitle.visible(camera.scale >= 0.56)
-      indicator.visible(camera.scale >= 0.38 && indicator.getAttr('hasLinks') === true)
     }
     for (const [id, edge] of edges) {
       const selected = id === state.selectedEdge
       const visible = state.visibleRelationIds.has(id) && (selected || (lowDetail ? movingEdges.has(id) : intersects(edge.bounds, viewport)))
-      edge.group.visible(visible)
+      show(edgesLayer, edge.group, visible)
       if (visible) {
-        edge.label.visible(selected || camera.scale >= 1.05)
+        edge.label.visible(selected || camera.scale >= LABEL_SCALE)
         edge.line.hitStrokeWidth(Math.min(32, 10 / camera.scale))
       }
     }
@@ -297,6 +356,11 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       arrow.start.visible(visible && state.selectedArrow === id)
       arrow.end.visible(visible && state.selectedArrow === id)
     }
+    if (attached) {
+      for (const arrow of arrows.values()) if (arrow.start.visible()) { arrow.start.moveToTop(); arrow.end.moveToTop() }
+      targetRing.moveToTop(); preview.moveToTop()
+    }
+    cardsLayer.batchDraw()
   }
   function schedule() {
     if (!frame) frame = requestAnimationFrame(() => { frame = 0; cull() })
@@ -312,7 +376,6 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       const node = cards.get(id)
       return node ? [node.group.position()] : []
     })
-    for (const folder of folders.values()) points.push(folder.group.position())
     for (const relation of state.relations) {
       if (!state.visibleRelationIds.has(relation.id)) continue
       const edge = edges.get(relation.id)
@@ -324,10 +387,11 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       if (!annotationVisible(arrow.data)) continue
       points.push(arrow.start.position(), arrow.end.position())
     }
-    setCamera(fitGraph(points, stage.width(), stage.height(), stage.height() < 760 ? 112 : 136))
+    const padding = stage.width() < 640 ? 32 : stage.height() < 760 ? 112 : 136
+    setCamera(fitGraph(points, stage.width(), stage.height(), padding))
   }
-  function focus(id: string, folder = false) {
-    const group = (folder ? folders.get(id) : cards.get(id))?.group
+  function focus(id: string) {
+    const group = cards.get(id)?.group
     if (!group) return
     const point = cardCenter(group.position())
     const center = midpoint()
@@ -375,27 +439,6 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     const old = state
     state = next
     overviewPaths = null
-    if (old?.folders !== next.folders) {
-      const ids = new Set(next.folders.map((item) => item.id))
-      for (const [id, node] of folders) if (!ids.has(id)) { node.group.destroy(); folders.delete(id) }
-    }
-    for (const item of next.folders) {
-      let node = folders.get(item.id)
-      if (!node) {
-        node = createFolder(item.id)
-        folders.set(item.id, node)
-        cardsLayer.add(node.group)
-      }
-      node.group.position(item.position)
-      node.body.setAttrs({ fill: palette.card, stroke: item.collapsed ? palette.accent : palette.border })
-      node.tab.fill(item.collapsed ? palette.accent : palette.border)
-      node.title.setAttrs({ text: item.name, fill: palette.text })
-      const hasLinks = item.collapsed && item.links > 0
-      node.subtitle.setAttrs({ text: hasLinks ? '' : `${item.members} ${item.members === 1 ? 'registro' : 'registros'} · ${item.collapsed ? 'Recolhida' : 'Aberta'}`, fill: palette.muted })
-      node.indicator.setAttr('hasLinks', hasLinks)
-      node.indicatorBox.fill(palette.border)
-      node.indicatorText.setAttrs({ text: `${item.links} ${item.links === 1 ? 'vínculo externo' : 'vínculos externos'} ›`, fill: palette.accent })
-    }
     if (old?.entities !== next.entities) {
       const ids = new Set(next.entities.map((item) => item.id))
       for (const [id, node] of cards) if (!ids.has(id)) { node.group.destroy(); cards.delete(id) }
@@ -403,15 +446,14 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     for (const item of next.entities) {
       const point = next.positions[item.id] ?? { x: 0, y: 0 }
       let node = cards.get(item.id)
-      if (!node) { node = createCard(item, point); cards.set(item.id, node); cardsLayer.add(node.group) }
+      if (!node) { node = createCard(item, point); cards.set(item.id, node) }
       if (!(drag?.moved && !drag.pan && drag.hit?.kind === 'card' && drag.hit.id === item.id)) node.group.position(point)
       const active = item.id === next.selectedCard || item.id === next.source || item.id === next.target || item.id === next.arrowStart?.cardId || item.id === next.arrowEnd?.cardId
       node.group.opacity(next.dimmedIds.has(item.id) ? 0.22 : 1)
       node.box.setAttrs({ fill: palette.card, stroke: active ? palette.accent : palette.border, strokeWidth: active ? 2.5 : 1.5 })
       node.title.setAttrs({ text: item.title, fill: palette.text })
-      const folderName = next.membership.get(item.id)?.name
       const typeLabel = next.typeLabels[item.type] ?? item.type
-      node.type.setAttrs({ text: folderName ? `${typeLabel} · ${folderName}` : typeLabel, fill: palette.muted })
+      node.type.setAttrs({ text: typeLabel, fill: palette.muted })
       node.port.setAttrs({ fill: palette.accent, stroke: palette.card })
     }
     if (old?.relations !== next.relations) {
@@ -430,7 +472,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       const style = styles.get(relation.type)
       if (!style) continue
       let edge = edges.get(relation.id)
-      if (!edge) { edge = createEdge(relation.id); edges.set(relation.id, edge); edgesLayer.add(edge.group) }
+      if (!edge) { edge = createEdge(relation.id); edges.set(relation.id, edge) }
       const selected = relation.id === next.selectedEdge
       const color = selected ? palette.accent : style.color
       edge.group.opacity(next.dimmedRelationIds.has(relation.id) ? 0.2 : 1)
@@ -502,6 +544,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     schedule()
   }
   function cancelDrag() {
+    if (drag?.hit?.kind === 'card') callbacks.dragCard(drag.hit.id, null)
     if (drag?.hit && drag.origin && drag.moved) {
       if (drag.hit.kind === 'card') moveObject(drag.hit, drag.origin)
       else if (drag.hit.kind === 'start' || drag.hit.kind === 'end') {
@@ -557,7 +600,10 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       if (drag.pan && previous) {
         host.style.cursor = 'grabbing'
         setCamera({ ...camera, x: camera.x + (first ? dx : p.x - previous.x), y: camera.y + (first ? dy : p.y - previous.y) })
-      } else if (drag.hit && drag.origin) moveObject(drag.hit, { x: limit(drag.origin.x + dx / drag.scale), y: limit(drag.origin.y + dy / drag.scale) })
+      } else if (drag.hit && drag.origin) {
+        moveObject(drag.hit, { x: limit(drag.origin.x + dx / drag.scale), y: limit(drag.origin.y + dy / drag.scale) })
+        if (drag.hit.kind === 'card') callbacks.dragCard(drag.hit.id, { x: event.clientX, y: event.clientY })
+      }
     }
     if (!drag?.pan && (state?.tool !== 'move' || drag?.hit?.kind === 'port')) redrawPreview(p)
   }
@@ -573,8 +619,13 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     else if (!current.pan && current.hit) {
       const { kind, id } = current.hit
       if (kind === 'card' && current.origin) {
-        const point = cards.get(id)?.group.position()
-        if (point) callbacks.move(id, point)
+        const transferred = callbacks.dropCard(id, { x: event.clientX, y: event.clientY })
+        callbacks.dragCard(id, null)
+        if (transferred || !host.contains(document.elementFromPoint(event.clientX, event.clientY))) moveObject(current.hit, current.origin)
+        else {
+          const point = cards.get(id)?.group.position()
+          if (point) callbacks.move(id, point)
+        }
       } else if (kind === 'port') {
         const target = host.contains(document.elementFromPoint(event.clientX, event.clientY)) ? cardAt(p) : ''
         if (target) callbacks.connect(id, target)
@@ -639,6 +690,8 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       window.removeEventListener('pointercancel', cancelPointer, true)
       host.removeEventListener('pointerleave', leave); host.removeEventListener('wheel', wheel)
       window.removeEventListener('keydown', keydown); window.removeEventListener('keyup', keyup); window.removeEventListener('blur', blur)
+      for (const node of cards.values()) node.group.destroy()
+      for (const edge of edges.values()) edge.group.destroy()
       stage.destroy()
     },
   }

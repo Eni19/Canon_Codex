@@ -1,6 +1,7 @@
 import 'server-only'
 import Fuse from 'fuse.js'
 import type { Entity } from '@/domain/entities/entity'
+import { matchesTagPrefixes, parseTagQuery } from '@/domain/entities/entityTags'
 import { getWorldRepository } from '@/repositories'
 
 export interface SearchResultItem {
@@ -41,8 +42,10 @@ export async function searchEntities(
     }
   }
 
-  const entities = options?.type ? allEntities.filter((entity) => entity.type === options.type) : allEntities
-  if (!query.trim()) return entities.slice(0, limit).map(toSearchResult)
+  // "#etiqueta" filtra por prefixo de etiqueta; o texto restante segue para a busca aproximada.
+  const { text, tagPrefixes } = parseTagQuery(query)
+  const entities = allEntities.filter((entity) => (!options?.type || entity.type === options.type) && matchesTagPrefixes(entity.tags, tagPrefixes))
+  if (!text) return entities.slice(0, limit).map(toSearchResult)
 
   const fuse = new Fuse(entities, {
     keys: [
@@ -55,7 +58,7 @@ export async function searchEntities(
   })
 
   return fuse
-    .search(query)
+    .search(text)
     .slice(0, limit)
     .map((result) => toSearchResult(result.item))
 }
