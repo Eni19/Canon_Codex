@@ -34,7 +34,7 @@ anterior/próxima, barra de progresso, volume, aleatório e repetição (desliga
 Se uma faixa não puder tocar, o site avisa e passa para a próxima. Com a barra lateral recolhida o
 vídeo diminui para uma miniatura, mas continua visível. O volume é lembrado neste navegador.
 
-O botão de trocar de Codex (`/`) e o recarregamento da página interrompem a música.
+O botão de trocar de mundo (`/`) e o recarregamento da página interrompem a música.
 
 ## No Scene Runner (aba Mestrar)
 

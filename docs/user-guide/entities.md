@@ -1,4 +1,4 @@
-# Entidades, tipos e relações
+# Registros, tipos e relações
 
 ## Criar e editar
 
@@ -109,7 +109,7 @@ Propriedades `reference` e `referenceList` oferecem candidatos de outros registr
 esperado. Essas referências guardam IDs; renomear o alvo não quebra a seleção.
 
 Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e marque **Relação mútua** quando o vínculo valer nos dois sentidos. Com a caixa desmarcada, o vínculo vai da origem ao alvo. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
-por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
+por varredura de todos os registros. Remover a relação altera somente o registro fonte.
 
 **Relacionamentos** ocupa a área ao lado do menu ou abaixo da navegação móvel. Arraste o fundo
 para mover a câmera ou o cartão para fixar sua posição. Use a roda, pinça ou os botões de zoom;
@@ -181,7 +181,7 @@ as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
 
-Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
 
 **Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
 encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com
@@ -200,7 +200,7 @@ Na busca, aparecem os locais encontrados e o caminho de regiões até eles; quan
 encontrada, ela aparece com tudo o que contém. Referências circulares (A dentro de B e B dentro de
 A) não somem da lista: o ciclo é quebrado no primeiro local em ordem alfabética.
 
-Essa busca é diferente da navegação por relações: pesquisar encontra entidades existentes, enquanto referências e backlinks mostram como elas se conectam.
+Essa busca é diferente da navegação por relações: pesquisar encontra registros existentes, enquanto referências e backlinks mostram como elas se conectam.
 
 ## Imagens
 
@@ -212,9 +212,9 @@ outra referência encontrada.
 
 ## Excluir e limitações
 
-**Excluir** uma entidade move sua pasta inteira, inclusive `content.json`, para `trash/`; ela some
+**Excluir** um registro move sua pasta inteira, inclusive `content.json`, para `trash/`; ele some
 dos catálogos e não há botão de restaurar. Referências ou cartões de quadro que ainda guardem o ID
-podem mostrar “entidade indisponível”. Não existe exclusão permanente exposta pela aplicação.
+podem mostrar **Entidade indisponível**. Não existe exclusão permanente exposta pela aplicação.
 
 Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, nota e data, com aviso
 **Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira

@@ -1,6 +1,6 @@
-# Mundos e biblioteca de Codex
+# Mundos e biblioteca
 
-## Selecionar um Codex
+## Selecionar um mundo
 
 Abra `/`. A biblioteca lista os mundos ativos: o mundo ativo aparece em
 destaque, com o botão **Continuar**, e os demais ficam em **Outros mundos**, do atualizado mais
@@ -43,7 +43,7 @@ após o mês correspondente e podem ser selecionados; a seleção é conservada 
 A grade mostra inícios de estações e marcos. Em telas estreitas, use o atalho **Detalhes** abaixo da
 grade para ler os nomes e as fases do dia selecionado. A vista anual reúne cartões com duração,
 estação inicial e data de até três marcos por mês, com legenda por categoria. A vista **Agenda** lista Eventos ativos cuja data ou intervalo alcança
-o mês consultado, com links para as entidades; datas parciais e aproximadas aparecem em seção
+o mês consultado, com links para os registros; datas parciais e aproximadas aparecem em seção
 própria. A lista é paginada e não inclui registros sem data válida.
 
 No teclado, use **Tab** para entrar nos dias do mês. As setas percorrem os dias do trecho,
@@ -104,9 +104,9 @@ Informe um ano para conferir a duração de cada mês, o total de dias e as regr
 Ano zero é um ano completo. **Salvar estrutura** valida o rascunho. Em caso de erro, os campos
 continuam preenchidos. **Descartar alterações** repõe a configuração salva.
 Cada mundo lê e grava seu próprio calendário; se o mundo ativo mudar em outra aba antes de salvar,
-o formulário pede para reabrir o calendário, evitando gravar no mundo errado. Datas de entidade
+o formulário pede para reabrir o calendário, evitando gravar no mundo errado. Datas de registro
 já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por esta configuração. Ao
-editar uma entidade, campos `kind: 'date'` usam esse calendário para aceitar ano, mês, dia, ano zero,
+editar um registro, campos `kind: 'date'` usam esse calendário para aceitar ano, mês, dia, ano zero,
 anos negativos, aproximação e intervalo; o formato persistido e a compatibilidade ISO estão em
 [Armazenamento e modelo de dados](../data/storage.md). Para converter strings antigas, abra
 **Prévia e conversão das datas antigas deste mundo** na tela do calendário; o procedimento e a
