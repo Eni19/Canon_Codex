@@ -105,9 +105,8 @@ Referências estudadas:
   `WikiShell`, que continua montado entre as rotas; sem a nova página em 10 s, ela some. Com
   `prefers-reduced-motion`, ou com cliques para nova aba, a navegação é a normal. Os polaroids
   enquadram as imagens pelo alto (`object-position: 50% 18%`), para mostrar o rosto dos retratos.
-- Uma tela de carregamento breve (`notebook-loading.tsx`) cobre o caderno: um pequeno caderno de
-  couro com cantos de latão e elástico, uma linha de tinta dourada que se escreve sozinha e o nome
-  "Canon Codex" datilografado, todos nas cores `--nb-*`. Ela aparece
+- Uma tela de carregamento breve e simples (`notebook-loading.tsx`) cobre o caderno: só o nome
+  "Canon Codex", datilografado, pulsando de leve sobre o fundo escuro. Ela aparece
   enquanto ele é montado: primeiro enquanto o código carrega (o `loading` do `next/dynamic`), depois
   até a cena 3D desenhar os primeiros quadros e as fotos do índice (e da página aberta, se houver)
   ficarem prontas; então ela some com um fade. Nunca fica mais de 8 s.
