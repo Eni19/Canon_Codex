@@ -89,6 +89,7 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 - [Armazenamento legado](docs/data/storage.md) e [migrações](docs/data/migrations.md): arquivos, esquemas e versões.
 - [Conversão de datas antigas](docs/data/migrations.md#datas-de-propriedades-durante-a-transição): prévia, backup e recuperação por mundo.
 - [Referência HTTP e Server Actions](docs/reference/http-and-actions.md).
+- [Contribuir](CONTRIBUTING.md): do clone ao primeiro PR.
 - [Como documentar](docs/contributing/documentation.md): tipos de documento, cabeçalho de estado e
   quando atualizar cada página.
 - [Commits e branches](docs/contributing/commits.md): formato das mensagens, tamanho dos commits,
