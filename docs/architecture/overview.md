@@ -45,6 +45,17 @@ invisível do HTML por cima para os cliques. Abrir um registro a partir do cader
 máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
 ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
+## Parede de evidências
+
+A página de Evidência (`src/components/entities/evidence-board-page.tsx`) monta no servidor os dados
+da parede e os painéis de leitura em HTML (conteúdo, relações e referências) e os entrega a
+`EvidenceWall` (`src/components/evidence-wall/`), carregado só no navegador. A cena é three.js
+(React Three Fiber): parede, polaroides, folhas e notas são texturas desenhadas em canvas, sem
+fotografar HTML, e o texto das folhas vem de `contentTextBlocks` (`src/components/editor/content-text.ts`),
+que conhece o formato Tiptap. Posições iniciais, limites da parede, linhas entre peças e leitura da
+arrumação salva são regras puras em `src/domain/evidence/evidenceWall.ts`. A arrumação fica no
+`localStorage` do navegador. Sem WebGL, a página mostra o quadro em HTML.
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do

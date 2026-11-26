@@ -96,7 +96,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
-- evidências aceitam até 24 descobertas;
+- evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
 - artefatos aceitam até 24 detalhes com posição, rótulo e descrição;
 - conceitos aceitam até 40 blocos entre visão geral, operação, estrutura, regras, exemplos,
@@ -105,6 +105,22 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 - linhas do tempo exibem aparições datadas em ordem cronológica e itens sem data em seção própria;
 - tipos que não possuem composição específica usam o compositor de header, propriedades, conteúdo,
   relações e backlinks conforme o layout do mundo.
+
+
+### Parede da Evidência
+
+A página de uma Evidência é uma parede com as peças pregadas e ligadas por linha vermelha: a
+polaroide da evidência, as polaroides dos personagens relacionados, o conteúdo como folhas de
+relatório datilografadas (texto que não cabe vira folha nova) e notas adesivas com propriedades,
+apresentação, cada descoberta, notas contextuais, relações e referências.
+
+- **Arraste** uma peça para reorganizá-la; ela não sai da parede. A arrumação fica salva neste
+  navegador; **Reorganizar** volta à arrumação inicial.
+- **Clique** numa peça para chegar perto e abrir a leitura completa ao lado; **Esc** ou um clique na
+  parede fecha.
+- **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
+- A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
+- Sem WebGL, a página mostra o quadro em HTML.
 
 ## Referências e relações
 
