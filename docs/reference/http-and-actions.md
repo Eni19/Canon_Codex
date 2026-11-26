@@ -157,6 +157,43 @@ cellSize fica entre 20 e 300; opacity entre 0 e 1. A resposta de sucesso é
 200 {"updatedAt":"..."}. JSON inválido, cena inexistente ou grade inválida propagam erro do
 handler, sem envelope/status específico implementado.
 
+### GET /api/playlists
+
+Consumidor: `SoundtrackBrowser` (`src/components/soundtrack/soundtrack-browser.tsx`), que busca a
+lista com `cache: 'no-store'`. Sem corpo ou query string.
+
+- 200 com um array de `PlaylistSummary`: os campos da playlist sem `tracks`, mais `trackCount` e
+  `previewExternalIds` (IDs do YouTube das quatro primeiras faixas, usados na capa do cartão);
+- a lista contém só playlists não excluídas do mundo ativo, da mais recente para a mais antiga por
+  `updatedAt`; um mundo sem playlists retorna `[]`;
+- falhas de leitura são exceções do servidor, sem envelope de erro próprio no handler.
+
+Exemplo sintético:
+
+    [
+      {
+        "schemaVersion": 1,
+        "id": "00000000-0000-4000-8000-000000000001",
+        "worldId": "mundo-exemplo",
+        "title": "Trilha de exemplo",
+        "tags": ["ambiente"],
+        "createdAt": "2026-11-01T12:00:00.000Z",
+        "updatedAt": "2026-11-01T12:00:00.000Z",
+        "trackCount": 1,
+        "previewExternalIds": ["xxxxxxxxxxx"]
+      }
+    ]
+
+### GET /api/playlists/[playlistId]
+
+Consumidor: `SoundtrackBrowser`, ao abrir uma playlist para tocar. Sem corpo ou query string.
+
+- 200 com a `Playlist` completa (`PlaylistSchema` em `src/domain/playlists/playlist.ts`), incluindo
+  `tracks` com `provider: "youtube"`, `externalId`, `title`, `author` opcional e `addedAt`;
+- 404 {"error":"Playlist não encontrada"} se o ID não existir ou estiver excluído no mundo ativo.
+
+As faixas guardam apenas o ID do vídeo e metadados; nenhum áudio é baixado.
+
 ## Server Actions por fluxo
 
 ### Mundos
@@ -261,3 +298,17 @@ createBoardAction e createSceneAction validam os campos do formulário e redirec
 recurso criado. A cena exige um asset de imagem com dimensões válidas. deleteBoardAction e
 deleteSceneAction fazem exclusão lógica; duplicateSceneAction mantém referências e snapshot com
 novo ID.
+
+### Playlists
+
+As actions ficam em `src/app/actions/playlists.ts` e operam no mundo ativo.
+
+- `createPlaylistAction(formData)` lê `title`, `description` e `tags` (separadas por vírgula),
+  cria a playlist e redireciona para `/soundtrack/<id>`;
+- `updatePlaylistAction(playlistId, formData)` atualiza os mesmos campos e revalida a lista e a
+  página da playlist;
+- `deletePlaylistAction(playlistId)` faz exclusão lógica; ID inexistente lança `PlaylistNotFoundError`;
+- `addVideosAction(playlistId, videoIds)` descarta IDs inválidos, limita a 300 por chamada, consulta
+  os metadados no YouTube e retorna `{ added, duplicates, unavailable }`, em que `unavailable` conta
+  vídeos privados, removidos ou sem incorporação;
+- `removeTrackAction(playlistId, trackId)` remove uma faixa da playlist.
