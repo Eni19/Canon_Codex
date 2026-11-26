@@ -1,7 +1,7 @@
 # ADR-007: Canvas próprio em Konva para relações e, depois, para os outros canvas
 
-> **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam as ferramentas de criação e o
-> painel de estilo dos Quadros e a retirada do pacote tldraw) · **Última verificação:** 26/11/2026,
+> **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam o painel de estilo dos Quadros e a
+> retirada do pacote tldraw) · **Última verificação:** 26/11/2026,
 > `package.json`, `src/components/boards/board-stage.ts`, `src/components/scenes/scene-stage.ts` e
 > `src/domain/canvas/`.
 
@@ -65,8 +65,11 @@ motor, não o motor.
   registro nas cinco visualizações, texto e setas vinculadas, seleção, alças, desfazer/refazer,
   copiar/colar e os atalhos do tldraw. As fontes do tldraw (Shantell Sans e IBM Plex) são servidas
   pelo app. A base comum (câmera, geometria, histórico) foi extraída para `src/domain/canvas/`,
-  agora que há dois consumidores. **Pendente:** ferramentas de nota, formas, desenho livre, marca-texto,
-  linha, borracha, laser, moldura e imagem (etapa 2) e o painel de estilo (etapa 3).
+  agora que há dois consumidores.
+- **Quadros, etapa 2 (26/11/2026):** desenho livre, borracha, nota, 20 formas geométricas, linha e
+  imagem (seletor, arrastar e colar). O traço livre usa `perfect-freehand` (MIT), a biblioteca
+  original do mesmo autor, em vez da cópia interna do tldraw, que segue a licença dele. Marca-texto,
+  laser e moldura ficaram de fora por decisão do usuário. **Pendente:** painel de estilo (etapa 3).
 - Nenhum canvas depende mais de `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
 - Câmera, seleção, toque, culling e desenho em lote passam a ser responsabilidade do projeto, e
   cada canvas migrado precisa de um perfil de desempenho próprio.

@@ -30,6 +30,7 @@ exposto fora de `localhost` ([operação e privacidade](docs/reference/operation
 - Konva para os canvas de relacionamentos (`src/components/relations/relationship-scene.ts`), Cenas
   (`src/components/scenes/scene-stage.ts`) e Quadros (`src/components/boards/board-stage.ts`), com
   câmera e geometria comuns em `src/domain/canvas/` ([ADR-007](docs/architecture/ADR-007-konva-canvas.md));
+- perfect-freehand para o traço do desenho livre dos Quadros (`src/components/boards/board-render-shapes.ts`);
 - o pacote `tldraw` não é mais importado pelo código; continua instalado até a migração dos Quadros
   terminar (#17);
 - sharp para dimensões, miniaturas e variantes de imagem (`src/repositories/assetImages.ts` e

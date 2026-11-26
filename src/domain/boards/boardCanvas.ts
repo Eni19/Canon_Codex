@@ -15,10 +15,16 @@ export const BOARD_FONTS = ['draw', 'sans', 'serif', 'mono'] as const
 export const BOARD_DASHES = ['draw', 'solid', 'dashed', 'dotted'] as const
 export const ARROWHEADS = ['none', 'arrow', 'triangle', 'square', 'dot', 'pipe', 'diamond', 'inverted', 'bar'] as const
 export const CARD_VIEW_MODES = ['minimal', 'card', 'portrait', 'dossier', 'wide'] as const
+export const BOARD_FILLS = ['none', 'semi', 'solid', 'pattern', 'fill'] as const
+export const BOARD_ALIGNS = ['start', 'middle', 'end'] as const
+export const GEO_TYPES = ['rectangle', 'ellipse', 'triangle', 'diamond', 'pentagon', 'hexagon', 'octagon', 'star', 'rhombus', 'rhombus-2', 'oval', 'trapezoid', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down', 'x-box', 'check-box', 'heart', 'cloud'] as const
 
 export const CARD_DEFAULT = { w: 280, h: 170 } as const
 export const CARD_WIDE = { w: 420, h: 190 } as const
 export const CARD_MIN = { w: 160, h: 90 } as const
+/** Tamanhos dos itens criados com um clique, como no tldraw. */
+export const NOTE_SIZE = 200
+export const GEO_DEFAULT = 100
 
 const color = z.enum(BOARD_COLORS)
 const size = z.enum(BOARD_SIZES)
@@ -34,6 +40,8 @@ export const BoardCardSchema = z.object({
 export const BoardTextSchema = z.object({
   ...base, kind: z.literal('text'), w: z.number().positive(), text: z.string(), color, size, font,
   textAlign: z.enum(['start', 'middle', 'end']), autoSize: z.boolean(), scale: z.number().positive(),
+  /** Caixa de texto: altura mínima escolhida ao criar arrastando (o texto pode passar dela). */
+  boxHeight: z.number().positive().optional(),
 })
 export const ArrowBindingSchema = z.object({ shapeId: z.string(), anchor: point, isPrecise: z.boolean(), isExact: z.boolean() })
 export type ArrowBinding = z.infer<typeof ArrowBindingSchema>
@@ -43,14 +51,36 @@ export const BoardArrowSchema = z.object({
   text: z.string(), labelPosition: z.number().min(0).max(1), scale: z.number().positive(),
   startBinding: ArrowBindingSchema.nullable(), endBinding: ArrowBindingSchema.nullable(),
 })
+const label = { text: z.string(), labelColor: color, font, align: z.enum(BOARD_ALIGNS), verticalAlign: z.enum(BOARD_ALIGNS), growY: z.number().min(0) }
+export const BoardNoteSchema = z.object({ ...base, kind: z.literal('note'), color, size, scale: z.number().positive(), ...label })
+export const BoardGeoSchema = z.object({
+  ...base, kind: z.literal('geo'), geo: z.enum(GEO_TYPES), w: z.number().positive(), h: z.number().positive(), color, fill: z.enum(BOARD_FILLS),
+  dash: z.enum(BOARD_DASHES), size, scale: z.number().positive(), ...label,
+})
+/** Desenho livre: pontos [x, y, pressão] relativos à origem da forma. */
+export const BoardDrawSchema = z.object({
+  ...base, kind: z.literal('draw'), points: z.array(z.tuple([finite, finite, z.number().min(0).max(1)])), color, fill: z.enum(BOARD_FILLS),
+  dash: z.enum(BOARD_DASHES), size, isClosed: z.boolean(), isPen: z.boolean(), scale: z.number().positive(),
+})
+export const BoardLineSchema = z.object({ ...base, kind: z.literal('line'), points: z.array(point).min(2), color, dash: z.enum(BOARD_DASHES), size, spline: z.enum(['line', 'cubic']), scale: z.number().positive() })
+/** Imagem: `assetId` é o ID do asset do Canon (ADR-003), não um caminho. */
+export const BoardImageSchema = z.object({ ...base, kind: z.literal('image'), w: z.number().positive(), h: z.number().positive(), assetId: z.string().min(1), flipX: z.boolean(), flipY: z.boolean() })
 /** Forma do editor anterior que ainda não tem equivalente: guardada intacta e mostrada como caixa. */
 export const BoardLegacySchema = z.object({ ...base, kind: z.literal('legacy'), w: z.number().positive(), h: z.number().positive(), type: z.string(), record: z.unknown() })
 
-export const BoardShapeSchema = z.discriminatedUnion('kind', [BoardCardSchema, BoardTextSchema, BoardArrowSchema, BoardLegacySchema])
+export const BoardShapeSchema = z.discriminatedUnion('kind', [BoardCardSchema, BoardTextSchema, BoardArrowSchema, BoardNoteSchema, BoardGeoSchema, BoardDrawSchema, BoardLineSchema, BoardImageSchema, BoardLegacySchema])
 export type BoardCard = z.infer<typeof BoardCardSchema>
 export type BoardText = z.infer<typeof BoardTextSchema>
 export type BoardArrow = z.infer<typeof BoardArrowSchema>
 export type BoardLegacy = z.infer<typeof BoardLegacySchema>
+export type BoardNote = z.infer<typeof BoardNoteSchema>
+export type BoardGeo = z.infer<typeof BoardGeoSchema>
+export type BoardDraw = z.infer<typeof BoardDrawSchema>
+export type BoardLine = z.infer<typeof BoardLineSchema>
+export type BoardImage = z.infer<typeof BoardImageSchema>
+export type GeoType = (typeof GEO_TYPES)[number]
+export type BoardFill = (typeof BOARD_FILLS)[number]
+export type BoardDash = (typeof BOARD_DASHES)[number]
 export type BoardShape = z.infer<typeof BoardShapeSchema>
 export type BoardColor = (typeof BOARD_COLORS)[number]
 export type BoardSize = (typeof BOARD_SIZES)[number]
@@ -109,6 +139,9 @@ export function fromTldrawBoardSnapshot(snapshot: unknown): BoardCanvas {
     entry[terminal] = { shapeId: str(record.toId), anchor: { x: num(anchor.x, 0.5), y: num(anchor.y, 0.5) }, isPrecise: bool(props.isPrecise, false), isExact: bool(props.isExact, false) }
     bindings.set(str(record.fromId), entry)
   }
+  // Imagens apontam para registros `asset`; o asset do Canon fica em `meta.wikiAssetId`.
+  const wikiAssets = new Map<string, string>()
+  for (const record of records) if (record.typeName === 'asset' && isObject(record.meta) && typeof record.meta.wikiAssetId === 'string') wikiAssets.set(str(record.id), record.meta.wikiAssetId)
   const shapes: BoardShape[] = []
   for (const record of records.filter((item) => item.typeName === 'shape').sort(byIndex)) {
     const props = isObject(record.props) ? record.props : {}
@@ -137,6 +170,24 @@ export function fromTldrawBoardSnapshot(snapshot: unknown): BoardCanvas {
         text: richTextToPlain(props.richText ?? props.text), labelPosition: Math.min(1, Math.max(0, num(props.labelPosition, 0.5))), scale: positive(props.scale, 1),
         startBinding: bound.start ?? null, endBinding: bound.end ?? null,
       })
+    } else if (record.type === 'note' || record.type === 'geo') {
+      const labelProps = {
+        text: richTextToPlain(props.richText ?? props.text), labelColor: pick(BOARD_COLORS, props.labelColor, 'black'), font: pick(BOARD_FONTS, props.font, 'draw'),
+        align: pick(BOARD_ALIGNS, String(props.align ?? 'middle').replace('-legacy', ''), 'middle'), verticalAlign: pick(BOARD_ALIGNS, props.verticalAlign, 'middle'),
+        growY: Math.max(0, num(props.growY, 0)),
+      }
+      const styles = { color: pick(BOARD_COLORS, props.color, 'black'), size: pick(BOARD_SIZES, props.size, 'm'), scale: positive(props.scale, 1) }
+      if (record.type === 'note') shapes.push({ ...common, kind: 'note', ...styles, ...labelProps })
+      else shapes.push({
+        ...common, kind: 'geo', ...styles, ...labelProps, geo: pick(GEO_TYPES, props.geo, 'rectangle'), w: positive(props.w, GEO_DEFAULT), h: positive(props.h, GEO_DEFAULT),
+        fill: pick(BOARD_FILLS, props.fill, 'none'), dash: pick(BOARD_DASHES, props.dash, 'draw'),
+      })
+    } else if (record.type === 'line' && isObject(props.points)) {
+      const points = Object.values(props.points).filter(isObject).sort(byIndex).map((p) => ({ x: num(p.x, 0), y: num(p.y, 0) }))
+      if (points.length >= 2) shapes.push({ ...common, kind: 'line', points, color: pick(BOARD_COLORS, props.color, 'black'), dash: pick(BOARD_DASHES, props.dash, 'draw'), size: pick(BOARD_SIZES, props.size, 'm'), spline: props.spline === 'cubic' ? 'cubic' : 'line', scale: positive(props.scale, 1) })
+      else shapes.push({ ...common, kind: 'legacy', w: 100, h: 100, type: 'line', record })
+    } else if (record.type === 'image' && wikiAssets.has(str(props.assetId))) {
+      shapes.push({ ...common, kind: 'image', w: positive(props.w, 100), h: positive(props.h, 100), assetId: wikiAssets.get(str(props.assetId))!, flipX: props.flipX === true, flipY: props.flipY === true })
     } else {
       shapes.push({ ...common, kind: 'legacy', w: positive(props.w, 100), h: positive(props.h, 100), type: str(record.type) || 'desconhecido', record })
     }

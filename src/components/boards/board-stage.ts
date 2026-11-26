@@ -4,9 +4,13 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { TriangleAlert } from 'lucide-react'
 import { assetVariantUrl } from '@/lib/assetUrl'
-import { arrowFrame, arrowGeometry, arrowStrokeWidth, bendHandle, bendThrough, distanceToPath, type ArrowGeometry } from '@/domain/boards/boardArrow'
-import { CARD_DEFAULT, CARD_MIN, type ArrowBinding, type BoardArrow, type BoardCanvas, type BoardCard, type BoardShape, type BoardText } from '@/domain/boards/boardCanvas'
-import { ARROW_LABEL_FONT_SIZES, BOARD_PALETTE, TEXT_FONT_SIZES, TEXT_LINE_HEIGHT } from '@/domain/boards/boardStyles'
+import { STROKE_WIDTHS, arrowFrame, arrowGeometry, arrowStrokeWidth, bendHandle, bendThrough, distanceToPath, type ArrowGeometry } from '@/domain/boards/boardArrow'
+import {
+  CARD_DEFAULT, CARD_MIN, GEO_DEFAULT, NOTE_SIZE,
+  type ArrowBinding, type BoardArrow, type BoardCanvas, type BoardCard, type BoardColor, type BoardDash, type BoardDraw, type BoardFill, type BoardFont, type BoardGeo,
+  type BoardImage, type BoardLine, type BoardNote, type BoardShape, type BoardSize, type BoardText, type GeoType,
+} from '@/domain/boards/boardCanvas'
+import { ARROW_LABEL_FONT_SIZES, BOARD_PALETTE, LABEL_FONT_SIZES, LABEL_PADDING, TEXT_FONT_SIZES, TEXT_LINE_HEIGHT } from '@/domain/boards/boardStyles'
 import { constrainCamera, interpolateCamera, screenToPage, stepZoom, viewportPageBounds, wheelCamera, zoomAt, type CameraState, type Rect, type Size } from '@/domain/canvas/camera'
 import {
   boundsOf, distanceSq, frameCenter, frameCorners, frameIntersectsRect, hitsFrame, resizePoint, resizeTransform, rotateAround, rotationDelta, selectionFrameOf, toLocal, toPage,
@@ -14,23 +18,31 @@ import {
 } from '@/domain/canvas/geometry'
 import { createHistory } from '@/domain/canvas/history'
 import { drawArrow, drawBoardBackground, drawCard, drawLegacy, drawText, layoutArrowLabel, layoutText, readBoardPalette, type BoardPalette, type LabelLayout, type TextLayout } from './board-render'
+import { drawDraw, drawGeo, drawImage, drawLine, drawNote, geoHeight, layoutLabel, linePath, noteSize } from './board-render-shapes'
 import type { BoardEntitySummary } from './board-types'
 
-export type BoardTool = 'select' | 'hand' | 'text' | 'arrow'
+export type BoardTool = 'select' | 'hand' | 'draw' | 'eraser' | 'arrow' | 'text' | 'note' | 'geo' | 'line'
+/** Estilo das próximas formas criadas (o painel de estilo do tldraw o altera). */
+export type BoardStyle = { color: BoardColor; fill: BoardFill; dash: BoardDash; size: BoardSize; font: BoardFont }
+/** O que o painel de estilo mostra: `null` quando a seleção tem valores diferentes. */
+export type BoardStyleState = { visible: boolean; color: BoardColor | null; size: BoardSize | null }
+const STYLED_KINDS = new Set<BoardShape['kind']>(['text', 'arrow', 'note', 'geo', 'draw', 'line'])
+const STYLED_TOOLS = new Set<BoardTool>(['draw', 'arrow', 'text', 'note', 'geo', 'line'])
+type StyledShape = Extract<BoardShape, { color: BoardColor; size: BoardSize }>
+const isStyled = (shape: BoardShape): shape is StyledShape => STYLED_KINDS.has(shape.kind)
 export type BoardEditorCallbacks = {
   documentChanged: () => void
   selectionChanged: () => void
   cameraChanged: () => void
   toolChanged: () => void
   openEntity: (entityId: string) => void
+  /** Ctrl+U: abrir o seletor de imagem. */
+  pickImage: () => void
 }
 type ShapePatch = { id: string } & Partial<Record<string, unknown>>
 
 // Tema escuro do tldraw 5.4.1: mesma cor de seleção, alças e área.
-const SELECTION_STROKE = 'hsl(214, 84%, 56%)'
 const SELECTION_CONTRAST = '#ffffff'
-const BRUSH_FILL = 'hsla(0, 0%, 56%, 0.102)'
-const BRUSH_STROKE = 'hsla(0, 0%, 56%, 0.251)'
 const LINE_WIDTH = 1.5
 const HINT_LINE_WIDTH = 2.5
 const HANDLE_SIZE = 8
@@ -43,6 +55,10 @@ const DOUBLE_CLICK_MS = 450
 const ZOOM_DURATION = 250
 const DUPLICATE_OFFSET = 16
 const CLIPBOARD_PREFIX = 'canon-board-shapes:'
+const ERASING_OPACITY = 0.32
+/** Largura mínima de uma caixa de texto criada arrastando. */
+const TEXT_MIN_BOX_WIDTH = 32
+const IMAGE_VIEWPORT_FRACTION = 0.6
 
 const ROTATE_CURSOR = (() => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22a9 9 0 1 1 12 0" stroke="#fff" stroke-width="5"/><path d="M22 16v6h6" stroke="#fff" stroke-width="5"/><path d="M10 22a9 9 0 1 1 12 0" stroke="#000" stroke-width="2"/><path d="M22 16v6h6" stroke="#000" stroke-width="2"/></g></svg>`
@@ -73,10 +89,18 @@ export function createBoardEditor(host: HTMLElement, options: {
   let tool: BoardTool = 'select'
   let editingId: string | null = null
   let palette: BoardPalette = readBoardPalette(host)
+  // Seleção, alças e área usam a cor de destaque do site (--primary).
+  const selectionStroke = () => palette.primary
+  const brushFill = () => palette.primary14
+  const brushStroke = () => palette.primary30
   let viewport: Size = { w: host.clientWidth, h: host.clientHeight }
   let camera: CameraState = options.camera ?? { x: 0, y: 0, z: 1 }
   let cameraAnimation: number | null = null
   const history = createHistory<{ shapes: BoardShape[]; selected: string[] }>()
+  let geoType: GeoType = 'rectangle'
+  const style: BoardStyle = { color: 'black', fill: 'none', dash: 'draw', size: 'm', font: 'draw' }
+  let erasing = new Set<string>()
+  let drawingId: string | null = null
 
   const stage = new K.Stage({ container: host as HTMLDivElement, width: Math.max(1, viewport.w), height: Math.max(1, viewport.h), listening: false })
   const backgroundLayer = new K.Layer({ listening: false })
@@ -118,11 +142,31 @@ export function createBoardEditor(host: HTMLElement, options: {
   }
   const shapeById = (id: string) => shapes.find((shape) => shape.id === id)
 
+  const originFrame = (shape: Pick<BoardShape, 'x' | 'y' | 'rotation'>): Frame => ({ x: shape.x, y: shape.y, w: 0, h: 0, rotation: shape.rotation })
+  const strokeOf = (shape: BoardDraw | BoardLine) => STROKE_WIDTHS[shape.size] * shape.scale
+  const localPath = (shape: BoardDraw | BoardLine): Point[] => shape.kind === 'draw' ? shape.points.map(([x, y]) => ({ x, y })) : linePath(shape)
+  const pagePath = (shape: BoardDraw | BoardLine) => localPath(shape).map((p) => toPage(originFrame(shape), p))
+  /** Desenho e linha: caixa dos pontos com meia espessura de folga, na rotação da forma. */
+  const pointsFrame = (shape: BoardDraw | BoardLine): Frame => {
+    const box = boundsOf(localPath(shape)), pad = strokeOf(shape) / 2
+    return { ...toPage(originFrame(shape), { x: box.x - pad, y: box.y - pad }), w: Math.max(1, box.w + pad * 2), h: Math.max(1, box.h + pad * 2), rotation: shape.rotation }
+  }
+  const labelLayoutOf = (shape: BoardNote | BoardGeo) => layoutLabel(measure, editingId === shape.id ? { ...shape, text: shape.text || ' ' } : shape, shape.kind === 'note' ? noteSize(shape).w : shape.w, palette)
+  /** Notas e formas crescem para baixo quando o rótulo não cabe, como o `growY` do tldraw. */
+  const withGrowth = <T extends BoardNote | BoardGeo>(shape: T): T => {
+    const needed = layoutLabel(measure, shape, shape.kind === 'note' ? NOTE_SIZE * shape.scale : shape.w, palette).height
+    if (shape.kind === 'note') return { ...shape, growY: Math.max(0, needed / shape.scale - NOTE_SIZE) }
+    return { ...shape, growY: Math.max(0, needed - shape.h) }
+  }
+
   /** Moldura de uma forma na página (para acerto, seleção e vínculo de setas). */
   const frameOf = (shape: BoardShape): Frame => {
     switch (shape.kind) {
-      case 'card': case 'legacy': return { x: shape.x, y: shape.y, w: shape.w, h: shape.h, rotation: shape.rotation }
-      case 'text': { const layout = textLayout(shape); return { x: shape.x, y: shape.y, w: layout.width, h: layout.height, rotation: shape.rotation } }
+      case 'card': case 'legacy': case 'image': return { x: shape.x, y: shape.y, w: shape.w, h: shape.h, rotation: shape.rotation }
+      case 'note': return { x: shape.x, y: shape.y, ...noteSize(shape), rotation: shape.rotation }
+      case 'geo': return { x: shape.x, y: shape.y, w: shape.w, h: geoHeight(shape), rotation: shape.rotation }
+      case 'draw': case 'line': return pointsFrame(shape)
+      case 'text': { const layout = textLayout(shape); return { x: shape.x, y: shape.y, w: layout.width, h: Math.max(layout.height, (shape.boxHeight ?? 0) * shape.scale), rotation: shape.rotation } }
       case 'arrow': { const box = boundsOf(geometryOf(shape).points); return { ...box, w: Math.max(box.w, 1), h: Math.max(box.h, 1), rotation: 0 } }
     }
   }
@@ -135,12 +179,17 @@ export function createBoardEditor(host: HTMLElement, options: {
   backgroundLayer.add(backgroundNode)
 
   const drawShape = (ctx: CanvasRenderingContext2D, shape: BoardShape) => {
-    ctx.globalAlpha *= shape.opacity
+    ctx.globalAlpha *= shape.opacity * (erasing.has(shape.id) ? ERASING_OPACITY : 1)
     switch (shape.kind) {
       case 'card': drawCard(ctx, shape, entities.get(shape.entityId), palette, assetImage, warningIcon, supportsFilter); break
       case 'text': if (editingId !== shape.id) drawText(ctx, shape, textLayout(shape)); break
       case 'arrow': { const geometry = geometryOf(shape); drawArrow(ctx, editingId === shape.id ? { ...shape, text: '' } : shape, geometry, editingId === shape.id ? null : labelOf(shape, geometry)); break }
       case 'legacy': drawLegacy(ctx, shape, palette); break
+      case 'note': drawNote(ctx, shape, labelLayoutOf(shape), editingId === shape.id); break
+      case 'geo': drawGeo(ctx, shape, labelLayoutOf(shape), editingId === shape.id); break
+      case 'draw': drawDraw(ctx, shape, drawingId !== shape.id); break
+      case 'line': drawLine(ctx, shape); break
+      case 'image': drawImage(ctx, shape, assetImage(shape.assetId, 'original'), palette); break
     }
   }
   const nodes = new Map<string, K.Shape>()
@@ -174,31 +223,40 @@ export function createBoardEditor(host: HTMLElement, options: {
     | { kind: 'handle'; pointerId: number; arrowId: string; which: 'start' | 'end' | 'middle'; before: { shapes: BoardShape[]; selected: string[] } }
     | { kind: 'pointing_arrow'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean }
     | { kind: 'pinching'; startDistance: number; startMid: Point; startCamera: CameraState }
+    | { kind: 'pointing_create'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean; create: 'geo' | 'line' }
+    | { kind: 'creating_geo'; pointerId: number; id: string; startPage: Point; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'creating_note'; pointerId: number; id: string; startPage: Point; origin: Point; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'drawing'; pointerId: number; id: string; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'erasing'; pointerId: number; last: Point; moved: boolean }
+    | { kind: 'line_handle'; pointerId: number; lineId: string; index: number; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'pointing_text'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean }
+    | { kind: 'creating_text'; pointerId: number; id: string; startPage: Point; before: { shapes: BoardShape[]; selected: string[] } }
   let interaction: Interaction = { kind: 'idle' }
 
   const selectedShapes = () => shapes.filter((shape) => selectedIds.includes(shape.id))
   const snapshot = () => ({ shapes: clone(shapes), selected: [...selectedIds] })
   const onlyArrow = () => { const selection = selectedShapes(); return selection.length === 1 && selection[0].kind === 'arrow' ? selection[0] : null }
+  const onlyLine = () => { const selection = selectedShapes(); return selection.length === 1 && selection[0].kind === 'line' ? selection[0] : null }
   const canResize = (shape: BoardShape) => shape.kind !== 'arrow' || !shape.startBinding || !shape.endBinding
   const showControls = () => (interaction.kind === 'idle' || interaction.kind === 'pointing') && !editingId && tool === 'select'
 
   const controls = () => {
     const selection = selectedShapes()
-    if (selection.length === 0 || !showControls() || onlyArrow()) return null
+    if (selection.length === 0 || !showControls() || onlyArrow() || onlyLine()) return null
     const frame = selectionFrameOf(selection.map(frameOf))
     if (!frame) return null
     const z = camera.z, handleSize = HANDLE_SIZE / z, hit = HIT_TARGET / z
     const tinyX = frame.w < handleSize * 2, tinyY = frame.h < handleSize * 2
     const text = selection.length === 1 && selection[0].kind === 'text'
-    return { frame, handleSize, resizable: selection.some(canResize), rotatable: !(tinyX || tinyY), cornerHit: hit * 1.5, rotateSize: hit * 1.62, edgeHit: hit, verticalEdges: !text }
+    return { frame, handleSize, resizable: selection.some(canResize), rotatable: !(tinyX || tinyY), cornerHit: hit * 1.5, rotateSize: hit * 1.62, edgeHit: hit, verticalEdges: !(text && (selection[0] as BoardText).autoSize) }
   }
 
   const strokeIndicator = (ctx: CanvasRenderingContext2D, shape: BoardShape, width: number) => {
     ctx.save()
-    ctx.strokeStyle = SELECTION_STROKE
+    ctx.strokeStyle = selectionStroke()
     ctx.lineWidth = width / camera.z
-    if (shape.kind === 'arrow') {
-      const { points } = geometryOf(shape)
+    if (shape.kind === 'arrow' || shape.kind === 'draw' || shape.kind === 'line') {
+      const points = shape.kind === 'arrow' ? geometryOf(shape).points : pagePath(shape)
       ctx.beginPath(); points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke()
     } else {
       const frame = frameOf(shape)
@@ -210,7 +268,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     const z = camera.z
     ctx.beginPath(); ctx.arc(p.x, p.y, HANDLE_RADIUS / z, 0, Math.PI * 2)
     ctx.fillStyle = SELECTION_CONTRAST; ctx.fill()
-    ctx.strokeStyle = SELECTION_STROKE; ctx.lineWidth = LINE_WIDTH / z; ctx.stroke()
+    ctx.strokeStyle = selectionStroke(); ctx.lineWidth = LINE_WIDTH / z; ctx.stroke()
   }
   const arrowHandles = (arrow: BoardArrow) => {
     const geometry = geometryOf(arrow)
@@ -219,7 +277,7 @@ export function createBoardEditor(host: HTMLElement, options: {
 
   const drawOverlay = (ctx: CanvasRenderingContext2D) => {
     const z = camera.z
-    for (const shape of selectedShapes()) if (shape.id !== editingId) strokeIndicator(ctx, shape, LINE_WIDTH)
+    for (const shape of selectedShapes()) if (shape.id !== editingId || shape.kind === 'text') strokeIndicator(ctx, shape, LINE_WIDTH)
     const busy = interaction.kind === 'brushing' || interaction.kind === 'panning' || interaction.kind === 'pinching'
     if (hoveredId && !selectedIds.includes(hoveredId) && (interaction.kind === 'idle' || busy) && tool === 'select') {
       const hovered = shapeById(hoveredId)
@@ -228,8 +286,8 @@ export function createBoardEditor(host: HTMLElement, options: {
     if (hintId) { const hinted = shapeById(hintId); if (hinted) strokeIndicator(ctx, hinted, HINT_LINE_WIDTH) }
     if (interaction.kind === 'brushing') {
       const { rect } = interaction
-      ctx.fillStyle = BRUSH_FILL; ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
-      ctx.strokeStyle = BRUSH_STROKE; ctx.lineWidth = 1 / z; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
+      ctx.fillStyle = brushFill(); ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
+      ctx.strokeStyle = brushStroke(); ctx.lineWidth = 1 / z; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
     }
     const arrow = onlyArrow()
     if (arrow && !editingId && (interaction.kind === 'idle' || interaction.kind === 'pointing' || interaction.kind === 'handle')) {
@@ -237,11 +295,16 @@ export function createBoardEditor(host: HTMLElement, options: {
       drawHandle(ctx, handles.start); drawHandle(ctx, handles.end); drawHandle(ctx, handles.middle)
       return
     }
+    const line = onlyLine()
+    if (line && !editingId && (interaction.kind === 'idle' || interaction.kind === 'pointing' || interaction.kind === 'line_handle')) {
+      for (const p of line.points) drawHandle(ctx, toPage(originFrame(line), p))
+      return
+    }
     const c = controls()
     if (!c) return
     ctx.save()
     ctx.translate(c.frame.x, c.frame.y); ctx.rotate(c.frame.rotation)
-    ctx.strokeStyle = SELECTION_STROKE; ctx.lineWidth = LINE_WIDTH / z
+    ctx.strokeStyle = selectionStroke(); ctx.lineWidth = LINE_WIDTH / z
     ctx.strokeRect(0, 0, c.frame.w, c.frame.h)
     if (c.resizable) {
       ctx.fillStyle = SELECTION_CONTRAST
@@ -333,14 +396,24 @@ export function createBoardEditor(host: HTMLElement, options: {
       const label = labelOf(shape, geometry)
       return !!label && Math.abs(page.x - label.center.x) <= label.width / 2 && Math.abs(page.y - label.center.y) <= label.height / 2
     }
+    if (shape.kind === 'draw' || shape.kind === 'line') {
+      const path = pagePath(shape)
+      return distanceToPath(path, page) <= strokeOf(shape) / 2 + margin + 4 / camera.z || (shape.kind === 'draw' && shape.isClosed && shape.fill !== 'none' && hitsFrame(frameOf(shape), page))
+    }
     return hitsFrame(frameOf(shape), page, margin)
   }
   /** Forma sob o ponto, da frente para trás, ignorando travadas. */
   const shapeAt = (page: Point, filter: (shape: BoardShape) => boolean = () => true) => [...shapes].reverse().find((shape) => !shape.locked && filter(shape) && hitShape(shape, page))
   const bindTargetAt = (page: Point, arrowId: string) => [...shapes].reverse().find((shape) => shape.kind !== 'arrow' && shape.id !== arrowId && hitsFrame(frameOf(shape), page, HIT_MARGIN / camera.z))
 
-  type ControlHit = { kind: 'resize'; handle: ResizeHandle } | { kind: 'rotate' } | { kind: 'arrow'; which: 'start' | 'end' | 'middle' }
+  type ControlHit = { kind: 'resize'; handle: ResizeHandle } | { kind: 'rotate' } | { kind: 'arrow'; which: 'start' | 'end' | 'middle' } | { kind: 'line'; index: number }
   const controlAt = (page: Point): ControlHit | null => {
+    const line = onlyLine()
+    if (line && !editingId && tool === 'select') {
+      const r = (HANDLE_RADIUS + 4) / camera.z
+      const index = line.points.findIndex((p) => distanceSq(toPage(originFrame(line), p), page) <= r * r)
+      return index >= 0 ? { kind: 'line', index } : null
+    }
     const arrow = onlyArrow()
     if (arrow && !editingId && tool === 'select') {
       const handles = arrowHandles(arrow), r = (HANDLE_RADIUS + 4) / camera.z
@@ -383,12 +456,29 @@ export function createBoardEditor(host: HTMLElement, options: {
       case 'card': return { ...shape, ...resizePoint(t, shape), w: Math.max(CARD_MIN.w, shape.w * sx), h: Math.max(CARD_MIN.h, shape.h * sy) }
       case 'legacy': return { ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h: Math.max(1, shape.h * sy) }
       case 'text': {
-        // Cantos mudam a escala do texto; bordas laterais mudam só a largura (quebra de linha).
+        // Caixa de texto: muda largura e altura como um retângulo, sem mudar o tamanho da letra.
+        if (!shape.autoSize && selectedIds.length === 1) {
+          const frame = frameOf(shape), min = TEXT_FONT_SIZES[shape.size] * TEXT_LINE_HEIGHT
+          return { ...shape, ...resizePoint(t, shape), w: Math.max(TEXT_MIN_BOX_WIDTH, shape.w * sx), boxHeight: Math.max(min, frame.h / shape.scale * sy) }
+        }
+        // Texto livre: cantos mudam a escala; bordas laterais mudam só a largura (quebra de linha).
         if ((handle === 'left' || handle === 'right') && selectedIds.length === 1) {
           const layout = textLayout(shape)
           return { ...shape, ...resizePoint(t, shape), w: Math.max(TEXT_FONT_SIZES[shape.size], layout.width / shape.scale * sx), autoSize: false }
         }
         return { ...shape, ...resizePoint(t, shape), scale: Math.max(0.05, shape.scale * Math.max(sx, sy)) }
+      }
+      case 'geo': {
+        const h = Math.max(1, geoHeight(shape) * sy)
+        return withGrowth({ ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h, growY: 0 })
+      }
+      case 'note': return withGrowth({ ...shape, ...resizePoint(t, shape), scale: Math.max(0.05, shape.scale * Math.max(sx, sy)) })
+      case 'image': return { ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h: Math.max(1, shape.h * sy) }
+      case 'draw': case 'line': {
+        const from = originFrame(shape), to = { ...from, ...resizePoint(t, shape) }
+        const map = (p: Point) => toLocal(to, resizePoint(t, toPage(from, p)))
+        if (shape.kind === 'draw') return { ...shape, x: to.x, y: to.y, points: shape.points.map(([x, y, pressure]) => { const p = map({ x, y }); return [p.x, p.y, pressure] as [number, number, number] }) }
+        return { ...shape, x: to.x, y: to.y, points: shape.points.map(map) }
       }
       case 'arrow': {
         const own = arrowFrame(shape)
@@ -406,7 +496,8 @@ export function createBoardEditor(host: HTMLElement, options: {
   let lastDown: { time: number; point: Point } | null = null
   const pointers = new Map<number, Point>()
   const setCursor = (cursor: string) => { if (host.style.cursor !== cursor) host.style.cursor = cursor }
-  const toolCursor = () => tool === 'hand' || spaceHeld ? 'grab' : tool === 'select' ? 'default' : 'crosshair'
+  const ERASER_CURSOR = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="6" fill="white" stroke="black" stroke-width="1.5"/></svg>')}") 10 10, crosshair`
+  const toolCursor = () => tool === 'hand' || spaceHeld ? 'grab' : tool === 'select' ? 'default' : tool === 'eraser' ? ERASER_CURSOR : 'crosshair'
 
   const updateHover = (screen: Point) => {
     if (interaction.kind !== 'idle') return
@@ -421,7 +512,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     const control = controlAt(page), c = controls()
     if (control?.kind === 'resize' && c) setCursor(resizeCursor(control.handle, c.frame))
     else if (control?.kind === 'rotate') setCursor(ROTATE_CURSOR)
-    else if (control?.kind === 'arrow') setCursor('grab')
+    else if (control?.kind === 'arrow' || control?.kind === 'line') setCursor('grab')
     else setCursor('default')
     const next = shapeAt(page)?.id ?? null
     if (next !== hoveredId) { hoveredId = next; redrawOverlay() }
@@ -499,11 +590,51 @@ export function createBoardEditor(host: HTMLElement, options: {
     const page = pageAt(screen)
     const coarse = event.pointerType !== 'mouse'
     if (tool === 'text') {
-      createText(page)
+      interaction = { kind: 'pointing_text', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse }
       return
     }
     if (tool === 'arrow') {
       interaction = { kind: 'pointing_arrow', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse }
+      return
+    }
+    if (tool === 'geo' || tool === 'line') {
+      interaction = { kind: 'pointing_create', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse, create: tool }
+      return
+    }
+    if (tool === 'note') {
+      // A nota aparece centrada no clique; arrastar antes de soltar a move.
+      const before = snapshot()
+      mark(before)
+      const note: BoardNote = withGrowth({
+        id: newShapeId(), kind: 'note', x: page.x - NOTE_SIZE / 2, y: page.y - NOTE_SIZE / 2, rotation: 0, opacity: 1, locked: false,
+        color: style.color, size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+      })
+      shapes = [...shapes, note]
+      selectedIds = [note.id]
+      callbacks.selectionChanged()
+      commit()
+      interaction = { kind: 'creating_note', pointerId: event.pointerId, id: note.id, startPage: page, origin: { x: note.x, y: note.y }, before }
+      return
+    }
+    if (tool === 'draw') {
+      const before = snapshot()
+      mark(before)
+      const draw: BoardDraw = {
+        id: newShapeId(), kind: 'draw', x: page.x, y: page.y, rotation: 0, opacity: 1, locked: false, points: [[0, 0, event.pointerType === 'pen' ? event.pressure || 0.5 : 0.5]],
+        color: style.color, fill: style.fill, dash: style.dash, size: style.size, isClosed: false, isPen: event.pointerType === 'pen', scale: 1,
+      }
+      shapes = [...shapes, draw]
+      drawingId = draw.id
+      selectedIds = []
+      callbacks.selectionChanged()
+      syncNodes()
+      interaction = { kind: 'drawing', pointerId: event.pointerId, id: draw.id, before }
+      return
+    }
+    if (tool === 'eraser') {
+      erasing = new Set()
+      interaction = { kind: 'erasing', pointerId: event.pointerId, last: page, moved: false }
+      eraseAlong(page, page)
       return
     }
     const now = performance.now()
@@ -511,7 +642,7 @@ export function createBoardEditor(host: HTMLElement, options: {
       lastDown = null
       const hit = shapeAt(page)
       if (hit?.kind === 'card') callbacks.openEntity(hit.entityId)
-      else if (hit?.kind === 'text' || hit?.kind === 'arrow') { setSelection([hit.id]); startEditing(hit.id) }
+      else if (hit?.kind === 'text' || hit?.kind === 'arrow' || hit?.kind === 'note' || hit?.kind === 'geo') { setSelection([hit.id]); startEditing(hit.id) }
       else if (!hit) createText(page)
       return
     }
@@ -521,6 +652,7 @@ export function createBoardEditor(host: HTMLElement, options: {
       const before = snapshot()
       mark(before)
       if (control.kind === 'arrow') interaction = { kind: 'handle', pointerId: event.pointerId, arrowId: onlyArrow()!.id, which: control.which, before }
+      else if (control.kind === 'line') interaction = { kind: 'line_handle', pointerId: event.pointerId, lineId: onlyLine()!.id, index: control.index, before }
       else {
         const frame = selectionFrameOf(selectedShapes().map(frameOf))!
         const initial = clone(selectedShapes())
@@ -584,7 +716,7 @@ export function createBoardEditor(host: HTMLElement, options: {
         const target = event.ctrlKey ? undefined : bindTargetAt(start, id)
         const arrow: BoardArrow = {
           id, kind: 'arrow', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, start: { x: 0, y: 0 }, end: { x: page.x - start.x, y: page.y - start.y }, bend: 0,
-          color: 'black', labelColor: 'black', size: 'm', font: 'draw', dash: 'draw', arrowheadStart: 'none', arrowheadEnd: 'arrow', text: '', labelPosition: 0.5, scale: 1,
+          color: style.color, labelColor: 'black', size: style.size, font: style.font, dash: style.dash, arrowheadStart: 'none', arrowheadEnd: 'arrow', text: '', labelPosition: 0.5, scale: 1,
           startBinding: target ? bindingFor(target, start) : null, endBinding: null,
         }
         shapes = [...shapes, arrow]
@@ -592,6 +724,96 @@ export function createBoardEditor(host: HTMLElement, options: {
         callbacks.selectionChanged()
         interaction = { kind: 'handle', pointerId: interaction.pointerId, arrowId: id, which: 'end', before }
         move(event)
+        return
+      }
+      case 'pointing_create': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        const before = snapshot()
+        mark(before)
+        const start = interaction.startPage, id = newShapeId()
+        if (interaction.create === 'geo') {
+          const geo: BoardGeo = {
+            id, kind: 'geo', geo: geoType, x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, w: 1, h: 1, color: style.color, fill: style.fill, dash: style.dash,
+            size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+          }
+          shapes = [...shapes, geo]
+          interaction = { kind: 'creating_geo', pointerId: interaction.pointerId, id, startPage: start, before }
+        } else {
+          const line: BoardLine = { id, kind: 'line', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, points: [{ x: 0, y: 0 }, { x: page.x - start.x, y: page.y - start.y }], color: style.color, dash: style.dash, size: style.size, spline: 'line', scale: 1 }
+          shapes = [...shapes, line]
+          interaction = { kind: 'line_handle', pointerId: interaction.pointerId, lineId: id, index: 1, before }
+        }
+        selectedIds = [id]
+        callbacks.selectionChanged()
+        move(event)
+        return
+      }
+      case 'pointing_text': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        const before = snapshot()
+        const start = interaction.startPage
+        const text: BoardText = { id: newShapeId(), kind: 'text', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, w: 1, text: '', color: style.color, size: style.size, font: style.font, textAlign: 'start', autoSize: false, scale: 1 }
+        shapes = [...shapes, text]
+        selectedIds = [text.id]
+        callbacks.selectionChanged()
+        interaction = { kind: 'creating_text', pointerId: interaction.pointerId, id: text.id, startPage: start, before }
+        move(event)
+        return
+      }
+      case 'creating_text': {
+        const text = shapeById(interaction.id)
+        if (!text || text.kind !== 'text') return
+        const w = Math.max(TEXT_MIN_BOX_WIDTH, Math.abs(page.x - interaction.startPage.x))
+        const lineHeight = TEXT_FONT_SIZES[text.size] * TEXT_LINE_HEIGHT
+        const h = Math.max(lineHeight, Math.abs(page.y - interaction.startPage.y))
+        const x = page.x < interaction.startPage.x ? interaction.startPage.x - w : interaction.startPage.x
+        const y = Math.min(page.y, interaction.startPage.y)
+        replaceShapes([{ ...text, x, y, w, boxHeight: h }])
+        commit()
+        return
+      }
+      case 'creating_geo': {
+        const geo = shapeById(interaction.id)
+        if (!geo || geo.kind !== 'geo') return
+        let w = Math.abs(page.x - interaction.startPage.x), h = Math.abs(page.y - interaction.startPage.y)
+        if (event.shiftKey) { w = h = Math.max(w, h) }
+        const x = page.x < interaction.startPage.x ? interaction.startPage.x - w : interaction.startPage.x
+        const y = page.y < interaction.startPage.y ? interaction.startPage.y - h : interaction.startPage.y
+        replaceShapes([withGrowth({ ...geo, x, y, w: Math.max(1, w), h: Math.max(1, h), growY: 0 })])
+        commit()
+        return
+      }
+      case 'creating_note': {
+        const note = shapeById(interaction.id)
+        if (!note) return
+        replaceShapes([{ ...note, x: interaction.origin.x + page.x - interaction.startPage.x, y: interaction.origin.y + page.y - interaction.startPage.y }])
+        commit()
+        return
+      }
+      case 'drawing': {
+        const draw = shapeById(interaction.id)
+        if (!draw || draw.kind !== 'draw') return
+        const local = toLocal(originFrame(draw), page), last = draw.points[draw.points.length - 1]
+        if (Math.hypot(local.x - last[0], local.y - last[1]) < 1 / camera.z) return
+        const pressure = event.pointerType === 'pen' ? event.pressure || 0.5 : 0.5
+        replaceShapes([{ ...draw, points: [...draw.points, [local.x, local.y, pressure]] }])
+        commit()
+        return
+      }
+      case 'erasing': {
+        eraseAlong(interaction.last, page)
+        interaction.last = page
+        interaction.moved = true
+        return
+      }
+      case 'line_handle': {
+        const line = shapeById(interaction.lineId)
+        if (!line || line.kind !== 'line') return
+        const local = toLocal(originFrame(line), page), { index } = interaction
+        replaceShapes([{ ...line, points: line.points.map((p, i) => i === index ? local : p) }])
+        commit()
         return
       }
       case 'translating': {
@@ -612,7 +834,10 @@ export function createBoardEditor(host: HTMLElement, options: {
       case 'resizing': {
         const { handle } = interaction
         const corner = handle !== 'left' && handle !== 'right' && handle !== 'top' && handle !== 'bottom'
-        const t = resizeTransform(interaction.frame, handle, page, event.altKey, event.shiftKey || (corner && interaction.initial.some((shape) => shape.kind === 'text')))
+        // Texto, nota e imagem mantêm a proporção pelos cantos, como no tldraw.
+        const { initial } = interaction
+        const locked = initial.some((shape) => (shape.kind === 'text' && (shape.autoSize || initial.length > 1)) || shape.kind === 'note' || shape.kind === 'image')
+        const t = resizeTransform(interaction.frame, handle, page, event.altKey, event.shiftKey || (corner && locked) || (interaction.initial.length === 1 && interaction.initial[0].kind === 'image'))
         replaceShapes(interaction.initial.map((shape) => resizeShape(shape, t, handle)))
         commit()
         return
@@ -667,6 +892,28 @@ export function createBoardEditor(host: HTMLElement, options: {
     }
     if (ended.kind === 'handle' && tool === 'arrow') setTool('select')
     if (ended.kind === 'pointing_arrow') setTool('select')
+    if (ended.kind === 'pointing_create' && ended.create === 'geo') {
+      // Clique sem arrastar: forma do tamanho padrão, centrada no ponto.
+      mark()
+      const p = ended.startPage
+      const geo: BoardGeo = withGrowth({
+        id: newShapeId(), kind: 'geo', geo: geoType, x: p.x - GEO_DEFAULT / 2, y: p.y - GEO_DEFAULT / 2, rotation: 0, opacity: 1, locked: false, w: GEO_DEFAULT, h: GEO_DEFAULT,
+        color: style.color, fill: style.fill, dash: style.dash, size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+      })
+      shapes = [...shapes, geo]
+      selectedIds = [geo.id]
+      callbacks.selectionChanged()
+      commit()
+      setTool('select')
+    }
+    if (ended.kind === 'pointing_create' && ended.create === 'line') setTool('select')
+    if (ended.kind === 'creating_geo') setTool('select')
+    if (ended.kind === 'line_handle' && tool === 'line') setTool('select')
+    if (ended.kind === 'creating_note') { setTool('select'); startEditing(ended.id, ended.before) }
+    if (ended.kind === 'drawing') finishDrawing(ended.id)
+    if (ended.kind === 'pointing_text') createText(ended.startPage)
+    if (ended.kind === 'creating_text') { setTool('select'); startEditing(ended.id, ended.before) }
+    if (ended.kind === 'erasing') finishErasing(ended.moved ? null : pageAt(screen))
     if (ended.kind === 'panning') setCursor(toolCursor())
     redrawOverlay()
     updateHover(screen)
@@ -696,14 +943,51 @@ export function createBoardEditor(host: HTMLElement, options: {
   }
   const gestureEnd = (event: Event) => { event.preventDefault(); gestureStart = null }
 
+  // ---------- Desenho livre e borracha ----------
+  /** Fecha o traço quando ele termina perto do começo, como o tldraw. */
+  const finishDrawing = (id: string) => {
+    drawingId = null
+    const draw = shapeById(id)
+    if (draw?.kind === 'draw' && draw.points.length > 6) {
+      const [x0, y0] = draw.points[0], [x1, y1] = draw.points[draw.points.length - 1]
+      if (Math.hypot(x1 - x0, y1 - y0) < Math.max(8, strokeOf(draw) * 2) / camera.z * camera.z) replaceShapes([{ ...draw, isClosed: true }])
+    }
+    commit()
+  }
+  /** Marca as formas tocadas no trecho percorrido; elas ficam translúcidas até soltar. */
+  const eraseAlong = (from: Point, to: Point) => {
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / (4 / camera.z)))
+    let changed = false
+    for (let i = 0; i <= steps; i++) {
+      const p = { x: from.x + (to.x - from.x) * i / steps, y: from.y + (to.y - from.y) * i / steps }
+      for (const shape of shapes) if (!shape.locked && !erasing.has(shape.id) && hitShape(shape, p)) { erasing.add(shape.id); changed = true }
+    }
+    if (changed) shapeLayer.batchDraw()
+  }
+  const removeShapes = (remove: Set<string>) => {
+    shapes = shapes.filter((shape) => !remove.has(shape.id)).map((shape) => shape.kind === 'arrow' && (remove.has(shape.startBinding?.shapeId ?? '') || remove.has(shape.endBinding?.shapeId ?? ''))
+      ? unbindFrom(shape, new Set(shapes.map((s) => s.id).filter((id) => !remove.has(id)))) : shape)
+    if (hoveredId && remove.has(hoveredId)) hoveredId = null
+  }
+  const finishErasing = (click: Point | null) => {
+    if (click && erasing.size === 0) { const hit = shapeAt(click); if (hit) erasing.add(hit.id) }
+    const remove = erasing
+    erasing = new Set()
+    if (remove.size === 0) { shapeLayer.batchDraw(); return }
+    mark()
+    removeShapes(remove)
+    setSelection(selectedIds.filter((id) => !remove.has(id)))
+    commit()
+  }
+
   // ---------- Texto no canvas ----------
   let textarea: HTMLTextAreaElement | null = null
   let editingBefore: { shapes: BoardShape[]; selected: string[] } | null = null
 
   const createText = (page: Point) => {
     const before = snapshot()
-    const size = 'm' as const, lineHeight = TEXT_FONT_SIZES[size] * TEXT_LINE_HEIGHT
-    const shape: BoardText = { id: newShapeId(), kind: 'text', x: page.x, y: page.y - lineHeight / 2, rotation: 0, opacity: 1, locked: false, w: 8, text: '', color: 'black', size, font: 'draw', textAlign: 'start', autoSize: true, scale: 1 }
+    const size = style.size, lineHeight = TEXT_FONT_SIZES[size] * TEXT_LINE_HEIGHT
+    const shape: BoardText = { id: newShapeId(), kind: 'text', x: page.x, y: page.y - lineHeight / 2, rotation: 0, opacity: 1, locked: false, w: 8, text: '', color: style.color, size, font: style.font, textAlign: 'start', autoSize: true, scale: 1 }
     shapes = [...shapes, shape]
     syncNodes()
     selectedIds = [shape.id]
@@ -722,6 +1006,16 @@ export function createBoardEditor(host: HTMLElement, options: {
       textarea.style.top = `${screen.y}px`
       textarea.style.transform = `rotate(${shape.rotation}rad) scale(${camera.z * shape.scale})`
       textarea.style.width = shape.autoSize ? 'auto' : `${shape.w}px`
+      textarea.style.minHeight = shape.boxHeight ? `${shape.boxHeight}px` : ''
+    } else if (shape.kind === 'note' || shape.kind === 'geo') {
+      const frame = frameOf(shape), layout = labelLayoutOf(shape), pad = LABEL_PADDING * shape.scale
+      const textHeight = layout.height - pad * 2
+      const top = shape.verticalAlign === 'start' ? pad : shape.verticalAlign === 'end' ? frame.h - pad - textHeight : (frame.h - textHeight) / 2
+      const origin = toPage(frame, { x: pad, y: top })
+      textarea.style.left = `${(origin.x + camera.x) * camera.z}px`
+      textarea.style.top = `${(origin.y + camera.y) * camera.z}px`
+      textarea.style.width = `${Math.max(1, frame.w - pad * 2)}px`
+      textarea.style.transform = `rotate(${shape.rotation}rad) scale(${camera.z})`
     } else if (shape.kind === 'arrow') {
       const geometry = geometryOf(shape), label = labelOf(shape, geometry)
       const center = label?.center ?? geometry.points[0]
@@ -741,28 +1035,29 @@ export function createBoardEditor(host: HTMLElement, options: {
 
   function startEditing(id: string, before = snapshot()) {
     const shape = shapeById(id)
-    if (!shape || (shape.kind !== 'text' && shape.kind !== 'arrow')) return
+    if (!shape || (shape.kind !== 'text' && shape.kind !== 'arrow' && shape.kind !== 'note' && shape.kind !== 'geo')) return
     stopEditing()
     editingId = id
     editingBefore = before
     const area = document.createElement('textarea')
     textarea = area
-    const fontSize = shape.kind === 'text' ? TEXT_FONT_SIZES[shape.size] : ARROW_LABEL_FONT_SIZES[shape.size] * shape.scale
-    const color = shape.kind === 'text' ? shape.color : shape.labelColor
+    const labelled = shape.kind === 'note' || shape.kind === 'geo'
+    const fontSize = shape.kind === 'text' ? TEXT_FONT_SIZES[shape.size] : labelled ? LABEL_FONT_SIZES[shape.size] * shape.scale : ARROW_LABEL_FONT_SIZES[shape.size] * shape.scale
+    const color = shape.kind === 'text' ? BOARD_PALETTE[shape.color].solid : shape.kind === 'note' && shape.labelColor === 'black' ? BOARD_PALETTE[shape.color].noteText : BOARD_PALETTE[shape.labelColor].solid
     Object.assign(area.style, {
       position: 'absolute', zIndex: '5', margin: '0', padding: '0', border: 'none', outline: 'none', resize: 'none', overflow: 'hidden', background: 'transparent',
-      transformOrigin: shape.kind === 'text' ? 'top left' : 'center', font: `${fontSize}px ${palette.fonts[shape.font]}`, lineHeight: String(TEXT_LINE_HEIGHT),
-      color: BOARD_PALETTE[color].solid, whiteSpace: shape.kind === 'text' && !shape.autoSize ? 'pre-wrap' : 'pre',
-      textAlign: shape.kind === 'arrow' ? 'center' : shape.textAlign === 'middle' ? 'center' : shape.textAlign === 'end' ? 'right' : 'left',
-      caretColor: SELECTION_STROKE, minWidth: '8px',
+      transformOrigin: shape.kind === 'arrow' ? 'center' : 'top left', font: `${fontSize}px ${palette.fonts[shape.font]}`, lineHeight: String(TEXT_LINE_HEIGHT),
+      color, whiteSpace: labelled || (shape.kind === 'text' && !shape.autoSize) ? 'pre-wrap' : 'pre',
+      textAlign: shape.kind === 'arrow' ? 'center' : labelled ? (shape.align === 'start' ? 'left' : shape.align === 'end' ? 'right' : 'center') : shape.textAlign === 'middle' ? 'center' : shape.textAlign === 'end' ? 'right' : 'left',
+      caretColor: palette.primary, minWidth: '8px',
     } satisfies Partial<CSSStyleDeclaration>)
     area.value = shape.text
     area.spellcheck = false
-    area.setAttribute('aria-label', shape.kind === 'text' ? 'Texto' : 'Rótulo da seta')
+    area.setAttribute('aria-label', shape.kind === 'text' ? 'Texto' : shape.kind === 'arrow' ? 'Rótulo da seta' : 'Texto da forma')
     area.addEventListener('input', () => {
       const current = shapeById(id)
-      if (!current || (current.kind !== 'text' && current.kind !== 'arrow')) return
-      replaceShapes([{ ...current, text: area.value }])
+      if (!current || (current.kind !== 'text' && current.kind !== 'arrow' && current.kind !== 'note' && current.kind !== 'geo')) return
+      replaceShapes([current.kind === 'note' || current.kind === 'geo' ? withGrowth({ ...current, text: area.value }) : { ...current, text: area.value }])
       syncNodes()
       fitTextarea()
       positionEditor()
@@ -845,6 +1140,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     if (mod && key === 'y') { event.preventDefault(); editor.redo(); return }
     if (mod && key === 'd') { event.preventDefault(); editor.duplicate(); return }
     if (mod && key === 'a') { event.preventDefault(); setSelection(shapes.filter((s) => !s.locked).map((s) => s.id)); return }
+    if (mod && key === 'u') { event.preventDefault(); callbacks.pickImage(); return }
     if (mod && (event.key === '=' || event.key === '+')) { event.preventDefault(); editor.zoomIn(); return }
     if (mod && event.key === '-') { event.preventDefault(); editor.zoomOut(); return }
     if (mod) return
@@ -857,7 +1153,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     if (event.key === 'Delete' || event.key === 'Backspace') { if (selectedIds.length) { event.preventDefault(); editor.deleteSelected() } return }
     if (event.key === 'Enter') {
       const only = selectedShapes()
-      if (only.length === 1 && (only[0].kind === 'text' || only[0].kind === 'arrow')) { event.preventDefault(); startEditing(only[0].id) }
+      if (only.length === 1 && (only[0].kind === 'text' || only[0].kind === 'arrow' || only[0].kind === 'note' || only[0].kind === 'geo')) { event.preventDefault(); startEditing(only[0].id) }
       return
     }
     if (event.key === ']') { reorder(event.altKey ? 'forward' : 'front'); return }
@@ -870,7 +1166,8 @@ export function createBoardEditor(host: HTMLElement, options: {
       return
     }
     if (event.altKey || event.shiftKey) return
-    const tools: Record<string, BoardTool> = { v: 'select', h: 'hand', a: 'arrow', t: 'text' }
+    if (key === 'r' || key === 'o') { event.preventDefault(); geoType = key === 'r' ? 'rectangle' : 'ellipse'; setTool('geo'); callbacks.toolChanged(); return }
+    const tools: Record<string, BoardTool> = { v: 'select', h: 'hand', d: 'draw', b: 'draw', x: 'draw', e: 'eraser', a: 'arrow', t: 'text', n: 'note', l: 'line' }
     if (tools[key]) { event.preventDefault(); setTool(tools[key]) }
   }
   const keyup = (event: KeyboardEvent) => { if (event.code === 'Space') { spaceHeld = false; if (interaction.kind === 'idle') setCursor(toolCursor()) } }
@@ -888,6 +1185,8 @@ export function createBoardEditor(host: HTMLElement, options: {
   const onCut = (event: ClipboardEvent) => { if (copySelection(event)) editor.deleteSelected() }
   const onPaste = (event: ClipboardEvent) => {
     if (editingId || isField(event.target)) return
+    const files = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith('image/'))
+    if (files.length) { event.preventDefault(); void editor.insertImages(files).catch(() => undefined); return }
     const text = event.clipboardData?.getData('text/plain') ?? ''
     let source: BoardShape[] | null = null
     if (text.startsWith(CLIPBOARD_PREFIX)) { try { source = JSON.parse(text.slice(CLIPBOARD_PREFIX.length)) as BoardShape[] } catch { source = null } }
@@ -968,6 +1267,65 @@ export function createBoardEditor(host: HTMLElement, options: {
     getSelectedShapes: selectedShapes,
     getTool: () => tool,
     setTool,
+    getGeoType: () => geoType,
+    /** Escolhe a forma da ferramenta de formas e a ativa. */
+    setGeoType(next: GeoType) { geoType = next; setTool('geo'); callbacks.toolChanged() },
+    getStyle: () => ({ ...style }),
+    /** Painel de estilo: visível com uma ferramenta de desenho ou com itens estilizáveis selecionados. */
+    getStyleState(): BoardStyleState {
+      const styled = selectedShapes().filter(isStyled)
+      if (styled.length === 0) return { visible: STYLED_TOOLS.has(tool), color: style.color, size: style.size }
+      const same = <K extends 'color' | 'size'>(key: K) => styled.every((shape) => shape[key] === styled[0][key]) ? styled[0][key] : null
+      return { visible: true, color: same('color'), size: same('size') }
+    },
+    /** Muda o estilo das próximas formas e dos itens estilizáveis selecionados. */
+    setStyle(patch: Partial<Pick<BoardStyle, 'color' | 'size'>>) {
+      Object.assign(style, patch)
+      const targets = new Set(selectedShapes().filter(isStyled).map((shape) => shape.id))
+      if (targets.size > 0) {
+        mark()
+        shapes = shapes.map((shape) => {
+          if (!targets.has(shape.id) || !isStyled(shape)) return shape
+          const next = { ...shape, ...patch } as StyledShape
+          return next.kind === 'note' || next.kind === 'geo' ? withGrowth(next) : next
+        })
+        commit()
+      }
+      callbacks.selectionChanged()
+    },
+    /**
+     * Envia as imagens para os assets do mundo e as coloca no quadro, no ponto indicado ou no centro
+     * da vista, no tamanho natural (reduzidas para caber em 60% da vista).
+     */
+    async insertImages(files: File[], client?: { clientX: number; clientY: number }) {
+      const images = files.filter((file) => file.type.startsWith('image/'))
+      if (images.length === 0) return
+      const view = viewportPageBounds(camera, viewport)
+      const at = client ? pageAt(pointerPoint(client)) : { x: view.x + view.w / 2, y: view.y + view.h / 2 }
+      const created: BoardImage[] = []
+      for (const [index, file] of images.entries()) {
+        const form = new FormData()
+        form.set('file', file)
+        const response = await fetch('/api/assets', { method: 'POST', body: form })
+        if (!response.ok) throw new Error('Não foi possível importar a imagem')
+        const { assetId } = await response.json() as { assetId: string }
+        const size = await new Promise<{ w: number; h: number }>((resolve) => {
+          const img = new window.Image()
+          img.onload = () => resolve({ w: img.naturalWidth || 100, h: img.naturalHeight || 100 })
+          img.onerror = () => resolve({ w: 100, h: 100 })
+          img.src = assetVariantUrl(assetId, 'original')
+        })
+        const fit = Math.min(1, view.w * IMAGE_VIEWPORT_FRACTION / size.w, view.h * IMAGE_VIEWPORT_FRACTION / size.h)
+        const w = size.w * fit, h = size.h * fit, offset = index * 20 / camera.z
+        created.push({ id: newShapeId(), kind: 'image', x: at.x - w / 2 + offset, y: at.y - h / 2 + offset, rotation: 0, opacity: 1, locked: false, w, h, assetId, flipX: false, flipY: false })
+      }
+      mark()
+      shapes = [...shapes, ...created]
+      setTool('select')
+      selectedIds = []
+      setSelection(created.map((shape) => shape.id))
+      commit()
+    },
     getCamera: () => camera,
     getCanvas: (): BoardCanvas => ({ format: 'canon-board-canvas', version: 1, shapes: clone(shapes), ...(legacyTldraw !== undefined ? { legacyTldraw } : {}) }),
     screenToPage: (client: { clientX: number; clientY: number }) => pageAt(pointerPoint(client)),
@@ -999,9 +1357,7 @@ export function createBoardEditor(host: HTMLElement, options: {
       if (remove.size === 0) return
       mark()
       // Setas ligadas a formas apagadas ficam, com a ponta solta onde estava.
-      shapes = shapes.filter((shape) => !remove.has(shape.id)).map((shape) => shape.kind === 'arrow' && (remove.has(shape.startBinding?.shapeId ?? '') || remove.has(shape.endBinding?.shapeId ?? ''))
-        ? unbindFrom(shape, new Set(shapes.map((s) => s.id).filter((id) => !remove.has(id)))) : shape)
-      hoveredId = null
+      removeShapes(remove)
       selectedIds = []
       callbacks.selectionChanged()
       commit()

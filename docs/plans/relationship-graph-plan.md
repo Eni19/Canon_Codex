@@ -265,8 +265,8 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
 1. **Inventariar/converter:** cartões, desenhos, anotações, texto, imagens, grupos e setas vinculadas.
    Formato Canon versionado; conversor idempotente com prévia, backup, incompatibilidades e restauração.
    Testar snapshots sintéticos; preservar original e bloquear troca automática diante de perda.
-2. **Quadros de investigação** (etapa 1 em 26/11/2026: canvas, cartões, texto e setas; faltam as
-   ferramentas de criação e o painel de estilo): preservar variações de cartões, imagens, setas, posições, camadas,
+2. **Quadros de investigação** (etapas 1 e 2 em 26/11/2026: canvas, cartões, texto, setas e as
+   ferramentas de criação, sem marca-texto, laser e moldura; falta o painel de estilo): preservar variações de cartões, imagens, setas, posições, camadas,
    referências por ID, anotação, autosave e recuperação. Validar reabertura das cópias antes da troca.
 3. **Cenas** (migradas em 26/11/2026; validação visual em uso real pendente): preservar mapa, grade/encaixe, tokens/transformações, camadas, bloqueio, pontos de
    interesse, revelações e duplicação. Validar Preparar/Mestrar/projeção, câmera e a garantia de

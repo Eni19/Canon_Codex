@@ -11,12 +11,9 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
-  Hand,
   LayoutDashboard,
   Maximize,
   Minus,
-  MousePointer2,
-  MoveUpRight,
   Plus,
   Redo2,
   Search,
@@ -24,12 +21,11 @@ import {
   Tag,
   Trash2,
   TriangleAlert,
-  Type,
   Undo2,
   X,
 } from 'lucide-react'
 import type { BoardDocument } from '@/domain/boards/board'
-import { CARD_DEFAULT, CARD_WIDE, readBoardCanvas, type BoardCanvas, type BoardCard } from '@/domain/boards/boardCanvas'
+import { CARD_DEFAULT, CARD_WIDE, readBoardCanvas, type BoardCanvas, type BoardCard, type GeoType } from '@/domain/boards/boardCanvas'
 import type { CameraState } from '@/domain/canvas/camera'
 import type { BoardEntitySummary } from '@/components/boards/board-types'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
@@ -37,16 +33,12 @@ import { PageScrollLock } from '@/components/entities/page-scroll-lock'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { canvasDraftKey, readCanvasDraft, sendCanvasSave, writeCanvasDraft } from '@/lib/canvas/canvas-drafts'
 import { boardFontVariables } from './board-fonts'
-import type { BoardEditor, BoardTool } from './board-stage'
+import type { BoardEditor, BoardStyleState, BoardTool } from './board-stage'
+import { BoardToolbar } from './board-toolbar'
+import { toast } from 'sonner'
 import styles from './investigation-board.module.css'
 
 const ENTITY_DRAG_TYPE = 'application/x-canon-codex-entity'
-const TOOLS: Array<{ id: BoardTool; label: string; kbd: string; icon: typeof MousePointer2 }> = [
-  { id: 'select', label: 'Selecionar', kbd: 'V', icon: MousePointer2 },
-  { id: 'hand', label: 'Mão', kbd: 'H', icon: Hand },
-  { id: 'arrow', label: 'Seta', kbd: 'A', icon: MoveUpRight },
-  { id: 'text', label: 'Texto', kbd: 'T', icon: Type },
-]
 
 export function InvestigationBoard({ board, entities }: { board: BoardDocument; entities: BoardEntitySummary[] }) {
   const router = useRouter()
@@ -62,6 +54,9 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
   const [selectedCard, setSelectedCard] = useState<BoardCard | null>(null)
   const [hasSelection, setHasSelection] = useState(false)
   const [tool, setToolState] = useState<BoardTool>('select')
+  const [geoType, setGeoTypeState] = useState<GeoType>('rectangle')
+  const [styleState, setStyleState] = useState<BoardStyleState>({ visible: false, color: null, size: null })
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const [zoom, setZoom] = useState(1)
   const [history, setHistory] = useState({ undo: false, redo: false })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved')
@@ -135,6 +130,7 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
     const card = editor.getSelectedShapes().find((shape): shape is BoardCard => shape.kind === 'card')
     setSelectedCard(card ?? null)
     setHasSelection(editor.getSelectedIds().length > 0)
+    setStyleState(editor.getStyleState())
   }
   const onDocumentChanged = useEffectEvent(() => {
     const editor = editorRef.current
@@ -151,7 +147,10 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
     if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current)
     cameraTimerRef.current = setTimeout(() => window.localStorage.setItem(cameraKey, JSON.stringify(editor.getCamera())), 300)
   })
-  const onToolChanged = useEffectEvent(() => { const editor = editorRef.current; if (editor) setToolState(editor.getTool()) })
+  const onToolChanged = useEffectEvent(() => { const editor = editorRef.current; if (editor) { setToolState(editor.getTool()); setGeoTypeState(editor.getGeoType()); setStyleState(editor.getStyleState()) } })
+  const insertImages = (files: File[], client?: { clientX: number; clientY: number }) => {
+    void editorRef.current?.insertImages(files, client).catch(() => toast.error('Não foi possível importar a imagem.'))
+  }
   const initialEntities = useEffectEvent(() => entityMap)
   useEffect(() => {
     const host = canvasHostRef.current
@@ -166,7 +165,7 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
       if (disposed) return
       editor = createBoardEditor(host, {
         canvas: initialCanvas, entities: initialEntities(), camera,
-        callbacks: { documentChanged: () => onDocumentChanged(), selectionChanged: () => onSelectionChanged(), cameraChanged: () => onCameraChanged(), toolChanged: () => onToolChanged(), openEntity: (id) => setPreviewId(id) },
+        callbacks: { documentChanged: () => onDocumentChanged(), selectionChanged: () => onSelectionChanged(), cameraChanged: () => onCameraChanged(), toolChanged: () => onToolChanged(), openEntity: (id) => setPreviewId(id), pickImage: () => imageInputRef.current?.click() },
       })
       editorRef.current = editor
       setZoom(editor.getZoom())
@@ -199,7 +198,7 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
           <div className={styles.saveState} data-state={saveState}>{saveState === 'saved' ? <Check /> : saveState === 'error' ? <TriangleAlert /> : <span className={styles.spinner} />}{saveState === 'saved' ? 'Salvo' : saveState === 'error' ? 'Erro ao salvar' : 'Salvando'}</div>
         </header>
 
-        <div className={styles.canvasStage} onDragOverCapture={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE)) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy' } }} onDropCapture={(event) => { const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); event.stopPropagation(); addEntity(id, editorRef.current.screenToPage({ clientX: event.clientX, clientY: event.clientY })) }}>
+        <div className={styles.canvasStage} onDragOverCapture={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE) || event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy' } }} onDropCapture={(event) => { const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith('image/')); if (files.length) { event.preventDefault(); event.stopPropagation(); insertImages(files, { clientX: event.clientX, clientY: event.clientY }); return } const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); event.stopPropagation(); addEntity(id, editorRef.current.screenToPage({ clientX: event.clientX, clientY: event.clientY })) }}>
           <div ref={canvasHostRef} className={styles.canvasHost} aria-label="Canvas do quadro" />
           {!initialCanvas && <div className={styles.canvasError} role="alert"><TriangleAlert /><strong>Não foi possível ler o canvas deste quadro.</strong><span>O registro foi preservado sem alterações.</span></div>}
           <div className={styles.quickActions}>
@@ -208,9 +207,8 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
             <button onClick={() => editorRef.current?.deleteSelected()} disabled={!hasSelection} title="Excluir (Delete)" aria-label="Excluir"><Trash2 /></button>
             <button onClick={() => editorRef.current?.duplicate()} disabled={!hasSelection} title="Duplicar (Ctrl D)" aria-label="Duplicar"><Copy /></button>
           </div>
-          <div className={styles.toolbar} role="toolbar" aria-label="Ferramentas">
-            {TOOLS.map(({ id, label, kbd, icon: Icon }) => <button key={id} data-active={tool === id} aria-pressed={tool === id} onClick={() => editorRef.current?.setTool(id)} title={`${label} (${kbd})`} aria-label={label}><Icon /></button>)}
-          </div>
+          <BoardToolbar tool={tool} geoType={geoType} styleState={styleState} onColor={(color) => editorRef.current?.setStyle({ color })} onSize={(size) => editorRef.current?.setStyle({ size })} onTool={(next) => editorRef.current?.setTool(next)} onGeo={(geo) => editorRef.current?.setGeoType(geo)} onImage={() => imageInputRef.current?.click()} />
+          <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={(event) => { const files = [...(event.target.files ?? [])]; event.target.value = ''; insertImages(files) }} />
           <div className={styles.zoomMenu}>
             <button onClick={() => editorRef.current?.zoomOut()} title="Afastar (Ctrl -)" aria-label="Afastar"><Minus /></button>
             <button className={styles.zoomValue} onClick={() => editorRef.current?.resetZoom()} title="Zoom 100% (Shift 0)">{Math.round(zoom * 100)}%</button>

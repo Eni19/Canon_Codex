@@ -11,7 +11,7 @@ const tldrawSnapshot = () => ({
       'shape:card': { id: 'shape:card', typeName: 'shape', type: 'entity-card', x: 10, y: 20, rotation: 0, index: 'a1', isLocked: false, opacity: 1, meta: {}, parentId: 'page:page', props: { w: 280, h: 170, entityId: 'entity-1', viewMode: 'dossier', showImage: false, showType: true, showTags: true, showStatus: true, customLabel: 'Apelido' } },
       'shape:text': { id: 'shape:text', typeName: 'shape', type: 'text', x: 300, y: 40, rotation: 0, index: 'a3', isLocked: true, opacity: 0.5, meta: {}, parentId: 'page:page', props: { color: 'red', size: 'l', w: 8, font: 'serif', textAlign: 'middle', autoSize: true, scale: 1, richText: rich('Primeira', 'Segunda') } },
       'shape:arrow': { id: 'shape:arrow', typeName: 'shape', type: 'arrow', x: 100, y: 100, rotation: 0, index: 'a2', isLocked: false, opacity: 1, meta: {}, parentId: 'page:page', props: { kind: 'arc', dash: 'draw', size: 'm', fill: 'none', color: 'black', labelColor: 'black', bend: 12, start: { x: 0, y: 0 }, end: { x: 200, y: 0 }, arrowheadStart: 'none', arrowheadEnd: 'arrow', richText: rich('liga'), labelPosition: 0.5, font: 'draw', scale: 1 } },
-      'shape:geo': { id: 'shape:geo', typeName: 'shape', type: 'geo', x: 0, y: 0, rotation: 0, index: 'a4', props: { w: 50, h: 60, geo: 'rectangle' } },
+      'shape:video': { id: 'shape:video', typeName: 'shape', type: 'video', x: 0, y: 0, rotation: 0, index: 'a4', props: { w: 50, h: 60 } },
       'binding:1': { id: 'binding:1', typeName: 'binding', type: 'arrow', fromId: 'shape:arrow', toId: 'shape:card', props: { terminal: 'start', normalizedAnchor: { x: 0.2, y: 0.8 }, isPrecise: true, isExact: false, snap: 'none' } },
       'binding:2': { id: 'binding:2', typeName: 'binding', type: 'arrow', fromId: 'shape:arrow', toId: 'shape:apagada', props: { terminal: 'end', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false } },
     },
@@ -37,7 +37,7 @@ describe('canvas de quadro', () => {
     const snapshot = tldrawSnapshot()
     const canvas = readBoardCanvas(snapshot)
     expect(canvas.legacyTldraw).toEqual(snapshot)
-    expect(canvas.shapes[3]).toMatchObject({ kind: 'legacy', type: 'geo', w: 50, h: 60, record: snapshot.document.store['shape:geo'] })
+    expect(canvas.shapes[3]).toMatchObject({ kind: 'legacy', type: 'video', w: 50, h: 60, record: snapshot.document.store['shape:video'] })
   })
 
   it('lê o formato próprio sem converter de novo e recusa dados ilegíveis', () => {

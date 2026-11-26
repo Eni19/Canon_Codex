@@ -100,15 +100,18 @@ do quadro (`BOARD_SCHEMA_VERSION` não muda) e é lido por `readBoardCanvas` em
       "legacyTldraw": {}
     }
 
-- `shapes` está em ordem de desenho. Tipos: `card` (cartão de registro), `text`, `arrow` e
-  `legacy`. Cores, tamanhos, fontes e traços usam os nomes do tldraw.
+- `shapes` está em ordem de desenho. Tipos: `card` (cartão de registro), `text`, `arrow`,
+  `note`, `geo` (20 formas geométricas), `draw` (pontos `[x, y, pressão]`), `line`, `image`
+  (com o UUID do asset do Canon em `assetId`) e `legacy`. Cores, tamanhos, fontes, preenchimentos
+  e traços usam os nomes do tldraw.
 - Na conversão, os vínculos das setas (registros `binding` do tldraw) passam para dentro da seta
   (`startBinding`/`endBinding`); vínculos para formas que não existem são descartados. O
   `richText` de textos e rótulos vira texto simples, um parágrafo por linha: negrito, itálico e
   links se perdem.
-- Formas do tldraw que o editor ainda não desenha (formas geométricas, desenho livre, notas,
-  imagens e outras) viram `legacy`: o registro original fica intacto em `record` e o quadro
-  mostra uma caixa tracejada no lugar. Um leitor futuro pode convertê-las sem perda.
+- Notas, formas geométricas, linhas e imagens do tldraw são convertidas; a imagem usa o
+  `meta.wikiAssetId` do registro `asset` correspondente. Desenhos livres (pontos codificados em
+  base64 pelo tldraw), imagens sem asset do Canon e outros tipos viram `legacy`: o registro
+  original fica intacto em `record` e o quadro mostra uma caixa tracejada no lugar.
 - A leitura não grava. O primeiro salvamento depois de uma alteração grava o formato novo, com o
   documento tldraw original intacto em `legacyTldraw`. Para voltar ao editor anterior, basta
   devolver `legacyTldraw` ao campo `canvasSnapshot`; perdem-se só as alterações feitas depois.

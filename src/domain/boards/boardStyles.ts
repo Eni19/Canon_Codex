@@ -28,3 +28,18 @@ export const ARROW_LABEL_PADDING = 4.25
 export const BOARD_FONT_VARIABLES: Record<BoardFont, string> = {
   draw: '--board-font-draw', sans: '--board-font-sans', serif: '--board-font-serif', mono: '--board-font-mono',
 }
+
+/** `LABEL_FONT_SIZES` do tldraw (rótulos de notas e formas) e o recuo do rótulo. */
+export const LABEL_FONT_SIZES: Record<BoardSize, number> = { s: 18, m: 22, l: 26, xl: 32 }
+export const LABEL_PADDING = 16
+/** Cor "solid" do tema escuro, usada pelo preenchimento `semi`. */
+export const THEME_SOLID = '#010403'
+
+/** Cor de preenchimento como no tldraw: semi usa o fundo do tema; solid, o tom apagado da cor; fill, a cor cheia. */
+export function fillColor(color: BoardColor, fill: 'none' | 'semi' | 'solid' | 'pattern' | 'fill'): string | null {
+  if (fill === 'none') return null
+  if (fill === 'semi') return THEME_SOLID
+  if (fill === 'solid') return BOARD_PALETTE[color].semi
+  if (fill === 'pattern') return BOARD_PALETTE[color].pattern
+  return BOARD_PALETTE[color].solid
+}
