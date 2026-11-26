@@ -1,5 +1,8 @@
 # Desenvolvimento
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, comandos contra os scripts de
+> `package.json`.
+
 ## Preparar o ambiente
 
 Execute:
