@@ -178,8 +178,8 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
         const response = await fetch(`/api/entities/search?q=${encodeURIComponent(query)}&limit=40`, { signal: controller.signal })
         if (!response.ok) return
         const results = await response.json() as Array<{ id: string }>
-        setSearchResultIds(results.map((result) => result.id))
-      } catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) setSearchResultIds([]) }
+        if (!controller.signal.aborted) setSearchResultIds(results.map((result) => result.id))
+      } catch { if (!controller.signal.aborted) setSearchResultIds([]) }
     }, 120)
     return () => { clearTimeout(timer); controller.abort() }
   }, [query])

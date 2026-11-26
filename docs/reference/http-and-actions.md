@@ -86,6 +86,9 @@ variantes e os metadados em uma transação.
 
 Consumidores: command palette, sugestão @ do editor e busca lateral de quadros.
 
+Ao trocar a consulta na busca geral, a interface cancela a requisição anterior.
+Uma resposta ou falha atrasada dessa requisição é descartada.
+
 Parâmetros opcionais:
 
 - q: texto fuzzy; vazio retorna os primeiros itens;

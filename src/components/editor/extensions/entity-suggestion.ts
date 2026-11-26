@@ -14,8 +14,8 @@ export const EntitySuggestion = Extension.create({
       suggestion: {
         char: '@',
         startOfLine: false,
-        items: async ({ query }: { query: string }): Promise<SearchResultItem[]> => {
-          const response = await fetch(`/api/entities/search?q=${encodeURIComponent(query)}`)
+        items: async ({ query, signal }: { query: string; signal: AbortSignal }): Promise<SearchResultItem[]> => {
+          const response = await fetch(`/api/entities/search?q=${encodeURIComponent(query)}`, { signal })
           if (!response.ok) return []
           return (await response.json()) as SearchResultItem[]
         },

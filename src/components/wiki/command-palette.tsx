@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { useCommandPalette } from '@/components/wiki/command-palette-provider'
+import { schedulePaletteSearch } from './palette-search'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import type { SearchResultItem } from '@/services/search/searchEntities'
@@ -17,16 +18,10 @@ export function CommandPalette() {
 
   useEffect(() => {
     if (!open) return
-    const timeout = setTimeout(() => {
-      fetch(`/api/entities/search?q=${encodeURIComponent(query)}`)
-        .then((response) => (response.ok ? response.json() : []))
-        .then((data: SearchResultItem[]) => {
-          setResults(data)
-          setSelectedIndex(0)
-        })
-        .catch(() => setResults([]))
-    }, 150)
-    return () => clearTimeout(timeout)
+    return schedulePaletteSearch(query, data => {
+      setResults(data)
+      setSelectedIndex(0)
+    })
   }, [query, open])
 
   function goToEntity(id: string) {
