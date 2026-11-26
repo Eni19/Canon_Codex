@@ -1,132 +1,57 @@
-# Auditoria documental e matriz de evidências
+# Auditoria da documentação
 
-Auditoria realizada em **23/09/2026**, a partir do código, dos testes e da configuração presentes
-neste repositório. A pasta `workspace/` não foi lida nem copiada: ela é dado privado e está
-ignorada pelo Git.
+> **Estado:** implementado · **Última verificação:** 26/11/2026, todos os `.md` versionados contra
+> `package.json`, `src/domain/`, `src/app/api/`, `src/app/actions/`, `src/repositories/` e
+> `.env.example`.
 
-## Inventário verificável
+Auditoria feita do zero ao fim do issue #44, que levou a documentação de 6,5 para o estado abaixo.
+Substitui a matriz de evidências de 23/09/2026, que descrevia o projeto em JSON com quatro
+contratos. Refaça esta página quando uma nova rodada de padronização terminar.
 
-### Interfaces de página
+## Nota por critério
 
-| Rota | Fonte |
-| --- | --- |
-| `/` | `src/app/page.tsx` |
-| `/codex` | `src/app/(wiki)/codex/page.tsx` |
-| `/calendar` | `src/app/(wiki)/calendar/page.tsx` |
-| `/all` | `src/app/(wiki)/all/page.tsx` |
-| `/<entityType>` | `src/app/(wiki)/[entityType]/page.tsx` |
-| `/<entityType>/new` | `src/app/(wiki)/[entityType]/new/page.tsx` |
-| `/entity/<entityId>` | `src/app/(wiki)/entity/[entityId]/page.tsx` |
-| `/entity/<entityId>/edit` | `src/app/(wiki)/entity/[entityId]/edit/page.tsx` |
-| `/boards` | `src/app/(wiki)/boards/page.tsx` |
-| `/boards/<boardId>` | `src/app/(wiki)/boards/[boardId]/page.tsx` |
-| `/scenes` | `src/app/(wiki)/scenes/page.tsx` |
-| `/scenes/<sceneId>` | `src/app/(wiki)/scenes/[sceneId]/page.tsx` |
-| `/projection/<sessionId>` | `src/app/projection/[sessionId]/page.tsx` |
-| `/display/entity/<entityId>` | `src/app/display/entity/[entityId]/page.tsx` |
+| Critério | Antes (25/11) | Agora | O que falta para 10 |
+| --- | ---: | ---: | --- |
+| Cobertura | 8,5 | 10 | nada: guias de uso, contribuição, commits, documentação, referência, dados, ADRs e glossário |
+| Fidelidade ao código | 7 | 9 | 32 páginas ainda não foram reconferidas uma a uma contra o código; isso acontece ao dar a elas o cabeçalho de estado (#57) |
+| Organização | 5,5 | 9,5 | as mesmas 32 páginas sem o cabeçalho de estado padrão (#57) |
+| Onboarding | 4 | 10 | nada: CONTRIBUTING, guias de commits e documentação, modelos de issue e AGENTS.md apontando para eles |
+| Governança | 7,5 | 9,5 | `pnpm docs:check` ainda não acusa página sem cabeçalho (#57) |
+| **Geral** | **6,5** | **9,6** | um issue de acompanhamento (#57) |
 
-`src/app/(wiki)/layout.tsx` envolve as páginas Wiki, lê o mundo ativo e monta o chrome da
-aplicação. O grupo de rota não aparece na URL.
+## O que foi conferido contra o código
 
-### Server Actions
-
-| Fluxo | Funções | Fonte |
+| Afirmação | Fonte | Resultado |
 | --- | --- | --- |
-| Biblioteca de Codex | `openWorldAction`, `createWorldAction`, `importWorldAction`, `manageWorldAction` | `src/app/actions/worlds.ts` |
-| Calendário do mundo | `updateCalendarAction` | `src/app/actions/calendar.ts` |
-| Entidades e conteúdo | `createEntityAction`, `updateEntityAction`, `deleteEntityAction` | `src/app/actions/entities.ts` |
-| Relações | `addRelationAction`, `removeRelationAction` | `src/app/actions/relations.ts` |
-| Quadros | `createBoardAction`, `deleteBoardAction` | `src/app/actions/boards.ts` |
-| Cenas | `createSceneAction`, `duplicateSceneAction`, `deleteSceneAction` | `src/app/actions/scenes.ts` |
+| Versões de todos os documentos e da estrutura SQL | constantes `*_SCHEMA_VERSION`, `graphSettings.ts`, `schema.ts` | tabela única em [migrações](../data/migrations.md#versões-atuais), conferida |
+| Toda rota HTTP tem seção na referência | `src/app/api/**/route.ts` | 12 rotas, todas documentadas, conferido por script |
+| Toda Server Action exportada tem seção | `src/app/actions/*.ts` | todas documentadas, conferido por script |
+| Cinco contratos de repositório | `src/repositories/index.ts` | PROJECT.md, arquitetura e CONTRIBUTING concordam |
+| Stack e comandos | `package.json` | PROJECT.md, README e desenvolvimento concordam, incluindo `pnpm storage` e `pnpm docs:check` |
+| Variáveis de ambiente | `.env.example` e código | quatro variáveis, todas na [configuração](../reference/configuration.md) |
+| Catálogo híbrido de tipos | `src/components/entities/entity-page.tsx` | ADR-002 e PROJECT.md concordam; decisão em aberto (#49) |
+| Links, âncoras e caminhos de `src/` | `pnpm docs:check` | nenhum problema em 49 arquivos |
 
-### Route Handlers
+## Verificações de regressão
 
-| Método e rota | Fonte | Consumidor interno verificado |
-| --- | --- | --- |
-| `POST /api/assets` | `src/app/api/assets/route.ts` | editor, quadros e importação de imagens |
-| `GET /api/assets/[assetId]/[variant]` | `src/app/api/assets/[assetId]/[variant]/route.ts` | `assetVariantUrl`, `next/image` desativado para esses assets e galerias |
-| `GET /api/entities/search` | `src/app/api/entities/search/route.ts` | command palette, editor e busca de quadros |
-| `GET /api/entities/[entityId]/summary` | `src/app/api/entities/[entityId]/summary/route.ts` | nenhum consumidor local encontrado na auditoria |
-| `PUT /api/boards/[boardId]` | `src/app/api/boards/[boardId]/route.ts` | `InvestigationBoard` |
-| `PUT /api/scenes/[sceneId]` | `src/app/api/scenes/[sceneId]/route.ts` | `SceneRunner` |
+Mudanças desta rodada são só documentação, o script `scripts/check-docs.mjs`, o comando em
+`package.json` e os modelos de issue. Em 26/11/2026, na branch de trabalho já sobre a `main`:
 
-Essas rotas são interfaces internas da aplicação. Não há contrato de API pública, autenticação ou
-política de compatibilidade versionada.
+- `pnpm typecheck`: passou;
+- `pnpm lint`: passou;
+- `pnpm build`: passou;
+- `pnpm test`: 308 testes passaram e 1 falhou por tempo (`timelineCanvas.test.ts`, 500 aparições,
+  limite de 5 s) durante a suíte completa. Rodado sozinho, o arquivo passou nos 5 testes. A falha
+  depende de carga da máquina, não destas mudanças.
 
-### Contratos e esquemas
+## Rastreadores
 
-| Área | Fonte |
-| --- | --- |
-| Mundos, entidades, conteúdo e relações | `src/repositories/contracts/worldRepository.ts` |
-| Assets | `src/repositories/contracts/assetStore.ts` |
-| Quadros | `src/repositories/contracts/boardRepository.ts` |
-| Cenas | `src/repositories/contracts/sceneRepository.ts` |
-| Mundo e tipos semeados | `src/domain/worlds/world.ts`, `src/domain/worlds/defaultWorldSeed.ts` |
-| Entidade e definição de tipo | `src/domain/entities/entity.ts`, `src/domain/entities/entityType.ts` |
-| Relações | `src/domain/relations/relation.ts` |
-| Conteúdo | `src/domain/content/contentDocument.ts` |
-| Assets | `src/domain/assets/asset.ts`, `src/domain/assets/mimeType.ts` |
-| Quadros | `src/domain/boards/board.ts` |
-| Cenas e grade | `src/domain/scenes/scene.ts` |
-| Projeção | `src/domain/projection/projection.ts` |
-| Dados específicos | `locationPoint.ts`, `evidenceFinding.ts`, `organizationGroup.ts`, `artifactDetail.ts` e `conceptBlock.ts` em `src/domain/entities/` |
+Bugs, ideias e trabalho em andamento ficam nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues).
+`docs/bugs.md`, `docs/ideas.md` e `docs/work-items.md` foram migrados e apagados: lacunas abertas
+viraram issues (#45 a #50 e #55), e os itens que já tinham issue (#16, #17, #22, #23) receberam o
+contexto em comentário.
 
-Versões atuais verificadas: `World` 18, `Entity` 4, `ContentDocument` 2, `Asset` 1, `Board` 1
-e `Scene` 1. As fontes canônicas são os esquemas Zod, não esta tabela.
+## Privacidade
 
-### Testes
-
-Os testes incluídos por `vitest.config.mts` seguem o padrão glob `src/**/*.test.ts`:
-
-- `src/services/worlds/worldLibrary.test.ts` — criação, renomeação, exclusão em `trash` e importação;
-- `src/repositories/filesystem/fileSystemWorldRepository.test.ts` — entidades, conteúdo,
-  relações, backlinks, concorrência e exclusão lógica;
-- `src/repositories/filesystem/fileSystemAssetStore.test.ts` — imagens, thumbnails, tipos e `trash`;
-- `src/repositories/filesystem/fileSystemBoardRepository.test.ts` — snapshots e exclusão;
-- `src/repositories/filesystem/fileSystemSceneRepository.test.ts` — persistência e duplicação;
-- `src/repositories/filesystem/migrations.test.ts` e `src/lib/migrations/registry.test.ts` — migrações;
-- `src/domain/worlds/calendar.test.ts` — cálculo, validação e formatação de calendários;
-- `src/lib/fs/atomicWrite.test.ts` — escrita atômica;
-- `src/lib/projection/projection-state-builder.test.ts` — filtragem de dados ocultos na projeção;
-- `src/services/assets/isAssetReferenced.test.ts` — referências de assets;
-- `src/domain/entities/conceptBlock.test.ts` — blocos de conceito.
-
-## Matriz de afirmações existentes
-
-| Afirmação/documento | Fonte atual | Classificação | Ação/documento de destino |
-| --- | --- | --- | --- |
-| O app é uma wiki local para worldbuilding/RPG | `README.md`, rotas Wiki e `src/domain/` | correta | manter no `README.md` |
-| Há múltiplos Codex, criação, importação, renomeação e exclusão | `src/services/worlds/worldLibrary.ts`, `src/app/actions/worlds.ts`, testes | correta, com exclusão em `trash` | detalhar em `docs/user-guide/worlds.md` e `docs/data/backup-and-restore.md` |
-| Existem aproximadamente 13 tipos | ADR-002 | desatualizada | corrigir ADR-002; catálogo em `docs/user-guide/entities.md` |
-| Não existem layouts/componentes próprios por tipo | ADR-002 e `PROJECT.md` | desatualizada | registrar a decisão histórica e o estado híbrido atual em ADR-002 e arquitetura |
-| Conteúdo tem um único `body` | ADR-004 | desatualizada | documentar `pages[]` e migração v1→v2 em ADR-004 e `docs/data/migrations.md` |
-| Só existem `WorldRepository` e `AssetStore` | ADR-001 e `PROJECT.md` | desatualizada | documentar também `BoardRepository` e `SceneRepository` |
-| `workspace/` pode ser versionado em Git | `PROJECT.md` | contraditória com `.gitignore` | corrigir `PROJECT.md`, README e operações |
-| A escrita fica em um arquivo `atomicWriteJson.ts` (inexistente) | `PROJECT.md` e ADR-001 | caminho desatualizado | apontar para `src/lib/fs/atomicWrite.ts` |
-| Todos os componentes e ações passam por contratos | `PROJECT.md`, `src/repositories/index.ts` | parcialmente correta | manter como regra arquitetural; registrar exceções de `worldLibrary` e handlers que usam filesystem auxiliar |
-| Exclusão é sempre soft-delete e há ação separada permanente | `PROJECT.md` | parcialmente verificável | documentar que o código atual só expõe soft-delete; não há ação permanente/restauração |
-| Assets são protegidos por cookie/autenticação | comentário em `next.config.ts` e ADR-003 | cookie verificado, autenticação não existente | qualificar em `docs/operations-and-privacy.md` e ADR-003 |
-| Há banco relacional, migração SQL ou storage remoto | nenhum arquivo local | não verificável/não implementado | declarar ausência em `docs/data/storage.md` e `docs/operations-and-privacy.md` |
-| Busca usa índice persistido | `src/services/search/searchEntities.ts` | desatualizada se inferida dos ADRs | documentar varredura em memória e Fuse.js |
-| Backlinks são fonte persistida | `src/repositories/contracts/worldRepository.ts` e repositório filesystem | desatualizada se inferida de `PROJECT.md` | documentar como dado derivado em `docs/data/storage.md` |
-| Há rastreador externo de trabalho | `.github/` ausente e nenhum tracker conectado | não verificado | criar `docs/work-items.md` somente com lacunas comprovadas |
-
-## Rastreador e limites da auditoria
-
-O repositório tem apenas o remoto Git `origin`; não há `.github/`, issue tracker conectado ou fonte
-local de status além do histórico Git. O histórico não foi usado para inventar backlog. Decisões
-pendentes e verificações ausentes ficam nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues).
-
-As colunas e afirmações desta auditoria serão atualizadas ao final da implementação documental,
-marcando os destinos resolvidos e as lacunas que dependem de decisão externa.
-
-## Status final das ações
-
-Resolvido nesta execução: índice e entrada do README; correções de PROJECT.md; notas de estado dos
-ADRs 001–005; arquitetura; guias de uso; armazenamento e migrações; backup/importação/restauração;
-referência HTTP/configuração; desenvolvimento/testes/operação; regra de manutenção no AGENTS.md.
-
-Dependem de decisão externa ou implementação futura: política de restauração e purge, decisão sobre
-apresentações específicas versus catálogo totalmente genérico, confirmação de
-NEXT_PUBLIC_TLDRAW_LICENSE_KEY e qualquer operação fora de localhost. Esses itens estão
-rastreados com evidência nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues) (#50, #49, #16 e #55).
+Nenhum conteúdo de `workspace/` foi lido. O antigo `docs/bugs.md` citava nomes de mundos e
+quadros que não eram sintéticos; eles continuam no histórico do git.
