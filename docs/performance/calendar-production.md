@@ -1,5 +1,8 @@
 # Calendário em produção
 
+> **Estado:** histórico · **Última verificação:** 13/11/2026, build de produção em Chrome e Edge com
+> dados sintéticos.
+
 Medição de 13/11/2026 no Windows 10.0.26200, AMD Ryzen 7 5700U, Node 24.21.0 e
 Next.js 16.3.4. O servidor rodou via `pnpm build` e `pnpm start`, em loopback, com
 `WIKI_WORKSPACE_DIR` apontando para um diretório sintético. Chrome 157.0.8103.78 e Edge
