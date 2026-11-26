@@ -2,7 +2,9 @@
 // Verifica a documentação Markdown do repositório sem dependências externas:
 // - links relativos apontam para arquivos ou pastas existentes;
 // - âncoras (#secao) existem no arquivo de destino, com o slug no formato do GitHub;
-// - caminhos `src/...` citados entre crases existem.
+// - caminhos `src/...` citados entre crases existem;
+// - toda página em `docs/` começa com o cabeçalho de estado (`> **Estado:**` ou, nos ADRs,
+//   `## Estado atual em`), como pede docs/contributing/documentation.md.
 // Só lê arquivos versionados ou não ignorados pelo Git; `workspace/` nunca é lido.
 // Uso: pnpm docs:check
 
@@ -94,6 +96,9 @@ const files = listMarkdownFiles()
 for (const file of files) {
   const absolute = path.join(root, file)
   const lines = stripFences(readFileSync(absolute, 'utf8'))
+  if (file.startsWith('docs/') && !lines.slice(0, 8).some((line) => /^> \*\*Estado:\*\*|^## Estado atual em /.test(line))) {
+    problems.push(`${file}:1: falta o cabeçalho de estado (veja docs/contributing/documentation.md#cabeçalho-padrão)`)
+  }
   lines.forEach((line, i) => {
     const where = `${file}:${i + 1}`
 
