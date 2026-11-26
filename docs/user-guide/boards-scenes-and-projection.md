@@ -1,5 +1,8 @@
 # Quadros, cenas e projeção
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito e rotas contra
+> `src/`.
+
 ## Quadro de investigação
 
 1. Abra `/boards`.

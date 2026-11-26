@@ -1,5 +1,8 @@
 # Registros, tipos e relações
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 ## Criar e editar
 
 1. Em `/codex`, escolha um catálogo ou abra `/<entityType>`.

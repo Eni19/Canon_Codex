@@ -1,5 +1,8 @@
 # Trilha sonora
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 O player do YouTube é preparado ao abrir a área da trilha sonora, abrir o seletor de playlists
 ou iniciar uma fila. Navegar pela wiki sem usar a trilha não abre o player.
 
