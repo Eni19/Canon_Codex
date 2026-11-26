@@ -1,5 +1,7 @@
 # ADR-006 · Persistência local em SQLite
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, driver padrão em `src/repositories/index.ts` e comandos de `scripts/sqlite-storage.ts`.
+
 ## Contexto
 
 O adaptador filesystem protege cada JSON com uma substituição atômica. Operações que afetam

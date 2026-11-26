@@ -168,6 +168,8 @@ O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepo
 câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
 mundo. Pastas no canto da tela agrupam registros de qualquer tipo. Abrir uma pasta mostra seus
 cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro para ela.
+A escolha do Konva e a migração planejada de Quadros e Cenas estão em
+[ADR-007](docs/architecture/ADR-007-konva-canvas.md).
 A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
 ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
 formulário de um vínculo gravado na ficha de origem.

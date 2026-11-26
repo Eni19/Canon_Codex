@@ -1,5 +1,7 @@
 # ADR-005: Design system com tokens semânticos, tema "dossiê editorial"
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, tokens semânticos em `src/app/globals.css`.
+
 ## Estado atual em 23/09/2026
 
 Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
