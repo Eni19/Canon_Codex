@@ -35,6 +35,7 @@ import type { BoardEntitySummary } from '@/components/boards/board-types'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { PageScrollLock } from '@/components/entities/page-scroll-lock'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { canvasDraftKey, readCanvasDraft, sendCanvasSave, writeCanvasDraft } from '@/lib/canvas/canvas-drafts'
 import { boardFontVariables } from './board-fonts'
 import type { BoardEditor, BoardTool } from './board-stage'
 import styles from './investigation-board.module.css'
@@ -64,14 +65,16 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
   const [zoom, setZoom] = useState(1)
   const [history, setHistory] = useState({ undo: false, redo: false })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved')
-  // Lido uma vez (o componente é recriado por quadro). Um canvas ilegível não abre o editor, para não ser sobrescrito.
-  const [initialCanvas] = useState<BoardCanvas | null>(() => { try { return readBoardCanvas(board.canvasSnapshot) } catch { return null } })
+  const draftKey = canvasDraftKey('board', board.id)
+  // Lido uma vez (o componente é recriado por quadro). A versão em memória vence a da página, que o
+  // roteador pode ter guardado antes das últimas alterações. Um canvas ilegível não abre o editor.
+  const [initialCanvas] = useState<BoardCanvas | null>(() => { try { return readBoardCanvas(readCanvasDraft(draftKey) ?? board.canvasSnapshot) } catch { return null } })
   const entityMap = useMemo(() => new Map(entities.map((entity) => [entity.id, entity])), [entities])
   const filtered = useMemo(() => !query.trim() || searchResultIds === null ? entities : searchResultIds.map((id) => entityMap.get(id)).filter((entity): entity is BoardEntitySummary => Boolean(entity)), [entities, entityMap, query, searchResultIds])
   const preview = previewId ? entityMap.get(previewId) : undefined
   const cameraKey = `canon-codex:board-camera:${board.id}`
 
-  useEffect(() => () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current) }, [])
+  useEffect(() => () => { if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current) }, [])
   useEffect(() => {
     // Back/forward navigation may restore an older RSC payload from the client router cache.
     // Refreshing merges current entity summaries without resetting the mounted editor.
@@ -102,14 +105,32 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
   const saveDocument = (editor: BoardEditor) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(async () => {
+      saveTimerRef.current = null
       setSaveState('saving')
       try {
-        const response = await fetch(`/api/boards/${board.id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ snapshot: editor.getCanvas() }) })
+        const canvas = editor.getCanvas()
+        writeCanvasDraft(draftKey, canvas)
+        const response = await sendCanvasSave(`/api/boards/${board.id}`, { snapshot: canvas })
         if (!response.ok) throw new Error('Falha ao salvar')
         setSaveState('saved')
       } catch { setSaveState('error') }
     }, 700)
   }
+  /** Salva na hora o que estiver esperando: ao sair do quadro ou fechar a aba. */
+  const flushSave = useEffectEvent(() => {
+    const editor = editorRef.current
+    if (!saveTimerRef.current || !editor) return
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = null
+    const canvas = editor.getCanvas()
+    writeCanvasDraft(draftKey, canvas)
+    void sendCanvasSave(`/api/boards/${board.id}`, { snapshot: canvas }).catch(() => undefined)
+  })
+  useEffect(() => {
+    const onPageHide = () => flushSave()
+    window.addEventListener('pagehide', onPageHide)
+    return () => window.removeEventListener('pagehide', onPageHide)
+  }, [])
   const syncSelection = (editor: BoardEditor) => {
     const card = editor.getSelectedShapes().find((shape): shape is BoardCard => shape.kind === 'card')
     setSelectedCard(card ?? null)
@@ -150,7 +171,14 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
       editorRef.current = editor
       setZoom(editor.getZoom())
     })
-    return () => { disposed = true; editor?.destroy(); if (editorRef.current === editor) editorRef.current = null }
+    return () => {
+      disposed = true
+      flushSave()
+      // A câmera volta exatamente onde estava, mesmo sem pan ou zoom nesta visita.
+      if (editor) window.localStorage.setItem(cameraKey, JSON.stringify(editor.getCamera()))
+      editor?.destroy()
+      if (editorRef.current === editor) editorRef.current = null
+    }
   }, [initialCanvas, cameraKey])
   useEffect(() => { editorRef.current?.setEntities(entityMap) }, [entityMap])
 

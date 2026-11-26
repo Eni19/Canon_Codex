@@ -260,6 +260,9 @@ e formatação de datas fictícias.
   desenho em `board-render.ts`), guarda o canvas validado por `PUT /api/boards/<boardId>` e a
   câmera no `localStorage` do navegador. Formato, conversão do tldraw e geometria das setas estão
   em `src/domain/boards/`; câmera, geometria e histórico comuns, em `src/domain/canvas/`.
+  Quadros e Cenas salvam na hora uma alteração pendente ao sair da página (ou fechar a aba) e
+  guardam a última versão em memória (`src/lib/canvas/canvas-drafts.ts`); assim, voltar pelo
+  roteador do cliente, que pode reaproveitar a página carregada antes, reabre o estado mais novo.
 - Cenas são `Scene`. No filesystem legado, ficam em `scenes/<sceneId>/scene.json`. Uma cena referencia um local e um asset de
   fundo por UUID, valida a grade e o canvas, salva o canvas por `PUT /api/scenes/<sceneId>` e pode
   ser duplicada mantendo essas referências e o canvas. O `SceneRunner` oferece modos preparar,
