@@ -91,7 +91,7 @@ parciais, aproximadas e intervalos. A seção de luas salva até cinco configura
 mensal exibe seus discos, permite filtrá-los e o dia selecionado informa fases e percentuais iluminados.
 A aparência oferece três temas, personalização e fundo local. O Hoje da campanha pode ser definido,
 avançado e usado como sugestão na criação de Eventos e na linha do tempo.
-O modelo v23 também persiste estações, data de campanha, categorias e marcos, além da aparência;
+O modelo de mundo também persiste estações, data de campanha, categorias e marcos, além da aparência;
 a projeção de domínio combina esses dados em janelas limitadas. Luas, estações, marcos e aparência têm
 formulários de configuração. Datas de Eventos e aparições podem identificar dias intercalares
 independentes por ano e ID da regra; a troca de origem inclui as datas do mundo na prévia e no backup.
