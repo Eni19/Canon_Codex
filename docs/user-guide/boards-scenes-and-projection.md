@@ -34,7 +34,33 @@ artefato. Você pode mover, redimensionar, alternar entre recorte e círculo, in
 ocultar/revelar, ordenar camadas e configurar a grade. Pontos de interesse vêm dos pontos do local;
 no modo **Mestrar**, revele-os individualmente ou todos e revele descobertas progressivamente.
 
-O snapshot e a grade são salvos por `PUT /api/scenes/<sceneId>`. **Duplicar** cria uma nova cena com
+### Mexer no canvas da cena
+
+O canvas da cena reproduz o jeito de mexer do editor anterior:
+
+| Ação | Como |
+| --- | --- |
+| Selecionar um token | clique; **Shift** + clique acrescenta ou tira da seleção |
+| Selecionar vários | arraste a partir de uma área vazia, do fundo ou de um ponto de interesse |
+| Mover | arraste o token; **Shift** trava em um eixo; **Alt** ao arrastar duplica |
+| Redimensionar | alças dos cantos ou bordas, sempre na proporção; **Alt** escala a partir do centro |
+| Girar | arraste logo do lado de fora de um canto; **Shift** encaixa em 15° |
+| Empurrar | setas do teclado movem 1 px; com **Shift**, 10 px |
+| Excluir | **Delete** ou **Backspace** |
+| Cancelar ou limpar a seleção | **Esc** |
+| Rolar a vista | roda do mouse ou dois dedos no trackpad; **Shift** + roda rola na horizontal |
+| Aproximar | **Ctrl** + roda, pinça no trackpad ou na tela; espaço + arraste ou botão do meio movem a vista |
+| Ficha rápida | clique duplo no token ou no ponto (em **Mestrar** e **Apresentar**) |
+
+Com um token selecionado, **F** inverte, **<** e **>** diminuem e aumentam, **H** oculta ou revela e
+**L** trava ou destrava. Token travado não muda de tamanho, mas ainda pode ser movido e girado.
+Contornos e alças aparecem só em **Preparar**; em **Mestrar** a seleção continua valendo para os
+atalhos, mas fica invisível. Pontos de interesse não são selecionáveis: um clique abre a ficha.
+
+O canvas e a grade são salvos por `PUT /api/scenes/<sceneId>`. Cenas criadas com o editor anterior
+(tldraw) abrem normalmente e passam ao formato novo no primeiro salvamento; o original fica guardado
+dentro da própria cena ([detalhes](../data/migrations.md#canvas-da-cena-snapshot-tldraw--canon-scene-canvas-v1)).
+**Duplicar** cria uma nova cena com
 novo ID e mantém o mesmo fundo, local, snapshot e configurações de grade. **Excluir** move a pasta
 para `trash/` e não oferece restauração na interface.
 
@@ -60,6 +86,7 @@ está conectada, a [trilha sonora](soundtrack.md) toca por ela (ver abaixo).
 
 - O recurso depende de popup permitido pelo navegador e de duas janelas na mesma origem.
 - Não há gravação de uma sessão de narração, controle remoto ou presença de jogadores.
-- `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` é lida pelos componentes tldraw, mas não está declarada em
+- O canvas das cenas não usa tldraw e funciona fora de `localhost` sem chave.
+- `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` é lida pelo tldraw dos Quadros, mas não está declarada em
   `.env.example`; sua necessidade/licenciamento permanece uma lacuna de configuração registrada em
   [#16](https://github.com/Eni19/Canon_Codex/issues/16).

@@ -31,6 +31,7 @@ linkam para cá em vez de repetir o número. Ao subir uma constante, atualize es
 | `Asset` | 1 | `ASSET_SCHEMA_VERSION` em [`src/domain/assets/asset.ts`](../../src/domain/assets/asset.ts) |
 | `BoardDocument` | 1 | `BOARD_SCHEMA_VERSION` em [`src/domain/boards/board.ts`](../../src/domain/boards/board.ts) |
 | `Scene` | 1 | `SCENE_SCHEMA_VERSION` em [`src/domain/scenes/scene.ts`](../../src/domain/scenes/scene.ts) |
+| Canvas da cena (`canvasSnapshot`) | 1 | `SCENE_CANVAS_VERSION` em [`src/domain/scenes/sceneCanvas.ts`](../../src/domain/scenes/sceneCanvas.ts) |
 | `Playlist` | 1 | `PLAYLIST_SCHEMA_VERSION` em [`src/domain/playlists/playlist.ts`](../../src/domain/playlists/playlist.ts) |
 
 ## Linha do Tempo: v1 → v2
@@ -41,6 +42,39 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 `showCover: true` a cada aparição, e expõe o documento como v2 em memória. A leitura não regrava o
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
+
+## Canvas da cena: snapshot tldraw → canon-scene-canvas v1
+
+O campo `canvasSnapshot` da `Scene` continua opaco para o schema da cena, então
+`SCENE_SCHEMA_VERSION` não muda. O conteúdo passou a ter formato próprio, lido por
+`readSceneCanvas` em [`src/domain/scenes/sceneCanvas.ts`](../../src/domain/scenes/sceneCanvas.ts):
+
+    {
+      "format": "canon-scene-canvas",
+      "version": 1,
+      "shapes": [
+        {"id": "shape:a", "kind": "poi", "x": 0, "y": 0, "rotation": 0, "w": 180, "h": 38,
+         "poiId": "<uuid>", "visibility": "visible"},
+        {"id": "shape:b", "kind": "token", "x": 0, "y": 0, "rotation": 0, "w": 180, "h": 280,
+         "entityId": "<uuid>", "representation": "cutout", "visibility": "visible",
+         "locked": false, "flipX": false}
+      ],
+      "legacyTldraw": {}
+    }
+
+- `shapes` está em ordem de desenho (o primeiro fica mais ao fundo). O fundo não é guardado: vem
+  de `background` da cena. `x`/`y` são o canto superior esquerdo e a rotação (radianos) gira em
+  torno desse ponto, a mesma convenção do tldraw.
+- `null` é uma cena nova, sem formas.
+- Um snapshot do tldraw (`{ document: { store } }`) é convertido em memória: entram as formas
+  `scene-token` e `scene-poi`, ordenadas pelo índice do tldraw; `meta.flipX` vira `flipX`;
+  valores ausentes recebem os padrões do editor; outros tipos são ignorados.
+- A leitura não grava. O primeiro salvamento depois de uma alteração grava o formato novo, com o
+  documento tldraw original intacto em `legacyTldraw`. Para voltar ao editor anterior, basta
+  devolver `legacyTldraw` ao campo `canvasSnapshot`; perdem-se só as alterações feitas depois.
+- Um canvas que não é legível (nem formato Canon nem snapshot tldraw) não abre o editor e não é
+  sobrescrito. `PUT /api/scenes/<sceneId>` só aceita o formato novo.
+- Builds anteriores a esta mudança não abrem cenas já gravadas no formato novo.
 
 ## Grafo de relacionamentos: v1/v2/v3 → v4
 

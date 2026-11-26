@@ -33,7 +33,7 @@ O app faz duas requisições externas conhecidas:
 
 - ao adicionar vídeos a uma playlist, o servidor consulta o oEmbed do YouTube com os IDs dos
   vídeos para obter título e autor (`src/services/soundtrack/youtubeInfo.ts`);
-- sem `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` e fora de `localhost`, o tldraw de Quadros e Cenas envia o
+- sem `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` e fora de `localhost`, o tldraw dos Quadros envia o
   endereço da página ao serviço dele ([levantamento](../research/tldraw-license.md)).
 
 ## Uploads

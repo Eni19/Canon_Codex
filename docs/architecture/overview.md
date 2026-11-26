@@ -13,7 +13,7 @@ src/app/                         entrada HTTP e navegação Next App Router
   (wiki)/                        calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
-src/components/                  UI client/server, Tiptap, tldraw, Konva e projeção
+src/components/                  UI client/server, Tiptap, tldraw (Quadros), Konva e projeção
 src/services/                    casos de uso: mundos, busca e referência de assets
 src/domain/                      schemas Zod, tipos e formatos persistidos
 src/repositories/contracts/      fronteiras de persistência
@@ -260,9 +260,10 @@ e formatação de datas fictícias.
   mantém uma cópia de sessão no `localStorage` do navegador. Imagens inseridas no quadro passam
   pelo mesmo `POST /api/assets`.
 - Cenas são `Scene`. No filesystem legado, ficam em `scenes/<sceneId>/scene.json`. Uma cena referencia um local e um asset de
-  fundo por UUID, valida a grade, salva snapshots por `PUT /api/scenes/<sceneId>` e pode ser
-  duplicada mantendo essas referências e o snapshot. O `SceneRunner` oferece modos preparar,
-  mestrar e apresentar.
+  fundo por UUID, valida a grade e o canvas, salva o canvas por `PUT /api/scenes/<sceneId>` e pode
+  ser duplicada mantendo essas referências e o canvas. O `SceneRunner` oferece modos preparar,
+  mestrar e apresentar sobre o editor Konva `createSceneEditor` (`scene-stage.ts`). Formato,
+  conversão do tldraw, câmera e geometria são regras puras em `src/domain/scenes/`.
 - A projeção de cena não cria uma sessão no servidor. O mestre abre `/projection/<sessionId>` e os
   dois contextos se conectam ao mesmo `BroadcastChannel` do navegador. O mestre publica estado
   completo e atualizações incrementais; `buildProjectionState` remove tokens/POIs ocultos antes de
@@ -294,7 +295,7 @@ e formatação de datas fictícias.
 | Busca | `src/services/search/` + handler | limites em [HTTP e actions](../reference/http-and-actions.md) |
 | Persistência | contrato + adaptador em `repositories/` | migração, backup e testes de repositório |
 | Upload/asset | `AssetStore`, handler e actions | MIME, thumbnail, privacidade e ADR-003 |
-| Quadro/cena | contrato, domínio e componente tldraw | snapshot, exclusão lógica e guia de quadros/cenas |
+| Quadro/cena | contrato, domínio, componente tldraw (quadro) ou editor Konva (cena) | snapshot, exclusão lógica e guia de quadros/cenas |
 
 Se a mudança atravessar uma dessas fronteiras, atualize também a página documental canônica na
 mesma tarefa.

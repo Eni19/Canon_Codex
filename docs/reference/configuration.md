@@ -22,7 +22,7 @@ em .env.example, README, testes ou commits.
 
 ## Variáveis referenciadas mas não declaradas
 
-Os componentes tldraw leem NEXT_PUBLIC_TLDRAW_LICENSE_KEY, mas a variável não está em
+O tldraw dos Quadros lê NEXT_PUBLIC_TLDRAW_LICENSE_KEY (as Cenas não usam mais tldraw), mas a variável não está em
 .env.example e o código não documenta se ela é necessária para a versão instalada. O valor não é
 reproduzido aqui; confirmar essa necessidade é acompanhada no
 [#16](https://github.com/Eni19/Canon_Codex/issues/16).
