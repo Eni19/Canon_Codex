@@ -4,10 +4,11 @@ import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   BackSide, BufferAttribute, BufferGeometry, CanvasTexture, Color, FrontSide, PerspectiveCamera, PlaneGeometry,
-  Quaternion, RepeatWrapping, Vector3, type DirectionalLight, type Group, type Mesh, type MeshBasicMaterial, type Texture,
+  Quaternion, RepeatWrapping, Vector3, type SpotLight, type Group, type Mesh, type MeshBasicMaterial, type Texture,
 } from 'three'
 import { bendProfile, BEND_SEGMENTS, blockHeights, BOARD, BLOCK, PAGE_DEPTH, PAGE_WIDTH } from './book-geometry'
-import { paintCover, paintDesk, paintEndpaper, paintLeather, paintPageEdges, type NotebookPalette } from './book-textures'
+import { Desk } from './desk-props'
+import { paintCover, paintEndpaper, paintLeather, paintPageEdges, type NotebookPalette } from './book-textures'
 
 /** Size of the index paper on the desk, in world units and in CSS pixels of its HTML. */
 export const INDEX_WIDTH = 0.34
@@ -54,6 +55,8 @@ export interface BookSceneProps {
     index: Texture | null
   }
   onOpenRequest: () => void
+  /** Called once the scene has drawn its first few frames, so a loading screen can step aside. */
+  onShown?: () => void
 }
 
 export default function BookScene(props: BookSceneProps) {
@@ -67,18 +70,17 @@ export default function BookScene(props: BookSceneProps) {
 const smooth = (t: number) => t * t * (3 - 2 * t)
 const segment = (t: number, start: number, length: number) => smooth(Math.min(1, Math.max(0, (t - start) / length)))
 
-function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, textures, onOpenRequest }: BookSceneProps) {
+function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, textures, onOpenRequest, onShown }: BookSceneProps) {
   const { color } = palette
   const cover = useMemo(() => paintCover(palette, worldName, recordLine, fonts.serif, fonts.type), [palette, worldName, recordLine, fonts])
   const endpaper = useMemo(() => paintEndpaper(palette), [palette])
   const leather = useMemo(() => paintLeather(palette), [palette])
-  const desk = useMemo(() => paintDesk(palette), [palette])
   const edges = useMemo(() => paintPageEdges(palette), [palette])
 
   const book = useRef<Group>(null)
   const hinge = useRef<Group>(null)
   const indexPaper = useRef<Group>(null)
-  const light = useRef<DirectionalLight>(null)
+  const light = useRef<SpotLight>(null)
   const { left: leftBlock, right: rightBlock } = blockHeights()
   const leftY = BOARD + leftBlock + 0.0008
   const rightY = BOARD + rightBlock + 0.0008
@@ -86,7 +88,7 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
   useLayoutEffect(() => {
     const target = light.current?.target
     if (!target) return
-    target.position.set(0.2, 0, 0)
+    target.position.set(0.15, 0, 0.05)
     target.updateMatrixWorld()
   }, [])
 
@@ -112,28 +114,32 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
 
   return <>
     <CameraRig motion={motion} overlays={overlays} leftY={leftY} rightY={rightY}/>
-    <hemisphereLight args={[color.paper, color['desk-deep'], 0.45]}/>
-    <directionalLight
+    <FirstFrames onShown={onShown}/>
+    {/* A desk lamp up and to the left: a warm pool of light on the notebook that fades toward the
+        edges of the desk, with soft shadows. A little sky light keeps the dark parts readable, and
+        a faint cool light from the right picks out the pen. The pages themselves are
+        not lit (see PagePlane), so they read the same everywhere. */}
+    <hemisphereLight args={[color.lamp, color['desk-deep'], 0.1]}/>
+    <spotLight
       ref={light}
-      color={color.card}
-      intensity={1.5}
-      position={[-0.9, 2.2, 1.1]}
+      color={color.lamp}
+      intensity={2.5}
+      decay={0}
+      position={[-0.45, 2.1, -0.4]}
+      angle={0.5}
+      penumbra={1}
       castShadow
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
       shadow-normalBias={0.01}
-      shadow-camera-left={-1.4}
-      shadow-camera-right={1.6}
-      shadow-camera-top={1}
-      shadow-camera-bottom={-1}
+      shadow-camera-near={0.5}
+      shadow-camera-far={4}
     />
+    <directionalLight color={color.fill} intensity={0.22} position={[1.8, 1.1, 0.9]}/>
     <pointLight color={color.brass} intensity={0.35} position={[0.4, 0.9, -0.6]} distance={3} decay={1.6}/>
 
-    {/* The walnut desk the notebook lies on; it also catches the book's soft shadow. */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={(event) => event.stopPropagation()}>
-      <planeGeometry args={[8, 8]}/>
-      <meshStandardMaterial map={desk} roughness={0.85}/>
-    </mesh>
+    {/* The desk: walnut, a felt pad under the book and a pen. It catches the book's shadow. */}
+    <Desk palette={palette}/>
 
     <group ref={book}>
       <group onClick={(event) => { event.stopPropagation(); if (motion.current.open < 0.01) onOpenRequest() }}>
@@ -207,6 +213,16 @@ function LeftPage({ texture, paper, y }: { texture: Texture | null; paper: Color
   return <mesh geometry={geometry} position={[PAGE_WIDTH / 2, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
     <meshBasicMaterial key={texture?.uuid ?? 'blank'} map={texture} color={texture ? UNTINTED : paper}/>
   </mesh>
+}
+
+/** Tells, once, that a few frames have been drawn: textures are uploaded and shadows computed by then. */
+function FirstFrames({ onShown }: { onShown?: () => void }) {
+  const frames = useRef(0)
+  useFrame(() => {
+    frames.current += 1
+    if (frames.current === 3) onShown?.()
+  })
+  return null
 }
 
 function PageBlock({ x, height, edges, paper }: { x: number; height: number; edges: Texture; paper: Color }) {

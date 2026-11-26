@@ -74,6 +74,13 @@
   --nb-backdrop: oklch(0.24 0.006 250);
   --nb-backdrop-deep: oklch(0.15 0.005 250);
   --nb-paper: oklch(0.93 0.022 85);
+  /* Desk things: the green felt pad under the notebook and a lacquered fountain pen. */
+  --nb-felt: oklch(0.31 0.035 168);
+  --nb-felt-deep: oklch(0.22 0.03 170);
+  --nb-pen: oklch(0.19 0.02 260);
+  /* Light on the desk: a warm lamp from the upper left, a faint cool fill from the right. */
+  --nb-lamp: oklch(0.92 0.07 75);
+  --nb-fill: oklch(0.72 0.06 245);
   --nb-paper-shade: oklch(0.86 0.03 80);
   --nb-paper-aged: oklch(0.82 0.045 75);
   --nb-card: oklch(0.97 0.008 90);

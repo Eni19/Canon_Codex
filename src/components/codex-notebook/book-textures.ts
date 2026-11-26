@@ -5,7 +5,7 @@ import { CanvasTexture, Color, RepeatWrapping, SRGBColorSpace } from 'three'
  * from the --nb-* tokens in globals.css (ADR-005); tokens are oklch, so each one is painted on a
  * 1×1 canvas and read back as sRGB.
  */
-const TOKENS = ['desk', 'desk-deep', 'paper', 'paper-shade', 'paper-aged', 'card', 'ink', 'cover', 'cover-deep', 'brass', 'red'] as const
+const TOKENS = ['desk', 'desk-deep', 'felt', 'felt-deep', 'pen', 'lamp', 'fill', 'paper', 'paper-shade', 'paper-aged', 'card', 'ink', 'cover', 'cover-deep', 'brass', 'red'] as const
 export type NotebookToken = (typeof TOKENS)[number]
 
 export interface NotebookPalette {
@@ -193,51 +193,113 @@ export function paintEndpaper({ css }: NotebookPalette) {
   })
 }
 
+/** Size of the desk top, in scene units; its picture covers it once, without repeating seams. */
+export const DESK_SIZE = { width: 4.4, depth: 3 }
+
 /**
- * Walnut desk: a few broad planks, each a slightly different tone, with long soft grain. Kept low in
- * contrast and large in scale, so it reads as wood at a glance and never as stripes or noise.
+ * Dark walnut, close-grained: long fine grain lines in two tones, a few broad darker streaks of
+ * figure, and faint joints between wide boards. Low in contrast, so it stays in the background.
  */
 export function paintDesk({ css }: NotebookPalette) {
-  const texture = paint(2048, 2048, (c, w, h) => {
+  return paint(2048, Math.round((2048 * DESK_SIZE.depth) / DESK_SIZE.width), (c, w, h) => {
     c.fillStyle = css.desk
     c.fillRect(0, 0, w, h)
-    const next = seeded(11)
-    const planks = 5
-    const plank = h / planks
-    for (let p = 0; p < planks; p += 1) {
-      const top = p * plank
-      const tone = (next() - 0.5) * 0.12
-      c.fillStyle = tone > 0 ? `rgba(255,236,210,${tone})` : `rgba(0,0,0,${-tone})`
-      c.fillRect(0, top, w, plank)
-      // Long, gently wavy grain, plus a soft sheen down the middle of each plank.
-      for (let i = 0; i < 46; i += 1) {
-        const y = top + next() * plank
-        const amplitude = 3 + next() * 9
-        const phase = next() * Math.PI * 2
-        const wave = 260 + next() * 140
-        c.strokeStyle = next() > 0.35 ? `rgba(0,0,0,${0.05 + next() * 0.06})` : `rgba(255,236,210,${0.025 + next() * 0.03})`
-        c.lineWidth = 1 + next() * 2.4
-        c.beginPath()
-        for (let x = 0; x <= w; x += 32) {
-          const yy = y + Math.sin(x / wave + phase) * amplitude
-          if (x === 0) c.moveTo(x, yy)
-          else c.lineTo(x, yy)
-        }
-        c.stroke()
+    const deep = rgbOf(css['desk-deep'])
+    blotches(c, w, h, 9, 41, deep, 0.55, 1.6)
+    const next = seeded(23)
+    // Broad streaks of figure, running with the grain.
+    for (let i = 0; i < 14; i += 1) {
+      const y = next() * h
+      const band = c.createLinearGradient(0, y - 40, 0, y + 40)
+      band.addColorStop(0, 'rgba(0,0,0,0)')
+      band.addColorStop(0.5, `rgba(${deep.join(',')},${0.18 + next() * 0.2})`)
+      band.addColorStop(1, 'rgba(0,0,0,0)')
+      c.fillStyle = band
+      c.fillRect(0, y - 40, w, 80)
+    }
+    // Fine grain: many thin, gently wavy lines, darker and lighter.
+    for (let i = 0; i < 900; i += 1) {
+      const y = next() * h
+      const amplitude = 1 + next() * 5
+      const phase = next() * Math.PI * 2
+      const wave = 180 + next() * 320
+      const start = next() * w * 0.6 - w * 0.1
+      const length = w * (0.3 + next() * 0.8)
+      c.strokeStyle = next() > 0.3 ? `rgba(0,0,0,${0.04 + next() * 0.06})` : `rgba(255,226,190,${0.02 + next() * 0.025})`
+      c.lineWidth = 0.6 + next() * 1.4
+      c.beginPath()
+      for (let x = start; x <= start + length; x += 24) {
+        const yy = y + Math.sin(x / wave + phase) * amplitude
+        if (x === start) c.moveTo(x, yy)
+        else c.lineTo(x, yy)
       }
-      const sheen = c.createLinearGradient(0, top, 0, top + plank)
-      sheen.addColorStop(0, 'rgba(0,0,0,0.12)')
-      sheen.addColorStop(0.5, 'rgba(255,236,210,0.04)')
-      sheen.addColorStop(1, 'rgba(0,0,0,0.14)')
-      c.fillStyle = sheen
-      c.fillRect(0, top, w, plank)
-      c.fillStyle = 'rgba(0,0,0,0.5)'
-      c.fillRect(0, top, w, 3)
+      c.stroke()
+    }
+    // Pores: tiny dashes along the grain.
+    for (let i = 0; i < 9000; i += 1) {
+      c.fillStyle = `rgba(0,0,0,${0.08 + next() * 0.1})`
+      c.fillRect(next() * w, next() * h, 2 + next() * 6, 1)
+    }
+    // Faint joints between three wide boards.
+    for (const at of [0.18, 0.5, 0.82]) {
+      c.fillStyle = 'rgba(0,0,0,0.35)'
+      c.fillRect(0, at * h, w, 2)
+      c.fillStyle = 'rgba(255,226,190,0.04)'
+      c.fillRect(0, at * h + 2, w, 1)
     }
   })
-  texture.wrapS = texture.wrapT = RepeatWrapping
-  texture.repeat.set(3, 3)
-  return texture
+}
+
+/** Size of the felt pad under the notebook, in scene units, and the x of its centre. */
+export const PAD = { width: 1.92, depth: 1.04, x: 0.2 }
+
+/** Green felt desk pad: fine fibres, soft mottling, a darker border band with a sewn stitch. */
+export function paintPad({ css }: NotebookPalette) {
+  const scale = 1100
+  return paint(Math.round(PAD.width * scale), Math.round(PAD.depth * scale), (c, w, h) => {
+    c.fillStyle = css.felt
+    c.fillRect(0, 0, w, h)
+    const deep = rgbOf(css['felt-deep'])
+    blotches(c, w, h, 12, 61, deep, 0.45, 2)
+    blotches(c, w, h, 60, 62, deep, 0.35, 3)
+    speckle(c, w, h, 60000, 63, 0.05)
+    // A darker band around the edge.
+    const band = 34
+    c.fillStyle = css['felt-deep']
+    c.globalAlpha = 0.75
+    c.fillRect(0, 0, w, band)
+    c.fillRect(0, h - band, w, band)
+    c.fillRect(0, 0, band, h)
+    c.fillRect(w - band, 0, band, h)
+    c.globalAlpha = 1
+    // Stitching: short dashes of pale thread, slightly uneven.
+    const next = seeded(64)
+    const inset = band - 12
+    c.strokeStyle = 'rgba(232,214,180,0.42)'
+    c.lineWidth = 2.4
+    c.lineCap = 'round'
+    const stitch = (x0: number, y0: number, x1: number, y1: number) => {
+      const length = Math.hypot(x1 - x0, y1 - y0)
+      const count = Math.floor(length / 16)
+      for (let i = 0; i < count; i += 1) {
+        const t0 = i / count
+        const t1 = t0 + 9 / length
+        const jitter = (next() - 0.5) * 1.2
+        c.beginPath()
+        c.moveTo(x0 + (x1 - x0) * t0 + jitter, y0 + (y1 - y0) * t0 + jitter)
+        c.lineTo(x0 + (x1 - x0) * t1 + jitter, y0 + (y1 - y0) * t1 + jitter)
+        c.stroke()
+      }
+    }
+    stitch(inset, inset, w - inset, inset)
+    stitch(w - inset, inset, w - inset, h - inset)
+    stitch(w - inset, h - inset, inset, h - inset)
+    stitch(inset, h - inset, inset, inset)
+    // Worn, darker rim at the very edge.
+    c.strokeStyle = 'rgba(0,0,0,0.35)'
+    c.lineWidth = 6
+    c.strokeRect(3, 3, w - 6, h - 6)
+  })
 }
 
 /** Page edges seen on the side of the page block: fine horizontal lines of paper. */

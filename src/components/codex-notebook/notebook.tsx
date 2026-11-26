@@ -2,8 +2,8 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Caveat, Special_Elite } from 'next/font/google'
 import type { Texture } from 'three'
+import { useRecordReveal } from '@/components/record-reveal/record-reveal'
 import { buildSpreads, formatRecordCount, spreadIndexFromParam, type NotebookType } from './notebook-contents'
 import { IndexCard, renderSpread, type NotebookWorld, type SpreadPages } from './notebook-pages'
 import { CANCEL_SPRING, COMMIT_SPRING, DRAG_FOLLOW, dragProgress, shouldComplete, springStep } from './page-turn'
@@ -15,8 +15,8 @@ import styles from './notebook.module.css'
 /** three.js only runs in the browser. */
 const BookScene = dynamic(() => import('./book-scene'), { ssr: false })
 
-const hand = Caveat({ subsets: ['latin'], variable: '--font-hand' })
-const typewriter = Special_Elite({ weight: '400', subsets: ['latin'], variable: '--font-type' })
+import { hand, typewriter } from './notebook-fonts'
+import { NotebookLoading } from './notebook-loading'
 
 /** Pages are composed on a fixed 600 × 820 sheet; the 3D page and its HTML overlay share that size. */
 export const PAGE_W = 600
@@ -92,6 +92,7 @@ function turnKeys(spreads: { id: string }[], turn: { from: number; to: number })
 
 export function Notebook({ world, types, initialSpread }: NotebookProps) {
   const spreads = useMemo(() => buildSpreads(types), [types])
+  const reveal = useRecordReveal()
   // The notebook renders only in the browser (see notebook-loader), so the first state can read the
   // spread saved when the reader followed a link out of it.
   const [initialIndex] = useState(() => {
@@ -108,6 +109,14 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
   const [fonts, setFonts] = useState<{ serif: string; type: string } | null>(null)
   const [textures, setTextures] = useState<Record<string, Texture>>({})
   const [pictures] = useState(() => new PageTextures())
+  /** The 3D scene has drawn its first frames. */
+  const [sceneShown, setSceneShown] = useState(false)
+  /** The loading screen never stays longer than this, whatever is still missing. */
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoadingTimedOut(true), 8000)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const stage = useRef<HTMLDivElement>(null)
   const overlays = useRef<OverlayTargets>({ left: null, right: null, index: null })
@@ -343,14 +352,23 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
     }
   }, [])
 
-  /** Remembers the open spread when the reader follows a link out of the notebook. */
-  const rememberSpread = (event: React.MouseEvent) => {
-    if (index < 0 || !(event.target instanceof Element) || !event.target.closest('a[href]')) return
+  /**
+   * Following a link out of the notebook: remembers the open spread, and opens a record's page with
+   * the name-mask transition (a plain click only; new-tab clicks keep the browser's behaviour).
+   */
+  const followLink = (event: React.MouseEvent) => {
+    const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
+    if (index < 0 || !anchor) return
     try {
       window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ world: world.name, spread: spreads[index].id }))
     } catch {
       // Private windows may refuse storage; the notebook then simply opens closed.
     }
+    const href = anchor.getAttribute('href') ?? ''
+    const plain = event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+    if (!reveal || !plain || !href.startsWith('/entity/')) return
+    event.preventDefault()
+    reveal({ href, title: anchor.dataset.revealTitle ?? anchor.textContent?.trim() ?? '' })
   }
 
   // Keys: arrows turn, Escape closes, Enter opens.
@@ -455,6 +473,12 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
   }
 
   const settled = phase === 'open' && !turn
+  // The notebook is shown once the scene has drawn and the pictures it shows first are ready, so
+  // the reader never sees it being put together.
+  const firstPictures = index < 0
+    ? picture('index') !== null
+    : picture('index') !== null && picture(pageKey(spreads[index].id, 'left')) !== null && picture(pageKey(spreads[index].id, 'right')) !== null
+  const loaded = (sceneShown && firstPictures) || loadingTimedOut
   const indexCard = <IndexCard spreads={spreads} current={index} onOpen={(target) => phase === 'closed' ? openBook(target) : turnTo(target)}/>
 
   return (
@@ -466,6 +490,7 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
+      <NotebookLoading done={loaded}/>
       <p className="sr-only" aria-live="polite">{index === -1 ? 'Capa do Codex' : `Páginas: ${spreads[index].tab}`}</p>
 
       {palette && fonts && <div className={styles.canvas}>
@@ -485,13 +510,14 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
             index: picture('index'),
           }}
           onOpenRequest={() => openBook()}
+          onShown={() => setSceneShown(true)}
         />
       </div>}
 
       {/* The real pages, laid exactly over the 3D ones while they lie still, so they can be clicked.
           Once a page's picture is ready they stay invisible (data-ghost): the reader always sees the
           same picture, still or turning, so nothing changes sharpness or blinks when a turn ends. */}
-      <div className={styles.overlays} onClickCapture={rememberSpread}>
+      <div className={styles.overlays} onClickCapture={followLink}>
         <div ref={(element) => { overlays.current.left = element }} data-page="left" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(index >= 0 && picture(pageKey(spreads[index].id, 'left')) !== null) || undefined}>{current.left}</div>
         <div ref={(element) => { overlays.current.right = element }} data-page="right" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(index >= 0 && picture(pageKey(spreads[index].id, 'right')) !== null) || undefined}>{current.right}</div>
         <div ref={(element) => { overlays.current.index = element }} data-index-card className={styles.overlayIndex} data-visible={phase === 'open' || undefined} style={{ width: INDEX_PX.width, height: INDEX_PX.height }}>{indexCard}</div>

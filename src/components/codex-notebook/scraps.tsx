@@ -41,7 +41,7 @@ export function Polaroid({ src, caption, href, icon, date, ...at }: Placement & 
     {date && <span className={styles.polaroidDate}>{date}</span>}
   </>
   return href
-    ? <Link href={href} className={`${styles.piece} ${styles.polaroid} ${styles.interactive}`} style={place(at)}>{body}</Link>
+    ? <Link href={href} className={`${styles.piece} ${styles.polaroid} ${styles.interactive}`} style={place(at)} data-reveal-title={caption}>{body}</Link>
     : <span className={`${styles.piece} ${styles.polaroid}`} style={place(at)}>{body}</span>
 }
 

@@ -27,7 +27,7 @@ Referências estudadas:
 - `/codex` mostra o caderno ocupando a área de conteúdo, com a barra lateral mantida.
 - O caderno é uma cena three.js (React Three Fiber), como o livro do Stripe Press (*Nomad Letters*),
   carregada só no navegador (`book-scene.tsx`): capas de couro, guardas, blocos de páginas, luz quente
-  e sombras sobre uma mesa de nogueira (ainda sem objetos; ela será decorada depois). Capa, mesa,
+  e sombras sobre uma mesa de nogueira com feltro e caneta. Capa, mesa,
   guardas e bordas das páginas são texturas
   pintadas em canvas com as cores dos tokens `--nb-*` (`book-textures.ts`).
 - Fechado, o caderno fica em vista 3/4 e gira um pouco com o ponteiro; o papel do índice está sobre
@@ -82,8 +82,35 @@ Referências estudadas:
   alcança o ponteiro. No Firefox/Zen uma foto leva de 0,3 a 0,6 s: virando sem parar, o arrasto
   pode esperar cerca de 0,4 s; no ritmo de leitura as fotos já estão prontas. As fotos são tiradas
   na escala 1 (600 × 820), porque o custo delas cresce com os pixels.
-- A mesa de nogueira (pranchas largas com veio suave, pintada em canvas) voltou sob o caderno e
-  recebe a sombra dele.
+- A mesa (`desk-props.tsx`) é toda gerada em código, nas cores dos tokens `--nb-*` (inclusive
+  `--nb-felt` e `--nb-pen`), sem baixar modelos: nogueira escura de veio fino, um feltro verde de
+  escrivaninha com costura sob o caderno e uma caneta-tinteiro laqueada com latão à esquerda do
+  livro, na margem que a vista aberta deixa livre. Dados de RPG chegaram a ficar ao lado do índice,
+  mas foram retirados da tela de início. Só a caneta recebe reflexos,
+  de um ambiente gerado localmente (`RoomEnvironment`); papel e couro mantêm a luz simples.
+- A luz é a de uma luminária de mesa: um spot quente (`--nb-lamp`) do alto à esquerda, com penumbra
+  larga, que forma um círculo de luz sobre o caderno e escurece até as bordas da mesa, com sombras
+  suaves; um pouco de luz do céu (hemisférica) e um preenchimento frio e fraco da direita
+  (`--nb-fill`) para a caneta. As páginas não são iluminadas, então não mudam.
+- Abrir um registro a partir do caderno usa uma transição de máscara de texto
+  (`src/components/record-reveal/`): a tela escurece e o nome do registro sobe em letras enormes
+  (Alfa Slab One), preenchidas com o papel pautado do caderno, desenhado em vetor: está pronto no primeiro quadro, então nada é carregado nem trocado enquanto a página carrega (a imagem do registro chegou a ser usada, mas a página carrega tão rápido que a troca da miniatura pela imagem cheia causava estranheza); enquanto a página carrega, o nome fica na tela no
+  lugar de um carregamento genérico. Quando a nova rota é exibida, as letras viram janelas para a
+  página por baixo do papel, de uma vez, e só o papel se dissolve, de baixo para cima, atrás de uma
+  borda suave presa às letras (fazer o papel sumir e abrir a máscara escura ao mesmo tempo
+  escurecia as letras por um instante, e a troca parecia brusca); a vista mergulha no traço mais grosso perto do centro do nome (achado por uma transformada
+  de distância sobre o nome rasterizado) até a página ocupar a tela. A página começa a carregar no clique (`router.prefetch`), mas a rota só
+  muda quando a tela escura já cobre tudo; navegar no clique deixava uma página rápida aparecer
+  descoberta por um instante antes da transição. A sobreposição vive no
+  `WikiShell`, que continua montado entre as rotas; sem a nova página em 10 s, ela some. Com
+  `prefers-reduced-motion`, ou com cliques para nova aba, a navegação é a normal. Os polaroids
+  enquadram as imagens pelo alto (`object-position: 50% 18%`), para mostrar o rosto dos retratos.
+- Uma tela de carregamento breve (`notebook-loading.tsx`) cobre o caderno: um pequeno caderno de
+  couro com cantos de latão e elástico, uma linha de tinta dourada que se escreve sozinha e o nome
+  "Canon Codex" datilografado, todos nas cores `--nb-*`. Ela aparece
+  enquanto ele é montado: primeiro enquanto o código carrega (o `loading` do `next/dynamic`), depois
+  até a cena 3D desenhar os primeiros quadros e as fotos do índice (e da página aberta, se houver)
+  ficarem prontas; então ela some com um fade. Nunca fica mais de 8 s.
 - A capa, a contracapa e a lombada usam um couro gasto pintado em canvas (manchas em três escalas,
   bordas mais claras e grão), na linha da capa do OWARI DIARY, com um friso dourado junto à lombada.
 - Setas desenhadas nos cantos de cada página (**continue** e **voltar**; **fechar** na primeira) e as
