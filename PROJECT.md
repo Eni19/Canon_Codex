@@ -175,7 +175,7 @@ ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois c
 formulário de um vínculo gravado na ficha de origem.
 O [guia de entidades](docs/user-guide/entities.md) explica os fluxos. A migração de
 Quadros, Cenas e Linha do Tempo depende das verificações do
-[plano de relacionamentos](docs/relationship-graph-plan.md).
+[plano de relacionamentos](docs/plans/relationship-graph-plan.md).
 
 ## Componentes de UI reutilizáveis
 

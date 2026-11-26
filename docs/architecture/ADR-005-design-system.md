@@ -7,7 +7,7 @@
 Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
 quadros e cenas também usa componentes próprios e tldraw, mas isso não altera a decisão de tokens:
 novos estilos devem continuar referenciando o sistema semântico. A visão e as limitações de
-segurança/operação da aplicação estão em [`docs/operations-and-privacy.md`](../operations-and-privacy.md).
+segurança/operação da aplicação estão em [`docs/reference/operations-and-privacy.md`](../reference/operations-and-privacy.md).
 
 ## Contexto
 

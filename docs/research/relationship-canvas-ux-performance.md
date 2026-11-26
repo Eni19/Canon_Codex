@@ -1,7 +1,7 @@
 # Canvas de relacionamentos: interface e desempenho
 
 Pesquisa online em **16/11/2026**, com fontes primárias. Apoia o
-[plano de retomada](../relationship-graph-plan.md); não é benchmark nem implementação.
+[plano de retomada](../plans/relationship-graph-plan.md); não é benchmark nem implementação.
 Código e documentação do projeto foram consultados; nenhum conteúdo privado foi acessado.
 
 ## Conclusão para o Canon
@@ -73,7 +73,7 @@ Comparar antes/depois com hardware, navegador, DPR e resolução registrados. In
 grafo vazio, poucos nós, paralelas, loops, filtros, seleção e painéis nos dois temas.
 
 As metas quantitativas e a sequência de execução são canônicas no
-[plano](../relationship-graph-plan.md#metas-e-critérios-de-medição).
+[plano](../plans/relationship-graph-plan.md#metas-e-critérios-de-medição).
 Não há medição nova nesta pesquisa. Mouse/trackpad/toque físico e leitor de tela precisam de
 verificação real; eventos simulados e documentação de bibliotecas não comprovam esses resultados.
 As migrações de Quadros, Cenas e Linha do Tempo permanecem a última etapa.

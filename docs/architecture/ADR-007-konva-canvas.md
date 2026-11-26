@@ -20,7 +20,7 @@ app local-first:
 1. fora de `localhost` e sem chave válida, o editor some depois de 5 s, o que quebra Quadros e
    Cenas abertos pelo IP da rede local (por exemplo, a projeção de uma cena em outro aparelho);
 2. sem chave em produção, o pacote envia o endereço da página ao CDN do tldraw, o que contraria
-   a [política de operação e privacidade](../operations-and-privacy.md);
+   a [política de operação e privacidade](../reference/operations-and-privacy.md);
 3. em `localhost` funciona, mas com marca-d'água, e o uso fora de desenvolvimento depende de uma
    licença hobby ou comercial.
 
@@ -41,7 +41,7 @@ motor, não o motor.
 - **Planejado:** migrar Cenas e depois Quadros do tldraw para o canvas Konva, com conversor de
   snapshots idempotente, prévia, backup e restauração, e então retirar o tldraw e
   `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`. A Linha do Tempo só migra se não houver regressão em relação
-  ao perfil atual. As etapas estão no [REL-08](../relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas)
+  ao perfil atual. As etapas estão no [REL-08](../plans/relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas)
   e são acompanhadas nos issues #16 e #17.
 - Uma base compartilhada entre canvas só é extraída quando houver um segundo consumidor real.
 

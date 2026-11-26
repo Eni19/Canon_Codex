@@ -3,12 +3,12 @@
 Grafo de relacionamentos (16/11/2026): `graphGeometry.test.ts` verifica posições automáticas
 reproduzíveis com cartões fixos, a âncora do zoom/pinça e o centro no resize. Os testes do
 repositório preservam cobertura de relações, idempotência e conflito de revisão. O
-[relatório do grafo](performance/relationship-graph.md) registra o ensaio em Chrome de produção
+[relatório do grafo](../performance/relationship-graph.md) registra o ensaio em Chrome de produção
 com mundos sintéticos, além do que ainda depende de hardware físico.
 
 A validação de 17/11/2026 repetiu a suíte e o build com pastas e conferiu fluxo por teclado, árvore
 de acessibilidade do Chrome, salvamento, recuperação da fixture e runtime com rede externa bloqueada.
-Os três gestos ficaram acima da meta na fixture densa. [Medições e limites](performance/relationship-graph.md#validação-da-versão-com-pastas--17112026).
+Os três gestos ficaram acima da meta na fixture densa. [Medições e limites](../performance/relationship-graph.md#validação-da-versão-com-pastas--17112026).
 
 A revisão de busca exercita ida, volta e ambos, vínculos sem direção, setas antigas e ancoradas
 e o reposicionamento das pontas. Em Chrome com dados sintéticos, foram verificados o esmaecimento
@@ -18,7 +18,7 @@ Cosmic Canvas (15/10/2026): cinco testes novos em timelineCanvas.test.ts cobrem 
 sem sobreposição, âncora de zoom nos limites, pinch com translação, enquadramento/culling e
 preservação das posições ao filtrar. Os 36 testes relevantes de timeline passaram. Ensaios de navegador usam somente dados sintéticos e o harness opt-in
 scripts/timeline-canvas-profile.html; nove checks de gestos/filtros passaram em desktop, mobile e tablet.
-Medições, regressões manuais e limites estão no [perfil atual](performance/timeline-cosmic-canvas.md).
+Medições, regressões manuais e limites estão no [perfil atual](../performance/timeline-cosmic-canvas.md).
 Os parágrafos TL-10/TL-11/TL-12 abaixo registram verificações históricas da interface anterior.
 
 TL-12 acrescenta cinco testes em `timeline-motion.test.ts` para movimento reduzido, navegação
@@ -26,7 +26,7 @@ instantânea, ausência da API de animação, cancelamento durante saída e limp
 Os 31 testes relevantes de linhas do tempo passaram. TypeScript, ESLint de `src/` e `scripts/`
 e build de produção passaram. A suíte completa em 14/10/2026 registrou uma falha fora do escopo
 do TL-12; esse resultado é histórico e não descreve o estado atual da suíte.
-O [perfil TL-12](performance/timeline-motion-tl12.md) registra referências, dados sintéticos,
+O [perfil TL-12](../performance/timeline-motion-tl12.md) registra referências, dados sintéticos,
 medidas de quadros em produção e verificação visual desktop/móvel, com limites explícitos.
 O gerador visual é opt-in e usa um diretório temporário validado; não integra a suíte normal.
 Os ensaios incluem retorno de foco, cancelamento sem gravação, remoção/Desfazer, filtros,
@@ -52,7 +52,7 @@ foram repetidos os três cenários que falhavam: retorno à nova página do cart
 após End + Próxima página e seletores de data coerentes depois de salvar, inclusive sem alterações.
 Também foram verificados o aviso de cartão oculto e o retorno horizontal em viewport 390×844.
 Esses ensaios de DOM/foco são verificações de navegador, não testes automatizados da suíte Node.
-O [perfil de 500 aparições](performance/timeline-500.md) contém comandos do gerador temporário,
+O [perfil de 500 aparições](../performance/timeline-500.md) contém comandos do gerador temporário,
 ambiente, medidas antes/depois e verificações em navegador desktop/móvel. O gerador é opt-in,
 fora da suíte normal. ESLint foi executado em `src/` e `scripts/`.
 
