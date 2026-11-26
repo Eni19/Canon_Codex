@@ -92,7 +92,6 @@ procedimento de cópia da biblioteca em arquivos em [Backup e restauração do f
 - [ADRs](docs/architecture/): decisões históricas e estado atual.
 - [Auditoria documental](docs/documentation-audit.md), [trabalho e lacunas](docs/work-items.md),
   [ideias de evolução](docs/ideas.md) e [registro de bugs](docs/bugs.md).
-- [Relatório desta execução](docs/documentation-report.md).
 
 ## Arquitetura em uma frase
 
