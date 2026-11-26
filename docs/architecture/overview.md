@@ -40,6 +40,17 @@ mundo. `RelationshipView` mantém filtros, ferramentas, painéis HTML e formulá
 mantém câmera, alvos do ponteiro e nós por ID em duas camadas. Armazenamento e formulários
 continuam delegando às [Server Actions](../reference/http-and-actions.md).
 
+O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
+câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
+mundo. Pastas no canto da tela agrupam registros de qualquer tipo. Abrir uma pasta mostra seus
+cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro para ela.
+A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
+ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
+formulário de um vínculo gravado na ficha de origem.
+O [guia de entidades](../user-guide/entities.md) explica os fluxos. A migração de
+Quadros, Cenas e Linha do Tempo depende das verificações do
+[plano de relacionamentos](../plans/relationship-graph-plan.md).
+
 Máscaras de IDs preservam posições ao filtrar ou abrir uma pasta. A navegação de pastas fica em
 HTML no canto do canvas; a cena informa as coordenadas do ponteiro durante o arraste para
 destacar e resolver o destino no HTML, inclusive com captura de ponteiro. Ao soltar sobre uma

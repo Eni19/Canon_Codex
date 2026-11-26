@@ -86,8 +86,8 @@ de imagens usa os bytes e o MIME devolvidos por `AssetStore`.
 O modelo persistido usa uma entidade genérica (`src/domain/entities/entity.ts`) com
 `properties: Record<string, unknown>`, relações e conteúdo separado. `EntityTypeDefinition` no
 documento do mundo declara propriedades, ícone, visibilidade e blocos de layout.
-O calendário de cada mundo e a Linha do Tempo estão descritos em
-[arquitetura](docs/architecture/overview.md#calendário-por-mundo).
+O calendário de cada mundo, a Linha do Tempo e o canvas de relacionamentos estão descritos em
+[arquitetura](docs/architecture/overview.md).
 
 A decisão histórica pretendia que todos os tipos fossem renderizados pelo mesmo compositor. O
 estado atual é híbrido: o compositor usa os blocos declarados, mas `src/components/entities/
@@ -99,21 +99,6 @@ personagem também usa uma composição de retrato. Os demais tipos usam o compo
 Relações são armazenadas no array da entidade fonte; backlinks são derivados por varredura de
 `targetId`. Conteúdo usa `ContentDocument.pages[]`, com `body` Tiptap tratado como opaco pelo
 domínio. Ver [ADR-004](docs/architecture/ADR-004-editor.md).
-
-## Relacionamentos
-
-O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
-câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
-mundo. Pastas no canto da tela agrupam registros de qualquer tipo. Abrir uma pasta mostra seus
-cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro para ela.
-A escolha do Konva e a migração planejada de Quadros e Cenas estão em
-[ADR-007](docs/architecture/ADR-007-konva-canvas.md).
-A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
-ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
-formulário de um vínculo gravado na ficha de origem.
-O [guia de entidades](docs/user-guide/entities.md) explica os fluxos. A migração de
-Quadros, Cenas e Linha do Tempo depende das verificações do
-[plano de relacionamentos](docs/plans/relationship-graph-plan.md).
 
 ## Componentes de UI reutilizáveis
 
