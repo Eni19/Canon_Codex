@@ -1,5 +1,8 @@
 # Visão de arquitetura
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, mapa do código contra a árvore de
+> `src/` e contratos em `src/repositories/index.ts`.
+
 A arquitetura mantém a aplicação e os dados locais. As decisões de produto estão nos [ADRs](.).
 
 ## Mapa do código

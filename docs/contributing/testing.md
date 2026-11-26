@@ -1,5 +1,8 @@
 # Testes e qualidade
 
+> **Estado:** implementado (as seções datadas são registros históricos) · **Última verificação:**
+> 26/11/2026, padrão de inclusão em `vitest.config.mts`; a suíte completa tinha 310 testes.
+
 Grafo de relacionamentos (16/11/2026): `graphGeometry.test.ts` verifica posições automáticas
 reproduzíveis com cartões fixos, a âncora do zoom/pinça e o centro no resize. Os testes do
 repositório preservam cobertura de relações, idempotência e conflito de revisão. O
