@@ -3,173 +3,78 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   LayoutDashboard,
+  Maximize,
+  Minus,
   Plus,
+  Redo2,
   Search,
   Settings2,
   Tag,
+  Trash2,
   TriangleAlert,
+  Undo2,
   X,
 } from 'lucide-react'
-import {
-  AssetRecordType,
-  DefaultStylePanel,
-  HTMLContainer,
-  MediaHelpers,
-  Rectangle2d,
-  ShapeUtil,
-  T,
-  Tldraw,
-  createShapeId,
-  getSnapshot,
-  loadSnapshot,
-  useEditor,
-  useValue,
-  type Editor,
-  type TLBaseShape,
-  type TLEditorSnapshot,
-  type TLResizeInfo,
-} from 'tldraw'
-import 'tldraw/tldraw.css'
 import type { BoardDocument } from '@/domain/boards/board'
+import { CARD_DEFAULT, CARD_WIDE, readBoardCanvas, type BoardCanvas, type BoardCard, type GeoType } from '@/domain/boards/boardCanvas'
+import type { CameraState } from '@/domain/canvas/camera'
 import type { BoardEntitySummary } from '@/components/boards/board-types'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { PageScrollLock } from '@/components/entities/page-scroll-lock'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { canvasDraftKey, readCanvasDraft, sendCanvasSave, writeCanvasDraft } from '@/lib/canvas/canvas-drafts'
+import { boardFontVariables } from './board-fonts'
+import type { BoardEditor, BoardStyleState, BoardTool } from './board-stage'
+import { BoardToolbar } from './board-toolbar'
+import { toast } from 'sonner'
 import styles from './investigation-board.module.css'
 
-const ENTITY_CARD_TYPE = 'entity-card' as const
-const OPEN_ENTITY_EVENT = 'canon-codex:open-board-entity'
 const ENTITY_DRAG_TYPE = 'application/x-canon-codex-entity'
-
-declare module 'tldraw' {
-  interface TLGlobalShapePropsMap {
-    [ENTITY_CARD_TYPE]: {
-      w: number
-      h: number
-      entityId: string
-      viewMode: string
-      showImage: boolean
-      showType: boolean
-      showTags: boolean
-      showStatus: boolean
-      customLabel: string
-    }
-  }
-}
-
-type EntityCardShape = TLBaseShape<typeof ENTITY_CARD_TYPE, {
-  w: number
-  h: number
-  entityId: string
-  viewMode: string
-  showImage: boolean
-  showType: boolean
-  showTags: boolean
-  showStatus: boolean
-  customLabel: string
-}>
-
-const EntityMapContext = createContext<Map<string, BoardEntitySummary>>(new Map())
-
-function EntityCardContent({ shape }: { shape: EntityCardShape }) {
-  const entity = useContext(EntityMapContext).get(shape.props.entityId)
-  if (!entity) return <div className={styles.missingCard}><TriangleAlert /><strong>Entidade indisponível</strong><span>{shape.props.entityId}</span></div>
-  const portrait = shape.props.viewMode === 'portrait'
-  const dossier = shape.props.viewMode === 'dossier'
-  return (
-    <div className={`${styles.entityCard} ${styles[shape.props.viewMode] ?? ''}`}>
-      <span className={styles.pin} />
-      {shape.props.showImage && entity.thumbnailAssetId && <Image className={styles.cardImage} src={assetVariantUrl(entity.thumbnailAssetId, portrait || dossier ? 'original' : 'thumbnail')} alt="" width={480} height={480} unoptimized draggable={false} />}
-      <div className={styles.cardBody}>
-        {shape.props.showType && <span className={styles.entityType}>{entity.typeLabel}</span>}
-        <strong className={styles.entityTitle}>{shape.props.customLabel || entity.title}</strong>
-        {entity.subtitle && <span className={styles.entitySubtitle}>{entity.subtitle}</span>}
-        {shape.props.showStatus && entity.status && <span className={styles.entityStatus}><i />{entity.status}</span>}
-        {shape.props.showTags && entity.tags.length > 0 && <div className={styles.entityTags}>{entity.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div>}
-      </div>
-    </div>
-  )
-}
-
-class EntityCardShapeUtil extends ShapeUtil<EntityCardShape> {
-  static override type = ENTITY_CARD_TYPE
-  static override props = {
-    w: T.number, h: T.number, entityId: T.string, viewMode: T.string,
-    showImage: T.boolean, showType: T.boolean, showTags: T.boolean,
-    showStatus: T.boolean, customLabel: T.string,
-  }
-  getDefaultProps(): EntityCardShape['props'] { return { w: 280, h: 170, entityId: '', viewMode: 'card', showImage: true, showType: true, showTags: true, showStatus: true, customLabel: '' } }
-  getGeometry(shape: EntityCardShape) { return new Rectangle2d({ width: shape.props.w, height: shape.props.h, isFilled: true }) }
-  component(shape: EntityCardShape) { return <HTMLContainer className={styles.shapeContainer} style={{ width: shape.props.w, height: shape.props.h }}><EntityCardContent shape={shape} /></HTMLContainer> }
-  getIndicatorPath(shape: EntityCardShape) { const path = new Path2D(); path.rect(0, 0, shape.props.w, shape.props.h); return path }
-  override canResize() { return true }
-  override onResize(shape: EntityCardShape, info: TLResizeInfo<EntityCardShape>) {
-    return { props: { w: Math.max(160, shape.props.w * info.scaleX), h: Math.max(90, shape.props.h * info.scaleY) } }
-  }
-  override onDoubleClick(shape: EntityCardShape) { window.dispatchEvent(new CustomEvent(OPEN_ENTITY_EVENT, { detail: shape.props.entityId })) }
-  override getAriaDescriptor(shape: EntityCardShape) { return `Referência para entidade ${shape.props.entityId}` }
-}
-
-const shapeUtils = [EntityCardShapeUtil]
-
-// The style panel only makes sense while something styleable (arrow, drawing, text...) is selected.
-function BoardStylePanel() {
-  const editor = useEditor()
-  const hasStyleableSelection = useValue('board-styleable-selection', () => editor.getSelectedShapes().some((shape) => shape.type !== ENTITY_CARD_TYPE), [editor])
-  return hasStyleableSelection ? <DefaultStylePanel /> : null
-}
-
-const boardComponents = { PageMenu: null, Minimap: null, StylePanel: BoardStylePanel }
-
-function createEntityShape(editor: Editor, entityId: string, point?: { x: number; y: number }) {
-  const center = point ?? editor.getViewportPageBounds().center
-  const id = createShapeId()
-  editor.createShape<EntityCardShape>({
-    id,
-    type: ENTITY_CARD_TYPE,
-    x: center.x - 140,
-    y: center.y - 85,
-    props: { entityId },
-  })
-  editor.select(id)
-  editor.setCurrentTool('select')
-}
 
 export function InvestigationBoard({ board, entities }: { board: BoardDocument; entities: BoardEntitySummary[] }) {
   const router = useRouter()
-  const editorRef = useRef<Editor | null>(null)
-  const cleanupRef = useRef<(() => void) | null>(null)
+  const canvasHostRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<BoardEditor | null>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cameraTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [query, setQuery] = useState('')
   const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null)
   const [worldPanelOpen, setWorldPanelOpen] = useState(true)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [previewId, setPreviewId] = useState<string | null>(null)
-  const [selectedShape, setSelectedShape] = useState<EntityCardShape | null>(null)
+  const [selectedCard, setSelectedCard] = useState<BoardCard | null>(null)
+  const [hasSelection, setHasSelection] = useState(false)
+  const [tool, setToolState] = useState<BoardTool>('select')
+  const [geoType, setGeoTypeState] = useState<GeoType>('rectangle')
+  const [styleState, setStyleState] = useState<BoardStyleState>({ visible: false, color: null, size: null })
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const [history, setHistory] = useState({ undo: false, redo: false })
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved')
+  const draftKey = canvasDraftKey('board', board.id)
+  // Lido uma vez (o componente é recriado por quadro). A versão em memória vence a da página, que o
+  // roteador pode ter guardado antes das últimas alterações. Um canvas ilegível não abre o editor.
+  const [initialCanvas] = useState<BoardCanvas | null>(() => { try { return readBoardCanvas(readCanvasDraft(draftKey) ?? board.canvasSnapshot) } catch { return null } })
   const entityMap = useMemo(() => new Map(entities.map((entity) => [entity.id, entity])), [entities])
   const filtered = useMemo(() => !query.trim() || searchResultIds === null ? entities : searchResultIds.map((id) => entityMap.get(id)).filter((entity): entity is BoardEntitySummary => Boolean(entity)), [entities, entityMap, query, searchResultIds])
   const preview = previewId ? entityMap.get(previewId) : undefined
+  const cameraKey = `canon-codex:board-camera:${board.id}`
 
-  useEffect(() => () => { cleanupRef.current?.(); if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }, [])
+  useEffect(() => () => { if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current) }, [])
   useEffect(() => {
     // Back/forward navigation may restore an older RSC payload from the client router cache.
-    // Refreshing merges current entity summaries without resetting the mounted tldraw editor.
+    // Refreshing merges current entity summaries without resetting the mounted editor.
     router.refresh()
   }, [router])
-  useEffect(() => {
-    const open = (event: Event) => setPreviewId((event as CustomEvent<string>).detail)
-    window.addEventListener(OPEN_ENTITY_EVENT, open)
-    return () => window.removeEventListener(OPEN_ENTITY_EVENT, open)
-  }, [])
   useEffect(() => {
     if (!query.trim()) return
     const controller = new AbortController()
@@ -192,58 +97,99 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
     return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [])
 
-  const saveDocument = (editor: Editor) => {
+  const saveDocument = (editor: BoardEditor) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(async () => {
+      saveTimerRef.current = null
       setSaveState('saving')
       try {
-        const { document } = getSnapshot(editor.store)
-        const response = await fetch(`/api/boards/${board.id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ snapshot: { document } }) })
+        const canvas = editor.getCanvas()
+        writeCanvasDraft(draftKey, canvas)
+        const response = await sendCanvasSave(`/api/boards/${board.id}`, { snapshot: canvas })
         if (!response.ok) throw new Error('Falha ao salvar')
         setSaveState('saved')
       } catch { setSaveState('error') }
     }, 700)
   }
-
-  const onMount = (editor: Editor) => {
-    editorRef.current = editor
-    const sessionKey = `canon-codex:board-session:${board.id}`
-    const savedSession = window.localStorage.getItem(sessionKey)
-    if (savedSession) {
-      try { loadSnapshot(editor.store, { session: JSON.parse(savedSession) }) } catch { window.localStorage.removeItem(sessionKey) }
-    } else if (editor.getCurrentPageShapes().length > 0) {
-      editor.zoomToFit({ animation: { duration: 0 } })
-    }
-    editor.registerExternalAssetHandler('file', async ({ file, assetId }) => {
-      const form = new FormData(); form.set('file', file)
-      const response = await fetch('/api/assets', { method: 'POST', body: form })
-      if (!response.ok) throw new Error('Não foi possível importar a imagem')
-      const { assetId: wikiAssetId } = await response.json() as { assetId: string }
-      const size = await MediaHelpers.getImageSize(file)
-      return AssetRecordType.create({ id: assetId ?? AssetRecordType.createId(), type: 'image', props: { name: file.name, src: assetVariantUrl(wikiAssetId, 'original'), w: size.w, h: size.h, mimeType: file.type, isAnimated: await MediaHelpers.isAnimated(file), fileSize: file.size }, meta: { wikiAssetId } })
-    })
-    cleanupRef.current?.()
-    const stopDocument = editor.store.listen(() => saveDocument(editor), { source: 'user', scope: 'document' })
-    const stopSelection = editor.store.listen(() => {
-      const { session } = getSnapshot(editor.store)
-      window.localStorage.setItem(sessionKey, JSON.stringify(session))
-      const shape = editor.getSelectedShapes().find((item): item is EntityCardShape => item.type === ENTITY_CARD_TYPE)
-      setSelectedShape(shape ?? null)
-    }, { source: 'all', scope: 'session' })
-    cleanupRef.current = () => { stopDocument(); stopSelection() }
-  }
-
-  const addEntity = (entityId: string, point?: { x: number; y: number }) => { const editor = editorRef.current; if (!editor) return; createEntityShape(editor, entityId, point); setPaletteOpen(false) }
-  const updateEntityShape = (props: Partial<EntityCardShape['props']>) => {
+  /** Salva na hora o que estiver esperando: ao sair do quadro ou fechar a aba. */
+  const flushSave = useEffectEvent(() => {
     const editor = editorRef.current
-    if (!editor || !selectedShape) return
-    editor.updateShape<EntityCardShape>({ id: selectedShape.id, type: ENTITY_CARD_TYPE, props })
-    setSelectedShape(editor.getShape<EntityCardShape>(selectedShape.id) ?? null)
+    if (!saveTimerRef.current || !editor) return
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = null
+    const canvas = editor.getCanvas()
+    writeCanvasDraft(draftKey, canvas)
+    void sendCanvasSave(`/api/boards/${board.id}`, { snapshot: canvas }).catch(() => undefined)
+  })
+  useEffect(() => {
+    const onPageHide = () => flushSave()
+    window.addEventListener('pagehide', onPageHide)
+    return () => window.removeEventListener('pagehide', onPageHide)
+  }, [])
+  const syncSelection = (editor: BoardEditor) => {
+    const card = editor.getSelectedShapes().find((shape): shape is BoardCard => shape.kind === 'card')
+    setSelectedCard(card ?? null)
+    setHasSelection(editor.getSelectedIds().length > 0)
+    setStyleState(editor.getStyleState())
+  }
+  const onDocumentChanged = useEffectEvent(() => {
+    const editor = editorRef.current
+    if (!editor) return
+    saveDocument(editor)
+    syncSelection(editor)
+    setHistory({ undo: editor.canUndo(), redo: editor.canRedo() })
+  })
+  const onSelectionChanged = useEffectEvent(() => { const editor = editorRef.current; if (editor) syncSelection(editor) })
+  const onCameraChanged = useEffectEvent(() => {
+    const editor = editorRef.current
+    if (!editor) return
+    setZoom(editor.getZoom())
+    if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current)
+    cameraTimerRef.current = setTimeout(() => window.localStorage.setItem(cameraKey, JSON.stringify(editor.getCamera())), 300)
+  })
+  const onToolChanged = useEffectEvent(() => { const editor = editorRef.current; if (editor) { setToolState(editor.getTool()); setGeoTypeState(editor.getGeoType()); setStyleState(editor.getStyleState()) } })
+  const insertImages = (files: File[], client?: { clientX: number; clientY: number }) => {
+    void editorRef.current?.insertImages(files, client).catch(() => toast.error('Não foi possível importar a imagem.'))
+  }
+  const initialEntities = useEffectEvent(() => entityMap)
+  useEffect(() => {
+    const host = canvasHostRef.current
+    if (!host || !initialCanvas) return
+    let disposed = false, editor: BoardEditor | null = null
+    let camera: CameraState | null = null
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(cameraKey) ?? 'null') as CameraState | null
+      if (saved && [saved.x, saved.y, saved.z].every(Number.isFinite) && saved.z > 0) camera = saved
+    } catch { window.localStorage.removeItem(cameraKey) }
+    void import('./board-stage').then(({ createBoardEditor }) => {
+      if (disposed) return
+      editor = createBoardEditor(host, {
+        canvas: initialCanvas, entities: initialEntities(), camera,
+        callbacks: { documentChanged: () => onDocumentChanged(), selectionChanged: () => onSelectionChanged(), cameraChanged: () => onCameraChanged(), toolChanged: () => onToolChanged(), openEntity: (id) => setPreviewId(id), pickImage: () => imageInputRef.current?.click() },
+      })
+      editorRef.current = editor
+      setZoom(editor.getZoom())
+    })
+    return () => {
+      disposed = true
+      flushSave()
+      // A câmera volta exatamente onde estava, mesmo sem pan ou zoom nesta visita.
+      if (editor) window.localStorage.setItem(cameraKey, JSON.stringify(editor.getCamera()))
+      editor?.destroy()
+      if (editorRef.current === editor) editorRef.current = null
+    }
+  }, [initialCanvas, cameraKey])
+  useEffect(() => { editorRef.current?.setEntities(entityMap) }, [entityMap])
+
+  const addEntity = (entityId: string, point?: { x: number; y: number }) => { editorRef.current?.createCard(entityId, point); setPaletteOpen(false) }
+  const updateEntityShape = (props: Partial<BoardCard>) => {
+    const editor = editorRef.current
+    if (!editor || !selectedCard) return
+    editor.updateShapes([{ id: selectedCard.id, ...props }])
   }
 
   return (
-    <EntityMapContext.Provider value={entityMap}>
-      <div className={styles.boardShell}>
+    <div className={`${styles.boardShell} ${boardFontVariables}`}>
         <PageScrollLock />
         <header className={styles.boardHeader}>
           <Link href="/boards" className={styles.headerButton} aria-label="Voltar aos quadros"><ArrowLeft /></Link>
@@ -252,16 +198,23 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
           <div className={styles.saveState} data-state={saveState}>{saveState === 'saved' ? <Check /> : saveState === 'error' ? <TriangleAlert /> : <span className={styles.spinner} />}{saveState === 'saved' ? 'Salvo' : saveState === 'error' ? 'Erro ao salvar' : 'Salvando'}</div>
         </header>
 
-        <div className={styles.canvasStage} onDragOverCapture={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE)) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy' } }} onDropCapture={(event) => { const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); event.stopPropagation(); addEntity(id, editorRef.current.screenToPage({ x: event.clientX, y: event.clientY })) }}>
-          <Tldraw
-            shapeUtils={shapeUtils}
-            components={boardComponents}
-            snapshot={(board.canvasSnapshot ?? undefined) as TLEditorSnapshot | undefined}
-            onMount={onMount}
-            autoFocus
-            colorScheme="dark"
-            licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
-          />
+        <div className={styles.canvasStage} onDragOverCapture={(event) => { if (event.dataTransfer.types.includes(ENTITY_DRAG_TYPE) || event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy' } }} onDropCapture={(event) => { const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith('image/')); if (files.length) { event.preventDefault(); event.stopPropagation(); insertImages(files, { clientX: event.clientX, clientY: event.clientY }); return } const id = event.dataTransfer.getData(ENTITY_DRAG_TYPE); if (!id || !editorRef.current) return; event.preventDefault(); event.stopPropagation(); addEntity(id, editorRef.current.screenToPage({ clientX: event.clientX, clientY: event.clientY })) }}>
+          <div ref={canvasHostRef} className={styles.canvasHost} aria-label="Canvas do quadro" />
+          {!initialCanvas && <div className={styles.canvasError} role="alert"><TriangleAlert /><strong>Não foi possível ler o canvas deste quadro.</strong><span>O registro foi preservado sem alterações.</span></div>}
+          <div className={styles.quickActions}>
+            <button onClick={() => editorRef.current?.undo()} disabled={!history.undo} title="Desfazer (Ctrl Z)" aria-label="Desfazer"><Undo2 /></button>
+            <button onClick={() => editorRef.current?.redo()} disabled={!history.redo} title="Refazer (Ctrl Shift Z)" aria-label="Refazer"><Redo2 /></button>
+            <button onClick={() => editorRef.current?.deleteSelected()} disabled={!hasSelection} title="Excluir (Delete)" aria-label="Excluir"><Trash2 /></button>
+            <button onClick={() => editorRef.current?.duplicate()} disabled={!hasSelection} title="Duplicar (Ctrl D)" aria-label="Duplicar"><Copy /></button>
+          </div>
+          <BoardToolbar tool={tool} geoType={geoType} styleState={styleState} onColor={(color) => editorRef.current?.setStyle({ color })} onSize={(size) => editorRef.current?.setStyle({ size })} onTool={(next) => editorRef.current?.setTool(next)} onGeo={(geo) => editorRef.current?.setGeoType(geo)} onImage={() => imageInputRef.current?.click()} />
+          <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={(event) => { const files = [...(event.target.files ?? [])]; event.target.value = ''; insertImages(files) }} />
+          <div className={styles.zoomMenu}>
+            <button onClick={() => editorRef.current?.zoomOut()} title="Afastar (Ctrl -)" aria-label="Afastar"><Minus /></button>
+            <button className={styles.zoomValue} onClick={() => editorRef.current?.resetZoom()} title="Zoom 100% (Shift 0)">{Math.round(zoom * 100)}%</button>
+            <button onClick={() => editorRef.current?.zoomIn()} title="Aproximar (Ctrl =)" aria-label="Aproximar"><Plus /></button>
+            <button onClick={() => editorRef.current?.zoomToFit()} title="Enquadrar tudo (Shift 1)" aria-label="Enquadrar tudo"><Maximize /></button>
+          </div>
         </div>
 
         <aside className={`${styles.worldPanel} ${worldPanelOpen ? '' : styles.worldPanelClosed}`}>
@@ -273,12 +226,12 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
           </div>
         </aside>
 
-        {selectedShape && <aside className={styles.inspector}>
-          <div className={styles.inspectorHeader}><span><Settings2 /> Aparência</span><button onClick={() => { editorRef.current?.selectNone(); setSelectedShape(null) }}><X /></button></div>
-          <label>Visualização<select value={selectedShape.props.viewMode} onChange={(event) => { const viewMode = event.target.value; updateEntityShape(viewMode === 'wide' ? { viewMode, w: 420, h: 190 } : selectedShape.props.viewMode === 'wide' ? { viewMode, w: 280, h: 170 } : { viewMode }) }}><option value="minimal">Mínima</option><option value="card">Cartão</option><option value="portrait">Retrato</option><option value="dossier">Dossiê</option>{entityMap.get(selectedShape.props.entityId)?.type === 'location' && <option value="wide">Local amplo</option>}</select></label>
-          <label>Nome personalizado<input value={selectedShape.props.customLabel} onChange={(event) => updateEntityShape({ customLabel: event.target.value })} placeholder={entityMap.get(selectedShape.props.entityId)?.title} /></label>
-          {[['showImage', 'Imagem'], ['showType', 'Tipo'], ['showStatus', 'Status'], ['showTags', 'Etiquetas']].map(([key, label]) => <label key={key} className={styles.switchRow}><input type="checkbox" checked={selectedShape.props[key as keyof EntityCardShape['props']] as boolean} onChange={(event) => updateEntityShape({ [key]: event.target.checked })} /><span>{label}</span></label>)}
-          <button className={styles.openPreview} onClick={() => setPreviewId(selectedShape.props.entityId)}>Abrir ficha rápida <ExternalLink /></button>
+        {selectedCard && <aside className={styles.inspector}>
+          <div className={styles.inspectorHeader}><span><Settings2 /> Aparência</span><button onClick={() => editorRef.current?.selectNone()}><X /></button></div>
+          <label>Visualização<select value={selectedCard.viewMode} onChange={(event) => { const viewMode = event.target.value; const mode = viewMode as BoardCard['viewMode']; updateEntityShape(mode === 'wide' ? { viewMode: mode, ...CARD_WIDE } : selectedCard.viewMode === 'wide' ? { viewMode: mode, ...CARD_DEFAULT } : { viewMode: mode }) }}><option value="minimal">Mínima</option><option value="card">Cartão</option><option value="portrait">Retrato</option><option value="dossier">Dossiê</option>{entityMap.get(selectedCard.entityId)?.type === 'location' && <option value="wide">Local amplo</option>}</select></label>
+          <label>Nome personalizado<input value={selectedCard.customLabel} onChange={(event) => updateEntityShape({ customLabel: event.target.value })} placeholder={entityMap.get(selectedCard.entityId)?.title} /></label>
+          {[['showImage', 'Imagem'], ['showType', 'Tipo'], ['showStatus', 'Status'], ['showTags', 'Etiquetas']].map(([key, label]) => <label key={key} className={styles.switchRow}><input type="checkbox" checked={selectedCard[key as 'showImage' | 'showType' | 'showStatus' | 'showTags']} onChange={(event) => updateEntityShape({ [key]: event.target.checked })} /><span>{label}</span></label>)}
+          <button className={styles.openPreview} onClick={() => setPreviewId(selectedCard.entityId)}>Abrir ficha rápida <ExternalLink /></button>
         </aside>}
 
         {previewId && <aside className={styles.previewPanel}>
@@ -288,6 +241,5 @@ export function InvestigationBoard({ board, entities }: { board: BoardDocument; 
 
         {paletteOpen && <div className={styles.paletteBackdrop} onMouseDown={() => setPaletteOpen(false)}><div className={styles.palette} onMouseDown={(event) => event.stopPropagation()}><div className={styles.paletteInput}><Search /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Adicionar ao quadro..." /><button onClick={() => setPaletteOpen(false)}><X /></button></div><div className={styles.paletteResults}>{filtered.slice(0, 12).map((entity) => <button key={entity.id} onClick={() => addEntity(entity.id)}><EntityTypeIcon name={entity.typeIcon} /><span><strong>{entity.title}</strong><small>{entity.typeLabel}{entity.subtitle ? ` · ${entity.subtitle}` : ''}</small></span><Plus /></button>)}</div></div></div>}
       </div>
-    </EntityMapContext.Provider>
   )
 }

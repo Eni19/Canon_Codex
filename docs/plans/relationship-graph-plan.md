@@ -1,7 +1,7 @@
 # Plano do grafo de relacionamentos e dos novos canvas
 
 > **Estado:** parcial (REL-01 a REL-06 e REL-09 implementados; REL-07 em validação no #46; REL-08
-> planejado no #17) · **Última verificação:** 25/11/2026, estimativa do REL-08 contra
+> em andamento no #17: Cenas migradas para Konva em 26/11/2026; Quadros com a etapa 1 em 26/11/2026) · **Última verificação:** 25/11/2026, estimativa do REL-08 contra
 > `investigation-board.tsx` e `scene-runner.tsx`.
 
 Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo usuário e da
@@ -265,9 +265,10 @@ própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de g
 1. **Inventariar/converter:** cartões, desenhos, anotações, texto, imagens, grupos e setas vinculadas.
    Formato Canon versionado; conversor idempotente com prévia, backup, incompatibilidades e restauração.
    Testar snapshots sintéticos; preservar original e bloquear troca automática diante de perda.
-2. **Quadros de investigação:** preservar variações de cartões, imagens, setas, posições, camadas,
+2. **Quadros de investigação** (etapas 1 e 2 em 26/11/2026: canvas, cartões, texto, setas e as
+   ferramentas de criação, sem marca-texto, laser e moldura; falta o painel de estilo): preservar variações de cartões, imagens, setas, posições, camadas,
    referências por ID, anotação, autosave e recuperação. Validar reabertura das cópias antes da troca.
-3. **Cenas:** preservar mapa, grade/encaixe, tokens/transformações, camadas, bloqueio, pontos de
+3. **Cenas** (migradas em 26/11/2026; validação visual em uso real pendente): preservar mapa, grade/encaixe, tokens/transformações, camadas, bloqueio, pontos de
    interesse, revelações e duplicação. Validar Preparar/Mestrar/projeção, câmera e a garantia de
    que itens ocultos não chegam à janela do jogador.
 4. **Linha do Tempo, por último entre as superfícies:** preservar coordenadas cronológicas, cartões

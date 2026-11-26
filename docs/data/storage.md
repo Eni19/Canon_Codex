@@ -167,7 +167,7 @@ mesmo ID e posição mediante token de concorrência, sem criar um segundo regis
 - `Entity.slug` é derivado do título, apenas cosmético. Relações, links Tiptap e propriedades de
   referência guardam IDs.
 - Uma cena guarda `background.locationId` e `background.assetId`; um quadro guarda IDs nas formas
-  do snapshot tldraw. Esses alvos não são copiados ao duplicar uma cena ou um quadro.
+  do canvas. Esses alvos não são copiados ao duplicar uma cena ou um quadro.
 - Backlinks, índices de busca e thumbnails são derivados. Backlinks e busca são reconstruídos em
   memória; uma thumbnail pode faltar sem remover o original.
 

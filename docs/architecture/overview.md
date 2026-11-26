@@ -13,7 +13,7 @@ src/app/                         entrada HTTP e navegação Next App Router
   (wiki)/                        calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
-src/components/                  UI client/server, Tiptap, tldraw, Konva e projeção
+src/components/                  UI client/server, Tiptap, Konva e projeção
 src/services/                    casos de uso: mundos, busca e referência de assets
 src/domain/                      schemas Zod, tipos e formatos persistidos
 src/repositories/contracts/      fronteiras de persistência
@@ -59,7 +59,7 @@ cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro p
 A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
 ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
 formulário de um vínculo gravado na ficha de origem.
-A escolha do Konva e a migração planejada de Quadros e Cenas estão em
+A escolha do Konva e a migração de Quadros e Cenas estão em
 [ADR-007](ADR-007-konva-canvas.md).
 O [guia de entidades](../user-guide/entities.md) explica os fluxos. A migração de
 Quadros, Cenas e Linha do Tempo depende das verificações do
@@ -256,13 +256,18 @@ e formatação de datas fictícias.
 ## Quadros, cenas e projeção
 
 - Quadros são `BoardDocument`. No filesystem legado, ficam em `boards/<boardId>/board.json`. A página carrega todas as entidades
-  como resumos; `InvestigationBoard` guarda o snapshot tldraw por `PUT /api/boards/<boardId>` e
-  mantém uma cópia de sessão no `localStorage` do navegador. Imagens inseridas no quadro passam
-  pelo mesmo `POST /api/assets`.
+  como resumos; `InvestigationBoard` usa o editor Konva `createBoardEditor` (`board-stage.ts`,
+  desenho em `board-render.ts`), guarda o canvas validado por `PUT /api/boards/<boardId>` e a
+  câmera no `localStorage` do navegador. Formato, conversão do tldraw e geometria das setas estão
+  em `src/domain/boards/`; câmera, geometria e histórico comuns, em `src/domain/canvas/`.
+  Quadros e Cenas salvam na hora uma alteração pendente ao sair da página (ou fechar a aba) e
+  guardam a última versão em memória (`src/lib/canvas/canvas-drafts.ts`); assim, voltar pelo
+  roteador do cliente, que pode reaproveitar a página carregada antes, reabre o estado mais novo.
 - Cenas são `Scene`. No filesystem legado, ficam em `scenes/<sceneId>/scene.json`. Uma cena referencia um local e um asset de
-  fundo por UUID, valida a grade, salva snapshots por `PUT /api/scenes/<sceneId>` e pode ser
-  duplicada mantendo essas referências e o snapshot. O `SceneRunner` oferece modos preparar,
-  mestrar e apresentar.
+  fundo por UUID, valida a grade e o canvas, salva o canvas por `PUT /api/scenes/<sceneId>` e pode
+  ser duplicada mantendo essas referências e o canvas. O `SceneRunner` oferece modos preparar,
+  mestrar e apresentar sobre o editor Konva `createSceneEditor` (`scene-stage.ts`). Formato,
+  conversão do tldraw e geometria são regras puras em `src/domain/scenes/`.
 - A projeção de cena não cria uma sessão no servidor. O mestre abre `/projection/<sessionId>` e os
   dois contextos se conectam ao mesmo `BroadcastChannel` do navegador. O mestre publica estado
   completo e atualizações incrementais; `buildProjectionState` remove tokens/POIs ocultos antes de
@@ -294,7 +299,7 @@ e formatação de datas fictícias.
 | Busca | `src/services/search/` + handler | limites em [HTTP e actions](../reference/http-and-actions.md) |
 | Persistência | contrato + adaptador em `repositories/` | migração, backup e testes de repositório |
 | Upload/asset | `AssetStore`, handler e actions | MIME, thumbnail, privacidade e ADR-003 |
-| Quadro/cena | contrato, domínio e componente tldraw | snapshot, exclusão lógica e guia de quadros/cenas |
+| Quadro/cena | contrato, domínio e editor Konva | snapshot, exclusão lógica e guia de quadros/cenas |
 
 Se a mudança atravessar uma dessas fronteiras, atualize também a página documental canônica na
 mesma tarefa.

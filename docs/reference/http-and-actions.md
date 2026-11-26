@@ -122,29 +122,30 @@ Não há consumidor local encontrado na auditoria. Sem corpo ou query string.
 
 ### PUT /api/boards/[boardId]
 
-Consumidor: InvestigationBoard. Recebe JSON com propriedade obrigatória snapshot; o valor pode ser
-qualquer JSON, inclusive null se enviado explicitamente.
+Consumidor: InvestigationBoard. Recebe JSON com a propriedade obrigatória snapshot, o canvas no
+formato `canon-board-canvas` validado por `BoardCanvasSchema`
+([formato](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1)).
 
     {
-      "snapshot": {
-        "document": {
-          "store": {}
-        }
-      }
+      "snapshot": {"format": "canon-board-canvas", "version": 1, "shapes": []}
     }
 
 - 400 {"error":"Snapshot ausente"} se a propriedade estiver ausente;
+- 400 {"error":"Canvas inválido"} se o snapshot não passar no schema; nada é gravado. Snapshots
+  antigos do tldraw também são recusados: a conversão só acontece na leitura;
 - 200 {"updatedAt":"2026-09-23T12:00:00.000Z"} após validação e escrita atômica;
-- JSON inválido, board inexistente ou erro de schema não têm tratamento próprio no handler e
-  dependem da resposta de erro do Next.js.
+- JSON inválido ou board inexistente não têm tratamento próprio no handler e dependem da resposta
+  de erro do Next.js.
 
 ### PUT /api/scenes/[sceneId]
 
-Consumidor: SceneRunner. Recebe JSON com snapshot opcional e grid opcional. A grade deve seguir
-SceneGridSchema:
+Consumidor: SceneRunner. Recebe JSON com snapshot opcional e grid opcional. O snapshot é o canvas
+da cena no formato `canon-scene-canvas` e deve seguir `SceneCanvasSchema`
+([formato](../data/migrations.md#canvas-da-cena-snapshot-tldraw--canon-scene-canvas-v1)); a grade
+deve seguir SceneGridSchema:
 
     {
-      "snapshot": {"document": {}},
+      "snapshot": {"format": "canon-scene-canvas", "version": 1, "shapes": []},
       "grid": {
         "enabled": true,
         "type": "square",
@@ -156,9 +157,12 @@ SceneGridSchema:
       }
     }
 
-cellSize fica entre 20 e 300; opacity entre 0 e 1. A resposta de sucesso é
-200 {"updatedAt":"..."}. JSON inválido, cena inexistente ou grade inválida propagam erro do
-handler, sem envelope/status específico implementado.
+cellSize fica entre 20 e 300; opacity entre 0 e 1. Respostas:
+
+- 400 {"error":"Canvas ou grade inválidos"} se o snapshot ou a grade não passarem no schema; nada
+  é gravado. Snapshots antigos do tldraw também são recusados: a conversão só acontece na leitura;
+- 200 {"updatedAt":"..."} após validação e escrita;
+- JSON inválido ou cena inexistente propagam erro do handler, sem envelope/status específico.
 
 ### GET /api/playlists
 

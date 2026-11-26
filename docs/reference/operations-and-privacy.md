@@ -29,12 +29,11 @@ A [trilha sonora](../user-guide/soundtrack.md) usa o YouTube. O navegador prepar
 usuário abre a área ou o seletor de trilha, ou inicia uma fila. A navegação pela wiki com a trilha
 ociosa não inicializa esse player.
 
-O app faz duas requisições externas conhecidas:
-
-- ao adicionar vídeos a uma playlist, o servidor consulta o oEmbed do YouTube com os IDs dos
-  vídeos para obter título e autor (`src/services/soundtrack/youtubeInfo.ts`);
-- sem `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` e fora de `localhost`, o tldraw de Quadros e Cenas envia o
-  endereço da página ao serviço dele ([levantamento](../research/tldraw-license.md)).
+O app faz uma requisição externa conhecida: ao adicionar vídeos a uma playlist, o servidor
+consulta o oEmbed do YouTube com os IDs dos vídeos para obter título e autor
+(`src/services/soundtrack/youtubeInfo.ts`). Quadros e Cenas não usam mais o tldraw, que avisava o
+serviço dele do endereço da página ([levantamento](../research/tldraw-license.md)); as fontes do
+quadro são servidas pelo próprio app.
 
 ## Uploads
 

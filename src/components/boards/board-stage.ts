@@ -1,0 +1,1486 @@
+import K from 'konva'
+import type { Context } from 'konva/lib/Context'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { TriangleAlert } from 'lucide-react'
+import { assetVariantUrl } from '@/lib/assetUrl'
+import { STROKE_WIDTHS, arrowFrame, arrowGeometry, arrowStrokeWidth, bendHandle, bendThrough, distanceToPath, type ArrowGeometry } from '@/domain/boards/boardArrow'
+import {
+  CARD_DEFAULT, CARD_MIN, GEO_DEFAULT, NOTE_SIZE,
+  type ArrowBinding, type BoardArrow, type BoardCanvas, type BoardCard, type BoardColor, type BoardDash, type BoardDraw, type BoardFill, type BoardFont, type BoardGeo,
+  type BoardImage, type BoardLine, type BoardNote, type BoardShape, type BoardSize, type BoardText, type GeoType,
+} from '@/domain/boards/boardCanvas'
+import { ARROW_LABEL_FONT_SIZES, BOARD_PALETTE, LABEL_FONT_SIZES, LABEL_PADDING, TEXT_FONT_SIZES, TEXT_LINE_HEIGHT } from '@/domain/boards/boardStyles'
+import { constrainCamera, interpolateCamera, screenToPage, stepZoom, viewportPageBounds, wheelCamera, zoomAt, type CameraState, type Rect, type Size } from '@/domain/canvas/camera'
+import {
+  boundsOf, distanceSq, frameCenter, frameCorners, frameIntersectsRect, hitsFrame, resizePoint, resizeTransform, rotateAround, rotationDelta, selectionFrameOf, toLocal, toPage,
+  type Frame, type Point, type ResizeHandle,
+} from '@/domain/canvas/geometry'
+import { createHistory } from '@/domain/canvas/history'
+import { drawArrow, drawBoardBackground, drawCard, drawLegacy, drawText, layoutArrowLabel, layoutText, readBoardPalette, resetTextCaches, type BoardPalette, type LabelLayout, type TextLayout } from './board-render'
+import { drawDraw, drawGeo, drawImage, drawLine, drawNote, geoHeight, layoutLabel, linePath, noteSize } from './board-render-shapes'
+import type { BoardEntitySummary } from './board-types'
+
+export type BoardTool = 'select' | 'hand' | 'draw' | 'eraser' | 'arrow' | 'text' | 'note' | 'geo' | 'line'
+/** Estilo das próximas formas criadas (o painel de estilo do tldraw o altera). */
+export type BoardStyle = { color: BoardColor; fill: BoardFill; dash: BoardDash; size: BoardSize; font: BoardFont }
+/** O que o painel de estilo mostra: `null` quando a seleção tem valores diferentes. */
+export type BoardStyleState = { visible: boolean; color: BoardColor | null; size: BoardSize | null }
+const STYLED_KINDS = new Set<BoardShape['kind']>(['text', 'arrow', 'note', 'geo', 'draw', 'line'])
+const STYLED_TOOLS = new Set<BoardTool>(['draw', 'arrow', 'text', 'note', 'geo', 'line'])
+type StyledShape = Extract<BoardShape, { color: BoardColor; size: BoardSize }>
+const isStyled = (shape: BoardShape): shape is StyledShape => STYLED_KINDS.has(shape.kind)
+export type BoardEditorCallbacks = {
+  documentChanged: () => void
+  selectionChanged: () => void
+  cameraChanged: () => void
+  toolChanged: () => void
+  openEntity: (entityId: string) => void
+  /** Ctrl+U: abrir o seletor de imagem. */
+  pickImage: () => void
+}
+type ShapePatch = { id: string } & Partial<Record<string, unknown>>
+
+// Tema escuro do tldraw 5.4.1: mesma cor de seleção, alças e área.
+const SELECTION_CONTRAST = '#ffffff'
+const LINE_WIDTH = 1.5
+const HINT_LINE_WIDTH = 2.5
+const HANDLE_SIZE = 8
+const HANDLE_RADIUS = 4
+const HIT_TARGET = 6
+const HIT_MARGIN = 3
+const DRAG_DISTANCE = 4
+const COARSE_DRAG_DISTANCE = 6
+const DOUBLE_CLICK_MS = 450
+const ZOOM_DURATION = 250
+const DUPLICATE_OFFSET = 16
+const CLIPBOARD_PREFIX = 'canon-board-shapes:'
+const ERASING_OPACITY = 0.32
+/** Largura mínima de uma caixa de texto criada arrastando. */
+const TEXT_MIN_BOX_WIDTH = 32
+const IMAGE_VIEWPORT_FRACTION = 0.6
+
+const ROTATE_CURSOR = (() => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22a9 9 0 1 1 12 0" stroke="#fff" stroke-width="5"/><path d="M22 16v6h6" stroke="#fff" stroke-width="5"/><path d="M10 22a9 9 0 1 1 12 0" stroke="#000" stroke-width="2"/><path d="M22 16v6h6" stroke="#000" stroke-width="2"/></g></svg>`
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 16 16, crosshair`
+})()
+
+const isField = (target: EventTarget | null) => target instanceof Element && !!target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')
+const newShapeId = () => `shape:${typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`}`
+const deg = (radians: number) => radians * 180 / Math.PI
+const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+
+// Área de transferência compartilhada entre quadros abertos nesta aba.
+let clipboard: BoardShape[] | null = null
+
+export function createBoardEditor(host: HTMLElement, options: {
+  canvas: BoardCanvas
+  entities: Map<string, BoardEntitySummary>
+  camera: CameraState | null
+  callbacks: BoardEditorCallbacks
+}) {
+  const { callbacks } = options
+  let entities = options.entities
+  let shapes: BoardShape[] = clone(options.canvas.shapes)
+  const legacyTldraw = options.canvas.legacyTldraw
+  let selectedIds: string[] = []
+  let hoveredId: string | null = null
+  let hintId: string | null = null
+  let tool: BoardTool = 'select'
+  let editingId: string | null = null
+  let palette: BoardPalette = readBoardPalette(host)
+  // Seleção, alças e área usam a cor de destaque do site (--primary).
+  const selectionStroke = () => palette.primary
+  const brushFill = () => palette.primary14
+  const brushStroke = () => palette.primary30
+  let viewport: Size = { w: host.clientWidth, h: host.clientHeight }
+  let camera: CameraState = options.camera ?? { x: 0, y: 0, z: 1 }
+  let cameraAnimation: number | null = null
+  const history = createHistory<{ shapes: BoardShape[]; selected: string[] }>()
+  let geoType: GeoType = 'rectangle'
+  const style: BoardStyle = { color: 'black', fill: 'none', dash: 'draw', size: 'm', font: 'draw' }
+  let erasing = new Set<string>()
+  let drawingId: string | null = null
+
+  const stage = new K.Stage({ container: host as HTMLDivElement, width: Math.max(1, viewport.w), height: Math.max(1, viewport.h), listening: false })
+  const backgroundLayer = new K.Layer({ listening: false })
+  const shapeLayer = new K.Layer({ listening: false })
+  const overlayLayer = new K.Layer({ listening: false })
+  stage.add(backgroundLayer, shapeLayer, overlayLayer)
+  const measure = document.createElement('canvas').getContext('2d')!
+  const supportsFilter = typeof CanvasRenderingContext2D !== 'undefined' && 'filter' in CanvasRenderingContext2D.prototype
+
+  // ---------- Imagens ----------
+  const images = new Map<string, HTMLImageElement>()
+  const loadImage = (src: string) => {
+    let img = images.get(src)
+    if (!img) {
+      img = new window.Image()
+      img.decoding = 'async'
+      img.onload = () => shapeLayer.batchDraw()
+      img.src = src
+      images.set(src, img)
+    }
+    return img.complete && img.naturalWidth > 0 ? img : null
+  }
+  const assetImage = (assetId: string, variant: 'original' | 'thumbnail') => loadImage(assetVariantUrl(assetId, variant))
+  let warningSrc: string | null = null
+  const warningIcon = () => {
+    warningSrc ??= `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(TriangleAlert)).replaceAll('currentColor', palette.warning))}`
+    return loadImage(warningSrc)
+  }
+
+  // ---------- Medidas ----------
+  const textLayouts = new Map<string, { key: string; layout: TextLayout }>()
+  const textLayout = (shape: BoardText) => {
+    const key = `${shape.text}|${shape.font}|${shape.size}|${shape.scale}|${shape.autoSize}|${shape.w}|${palette.fonts[shape.font]}`
+    const cached = textLayouts.get(shape.id)
+    if (cached?.key === key) return cached.layout
+    const layout = layoutText(measure, shape, palette)
+    textLayouts.set(shape.id, { key, layout })
+    return layout
+  }
+  // Índice por ID, refeito só quando a lista muda: cada item desenhado se busca a cada quadro.
+  let byIdFor: BoardShape[] | null = null
+  let byId = new Map<string, BoardShape>()
+  const shapeById = (id: string) => {
+    if (byIdFor !== shapes) { byId = new Map(shapes.map((shape) => [shape.id, shape])); byIdFor = shapes }
+    return byId.get(id)
+  }
+
+  const originFrame = (shape: Pick<BoardShape, 'x' | 'y' | 'rotation'>): Frame => ({ x: shape.x, y: shape.y, w: 0, h: 0, rotation: shape.rotation })
+  const strokeOf = (shape: BoardDraw | BoardLine) => STROKE_WIDTHS[shape.size] * shape.scale
+  const localPath = (shape: BoardDraw | BoardLine): Point[] => shape.kind === 'draw' ? shape.points.map(([x, y]) => ({ x, y })) : linePath(shape)
+  const pagePath = (shape: BoardDraw | BoardLine) => localPath(shape).map((p) => toPage(originFrame(shape), p))
+  /** Desenho e linha: caixa dos pontos com meia espessura de folga, na rotação da forma. */
+  const pointsFrame = (shape: BoardDraw | BoardLine): Frame => {
+    const box = boundsOf(localPath(shape)), pad = strokeOf(shape) / 2
+    return { ...toPage(originFrame(shape), { x: box.x - pad, y: box.y - pad }), w: Math.max(1, box.w + pad * 2), h: Math.max(1, box.h + pad * 2), rotation: shape.rotation }
+  }
+  const labelCache = new WeakMap<BoardNote | BoardGeo, ReturnType<typeof layoutLabel>>()
+  const labelLayoutOf = (shape: BoardNote | BoardGeo) => {
+    if (editingId === shape.id) return computeLabel(shape)
+    let layout = labelCache.get(shape)
+    if (!layout) { layout = computeLabel(shape); labelCache.set(shape, layout) }
+    return layout
+  }
+  const computeLabel = (shape: BoardNote | BoardGeo) => layoutLabel(measure, editingId === shape.id ? { ...shape, text: shape.text || ' ' } : shape, shape.kind === 'note' ? noteSize(shape).w : shape.w, palette)
+  /** Notas e formas crescem para baixo quando o rótulo não cabe, como o `growY` do tldraw. */
+  const withGrowth = <T extends BoardNote | BoardGeo>(shape: T): T => {
+    const needed = layoutLabel(measure, shape, shape.kind === 'note' ? NOTE_SIZE * shape.scale : shape.w, palette).height
+    if (shape.kind === 'note') return { ...shape, growY: Math.max(0, needed / shape.scale - NOTE_SIZE) }
+    return { ...shape, growY: Math.max(0, needed - shape.h) }
+  }
+
+  // As formas são imutáveis (cada mudança cria um objeto novo), então medidas ficam em cache por
+  // objeto. Só a seta depende de outras formas: sua geometria é refeita quando a seta ou uma das
+  // formas ligadas a ela muda. Pan, zoom e arraste reaproveitam o resto.
+  let frameCache = new WeakMap<BoardShape, Frame>()
+  let arrowCache = new WeakMap<BoardArrow, { start: BoardShape | undefined; end: BoardShape | undefined; geometry: ArrowGeometry }>()
+  let boundsCache = new WeakMap<BoardShape | ArrowGeometry, Rect>()
+  let labelCacheByGeometry = new WeakMap<ArrowGeometry, LabelLayout | null>()
+  const invalidateGeometry = () => { frameCache = new WeakMap(); arrowCache = new WeakMap(); boundsCache = new WeakMap(); labelCacheByGeometry = new WeakMap() }
+  /** Moldura de uma forma na página (para acerto, seleção e vínculo de setas). */
+  const frameOf = (shape: BoardShape): Frame => {
+    if (shape.kind === 'arrow') return computeFrame(shape)
+    let frame = frameCache.get(shape)
+    if (!frame) { frame = computeFrame(shape); frameCache.set(shape, frame) }
+    return frame
+  }
+  /** Caixa na página com folga para sombras e rótulos, usada para não desenhar o que está fora da vista. */
+  const visualBounds = (shape: BoardShape): Rect => {
+    const key = shape.kind === 'arrow' ? geometryOf(shape) : shape
+    let box = boundsCache.get(key)
+    if (!box) {
+      const corners = frameCorners(frameOf(shape))
+      if (shape.kind === 'arrow') { const label = labelOf(shape); if (label) corners.push({ x: label.center.x - label.width / 2, y: label.center.y - label.height / 2 }, { x: label.center.x + label.width / 2, y: label.center.y + label.height / 2 }) }
+      const b = boundsOf(corners), pad = 24
+      box = { x: b.x - pad, y: b.y - pad, w: b.w + pad * 2, h: b.h + pad * 2 }
+      boundsCache.set(key, box)
+    }
+    return box
+  }
+  const computeFrame = (shape: BoardShape): Frame => {
+    switch (shape.kind) {
+      case 'card': case 'legacy': case 'image': return { x: shape.x, y: shape.y, w: shape.w, h: shape.h, rotation: shape.rotation }
+      case 'note': return { x: shape.x, y: shape.y, ...noteSize(shape), rotation: shape.rotation }
+      case 'geo': return { x: shape.x, y: shape.y, w: shape.w, h: geoHeight(shape), rotation: shape.rotation }
+      case 'draw': case 'line': return pointsFrame(shape)
+      case 'text': { const layout = textLayout(shape); return { x: shape.x, y: shape.y, w: layout.width, h: Math.max(layout.height, (shape.boxHeight ?? 0) * shape.scale), rotation: shape.rotation } }
+      case 'arrow': { const box = boundsOf(geometryOf(shape).points); return { ...box, w: Math.max(box.w, 1), h: Math.max(box.h, 1), rotation: 0 } }
+    }
+  }
+  const bindableFrame = (id: string) => { const shape = shapeById(id); return shape && shape.kind !== 'arrow' ? frameOf(shape) : null }
+  const geometryOf = (arrow: BoardArrow): ArrowGeometry => {
+    const start = arrow.startBinding ? shapeById(arrow.startBinding.shapeId) : undefined
+    const end = arrow.endBinding ? shapeById(arrow.endBinding.shapeId) : undefined
+    const cached = arrowCache.get(arrow)
+    if (cached && cached.start === start && cached.end === end) return cached.geometry
+    const geometry = arrowGeometry(arrow, bindableFrame)
+    arrowCache.set(arrow, { start, end, geometry })
+    return geometry
+  }
+  const labelOf = (arrow: BoardArrow, geometry = geometryOf(arrow)): LabelLayout | null => {
+    if (editingId === arrow.id) return layoutArrowLabel(measure, { ...arrow, text: arrow.text || ' ' }, geometry, palette)
+    if (!labelCacheByGeometry.has(geometry)) labelCacheByGeometry.set(geometry, layoutArrowLabel(measure, arrow, geometry, palette))
+    return labelCacheByGeometry.get(geometry) ?? null
+  }
+
+  // ---------- Desenho ----------
+  const backgroundNode = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc: (context: Context) => drawBoardBackground(context._context, viewport.w, viewport.h, palette) })
+  backgroundLayer.add(backgroundNode)
+
+  const drawShape = (ctx: CanvasRenderingContext2D, shape: BoardShape) => {
+    ctx.globalAlpha *= shape.opacity * (erasing.has(shape.id) ? ERASING_OPACITY : 1)
+    switch (shape.kind) {
+      case 'card': drawCard(ctx, shape, entities.get(shape.entityId), palette, assetImage, warningIcon, supportsFilter); break
+      case 'text': if (editingId !== shape.id) drawText(ctx, shape, textLayout(shape)); break
+      case 'arrow': { const geometry = geometryOf(shape); drawArrow(ctx, editingId === shape.id ? { ...shape, text: '' } : shape, geometry, editingId === shape.id ? null : labelOf(shape, geometry)); break }
+      case 'legacy': drawLegacy(ctx, shape, palette); break
+      case 'note': drawNote(ctx, shape, labelLayoutOf(shape), editingId === shape.id); break
+      case 'geo': drawGeo(ctx, shape, labelLayoutOf(shape), editingId === shape.id); break
+      case 'draw': drawDraw(ctx, shape, drawingId !== shape.id); break
+      case 'line': drawLine(ctx, shape); break
+      case 'image': drawImage(ctx, shape, assetImage(shape.assetId, 'original'), palette); break
+    }
+  }
+  const nodes = new Map<string, K.Shape>()
+  /** Esconde do Konva os itens fora da vista (com folga), para cada quadro desenhar só o visível. */
+  const cull = () => {
+    const view = viewportPageBounds(camera, viewport)
+    for (const shape of shapes) {
+      const node = nodes.get(shape.id)
+      if (!node) continue
+      const b = visualBounds(shape)
+      node.visible(b.x <= view.x + view.w && b.x + b.w >= view.x && b.y <= view.y + view.h && b.y + b.h >= view.y)
+    }
+  }
+  const syncNodes = () => {
+    const ids = new Set(shapes.map((shape) => shape.id))
+    for (const [id, node] of nodes) if (!ids.has(id)) { node.destroy(); nodes.delete(id); textLayouts.delete(id) }
+    shapes.forEach((shape, index) => {
+      let node = nodes.get(shape.id)
+      if (!node) {
+        const id = shape.id
+        node = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc: (context: Context) => { const current = shapeById(id); if (current) drawShape(context._context, current) } })
+        shapeLayer.add(node)
+        nodes.set(shape.id, node)
+      }
+      // Setas são desenhadas em coordenadas da página, porque seguem as formas vinculadas.
+      if (shape.kind === 'arrow') node.setAttrs({ x: 0, y: 0, rotation: 0 })
+      else node.setAttrs({ x: shape.x, y: shape.y, rotation: deg(shape.rotation) })
+      node.zIndex(index)
+    })
+    cull()
+    shapeLayer.batchDraw()
+  }
+
+  type Interaction =
+    | { kind: 'idle' }
+    | { kind: 'pointing'; pointerId: number; startScreen: Point; startPage: Point; targetId: string | null; shift: boolean; wasSelected: boolean; coarse: boolean }
+    | { kind: 'translating'; pointerId: number; startPage: Point; initial: BoardShape[]; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'brushing'; pointerId: number; startPage: Point; rect: Rect; base: string[] }
+    | { kind: 'panning'; pointerId: number; last: Point }
+    | { kind: 'resizing'; pointerId: number; handle: ResizeHandle; frame: Frame; initial: BoardShape[]; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'rotating'; pointerId: number; center: Point; startPage: Point; baseRotation: number; initial: BoardShape[]; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'handle'; pointerId: number; arrowId: string; which: 'start' | 'end' | 'middle'; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'pointing_arrow'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean }
+    | { kind: 'pinching'; startDistance: number; startMid: Point; startCamera: CameraState }
+    | { kind: 'pointing_create'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean; create: 'geo' | 'line' }
+    | { kind: 'creating_geo'; pointerId: number; id: string; startPage: Point; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'creating_note'; pointerId: number; id: string; startPage: Point; origin: Point; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'drawing'; pointerId: number; id: string; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'erasing'; pointerId: number; last: Point; moved: boolean }
+    | { kind: 'line_handle'; pointerId: number; lineId: string; index: number; before: { shapes: BoardShape[]; selected: string[] } }
+    | { kind: 'pointing_text'; pointerId: number; startScreen: Point; startPage: Point; coarse: boolean }
+    | { kind: 'creating_text'; pointerId: number; id: string; startPage: Point; before: { shapes: BoardShape[]; selected: string[] } }
+  let interaction: Interaction = { kind: 'idle' }
+
+  const selectedShapes = () => shapes.filter((shape) => selectedIds.includes(shape.id))
+  const snapshot = () => ({ shapes: clone(shapes), selected: [...selectedIds] })
+  const onlyArrow = () => { const selection = selectedShapes(); return selection.length === 1 && selection[0].kind === 'arrow' ? selection[0] : null }
+  const onlyLine = () => { const selection = selectedShapes(); return selection.length === 1 && selection[0].kind === 'line' ? selection[0] : null }
+  const canResize = (shape: BoardShape) => shape.kind !== 'arrow' || !shape.startBinding || !shape.endBinding
+  const showControls = () => (interaction.kind === 'idle' || interaction.kind === 'pointing') && !editingId && tool === 'select'
+
+  const controls = () => {
+    const selection = selectedShapes()
+    if (selection.length === 0 || !showControls() || onlyArrow() || onlyLine()) return null
+    const frame = selectionFrameOf(selection.map(frameOf))
+    if (!frame) return null
+    const z = camera.z, handleSize = HANDLE_SIZE / z, hit = HIT_TARGET / z
+    const tinyX = frame.w < handleSize * 2, tinyY = frame.h < handleSize * 2
+    const text = selection.length === 1 && selection[0].kind === 'text'
+    return { frame, handleSize, resizable: selection.some(canResize), rotatable: !(tinyX || tinyY), cornerHit: hit * 1.5, rotateSize: hit * 1.62, edgeHit: hit, verticalEdges: !(text && (selection[0] as BoardText).autoSize) }
+  }
+
+  const strokeIndicator = (ctx: CanvasRenderingContext2D, shape: BoardShape, width: number) => {
+    ctx.save()
+    ctx.strokeStyle = selectionStroke()
+    ctx.lineWidth = width / camera.z
+    if (shape.kind === 'arrow' || shape.kind === 'draw' || shape.kind === 'line') {
+      const points = shape.kind === 'arrow' ? geometryOf(shape).points : pagePath(shape)
+      ctx.beginPath(); points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke()
+    } else {
+      const frame = frameOf(shape)
+      ctx.translate(frame.x, frame.y); ctx.rotate(frame.rotation); ctx.strokeRect(0, 0, frame.w, frame.h)
+    }
+    ctx.restore()
+  }
+  const drawHandle = (ctx: CanvasRenderingContext2D, p: Point) => {
+    const z = camera.z
+    ctx.beginPath(); ctx.arc(p.x, p.y, HANDLE_RADIUS / z, 0, Math.PI * 2)
+    ctx.fillStyle = SELECTION_CONTRAST; ctx.fill()
+    ctx.strokeStyle = selectionStroke(); ctx.lineWidth = LINE_WIDTH / z; ctx.stroke()
+  }
+  const arrowHandles = (arrow: BoardArrow) => {
+    const geometry = geometryOf(arrow)
+    return { start: geometry.start, end: geometry.end, middle: bendHandle(geometry.start, geometry.end, arrow.bend) }
+  }
+
+  const drawOverlay = (ctx: CanvasRenderingContext2D) => {
+    const z = camera.z
+    for (const shape of selectedShapes()) if (shape.id !== editingId || shape.kind === 'text') strokeIndicator(ctx, shape, LINE_WIDTH)
+    const busy = interaction.kind === 'brushing' || interaction.kind === 'panning' || interaction.kind === 'pinching'
+    if (hoveredId && !selectedIds.includes(hoveredId) && (interaction.kind === 'idle' || busy) && tool === 'select') {
+      const hovered = shapeById(hoveredId)
+      if (hovered) strokeIndicator(ctx, hovered, LINE_WIDTH)
+    }
+    if (hintId) { const hinted = shapeById(hintId); if (hinted) strokeIndicator(ctx, hinted, HINT_LINE_WIDTH) }
+    if (interaction.kind === 'brushing') {
+      const { rect } = interaction
+      ctx.fillStyle = brushFill(); ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
+      ctx.strokeStyle = brushStroke(); ctx.lineWidth = 1 / z; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
+    }
+    const arrow = onlyArrow()
+    if (arrow && !editingId && (interaction.kind === 'idle' || interaction.kind === 'pointing' || interaction.kind === 'handle')) {
+      const handles = arrowHandles(arrow)
+      drawHandle(ctx, handles.start); drawHandle(ctx, handles.end); drawHandle(ctx, handles.middle)
+      return
+    }
+    const line = onlyLine()
+    if (line && !editingId && (interaction.kind === 'idle' || interaction.kind === 'pointing' || interaction.kind === 'line_handle')) {
+      for (const p of line.points) drawHandle(ctx, toPage(originFrame(line), p))
+      return
+    }
+    const c = controls()
+    if (!c) return
+    ctx.save()
+    ctx.translate(c.frame.x, c.frame.y); ctx.rotate(c.frame.rotation)
+    ctx.strokeStyle = selectionStroke(); ctx.lineWidth = LINE_WIDTH / z
+    ctx.strokeRect(0, 0, c.frame.w, c.frame.h)
+    if (c.resizable) {
+      ctx.fillStyle = SELECTION_CONTRAST
+      const s = c.handleSize
+      for (const [x, y] of [[0, 0], [c.frame.w, 0], [c.frame.w, c.frame.h], [0, c.frame.h]]) { ctx.fillRect(x - s / 2, y - s / 2, s, s); ctx.strokeRect(x - s / 2, y - s / 2, s, s) }
+    }
+    ctx.restore()
+  }
+  const overlayNode = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc: (context: Context) => drawOverlay(context._context) })
+  overlayLayer.add(overlayNode)
+  const redrawOverlay = () => overlayLayer.batchDraw()
+
+  // ---------- Câmera ----------
+  const applyCamera = () => {
+    for (const layer of [shapeLayer, overlayLayer]) { layer.scale({ x: camera.z, y: camera.z }); layer.position({ x: camera.x * camera.z, y: camera.y * camera.z }) }
+    cull()
+    stage.batchDraw()
+    positionEditor()
+    callbacks.cameraChanged()
+  }
+  const setCamera = (next: CameraState) => { camera = constrainCamera(next, camera, viewport, null); applyCamera() }
+  const stopCameraAnimation = () => { if (cameraAnimation !== null) { cancelAnimationFrame(cameraAnimation); cameraAnimation = null } }
+  const animateTo = (target: CameraState, animate = true) => {
+    stopCameraAnimation()
+    target = constrainCamera(target, camera, viewport, null)
+    if (!animate) { camera = target; applyCamera(); return }
+    const from = camera, start = performance.now()
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / ZOOM_DURATION)
+      camera = t >= 1 ? target : interpolateCamera(from, target, viewport, t)
+      applyCamera()
+      cameraAnimation = t >= 1 ? null : requestAnimationFrame(step)
+    }
+    cameraAnimation = requestAnimationFrame(step)
+  }
+  const zoomCentered = (z: number) => animateTo(zoomAt(camera, { x: viewport.w / 2, y: viewport.h / 2 }, z))
+  const contentBounds = (list: BoardShape[]) => list.length ? boundsOf(list.flatMap((shape) => frameCorners(frameOf(shape)))) : null
+  /** Enquadra como o `zoomToBounds` do tldraw: margem de 128 px (ou 28% da largura) e zoom opcional máximo. */
+  const zoomToBounds = (bounds: Rect | null, animate = true, maxZoom = Infinity) => {
+    if (!bounds) return
+    const inset = Math.min(128, viewport.w * 0.28)
+    const w = Math.max(bounds.w, 1), h = Math.max(bounds.h, 1)
+    const z = Math.min(maxZoom, (viewport.w - inset) / w, (viewport.h - inset) / h)
+    animateTo({ x: -bounds.x + (viewport.w / z - w) / 2, y: -bounds.y + (viewport.h / z - h) / 2, z }, animate)
+  }
+
+  // ---------- Documento ----------
+  const commit = () => { syncNodes(); redrawOverlay(); callbacks.documentChanged() }
+  const mark = (before = snapshot()) => history.mark(before)
+  const setSelection = (ids: string[]) => {
+    const next = ids.filter((id) => { const shape = shapeById(id); return !!shape && !shape.locked })
+    if (next.length === selectedIds.length && next.every((id, i) => id === selectedIds[i])) return
+    selectedIds = next
+    redrawOverlay()
+    callbacks.selectionChanged()
+  }
+  const replaceShapes = (next: BoardShape[]) => {
+    const byId = new Map(next.map((shape) => [shape.id, shape]))
+    shapes = shapes.map((shape) => byId.get(shape.id) ?? shape)
+  }
+  const restore = (state: { shapes: BoardShape[]; selected: string[] }) => {
+    shapes = clone(state.shapes)
+    selectedIds = []
+    setSelection(state.selected)
+    commit()
+    callbacks.selectionChanged()
+  }
+
+  /** Desfaz o vínculo das setas com formas que não estão indo junto, mantendo a ponta onde está. */
+  const unbindFrom = (arrow: BoardArrow, keep: Set<string>): BoardArrow => {
+    const geometry = geometryOf(arrow)
+    const own = arrowFrame(arrow)
+    const next = { ...arrow }
+    if (arrow.startBinding && !keep.has(arrow.startBinding.shapeId)) { next.start = toLocal(own, geometry.start); next.startBinding = null }
+    if (arrow.endBinding && !keep.has(arrow.endBinding.shapeId)) { next.end = toLocal(own, geometry.end); next.endBinding = null }
+    return next
+  }
+
+  // ---------- Acerto ----------
+  const pointerPoint = (event: { clientX: number; clientY: number }): Point => {
+    const rect = host.getBoundingClientRect()
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+  const pageAt = (screen: Point) => screenToPage(screen, camera)
+  const hitShape = (shape: BoardShape, page: Point) => {
+    const margin = HIT_MARGIN / camera.z
+    if (shape.kind === 'arrow') {
+      const geometry = geometryOf(shape)
+      if (distanceToPath(geometry.points, page) <= arrowStrokeWidth(shape) / 2 + margin + 4 / camera.z) return true
+      const label = labelOf(shape, geometry)
+      return !!label && Math.abs(page.x - label.center.x) <= label.width / 2 && Math.abs(page.y - label.center.y) <= label.height / 2
+    }
+    if (shape.kind === 'draw' || shape.kind === 'line') {
+      const path = pagePath(shape)
+      return distanceToPath(path, page) <= strokeOf(shape) / 2 + margin + 4 / camera.z || (shape.kind === 'draw' && shape.isClosed && shape.fill !== 'none' && hitsFrame(frameOf(shape), page))
+    }
+    return hitsFrame(frameOf(shape), page, margin)
+  }
+  /** Forma sob o ponto, da frente para trás, ignorando travadas. */
+  const shapeAt = (page: Point, filter: (shape: BoardShape) => boolean = () => true) => [...shapes].reverse().find((shape) => !shape.locked && filter(shape) && hitShape(shape, page))
+  const bindTargetAt = (page: Point, arrowId: string) => [...shapes].reverse().find((shape) => shape.kind !== 'arrow' && shape.id !== arrowId && hitsFrame(frameOf(shape), page, HIT_MARGIN / camera.z))
+
+  type ControlHit = { kind: 'resize'; handle: ResizeHandle } | { kind: 'rotate' } | { kind: 'arrow'; which: 'start' | 'end' | 'middle' } | { kind: 'line'; index: number }
+  const controlAt = (page: Point): ControlHit | null => {
+    const line = onlyLine()
+    if (line && !editingId && tool === 'select') {
+      const r = (HANDLE_RADIUS + 4) / camera.z
+      const index = line.points.findIndex((p) => distanceSq(toPage(originFrame(line), p), page) <= r * r)
+      return index >= 0 ? { kind: 'line', index } : null
+    }
+    const arrow = onlyArrow()
+    if (arrow && !editingId && tool === 'select') {
+      const handles = arrowHandles(arrow), r = (HANDLE_RADIUS + 4) / camera.z
+      for (const which of ['start', 'end', 'middle'] as const) if (distanceSq(handles[which], page) <= r * r) return { kind: 'arrow', which }
+      return null
+    }
+    const c = controls()
+    if (!c) return null
+    const local = toLocal(c.frame, page)
+    const { w, h } = c.frame
+    const corners: Array<[ResizeHandle, number, number]> = [['top_left', 0, 0], ['top_right', w, 0], ['bottom_right', w, h], ['bottom_left', 0, h]]
+    if (c.resizable) for (const [handle, x, y] of corners) if (Math.abs(local.x - x) <= c.cornerHit && Math.abs(local.y - y) <= c.cornerHit) return { kind: 'resize', handle }
+    if (c.rotatable) {
+      const r = c.rotateSize
+      for (const [x, y] of [[-r, -r], [w + r, -r], [w + r, h + r], [-r, h + r]]) if (distanceSq(local, { x, y }) <= r * r) return { kind: 'rotate' }
+    }
+    if (c.resizable) {
+      const e = c.edgeHit
+      const inX = local.x > c.cornerHit && local.x < w - c.cornerHit, inY = local.y > c.cornerHit && local.y < h - c.cornerHit
+      if (c.verticalEdges && inX && Math.abs(local.y) <= e) return { kind: 'resize', handle: 'top' }
+      if (c.verticalEdges && inX && Math.abs(local.y - h) <= e) return { kind: 'resize', handle: 'bottom' }
+      if (inY && Math.abs(local.x) <= e) return { kind: 'resize', handle: 'left' }
+      if (inY && Math.abs(local.x - w) <= e) return { kind: 'resize', handle: 'right' }
+    }
+    return null
+  }
+  const resizeCursor = (handle: ResizeHandle, frame: Frame) => {
+    const local = { top_left: [0, 0], top_right: [frame.w, 0], bottom_right: [frame.w, frame.h], bottom_left: [0, frame.h], top: [frame.w / 2, 0], right: [frame.w, frame.h / 2], bottom: [frame.w / 2, frame.h], left: [0, frame.h / 2] }[handle]
+    const point = toPage(frame, { x: local[0], y: local[1] }), center = frameCenter(frame)
+    const angle = ((Math.atan2(point.y - center.y, point.x - center.x) * 180 / Math.PI % 180) + 180) % 180
+    if (handle === 'top' || handle === 'bottom' || handle === 'left' || handle === 'right') return angle < 22.5 || angle >= 157.5 ? 'ew-resize' : angle < 67.5 ? 'nwse-resize' : angle < 112.5 ? 'ns-resize' : 'nesw-resize'
+    return angle < 90 ? 'nwse-resize' : 'nesw-resize'
+  }
+
+  // ---------- Transformações ----------
+  const resizeShape = (shape: BoardShape, t: ReturnType<typeof resizeTransform>, handle: ResizeHandle): BoardShape => {
+    const sx = Math.abs(t.sx), sy = Math.abs(t.sy)
+    if (!canResize(shape)) return shape
+    switch (shape.kind) {
+      case 'card': return { ...shape, ...resizePoint(t, shape), w: Math.max(CARD_MIN.w, shape.w * sx), h: Math.max(CARD_MIN.h, shape.h * sy) }
+      case 'legacy': return { ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h: Math.max(1, shape.h * sy) }
+      case 'text': {
+        // Caixa de texto: muda largura e altura como um retângulo, sem mudar o tamanho da letra.
+        if (!shape.autoSize && selectedIds.length === 1) {
+          const frame = frameOf(shape), min = TEXT_FONT_SIZES[shape.size] * TEXT_LINE_HEIGHT
+          return { ...shape, ...resizePoint(t, shape), w: Math.max(TEXT_MIN_BOX_WIDTH, shape.w * sx), boxHeight: Math.max(min, frame.h / shape.scale * sy) }
+        }
+        // Texto livre: cantos mudam a escala; bordas laterais mudam só a largura (quebra de linha).
+        if ((handle === 'left' || handle === 'right') && selectedIds.length === 1) {
+          const layout = textLayout(shape)
+          return { ...shape, ...resizePoint(t, shape), w: Math.max(TEXT_FONT_SIZES[shape.size], layout.width / shape.scale * sx), autoSize: false }
+        }
+        return { ...shape, ...resizePoint(t, shape), scale: Math.max(0.05, shape.scale * Math.max(sx, sy)) }
+      }
+      case 'geo': {
+        const h = Math.max(1, geoHeight(shape) * sy)
+        return withGrowth({ ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h, growY: 0 })
+      }
+      case 'note': return withGrowth({ ...shape, ...resizePoint(t, shape), scale: Math.max(0.05, shape.scale * Math.max(sx, sy)) })
+      case 'image': return { ...shape, ...resizePoint(t, shape), w: Math.max(1, shape.w * sx), h: Math.max(1, shape.h * sy) }
+      case 'draw': case 'line': {
+        const from = originFrame(shape), to = { ...from, ...resizePoint(t, shape) }
+        const map = (p: Point) => toLocal(to, resizePoint(t, toPage(from, p)))
+        if (shape.kind === 'draw') return { ...shape, x: to.x, y: to.y, points: shape.points.map(([x, y, pressure]) => { const p = map({ x, y }); return [p.x, p.y, pressure] as [number, number, number] }) }
+        return { ...shape, x: to.x, y: to.y, points: shape.points.map(map) }
+      }
+      case 'arrow': {
+        const own = arrowFrame(shape)
+        const start = resizePoint(t, toPage(own, shape.start)), end = resizePoint(t, toPage(own, shape.end))
+        const origin = resizePoint(t, shape)
+        const moved = { ...shape, ...origin }
+        const local = (p: Point) => toLocal(arrowFrame(moved), p)
+        return { ...moved, start: shape.startBinding ? shape.start : local(start), end: shape.endBinding ? shape.end : local(end), bend: shape.bend * Math.sqrt(sx * sy) }
+      }
+    }
+  }
+
+  // ---------- Entrada ----------
+  let spaceHeld = false
+  let lastDown: { time: number; point: Point } | null = null
+  const pointers = new Map<number, Point>()
+  const setCursor = (cursor: string) => { if (host.style.cursor !== cursor) host.style.cursor = cursor }
+  const ERASER_CURSOR = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="6" fill="white" stroke="black" stroke-width="1.5"/></svg>')}") 10 10, crosshair`
+  const toolCursor = () => tool === 'hand' || spaceHeld ? 'grab' : tool === 'select' ? 'default' : tool === 'eraser' ? ERASER_CURSOR : 'crosshair'
+
+  const updateHover = (screen: Point) => {
+    if (interaction.kind !== 'idle') return
+    const page = pageAt(screen)
+    if (tool !== 'select' || spaceHeld) {
+      setCursor(toolCursor())
+      const next = tool === 'arrow' ? bindTargetAt(page, '')?.id ?? null : null
+      if (next !== hintId) { hintId = next; redrawOverlay() }
+      if (hoveredId) { hoveredId = null; redrawOverlay() }
+      return
+    }
+    const control = controlAt(page), c = controls()
+    if (control?.kind === 'resize' && c) setCursor(resizeCursor(control.handle, c.frame))
+    else if (control?.kind === 'rotate') setCursor(ROTATE_CURSOR)
+    else if (control?.kind === 'arrow' || control?.kind === 'line') setCursor('grab')
+    else setCursor('default')
+    const next = shapeAt(page)?.id ?? null
+    if (next !== hoveredId) { hoveredId = next; redrawOverlay() }
+  }
+
+  const cancelInteraction = () => {
+    if ('before' in interaction) {
+      const { before } = interaction
+      interaction = { kind: 'idle' }
+      shapes = clone(before.shapes)
+      selectedIds = []
+      setSelection(before.selected)
+      commit()
+    }
+    interaction = { kind: 'idle' }
+    hintId = null
+    redrawOverlay()
+  }
+
+  const startTranslate = (pointerId: number, startPage: Point, alt: boolean) => {
+    const before = snapshot()
+    mark(before)
+    let moving = selectedShapes()
+    if (alt && moving.length > 0) {
+      // Alt ao arrastar duplica, como no tldraw: as cópias ficam logo acima das originais.
+      const copies = duplicateShapes(moving, { x: 0, y: 0 })
+      const top = Math.max(...moving.map((shape) => shapes.indexOf(shape)))
+      shapes = [...shapes.slice(0, top + 1), ...copies, ...shapes.slice(top + 1)]
+      selectedIds = copies.map((shape) => shape.id)
+      callbacks.selectionChanged()
+      moving = copies
+    }
+    const keep = new Set(moving.map((shape) => shape.id))
+    moving = moving.map((shape) => shape.kind === 'arrow' ? unbindFrom(shape, keep) : shape)
+    replaceShapes(moving)
+    interaction = { kind: 'translating', pointerId, startPage, initial: clone(moving), before }
+  }
+
+  /** Copia formas com IDs novos, refazendo os vínculos entre as copiadas. */
+  const duplicateShapes = (list: BoardShape[], offset: Point): BoardShape[] => {
+    const ids = new Map(list.map((shape) => [shape.id, newShapeId()]))
+    return list.map((shape) => {
+      let copy = clone(shape)
+      if (copy.kind === 'arrow') {
+        copy = unbindFrom(copy, new Set(ids.keys()))
+        const remap = (binding: ArrowBinding | null) => binding ? { ...binding, shapeId: ids.get(binding.shapeId)! } : null
+        copy = { ...copy, startBinding: remap(copy.startBinding), endBinding: remap(copy.endBinding) }
+      }
+      return { ...copy, id: ids.get(shape.id)!, x: copy.x + offset.x, y: copy.y + offset.y }
+    })
+  }
+
+  const down = (event: PointerEvent) => {
+    if (isField(event.target)) return
+    if (editingId) stopEditing()
+    const screen = pointerPoint(event)
+    pointers.set(event.pointerId, screen)
+    stopCameraAnimation()
+    if (pointers.size === 2) {
+      cancelInteraction()
+      const [a, b] = [...pointers.values()]
+      interaction = { kind: 'pinching', startDistance: Math.max(1, Math.sqrt(distanceSq(a, b))), startMid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, startCamera: camera }
+      return
+    }
+    if (pointers.size > 2 || interaction.kind !== 'idle') return
+    host.setPointerCapture?.(event.pointerId)
+    host.focus({ preventScroll: true })
+    if (event.button === 1 || (event.button === 0 && (spaceHeld || tool === 'hand'))) {
+      event.preventDefault()
+      interaction = { kind: 'panning', pointerId: event.pointerId, last: screen }
+      setCursor('grabbing')
+      return
+    }
+    if (event.button !== 0) return
+    const page = pageAt(screen)
+    const coarse = event.pointerType !== 'mouse'
+    if (tool === 'text') {
+      interaction = { kind: 'pointing_text', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse }
+      return
+    }
+    if (tool === 'arrow') {
+      interaction = { kind: 'pointing_arrow', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse }
+      return
+    }
+    if (tool === 'geo' || tool === 'line') {
+      interaction = { kind: 'pointing_create', pointerId: event.pointerId, startScreen: screen, startPage: page, coarse, create: tool }
+      return
+    }
+    if (tool === 'note') {
+      // A nota aparece centrada no clique; arrastar antes de soltar a move.
+      const before = snapshot()
+      mark(before)
+      const note: BoardNote = withGrowth({
+        id: newShapeId(), kind: 'note', x: page.x - NOTE_SIZE / 2, y: page.y - NOTE_SIZE / 2, rotation: 0, opacity: 1, locked: false,
+        color: style.color, size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+      })
+      shapes = [...shapes, note]
+      selectedIds = [note.id]
+      callbacks.selectionChanged()
+      commit()
+      interaction = { kind: 'creating_note', pointerId: event.pointerId, id: note.id, startPage: page, origin: { x: note.x, y: note.y }, before }
+      return
+    }
+    if (tool === 'draw') {
+      const before = snapshot()
+      mark(before)
+      const draw: BoardDraw = {
+        id: newShapeId(), kind: 'draw', x: page.x, y: page.y, rotation: 0, opacity: 1, locked: false, points: [[0, 0, event.pointerType === 'pen' ? event.pressure || 0.5 : 0.5]],
+        color: style.color, fill: style.fill, dash: style.dash, size: style.size, isClosed: false, isPen: event.pointerType === 'pen', scale: 1,
+      }
+      shapes = [...shapes, draw]
+      drawingId = draw.id
+      selectedIds = []
+      callbacks.selectionChanged()
+      syncNodes()
+      interaction = { kind: 'drawing', pointerId: event.pointerId, id: draw.id, before }
+      return
+    }
+    if (tool === 'eraser') {
+      erasing = new Set()
+      interaction = { kind: 'erasing', pointerId: event.pointerId, last: page, moved: false }
+      eraseAlong(page, page)
+      return
+    }
+    const now = performance.now()
+    if (lastDown && now - lastDown.time < DOUBLE_CLICK_MS && distanceSq(lastDown.point, screen) < 16 * 16) {
+      lastDown = null
+      const hit = shapeAt(page)
+      if (hit?.kind === 'card') callbacks.openEntity(hit.entityId)
+      else if (hit?.kind === 'text' || hit?.kind === 'arrow' || hit?.kind === 'note' || hit?.kind === 'geo') { setSelection([hit.id]); startEditing(hit.id) }
+      else if (!hit) createText(page)
+      return
+    }
+    lastDown = { time: now, point: screen }
+    const control = controlAt(page)
+    if (control) {
+      const before = snapshot()
+      mark(before)
+      if (control.kind === 'arrow') interaction = { kind: 'handle', pointerId: event.pointerId, arrowId: onlyArrow()!.id, which: control.which, before }
+      else if (control.kind === 'line') interaction = { kind: 'line_handle', pointerId: event.pointerId, lineId: onlyLine()!.id, index: control.index, before }
+      else {
+        const frame = selectionFrameOf(selectedShapes().map(frameOf))!
+        const initial = clone(selectedShapes())
+        interaction = control.kind === 'resize'
+          ? { kind: 'resizing', pointerId: event.pointerId, handle: control.handle, frame, initial, before }
+          : { kind: 'rotating', pointerId: event.pointerId, center: frameCenter(frame), startPage: page, baseRotation: initial.length === 1 ? frame.rotation : 0, initial, before }
+      }
+      redrawOverlay()
+      return
+    }
+    const target = shapeAt(page)
+    const wasSelected = !!target && selectedIds.includes(target.id)
+    if (target && !wasSelected) setSelection(event.shiftKey ? [...selectedIds, target.id] : [target.id])
+    interaction = { kind: 'pointing', pointerId: event.pointerId, startScreen: screen, startPage: page, targetId: target?.id ?? null, shift: event.shiftKey, wasSelected, coarse }
+    redrawOverlay()
+  }
+
+  const move = (event: PointerEvent) => {
+    const screen = pointerPoint(event)
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, screen)
+    if (interaction.kind === 'pinching') {
+      if (pointers.size < 2) return
+      const [a, b] = [...pointers.values()]
+      const distance = Math.max(1, Math.sqrt(distanceSq(a, b))), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      const { startCamera, startDistance, startMid } = interaction
+      const zoomed = zoomAt(startCamera, startMid, startCamera.z * distance / startDistance)
+      setCamera({ x: zoomed.x + (mid.x - startMid.x) / zoomed.z, y: zoomed.y + (mid.y - startMid.y) / zoomed.z, z: zoomed.z })
+      return
+    }
+    if (interaction.kind === 'idle') { if (event.target === host || host.contains(event.target as Node)) updateHover(screen); return }
+    if ('pointerId' in interaction && interaction.pointerId !== event.pointerId) return
+    const page = pageAt(screen)
+    switch (interaction.kind) {
+      case 'panning': {
+        const dx = screen.x - interaction.last.x, dy = screen.y - interaction.last.y
+        interaction.last = screen
+        setCamera({ x: camera.x + dx / camera.z, y: camera.y + dy / camera.z, z: camera.z })
+        return
+      }
+      case 'pointing': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        if (interaction.targetId) startTranslate(interaction.pointerId, interaction.startPage, event.altKey)
+        else {
+          const base = interaction.shift ? [...selectedIds] : []
+          if (!interaction.shift) setSelection([])
+          interaction = { kind: 'brushing', pointerId: interaction.pointerId, startPage: interaction.startPage, rect: { x: page.x, y: page.y, w: 0, h: 0 }, base }
+        }
+        hoveredId = null
+        move(event)
+        return
+      }
+      case 'pointing_arrow': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        // Cria a seta a partir do ponto inicial, vinculada à forma que estiver embaixo.
+        const before = snapshot()
+        mark(before)
+        const start = interaction.startPage
+        const id = newShapeId()
+        const target = event.ctrlKey ? undefined : bindTargetAt(start, id)
+        const arrow: BoardArrow = {
+          id, kind: 'arrow', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, start: { x: 0, y: 0 }, end: { x: page.x - start.x, y: page.y - start.y }, bend: 0,
+          color: style.color, labelColor: 'black', size: style.size, font: style.font, dash: style.dash, arrowheadStart: 'none', arrowheadEnd: 'arrow', text: '', labelPosition: 0.5, scale: 1,
+          startBinding: target ? bindingFor(target, start) : null, endBinding: null,
+        }
+        shapes = [...shapes, arrow]
+        selectedIds = [id]
+        callbacks.selectionChanged()
+        interaction = { kind: 'handle', pointerId: interaction.pointerId, arrowId: id, which: 'end', before }
+        move(event)
+        return
+      }
+      case 'pointing_create': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        const before = snapshot()
+        mark(before)
+        const start = interaction.startPage, id = newShapeId()
+        if (interaction.create === 'geo') {
+          const geo: BoardGeo = {
+            id, kind: 'geo', geo: geoType, x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, w: 1, h: 1, color: style.color, fill: style.fill, dash: style.dash,
+            size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+          }
+          shapes = [...shapes, geo]
+          interaction = { kind: 'creating_geo', pointerId: interaction.pointerId, id, startPage: start, before }
+        } else {
+          const line: BoardLine = { id, kind: 'line', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, points: [{ x: 0, y: 0 }, { x: page.x - start.x, y: page.y - start.y }], color: style.color, dash: style.dash, size: style.size, spline: 'line', scale: 1 }
+          shapes = [...shapes, line]
+          interaction = { kind: 'line_handle', pointerId: interaction.pointerId, lineId: id, index: 1, before }
+        }
+        selectedIds = [id]
+        callbacks.selectionChanged()
+        move(event)
+        return
+      }
+      case 'pointing_text': {
+        const limit = interaction.coarse ? COARSE_DRAG_DISTANCE : DRAG_DISTANCE
+        if (distanceSq(screen, interaction.startScreen) < limit * limit) return
+        const before = snapshot()
+        const start = interaction.startPage
+        const text: BoardText = { id: newShapeId(), kind: 'text', x: start.x, y: start.y, rotation: 0, opacity: 1, locked: false, w: 1, text: '', color: style.color, size: style.size, font: style.font, textAlign: 'start', autoSize: false, scale: 1 }
+        shapes = [...shapes, text]
+        selectedIds = [text.id]
+        callbacks.selectionChanged()
+        interaction = { kind: 'creating_text', pointerId: interaction.pointerId, id: text.id, startPage: start, before }
+        move(event)
+        return
+      }
+      case 'creating_text': {
+        const text = shapeById(interaction.id)
+        if (!text || text.kind !== 'text') return
+        const w = Math.max(TEXT_MIN_BOX_WIDTH, Math.abs(page.x - interaction.startPage.x))
+        const lineHeight = TEXT_FONT_SIZES[text.size] * TEXT_LINE_HEIGHT
+        const h = Math.max(lineHeight, Math.abs(page.y - interaction.startPage.y))
+        const x = page.x < interaction.startPage.x ? interaction.startPage.x - w : interaction.startPage.x
+        const y = Math.min(page.y, interaction.startPage.y)
+        replaceShapes([{ ...text, x, y, w, boxHeight: h }])
+        commit()
+        return
+      }
+      case 'creating_geo': {
+        const geo = shapeById(interaction.id)
+        if (!geo || geo.kind !== 'geo') return
+        let w = Math.abs(page.x - interaction.startPage.x), h = Math.abs(page.y - interaction.startPage.y)
+        if (event.shiftKey) { w = h = Math.max(w, h) }
+        const x = page.x < interaction.startPage.x ? interaction.startPage.x - w : interaction.startPage.x
+        const y = page.y < interaction.startPage.y ? interaction.startPage.y - h : interaction.startPage.y
+        replaceShapes([withGrowth({ ...geo, x, y, w: Math.max(1, w), h: Math.max(1, h), growY: 0 })])
+        commit()
+        return
+      }
+      case 'creating_note': {
+        const note = shapeById(interaction.id)
+        if (!note) return
+        replaceShapes([{ ...note, x: interaction.origin.x + page.x - interaction.startPage.x, y: interaction.origin.y + page.y - interaction.startPage.y }])
+        commit()
+        return
+      }
+      case 'drawing': {
+        const draw = shapeById(interaction.id)
+        if (!draw || draw.kind !== 'draw') return
+        const local = toLocal(originFrame(draw), page), last = draw.points[draw.points.length - 1]
+        if (Math.hypot(local.x - last[0], local.y - last[1]) < 1 / camera.z) return
+        const pressure = event.pointerType === 'pen' ? event.pressure || 0.5 : 0.5
+        replaceShapes([{ ...draw, points: [...draw.points, [local.x, local.y, pressure]] }])
+        commit()
+        return
+      }
+      case 'erasing': {
+        eraseAlong(interaction.last, page)
+        interaction.last = page
+        interaction.moved = true
+        return
+      }
+      case 'line_handle': {
+        const line = shapeById(interaction.lineId)
+        if (!line || line.kind !== 'line') return
+        const local = toLocal(originFrame(line), page), { index } = interaction
+        replaceShapes([{ ...line, points: line.points.map((p, i) => i === index ? local : p) }])
+        commit()
+        return
+      }
+      case 'translating': {
+        let dx = page.x - interaction.startPage.x, dy = page.y - interaction.startPage.y
+        if (event.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0 }
+        replaceShapes(interaction.initial.map((shape) => ({ ...shape, x: shape.x + dx, y: shape.y + dy })))
+        commit()
+        return
+      }
+      case 'brushing': {
+        const rect = boundsOf([interaction.startPage, page])
+        interaction.rect = rect
+        const inside = shapes.filter((shape) => !shape.locked && frameIntersectsRect(frameOf(shape), rect)).map((shape) => shape.id)
+        setSelection([...new Set([...interaction.base, ...inside])])
+        redrawOverlay()
+        return
+      }
+      case 'resizing': {
+        const { handle } = interaction
+        const corner = handle !== 'left' && handle !== 'right' && handle !== 'top' && handle !== 'bottom'
+        // Texto, nota e imagem mantêm a proporção pelos cantos, como no tldraw.
+        const { initial } = interaction
+        const locked = initial.some((shape) => (shape.kind === 'text' && (shape.autoSize || initial.length > 1)) || shape.kind === 'note' || shape.kind === 'image')
+        const t = resizeTransform(interaction.frame, handle, page, event.altKey, event.shiftKey || (corner && locked) || (interaction.initial.length === 1 && interaction.initial[0].kind === 'image'))
+        replaceShapes(interaction.initial.map((shape) => resizeShape(shape, t, handle)))
+        commit()
+        return
+      }
+      case 'rotating': {
+        const delta = rotationDelta(interaction.center, interaction.startPage, page, interaction.baseRotation, event.shiftKey)
+        const { center } = interaction
+        replaceShapes(interaction.initial.map((shape) => rotateAround(shape, center, delta)))
+        commit()
+        return
+      }
+      case 'handle': {
+        const arrow = shapeById(interaction.arrowId)
+        if (!arrow || arrow.kind !== 'arrow') return
+        const own = arrowFrame(arrow)
+        if (interaction.which === 'middle') {
+          const geometry = geometryOf(arrow)
+          replaceShapes([{ ...arrow, bend: bendThrough(geometry.start, geometry.end, page) }])
+          hintId = null
+        } else {
+          const target = event.ctrlKey ? undefined : bindTargetAt(page, arrow.id)
+          const key = interaction.which === 'start' ? 'startBinding' : 'endBinding'
+          replaceShapes([{ ...arrow, [interaction.which]: toLocal(own, page), [key]: target ? bindingFor(target, page) : null } as BoardArrow])
+          hintId = target?.id ?? null
+        }
+        commit()
+        return
+      }
+    }
+  }
+
+  /** Vínculo imprecisa (mira o centro), como o tldraw faz ao soltar a ponta sobre uma forma. */
+  const bindingFor = (target: BoardShape, page: Point): ArrowBinding => {
+    const frame = frameOf(target), local = toLocal(frame, page)
+    return { shapeId: target.id, anchor: { x: frame.w ? local.x / frame.w : 0.5, y: frame.h ? local.y / frame.h : 0.5 }, isPrecise: false, isExact: false }
+  }
+
+  const up = (event: PointerEvent) => {
+    pointers.delete(event.pointerId)
+    if (interaction.kind === 'pinching') { if (pointers.size < 2) interaction = { kind: 'idle' }; return }
+    if (!('pointerId' in interaction) || interaction.pointerId !== event.pointerId) return
+    host.releasePointerCapture?.(event.pointerId)
+    const screen = pointerPoint(event)
+    const ended = interaction
+    interaction = { kind: 'idle' }
+    hintId = null
+    if (ended.kind === 'pointing') {
+      if (ended.targetId) {
+        if (ended.shift && ended.wasSelected) setSelection(selectedIds.filter((id) => id !== ended.targetId))
+        else if (!ended.shift && ended.wasSelected) setSelection([ended.targetId])
+      } else if (!ended.shift) setSelection([])
+    }
+    if (ended.kind === 'handle' && tool === 'arrow') setTool('select')
+    if (ended.kind === 'pointing_arrow') setTool('select')
+    if (ended.kind === 'pointing_create' && ended.create === 'geo') {
+      // Clique sem arrastar: forma do tamanho padrão, centrada no ponto.
+      mark()
+      const p = ended.startPage
+      const geo: BoardGeo = withGrowth({
+        id: newShapeId(), kind: 'geo', geo: geoType, x: p.x - GEO_DEFAULT / 2, y: p.y - GEO_DEFAULT / 2, rotation: 0, opacity: 1, locked: false, w: GEO_DEFAULT, h: GEO_DEFAULT,
+        color: style.color, fill: style.fill, dash: style.dash, size: style.size, scale: 1, text: '', labelColor: 'black', font: style.font, align: 'middle', verticalAlign: 'middle', growY: 0,
+      })
+      shapes = [...shapes, geo]
+      selectedIds = [geo.id]
+      callbacks.selectionChanged()
+      commit()
+      setTool('select')
+    }
+    if (ended.kind === 'pointing_create' && ended.create === 'line') setTool('select')
+    if (ended.kind === 'creating_geo') setTool('select')
+    if (ended.kind === 'line_handle' && tool === 'line') setTool('select')
+    if (ended.kind === 'creating_note') { setTool('select'); startEditing(ended.id, ended.before) }
+    if (ended.kind === 'drawing') finishDrawing(ended.id)
+    if (ended.kind === 'pointing_text') createText(ended.startPage)
+    if (ended.kind === 'creating_text') { setTool('select'); startEditing(ended.id, ended.before) }
+    if (ended.kind === 'erasing') finishErasing(ended.moved ? null : pageAt(screen))
+    if (ended.kind === 'panning') setCursor(toolCursor())
+    redrawOverlay()
+    updateHover(screen)
+  }
+
+  const cancelPointer = (event: PointerEvent) => {
+    pointers.delete(event.pointerId)
+    if (interaction.kind === 'pinching') { if (pointers.size < 2) interaction = { kind: 'idle' }; return }
+    if ('pointerId' in interaction && interaction.pointerId === event.pointerId) cancelInteraction()
+  }
+  const leave = () => { if (hoveredId && interaction.kind === 'idle') { hoveredId = null; redrawOverlay() } }
+
+  const isApple = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+  const wheel = (event: WheelEvent) => {
+    if (isField(event.target) && !editingId) return
+    event.preventDefault()
+    stopCameraAnimation()
+    setCamera(wheelCamera(camera, event, pointerPoint(event), isApple))
+  }
+  let gestureStart: { scale: number; camera: CameraState } | null = null
+  const gestureStartHandler = (event: Event) => { event.preventDefault(); gestureStart = { scale: (event as unknown as { scale: number }).scale, camera } }
+  const gestureChange = (event: Event) => {
+    event.preventDefault()
+    if (!gestureStart) return
+    const gesture = event as unknown as { scale: number; clientX: number; clientY: number }
+    setCamera(zoomAt(camera, pointerPoint(gesture), gestureStart.camera.z * gesture.scale / gestureStart.scale))
+  }
+  const gestureEnd = (event: Event) => { event.preventDefault(); gestureStart = null }
+
+  // ---------- Desenho livre e borracha ----------
+  /** Fecha o traço quando ele termina perto do começo, como o tldraw. */
+  const finishDrawing = (id: string) => {
+    drawingId = null
+    const draw = shapeById(id)
+    if (draw?.kind === 'draw' && draw.points.length > 6) {
+      const [x0, y0] = draw.points[0], [x1, y1] = draw.points[draw.points.length - 1]
+      if (Math.hypot(x1 - x0, y1 - y0) < Math.max(8, strokeOf(draw) * 2) / camera.z * camera.z) replaceShapes([{ ...draw, isClosed: true }])
+    }
+    commit()
+  }
+  /** Marca as formas tocadas no trecho percorrido; elas ficam translúcidas até soltar. */
+  const eraseAlong = (from: Point, to: Point) => {
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / (4 / camera.z)))
+    let changed = false
+    for (let i = 0; i <= steps; i++) {
+      const p = { x: from.x + (to.x - from.x) * i / steps, y: from.y + (to.y - from.y) * i / steps }
+      for (const shape of shapes) if (!shape.locked && !erasing.has(shape.id) && hitShape(shape, p)) { erasing.add(shape.id); changed = true }
+    }
+    if (changed) shapeLayer.batchDraw()
+  }
+  const removeShapes = (remove: Set<string>) => {
+    shapes = shapes.filter((shape) => !remove.has(shape.id)).map((shape) => shape.kind === 'arrow' && (remove.has(shape.startBinding?.shapeId ?? '') || remove.has(shape.endBinding?.shapeId ?? ''))
+      ? unbindFrom(shape, new Set(shapes.map((s) => s.id).filter((id) => !remove.has(id)))) : shape)
+    if (hoveredId && remove.has(hoveredId)) hoveredId = null
+  }
+  const finishErasing = (click: Point | null) => {
+    if (click && erasing.size === 0) { const hit = shapeAt(click); if (hit) erasing.add(hit.id) }
+    const remove = erasing
+    erasing = new Set()
+    if (remove.size === 0) { shapeLayer.batchDraw(); return }
+    mark()
+    removeShapes(remove)
+    setSelection(selectedIds.filter((id) => !remove.has(id)))
+    commit()
+  }
+
+  // ---------- Texto no canvas ----------
+  let textarea: HTMLTextAreaElement | null = null
+  let editingBefore: { shapes: BoardShape[]; selected: string[] } | null = null
+
+  const createText = (page: Point) => {
+    const before = snapshot()
+    const size = style.size, lineHeight = TEXT_FONT_SIZES[size] * TEXT_LINE_HEIGHT
+    const shape: BoardText = { id: newShapeId(), kind: 'text', x: page.x, y: page.y - lineHeight / 2, rotation: 0, opacity: 1, locked: false, w: 8, text: '', color: style.color, size, font: style.font, textAlign: 'start', autoSize: true, scale: 1 }
+    shapes = [...shapes, shape]
+    syncNodes()
+    selectedIds = [shape.id]
+    callbacks.selectionChanged()
+    if (tool !== 'select') setTool('select')
+    startEditing(shape.id, before)
+  }
+
+  function positionEditor() {
+    if (!textarea || !editingId) return
+    const shape = shapeById(editingId)
+    if (!shape) return
+    if (shape.kind === 'text') {
+      const screen = { x: (shape.x + camera.x) * camera.z, y: (shape.y + camera.y) * camera.z }
+      textarea.style.left = `${screen.x}px`
+      textarea.style.top = `${screen.y}px`
+      textarea.style.transform = `rotate(${shape.rotation}rad) scale(${camera.z * shape.scale})`
+      textarea.style.width = shape.autoSize ? 'auto' : `${shape.w}px`
+      textarea.style.minHeight = shape.boxHeight ? `${shape.boxHeight}px` : ''
+    } else if (shape.kind === 'note' || shape.kind === 'geo') {
+      const frame = frameOf(shape), layout = labelLayoutOf(shape), pad = LABEL_PADDING * shape.scale
+      const textHeight = layout.height - pad * 2
+      const top = shape.verticalAlign === 'start' ? pad : shape.verticalAlign === 'end' ? frame.h - pad - textHeight : (frame.h - textHeight) / 2
+      const origin = toPage(frame, { x: pad, y: top })
+      textarea.style.left = `${(origin.x + camera.x) * camera.z}px`
+      textarea.style.top = `${(origin.y + camera.y) * camera.z}px`
+      textarea.style.width = `${Math.max(1, frame.w - pad * 2)}px`
+      textarea.style.transform = `rotate(${shape.rotation}rad) scale(${camera.z})`
+    } else if (shape.kind === 'arrow') {
+      const geometry = geometryOf(shape), label = labelOf(shape, geometry)
+      const center = label?.center ?? geometry.points[0]
+      textarea.style.left = `${(center.x + camera.x) * camera.z}px`
+      textarea.style.top = `${(center.y + camera.y) * camera.z}px`
+      textarea.style.transform = `translate(-50%, -50%) scale(${camera.z})`
+    }
+  }
+  const fitTextarea = () => {
+    if (!textarea || !editingId) return
+    const shape = shapeById(editingId)
+    textarea.style.height = '0px'
+    textarea.style.height = `${textarea.scrollHeight}px`
+    if (shape?.kind === 'text' && shape.autoSize) { textarea.style.width = '0px'; textarea.style.width = `${Math.max(8, textarea.scrollWidth + 2)}px` }
+    if (shape?.kind === 'arrow') { textarea.style.width = '0px'; textarea.style.width = `${Math.max(40, textarea.scrollWidth + 2)}px` }
+  }
+
+  function startEditing(id: string, before = snapshot()) {
+    const shape = shapeById(id)
+    if (!shape || (shape.kind !== 'text' && shape.kind !== 'arrow' && shape.kind !== 'note' && shape.kind !== 'geo')) return
+    stopEditing()
+    editingId = id
+    editingBefore = before
+    const area = document.createElement('textarea')
+    textarea = area
+    const labelled = shape.kind === 'note' || shape.kind === 'geo'
+    const fontSize = shape.kind === 'text' ? TEXT_FONT_SIZES[shape.size] : labelled ? LABEL_FONT_SIZES[shape.size] * shape.scale : ARROW_LABEL_FONT_SIZES[shape.size] * shape.scale
+    const color = shape.kind === 'text' ? BOARD_PALETTE[shape.color].solid : shape.kind === 'note' && shape.labelColor === 'black' ? BOARD_PALETTE[shape.color].noteText : BOARD_PALETTE[shape.labelColor].solid
+    Object.assign(area.style, {
+      position: 'absolute', zIndex: '5', margin: '0', padding: '0', border: 'none', outline: 'none', resize: 'none', overflow: 'hidden', background: 'transparent',
+      transformOrigin: shape.kind === 'arrow' ? 'center' : 'top left', font: `${fontSize}px ${palette.fonts[shape.font]}`, lineHeight: String(TEXT_LINE_HEIGHT),
+      color, whiteSpace: labelled || (shape.kind === 'text' && !shape.autoSize) ? 'pre-wrap' : 'pre',
+      textAlign: shape.kind === 'arrow' ? 'center' : labelled ? (shape.align === 'start' ? 'left' : shape.align === 'end' ? 'right' : 'center') : shape.textAlign === 'middle' ? 'center' : shape.textAlign === 'end' ? 'right' : 'left',
+      caretColor: palette.primary, minWidth: '8px',
+    } satisfies Partial<CSSStyleDeclaration>)
+    area.value = shape.text
+    area.spellcheck = false
+    area.setAttribute('aria-label', shape.kind === 'text' ? 'Texto' : shape.kind === 'arrow' ? 'Rótulo da seta' : 'Texto da forma')
+    area.addEventListener('input', () => {
+      const current = shapeById(id)
+      if (!current || (current.kind !== 'text' && current.kind !== 'arrow' && current.kind !== 'note' && current.kind !== 'geo')) return
+      replaceShapes([current.kind === 'note' || current.kind === 'geo' ? withGrowth({ ...current, text: area.value }) : { ...current, text: area.value }])
+      syncNodes()
+      fitTextarea()
+      positionEditor()
+    })
+    area.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' || (event.key === 'Enter' && (event.ctrlKey || event.metaKey))) { event.preventDefault(); event.stopPropagation(); stopEditing() }
+    })
+    area.addEventListener('blur', () => { if (editingId === id) stopEditing() })
+    host.appendChild(area)
+    positionEditor()
+    fitTextarea()
+    syncNodes()
+    redrawOverlay()
+    requestAnimationFrame(() => { area.focus(); area.setSelectionRange(area.value.length, area.value.length); if (shape.text) area.select() })
+  }
+
+  function stopEditing() {
+    if (!editingId) return
+    const id = editingId, before = editingBefore
+    editingId = null
+    editingBefore = null
+    const area = textarea
+    textarea = null
+    area?.remove()
+    const shape = shapeById(id)
+    if (shape?.kind === 'text' && !shape.text.trim()) {
+      // Texto vazio some ao sair da edição, como no tldraw.
+      shapes = shapes.filter((item) => item.id !== id)
+      setSelection(selectedIds.filter((item) => item !== id))
+      if (before && before.shapes.some((item) => item.id === id)) mark(before)
+    } else if (before && JSON.stringify(before.shapes) !== JSON.stringify(shapes)) mark(before)
+    commit()
+    host.focus({ preventScroll: true })
+  }
+
+  // ---------- Teclado e área de transferência ----------
+  const nudgeSelected = (dx: number, dy: number) => {
+    mark()
+    const keep = new Set(selectedIds)
+    shapes = shapes.map((shape) => {
+      if (!keep.has(shape.id)) return shape
+      const free = shape.kind === 'arrow' ? unbindFrom(shape, keep) : shape
+      return { ...free, x: free.x + dx, y: free.y + dy }
+    })
+    commit()
+  }
+  const reorder = (mode: 'front' | 'back' | 'forward' | 'backward') => {
+    if (selectedIds.length === 0) return
+    mark()
+    const chosen = new Set(selectedIds)
+    if (mode === 'front') shapes = [...shapes.filter((s) => !chosen.has(s.id)), ...shapes.filter((s) => chosen.has(s.id))]
+    else if (mode === 'back') shapes = [...shapes.filter((s) => chosen.has(s.id)), ...shapes.filter((s) => !chosen.has(s.id))]
+    else {
+      const list = [...shapes]
+      const indices = list.map((s, i) => chosen.has(s.id) ? i : -1).filter((i) => i >= 0)
+      if (mode === 'forward') for (const i of indices.reverse()) { if (i < list.length - 1 && !chosen.has(list[i + 1].id)) [list[i], list[i + 1]] = [list[i + 1], list[i]] }
+      else for (const i of indices) { if (i > 0 && !chosen.has(list[i - 1].id)) [list[i], list[i - 1]] = [list[i - 1], list[i]] }
+      shapes = list
+    }
+    commit()
+  }
+
+  const keydown = (event: KeyboardEvent) => {
+    if (editingId || isField(event.target) || event.defaultPrevented) return
+    const mod = event.ctrlKey || event.metaKey
+    const key = event.key.toLowerCase()
+    if (event.code === 'Space') {
+      if (!spaceHeld) { spaceHeld = true; if (interaction.kind === 'idle') setCursor('grab') }
+      event.preventDefault()
+      return
+    }
+    if (event.key === 'Escape') {
+      if (interaction.kind !== 'idle') cancelInteraction()
+      else if (tool !== 'select') setTool('select')
+      else setSelection([])
+      return
+    }
+    if (interaction.kind !== 'idle') return
+    if (mod && key === 'z') { event.preventDefault(); if (event.shiftKey) editor.redo(); else editor.undo(); return }
+    if (mod && key === 'y') { event.preventDefault(); editor.redo(); return }
+    if (mod && key === 'd') { event.preventDefault(); editor.duplicate(); return }
+    if (mod && key === 'a') { event.preventDefault(); setSelection(shapes.filter((s) => !s.locked).map((s) => s.id)); return }
+    if (mod && key === 'u') { event.preventDefault(); callbacks.pickImage(); return }
+    if (mod && (event.key === '=' || event.key === '+')) { event.preventDefault(); editor.zoomIn(); return }
+    if (mod && event.key === '-') { event.preventDefault(); editor.zoomOut(); return }
+    if (mod) return
+    if (event.shiftKey && event.code === 'Digit1') { event.preventDefault(); editor.zoomToFit(); return }
+    if (event.shiftKey && event.code === 'Digit2') { event.preventDefault(); editor.zoomToSelection(); return }
+    if (event.shiftKey && event.code === 'Digit0') { event.preventDefault(); editor.resetZoom(); return }
+    if (event.shiftKey && key === 'l') { event.preventDefault(); editor.toggleLock(); return }
+    if (!event.shiftKey && (event.key === '=' || event.key === '+')) { editor.zoomIn(); return }
+    if (!event.shiftKey && event.key === '-') { editor.zoomOut(); return }
+    if (event.key === 'Delete' || event.key === 'Backspace') { if (selectedIds.length) { event.preventDefault(); editor.deleteSelected() } return }
+    if (event.key === 'Enter') {
+      const only = selectedShapes()
+      if (only.length === 1 && (only[0].kind === 'text' || only[0].kind === 'arrow' || only[0].kind === 'note' || only[0].kind === 'geo')) { event.preventDefault(); startEditing(only[0].id) }
+      return
+    }
+    if (event.key === ']') { reorder(event.altKey ? 'forward' : 'front'); return }
+    if (event.key === '[') { reorder(event.altKey ? 'backward' : 'back'); return }
+    const nudge = ({ ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<string, number[]>)[event.key]
+    if (nudge && selectedIds.length > 0 && !event.altKey && !spaceHeld) {
+      event.preventDefault()
+      const step = event.shiftKey ? 10 : 1
+      nudgeSelected(nudge[0] * step, nudge[1] * step)
+      return
+    }
+    if (event.altKey || event.shiftKey) return
+    if (key === 'r' || key === 'o') { event.preventDefault(); geoType = key === 'r' ? 'rectangle' : 'ellipse'; setTool('geo'); callbacks.toolChanged(); return }
+    const tools: Record<string, BoardTool> = { v: 'select', h: 'hand', d: 'draw', b: 'draw', x: 'draw', e: 'eraser', a: 'arrow', t: 'text', n: 'note', l: 'line' }
+    if (tools[key]) { event.preventDefault(); setTool(tools[key]) }
+  }
+  const keyup = (event: KeyboardEvent) => { if (event.code === 'Space') { spaceHeld = false; if (interaction.kind === 'idle') setCursor(toolCursor()) } }
+  const blur = () => { spaceHeld = false; if (interaction.kind !== 'idle' && interaction.kind !== 'pinching') cancelInteraction(); pointers.clear() }
+  const contextMenu = (event: MouseEvent) => { if (!isField(event.target)) event.preventDefault() }
+
+  const copySelection = (event: ClipboardEvent) => {
+    if (editingId || isField(event.target) || selectedIds.length === 0) return false
+    clipboard = clone(selectedShapes())
+    event.clipboardData?.setData('text/plain', CLIPBOARD_PREFIX + JSON.stringify(clipboard))
+    event.preventDefault()
+    return true
+  }
+  const onCopy = (event: ClipboardEvent) => { copySelection(event) }
+  const onCut = (event: ClipboardEvent) => { if (copySelection(event)) editor.deleteSelected() }
+  const onPaste = (event: ClipboardEvent) => {
+    if (editingId || isField(event.target)) return
+    const files = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith('image/'))
+    if (files.length) { event.preventDefault(); void editor.insertImages(files).catch(() => undefined); return }
+    const text = event.clipboardData?.getData('text/plain') ?? ''
+    let source: BoardShape[] | null = null
+    if (text.startsWith(CLIPBOARD_PREFIX)) { try { source = JSON.parse(text.slice(CLIPBOARD_PREFIX.length)) as BoardShape[] } catch { source = null } }
+    else if (!text && clipboard) source = clipboard
+    event.preventDefault()
+    if (source && source.length) {
+      // Cola no mesmo lugar se a origem está visível; senão, no centro da vista.
+      const bounds = contentBounds(source)!, view = viewportPageBounds(camera, viewport)
+      const visible = bounds.x < view.x + view.w && bounds.x + bounds.w > view.x && bounds.y < view.y + view.h && bounds.y + bounds.h > view.y
+      const offset = visible ? { x: 0, y: 0 } : { x: view.x + view.w / 2 - (bounds.x + bounds.w / 2), y: view.y + view.h / 2 - (bounds.y + bounds.h / 2) }
+      mark()
+      const copies = duplicateShapes(source, offset)
+      shapes = [...shapes, ...copies]
+      selectedIds = []
+      setSelection(copies.map((shape) => shape.id))
+      commit()
+    } else if (text.trim()) {
+      // Texto comum vira uma forma de texto no centro da vista, como no tldraw.
+      mark()
+      const view = viewportPageBounds(camera, viewport)
+      const shape: BoardText = { id: newShapeId(), kind: 'text', x: view.x + view.w / 2, y: view.y + view.h / 2, rotation: 0, opacity: 1, locked: false, w: 8, text: text.trim(), color: 'black', size: 'm', font: 'draw', textAlign: 'start', autoSize: true, scale: 1 }
+      const layout = textLayout(shape)
+      shape.x -= layout.width / 2; shape.y -= layout.height / 2
+      shapes = [...shapes, shape]
+      setSelection([shape.id])
+      commit()
+    }
+  }
+
+  function setTool(next: BoardTool) {
+    if (tool === next) return
+    if (editingId) stopEditing()
+    tool = next
+    hintId = null
+    hoveredId = null
+    setCursor(toolCursor())
+    redrawOverlay()
+    callbacks.toolChanged()
+  }
+
+  host.tabIndex = -1
+  host.style.outline = 'none'
+  host.style.position = host.style.position || 'relative'
+  host.addEventListener('pointerdown', down)
+  window.addEventListener('pointermove', move, true)
+  window.addEventListener('pointerup', up, true)
+  window.addEventListener('pointercancel', cancelPointer, true)
+  host.addEventListener('pointerleave', leave)
+  host.addEventListener('wheel', wheel, { passive: false })
+  host.addEventListener('contextmenu', contextMenu)
+  host.addEventListener('gesturestart', gestureStartHandler)
+  host.addEventListener('gesturechange', gestureChange)
+  host.addEventListener('gestureend', gestureEnd)
+  window.addEventListener('keydown', keydown)
+  window.addEventListener('keyup', keyup)
+  window.addEventListener('blur', blur)
+  window.addEventListener('copy', onCopy)
+  window.addEventListener('cut', onCut)
+  window.addEventListener('paste', onPaste)
+  const observer = new ResizeObserver(() => {
+    const next = { w: host.clientWidth, h: host.clientHeight }
+    if (next.w === viewport.w && next.h === viewport.h) return
+    viewport = next
+    stage.size({ width: Math.max(1, next.w), height: Math.max(1, next.h) })
+    applyCamera()
+  })
+  observer.observe(host)
+  void document.fonts?.ready.then(() => { palette = readBoardPalette(host); textLayouts.clear(); resetTextCaches(); invalidateGeometry(); syncNodes(); stage.batchDraw() })
+
+  syncNodes()
+  if (!options.camera && shapes.length) zoomToBounds(contentBounds(shapes), false)
+  else applyCamera()
+
+  const editor = {
+    getShapes: () => shapes,
+    getShape: (id: string) => shapeById(id),
+    getSelectedIds: () => selectedIds,
+    getSelectedShapes: selectedShapes,
+    getTool: () => tool,
+    setTool,
+    getGeoType: () => geoType,
+    /** Escolhe a forma da ferramenta de formas e a ativa. */
+    setGeoType(next: GeoType) { geoType = next; setTool('geo'); callbacks.toolChanged() },
+    getStyle: () => ({ ...style }),
+    /** Painel de estilo: visível com uma ferramenta de desenho ou com itens estilizáveis selecionados. */
+    getStyleState(): BoardStyleState {
+      const styled = selectedShapes().filter(isStyled)
+      if (styled.length === 0) return { visible: STYLED_TOOLS.has(tool), color: style.color, size: style.size }
+      const same = <K extends 'color' | 'size'>(key: K) => styled.every((shape) => shape[key] === styled[0][key]) ? styled[0][key] : null
+      return { visible: true, color: same('color'), size: same('size') }
+    },
+    /** Muda o estilo das próximas formas e dos itens estilizáveis selecionados. */
+    setStyle(patch: Partial<Pick<BoardStyle, 'color' | 'size'>>) {
+      Object.assign(style, patch)
+      const targets = new Set(selectedShapes().filter(isStyled).map((shape) => shape.id))
+      if (targets.size > 0) {
+        mark()
+        shapes = shapes.map((shape) => {
+          if (!targets.has(shape.id) || !isStyled(shape)) return shape
+          const next = { ...shape, ...patch } as StyledShape
+          return next.kind === 'note' || next.kind === 'geo' ? withGrowth(next) : next
+        })
+        commit()
+      }
+      callbacks.selectionChanged()
+    },
+    /**
+     * Envia as imagens para os assets do mundo e as coloca no quadro, no ponto indicado ou no centro
+     * da vista, no tamanho natural (reduzidas para caber em 60% da vista).
+     */
+    async insertImages(files: File[], client?: { clientX: number; clientY: number }) {
+      const images = files.filter((file) => file.type.startsWith('image/'))
+      if (images.length === 0) return
+      const view = viewportPageBounds(camera, viewport)
+      const at = client ? pageAt(pointerPoint(client)) : { x: view.x + view.w / 2, y: view.y + view.h / 2 }
+      const created: BoardImage[] = []
+      for (const [index, file] of images.entries()) {
+        const form = new FormData()
+        form.set('file', file)
+        const response = await fetch('/api/assets', { method: 'POST', body: form })
+        if (!response.ok) throw new Error('Não foi possível importar a imagem')
+        const { assetId } = await response.json() as { assetId: string }
+        const size = await new Promise<{ w: number; h: number }>((resolve) => {
+          const img = new window.Image()
+          img.onload = () => resolve({ w: img.naturalWidth || 100, h: img.naturalHeight || 100 })
+          img.onerror = () => resolve({ w: 100, h: 100 })
+          img.src = assetVariantUrl(assetId, 'original')
+        })
+        const fit = Math.min(1, view.w * IMAGE_VIEWPORT_FRACTION / size.w, view.h * IMAGE_VIEWPORT_FRACTION / size.h)
+        const w = size.w * fit, h = size.h * fit, offset = index * 20 / camera.z
+        created.push({ id: newShapeId(), kind: 'image', x: at.x - w / 2 + offset, y: at.y - h / 2 + offset, rotation: 0, opacity: 1, locked: false, w, h, assetId, flipX: false, flipY: false })
+      }
+      mark()
+      shapes = [...shapes, ...created]
+      setTool('select')
+      selectedIds = []
+      setSelection(created.map((shape) => shape.id))
+      commit()
+    },
+    getCamera: () => camera,
+    getCanvas: (): BoardCanvas => ({ format: 'canon-board-canvas', version: 1, shapes: clone(shapes), ...(legacyTldraw !== undefined ? { legacyTldraw } : {}) }),
+    screenToPage: (client: { clientX: number; clientY: number }) => pageAt(pointerPoint(client)),
+    select: (ids: string[]) => setSelection(ids),
+    selectNone: () => setSelection([]),
+    setEntities(next: Map<string, BoardEntitySummary>) { entities = next; shapeLayer.batchDraw() },
+    /** Cartão de registro no ponto (ou no centro da vista), selecionado, como o quadro anterior. */
+    createCard(entityId: string, point?: Point) {
+      const view = viewportPageBounds(camera, viewport)
+      const center = point ?? { x: view.x + view.w / 2, y: view.y + view.h / 2 }
+      mark()
+      const card: BoardCard = { id: newShapeId(), kind: 'card', x: center.x - CARD_DEFAULT.w / 2, y: center.y - CARD_DEFAULT.h / 2, rotation: 0, opacity: 1, locked: false, ...CARD_DEFAULT, entityId, viewMode: 'card', showImage: true, showType: true, showTags: true, showStatus: true, customLabel: '' }
+      shapes = [...shapes, card]
+      setTool('select')
+      selectedIds = []
+      setSelection([card.id])
+      commit()
+    },
+    updateShapes(patches: ShapePatch[]) {
+      if (patches.length === 0) return
+      mark()
+      const byId = new Map(patches.map((patch) => [patch.id, patch]))
+      shapes = shapes.map((shape) => { const patch = byId.get(shape.id); return patch ? { ...shape, ...patch, id: shape.id, kind: shape.kind } as BoardShape : shape })
+      commit()
+      callbacks.selectionChanged()
+    },
+    deleteSelected() {
+      const remove = new Set(selectedIds)
+      if (remove.size === 0) return
+      mark()
+      // Setas ligadas a formas apagadas ficam, com a ponta solta onde estava.
+      removeShapes(remove)
+      selectedIds = []
+      callbacks.selectionChanged()
+      commit()
+    },
+    duplicate() {
+      const selection = selectedShapes()
+      if (selection.length === 0) return
+      mark()
+      const copies = duplicateShapes(selection, { x: DUPLICATE_OFFSET, y: DUPLICATE_OFFSET })
+      shapes = [...shapes, ...copies]
+      selectedIds = []
+      setSelection(copies.map((shape) => shape.id))
+      commit()
+    },
+    toggleLock() {
+      const selection = selectedShapes()
+      if (selection.length === 0) return
+      mark()
+      const ids = new Set(selection.map((shape) => shape.id))
+      shapes = shapes.map((shape) => ids.has(shape.id) ? { ...shape, locked: true } : shape)
+      selectedIds = []
+      callbacks.selectionChanged()
+      commit()
+    },
+    undo() { const previous = history.undo(snapshot()); if (previous) restore(previous) },
+    redo() { const next = history.redo(snapshot()); if (next) restore(next) },
+    canUndo: () => history.canUndo(),
+    canRedo: () => history.canRedo(),
+    getZoom: () => camera.z,
+    zoomIn: () => zoomCentered(stepZoom(camera.z, 1)),
+    zoomOut: () => zoomCentered(stepZoom(camera.z, -1)),
+    resetZoom: () => zoomCentered(1),
+    zoomToFit: () => zoomToBounds(contentBounds(shapes)),
+    zoomToSelection: () => zoomToBounds(contentBounds(selectedShapes()), true, Math.max(1, camera.z)),
+    destroy() {
+      stopEditing()
+      stopCameraAnimation()
+      observer.disconnect()
+      host.removeEventListener('pointerdown', down)
+      window.removeEventListener('pointermove', move, true)
+      window.removeEventListener('pointerup', up, true)
+      window.removeEventListener('pointercancel', cancelPointer, true)
+      host.removeEventListener('pointerleave', leave)
+      host.removeEventListener('wheel', wheel)
+      host.removeEventListener('contextmenu', contextMenu)
+      host.removeEventListener('gesturestart', gestureStartHandler)
+      host.removeEventListener('gesturechange', gestureChange)
+      host.removeEventListener('gestureend', gestureEnd)
+      window.removeEventListener('keydown', keydown)
+      window.removeEventListener('keyup', keyup)
+      window.removeEventListener('blur', blur)
+      window.removeEventListener('copy', onCopy)
+      window.removeEventListener('cut', onCut)
+      window.removeEventListener('paste', onPaste)
+      stage.destroy()
+    },
+  }
+  return editor
+}
+
+
+export type BoardEditor = ReturnType<typeof createBoardEditor>

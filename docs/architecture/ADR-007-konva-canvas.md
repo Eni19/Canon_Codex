@@ -1,9 +1,9 @@
 # ADR-007: Canvas próprio em Konva para relações e, depois, para os outros canvas
 
-> **Estado:** parcial (o grafo de relações usa Konva; a migração de Quadros e Cenas e a retirada
-> do tldraw estão planejadas) · **Última verificação:** 25/11/2026, `package.json`,
-> `src/components/relations/relationship-scene.ts`, `src/components/boards/investigation-board.tsx`
-> e `src/components/scenes/scene-runner.tsx`.
+> **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam o painel de estilo dos Quadros e a
+> retirada do pacote tldraw) · **Última verificação:** 26/11/2026,
+> `package.json`, `src/components/boards/board-stage.ts`, `src/components/scenes/scene-stage.ts` e
+> `src/domain/canvas/`.
 
 ## Contexto
 
@@ -57,10 +57,24 @@ motor, não o motor.
 ## Consequências
 
 - O grafo funciona sem conta, chave, CDN ou marca-d'água, inclusive fora de `localhost`.
-- Enquanto a migração não acontece, Quadros e Cenas continuam com as limitações do tldraw. Para
-  abri-los fora de `localhost`, é preciso definir `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
+- **Cenas migradas (26/11/2026):** o editor Konva (`scene-stage.ts`) reproduz a câmera, a
+  seleção, as alças, a rotação pelos cantos, a seleção por área e os atalhos que a cena tinha no
+  tldraw, com as mesmas cores de seleção. A câmera e a geometria foram portadas como funções puras
+  em `src/domain/scenes/`. Funcionam fora de `localhost` sem chave.
+- **Quadros migrados, etapa 1 (26/11/2026):** canvas infinito com a câmera do tldraw, cartões de
+  registro nas cinco visualizações, texto e setas vinculadas, seleção, alças, desfazer/refazer,
+  copiar/colar e os atalhos do tldraw. As fontes do tldraw (Shantell Sans e IBM Plex) são servidas
+  pelo app. A base comum (câmera, geometria, histórico) foi extraída para `src/domain/canvas/`,
+  agora que há dois consumidores.
+- **Quadros, etapa 2 (26/11/2026):** desenho livre, borracha, nota, 20 formas geométricas, linha e
+  imagem (seletor, arrastar e colar). O traço livre usa `perfect-freehand` (MIT), a biblioteca
+  original do mesmo autor, em vez da cópia interna do tldraw, que segue a licença dele. Marca-texto,
+  laser e moldura ficaram de fora por decisão do usuário. **Pendente:** painel de estilo (etapa 3).
+- Nenhum canvas depende mais de `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
 - Câmera, seleção, toque, culling e desenho em lote passam a ser responsabilidade do projeto, e
   cada canvas migrado precisa de um perfil de desempenho próprio.
-- A migração exige converter snapshots tldraw para um formato Canon versionado. Isso entra em
-  [migrações](../data/migrations.md) e em [backup](../data/backup-and-restore.md) quando for implementado.
+- A migração exige converter snapshots tldraw para um formato Canon versionado. Os formatos
+  `canon-scene-canvas` e `canon-board-canvas` e as conversões estão em
+  [migrações](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1); o
+  documento tldraw original fica guardado no próprio registro.
 - Não verificado: latência real em tela física, trackpad e toque, e o comportamento com leitor de tela.
