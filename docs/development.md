@@ -23,6 +23,7 @@ Comandos do package.json:
 | pnpm lint | ESLint |
 | pnpm test | vitest run |
 | pnpm test:watch | Vitest interativo |
+| pnpm docs:check | verifica links relativos, âncoras e caminhos `src/` citados entre crases nos arquivos Markdown |
 | pnpm storage preview <origem> | prévia da importação de uma biblioteca JSON legada, sem gravar |
 | pnpm storage import <origem> <novo-banco> | importa a biblioteca legada para um novo arquivo SQLite |
 | pnpm storage backup <banco> <novo-backup> | copia o banco SQLite para um novo arquivo de backup |
@@ -53,6 +54,7 @@ Para adicionar ou mudar um campo persistido:
 4. adicione teste de registro atual, registro legado e falha de validação;
 5. atualize [storage](data/storage.md), [migrações](data/migrations.md), guias e referência HTTP
    quando o contrato externo mudar.
+6. rode `pnpm docs:check` para conferir links, âncoras e caminhos citados.
 
 Para um novo tipo de entidade, uma definição genérica em world.json pode ser suficiente. Um
 renderizador, editor ou regra específica exige código em components/entities, testes e atualização
