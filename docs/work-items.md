@@ -39,4 +39,4 @@ Um item só deve ser marcado como concluído quando o comportamento estiver impl
 verificado por código/teste ou quando a decisão externa estiver registrada em fonte acessível.
 
 Ideias propostas de produto, que ainda não são lacunas confirmadas nem compromisso de
-implementação, ficam em [ideas.md](ideas.md). Bugs reproduzidos ficam em [bugs.md](bugs.md).
+implementação, ficam em [ideas.md](ideas.md). Bugs reproduzidos ficam nos [issues com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).

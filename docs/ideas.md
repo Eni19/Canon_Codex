@@ -88,4 +88,4 @@ As referências de produto e de engenharia estão na [pesquisa](research/calenda
 
 As lacunas já comprovadas na implementação continuam em
 [work-items.md](work-items.md). Bugs confirmados devem ser registrados em
-[bugs.md](bugs.md), separados de ideias e limitações de produto.
+[issues com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug), separados de ideias e limitações de produto.
