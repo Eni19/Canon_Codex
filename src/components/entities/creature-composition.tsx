@@ -47,7 +47,7 @@ export function CreatureComposition({ breadcrumbs, action, title, status, tags, 
 
 export interface CreatureProperty { key: string; label: string; text: string; href?: string }
 
-const PROPERTY_KEYS = ['creatureKind', 'classification', 'dangerLevel', 'habitat']
+const PROPERTY_KEYS = ['creatureKind', 'classification', 'dangerLevel', 'habitat', 'typicalBehavior']
 
 /** Sheet facts beside the content; works from stored properties or live form values. */
 export function creatureProperties(entityType: EntityTypeDefinition, values: Record<string, unknown>, calendar: Calendar, titleById: Record<string, string>): CreatureProperty[] {

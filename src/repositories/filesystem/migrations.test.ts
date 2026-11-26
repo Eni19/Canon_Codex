@@ -152,7 +152,7 @@ describe('concept block migration', () => {
   })
 })
 describe('world reference areas migration', () => {
-  it('hides phenomena and adds species plus natural sciences without deleting old definitions', () => {
+  it('hides investigation catalogs and adds species plus natural sciences', () => {
     const world = createDefaultWorldSeed()
     const legacy = {
       ...world,
@@ -163,12 +163,13 @@ describe('world reference areas migration', () => {
     }
 
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, legacy))
-    const phenomenon = migrated.entityTypes.find((type) => type.id === 'phenomenon')
     const species = migrated.entityTypes.find((type) => type.id === 'species')
     const naturalScience = migrated.entityTypes.find((type) => type.id === 'naturalScience')
 
     expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
-    expect(phenomenon?.showInSidebar).toBe(false)
+    for (const id of ['case', 'clue', 'phenomenon']) {
+      expect(migrated.entityTypes.find((type) => type.id === id)?.showInSidebar).toBe(false)
+    }
     expect(species?.properties.find((property) => property.key === 'recordKind')?.options).toEqual(['Espécie', 'Povo / Cultura'])
     expect(naturalScience?.properties.find((property) => property.key === 'discipline')?.options).toEqual(['Natureza', 'Medicina'])
   })

@@ -34,6 +34,7 @@ export function EventNewspaperPage({ entity, entityType, worldName, content, ent
       {entity.coverAssetId && <figure className={styles.newsPhoto}><div><Image src={assetVariantUrl(entity.coverAssetId, 'original')} alt="" fill sizes="(min-width: 900px) 30vw, 100vw" className="object-contain" priority /></div><figcaption>Imagem associada ao registro de {entity.title}.</figcaption></figure>}
       <article className={styles.story}><ContentRenderer content={content} /></article>
       <aside className={styles.sidebar}>
+        {text(entity.properties.consequences) && <section><h2>Consequências</h2><p>{text(entity.properties.consequences)}</p></section>}
         <section><h2>Participantes</h2>{participantIds.length ? participantIds.map((id) => <Link key={id} href={`/entity/${id}`}>{entityTitleById[id] ?? 'Registro relacionado'}</Link>) : <p>Nenhum participante registrado.</p>}</section>
         {entity.tags.length > 0 && <section><h2>Índice</h2><p>{entity.tags.join(' · ')}</p></section>}
       </aside>

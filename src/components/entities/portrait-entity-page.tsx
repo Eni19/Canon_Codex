@@ -104,6 +104,10 @@ export function PortraitEntityPage({
             </PortraitSection>
           )}
 
+          {typeof entity.properties.currentGoal === 'string' && entity.properties.currentGoal && (
+            <PortraitSection title="Objetivo atual"><p>{entity.properties.currentGoal}</p></PortraitSection>
+          )}
+
           <PortraitSection title="Personalidade">
             <div className={styles.personalityBox}>
               {typeof entity.properties.personality === 'string' && entity.properties.personality.trim()

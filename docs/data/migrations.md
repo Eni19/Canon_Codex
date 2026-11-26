@@ -33,7 +33,7 @@ com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds
 podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
 original de `directional`.
 
-## Mundo: v1 → v23
+## Mundo: v1 → v24
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -66,12 +66,11 @@ Registry: `worldMigrations` em
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
 da linha do tempo. Mundos v19 também recebem a limpeza das referências no passo v19→v20.
-Essa limpeza altera definições de campos, sem apagar valores dos metadados de entidades. O mesmo
-vale para v20→v21: valores antigos de `profile` e `firstAppearance` continuam no `metadata.json`
-do personagem até o registro ser salvo de novo; como o formulário só envia campos definidos no
-tipo, salvar o personagem descarta esses valores.
+Ao editar uma ficha, propriedades antigas fora do formulário continuam nas chaves originais de metadata.json. Origem e local atual podem divergir. Perfil e primeira aparição também continuam disponíveis nos metadados após salvar. A matriz aprovada mantém os campos existentes e acrescenta sete opcionais, sem pares para consolidar.
 
-O seed atual já é v23, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
+A migração v23 → v24 acrescenta sete definições opcionais às fichas. Preserva definições com a mesma chave e os dados das entidades.
+
+O seed atual já é v24, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.

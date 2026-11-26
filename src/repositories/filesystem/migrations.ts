@@ -1,3 +1,4 @@
+import { addWorldV24Fields } from '@/domain/worlds/entityFieldsV24'
 import 'server-only'
 import { ASSET_SCHEMA_VERSION } from '@/domain/assets/asset'
 import { CONTENT_SCHEMA_VERSION } from '@/domain/content/contentDocument'
@@ -309,7 +310,7 @@ export const worldMigrations: MigrationRegistry = {
       }),
     }),
     // Character form no longer asks for profile or first appearance. Like v19→v20, only the type
-    // changes; stored values stay in the entity files until the record is saved again.
+    // changes; stored values stay in the entity files when the record is edited.
     20: (data) => ({
       ...data,
       schemaVersion: 21,
@@ -321,6 +322,11 @@ export const worldMigrations: MigrationRegistry = {
     }),
     21: (data) => ({ ...data, schemaVersion: 22, calendarMoons: [] }),
     22: (data) => ({ ...data, schemaVersion: 23, calendarSeasons: [], campaignToday: null, calendarLandmarks: { categories: [], landmarks: [] }, calendarAppearance: { activeTheme: 'codex', customThemes: [] } }),
+    23: (data) => ({
+      ...data,
+      schemaVersion: 24,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map(addWorldV24Fields),
+    }),
   },
 }
 export const entityMigrations: MigrationRegistry = {
