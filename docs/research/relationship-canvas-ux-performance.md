@@ -1,5 +1,8 @@
 # Canvas de relacionamentos: interface e desempenho
 
+> **Estado:** histórico · **Última verificação:** 16/11/2026, pesquisa com fontes primárias; a
+> decisão resultante está no [ADR-007](../architecture/ADR-007-konva-canvas.md).
+
 Pesquisa online em **16/11/2026**, com fontes primárias. Apoia o
 [plano de retomada](../plans/relationship-graph-plan.md); não é benchmark nem implementação.
 Código e documentação do projeto foram consultados; nenhum conteúdo privado foi acessado.

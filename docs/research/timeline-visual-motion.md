@@ -1,5 +1,8 @@
 # Linha do Tempo: referências de apresentação e movimento
 
+> **Estado:** histórico · **Última verificação:** 14/10/2026, pesquisa para o TL-12, cuja interface
+> foi substituída pelo mapa espacial.
+
 Pesquisa em **14/10/2026** para o TL-12. A seleção privilegia fontes dos próprios produtos,
 design systems e padrões; não constitui um ranking objetivo dos “melhores” exemplos.
 As recomendações abaixo são decisões de projeto para o Canon. O comportamento efetivamente

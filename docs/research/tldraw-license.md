@@ -1,5 +1,8 @@
 # Licença do tldraw (DOC-GAP-003)
 
+> **Estado:** histórico · **Última verificação:** 25/11/2026, texto da licença, página de preços e
+> código do pacote `tldraw` 5.4.1.
+
 Verificação de 25/11/2026 sobre `tldraw` 5.4.1, usado em Quadros e Cenas
 (`src/components/boards/investigation-board.tsx` e `src/components/scenes/scene-runner.tsx`).
 Isto é um levantamento técnico, não uma análise jurídica.
