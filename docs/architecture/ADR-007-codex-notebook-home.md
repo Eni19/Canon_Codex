@@ -68,8 +68,8 @@ Referências estudadas:
   foto boa era descartada e a página virava em branco.
 - Com o caderno parado, as páginas em HTML continuam sobre as 3D para receber cliques, mas ficam
   invisíveis assim que a foto da página está pronta: o leitor vê sempre a mesma foto, parada ou
-  virando, então nada muda de nitidez nem pisca quando a virada termina. O preço é que os efeitos de
-  hover das peças não aparecem; o cursor de link continua. As fotos são tiradas na escala 1 (ver abaixo). Links e setas em texto não quebram linha (`white-space: nowrap`): a foto mede o texto
+  virando, então nada muda de nitidez nem pisca quando a virada termina. Só a peça sob o ponteiro
+  (polaroid, link, seta) aparece em HTML sobre a própria foto, e levanta como antes. As fotos são tiradas na escala 1 (ver abaixo). Links e setas em texto não quebram linha (`white-space: nowrap`): a foto mede o texto
   um pouco mais largo, e "ver todos →" chegava a descer a seta para a linha de baixo.
 - A fila de fotografias descarta as páginas que deixaram a vizinhança da página aberta e nunca
   fotografa uma cópia já removida do documento. Antes, cada pedido antigo ocupava a fila (uma foto

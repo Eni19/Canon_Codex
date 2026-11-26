@@ -492,8 +492,8 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
           Once a page's picture is ready they stay invisible (data-ghost): the reader always sees the
           same picture, still or turning, so nothing changes sharpness or blinks when a turn ends. */}
       <div className={styles.overlays} onClickCapture={rememberSpread}>
-        <div ref={(element) => { overlays.current.left = element }} data-page="left" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(settled && picture(underKeys?.left) !== null) || undefined}>{current.left}</div>
-        <div ref={(element) => { overlays.current.right = element }} data-page="right" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(settled && picture(underKeys?.right) !== null) || undefined}>{current.right}</div>
+        <div ref={(element) => { overlays.current.left = element }} data-page="left" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(index >= 0 && picture(pageKey(spreads[index].id, 'left')) !== null) || undefined}>{current.left}</div>
+        <div ref={(element) => { overlays.current.right = element }} data-page="right" className={styles.overlayPage} data-visible={(settled && index >= 0) || undefined} data-ghost={(index >= 0 && picture(pageKey(spreads[index].id, 'right')) !== null) || undefined}>{current.right}</div>
         <div ref={(element) => { overlays.current.index = element }} data-index-card className={styles.overlayIndex} data-visible={phase === 'open' || undefined} style={{ width: INDEX_PX.width, height: INDEX_PX.height }}>{indexCard}</div>
       </div>
 

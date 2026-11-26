@@ -50,9 +50,29 @@
   pointer-events: auto;
 }
 
-/* Still clickable, but the 3D page's picture is what shows. */
-.overlayPage[data-ghost] {
+/*
+ * Still clickable, but the 3D page's picture is what shows: the paper and every piece are invisible,
+ * except the piece under the pointer, which appears over its own picture and lifts as usual.
+ */
+.overlayPage[data-ghost] .sheet {
+  background: none;
+  box-shadow: none;
+}
+
+.overlayPage[data-ghost] .sheet::before,
+.overlayPage[data-ghost] .sheet::after {
+  display: none;
+}
+
+/* No transition on the way out: a fade there showed the HTML page for a moment after every turn. */
+.overlayPage[data-ghost] .sheet > * {
   opacity: 0;
+}
+
+.overlayPage[data-ghost] .sheet > :is(.interactive, .pageArrow):hover,
+.overlayPage[data-ghost] .sheet > :has(.interactive:hover) {
+  opacity: 1;
+  transition: opacity 140ms ease;
 }
 
 /* The 3D book already draws the page's edge and shadow; the HTML copy only needs no shadow of its own. */
