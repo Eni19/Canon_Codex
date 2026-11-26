@@ -1,5 +1,9 @@
 # Plano do grafo de relacionamentos e dos novos canvas
 
+> **Estado:** parcial (REL-01 a REL-06 e REL-09 implementados; REL-07 em validação no #46; REL-08
+> planejado no #17) · **Última verificação:** 25/11/2026, estimativa do REL-08 contra
+> `investigation-board.tsx` e `scene-runner.tsx`.
+
 Replanejado em **16/11/2026**, a partir do código atual, da imagem enviada pelo usuário e da
 [pesquisa de interface e desempenho](../research/relationship-canvas-ux-performance.md).
 **Em validação: REL-02 a REL-07.** A migração dos outros canvas fica por último, depois da
