@@ -115,7 +115,7 @@ Os testes incluídos por `vitest.config.mts` são `src/**/*.test.ts`:
 
 O repositório tem apenas o remoto Git `origin`; não há `.github/`, issue tracker conectado ou fonte
 local de status além do histórico Git. O histórico não foi usado para inventar backlog. Decisões
-pendentes e verificações ausentes ficam em [work-items.md](work-items.md).
+pendentes e verificações ausentes ficam nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues).
 
 As colunas e afirmações desta auditoria serão atualizadas ao final da implementação documental,
 marcando os destinos resolvidos e as lacunas que dependem de decisão externa.
@@ -129,4 +129,4 @@ referência HTTP/configuração; desenvolvimento/testes/operação; regra de man
 Dependem de decisão externa ou implementação futura: política de restauração e purge, decisão sobre
 apresentações específicas versus catálogo totalmente genérico, confirmação de
 NEXT_PUBLIC_TLDRAW_LICENSE_KEY e qualquer operação fora de localhost. Esses itens estão
-rastreados com evidência em [work-items.md](work-items.md).
+rastreados com evidência nos [issues do GitHub](https://github.com/Eni19/Canon_Codex/issues) (#50, #49, #16 e #55).

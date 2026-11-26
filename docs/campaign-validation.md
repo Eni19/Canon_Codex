@@ -30,7 +30,7 @@ Para cada passo, anote o tempo aproximado, onde travou e o que esperava acontece
 - **Algo quebrado** (contradiz o comportamento documentado): [issue com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug), com passos
   mínimos e dados sintéticos que reproduzam o problema. Não copie nomes ou textos da campanha.
 - **Algo que falta ou atrapalha** (funciona, mas não serve ao mestre): [issue com label `backlog`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abacklog).
-- **Algo que já está planejado**: comente no item correspondente de [work-items.md](work-items.md).
+- **Algo que já está planejado**: comente no [issue](https://github.com/Eni19/Canon_Codex/issues) correspondente.
 
 Ao final de cada sessão de uso, revise as anotações e transforme as recorrentes em entradas
 nesses arquivos. Uma linha por atrito basta; a priorização vem depois.

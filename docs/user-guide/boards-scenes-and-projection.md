@@ -59,4 +59,4 @@ está conectada, a [trilha sonora](soundtrack.md) toca por ela (ver abaixo).
 - Não há gravação de uma sessão de narração, controle remoto ou presença de jogadores.
 - `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` é lida pelos componentes tldraw, mas não está declarada em
   `.env.example`; sua necessidade/licenciamento permanece uma lacuna de configuração registrada em
-  [work-items.md](../work-items.md).
+  [#16](https://github.com/Eni19/Canon_Codex/issues/16).
