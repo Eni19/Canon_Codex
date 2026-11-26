@@ -1,5 +1,8 @@
 # Migrações e compatibilidade
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, constantes de versão em
+> `src/domain/` e registry em `src/repositories/filesystem/migrations.ts`.
+
 Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
 validadas pelo importador. Os procedimentos que citam arquivos descrevem o driver legado.
 No SQLite, a conversão de datas e a recuperação operam em transações, com histórico no banco.

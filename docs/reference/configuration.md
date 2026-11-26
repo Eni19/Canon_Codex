@@ -1,5 +1,7 @@
 # Configuração e ambientes
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, `.env.example` e `next.config.ts`.
+
 ## Variáveis suportadas
 
 As variáveis documentadas em .env.example são lidas no servidor:
