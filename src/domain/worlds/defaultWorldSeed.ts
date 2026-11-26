@@ -301,11 +301,9 @@ const DEFAULT_ENTITY_TYPES: EntityTypeDefinition[] = [
     layout: narrativeLayout,
     showInSidebar: true,
     properties: [
-      { key: 'registrationNumber', label: 'Número de registro', kind: 'text' },
       { key: 'artifactType', label: 'Tipo de objeto', kind: 'text' },
       { key: 'origin', label: 'Origem', kind: 'text' },
       { key: 'period', label: 'Época ou datação', kind: 'text' },
-      { key: 'materials', label: 'Materiais', kind: 'tags' },
       { key: 'dimensions', label: 'Dimensões', kind: 'text' },
       { key: 'condition', label: 'Estado de conservação', kind: 'enum', options: ['Íntegro', 'Estável', 'Frágil', 'Danificado', 'Em restauração', 'Desconhecido'] },
       { key: 'acquisition', label: 'Forma de aquisição', kind: 'textarea' },

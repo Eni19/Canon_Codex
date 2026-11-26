@@ -137,4 +137,21 @@ export const migrations = [
   );
   UPDATE worlds SET document = json_set(document, '$.schemaVersion', 25) WHERE json_extract(document, '$.schemaVersion') = 24;
   `,
+  // Mundo v26: a ficha de Objeto perde número de registro e materiais (mesma regra de
+  // removeObjectFields); valores já preenchidos ficam nos registros.
+  `
+  UPDATE worlds SET document = (
+    SELECT json_set(worlds.document, '$.entityTypes[' || item.key || '].properties', (
+      SELECT json_group_array(json(field.value)) FROM json_each(item.value, '$.properties') AS field
+      WHERE json_extract(field.value, '$.key') NOT IN ('registrationNumber', 'materials')
+    ))
+    FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact'
+  )
+  WHERE EXISTS (
+    SELECT 1 FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact'
+  );
+  UPDATE worlds SET document = json_set(document, '$.schemaVersion', 26) WHERE json_extract(document, '$.schemaVersion') = 25;
+  `,
 ]
