@@ -17,7 +17,7 @@ import {
   type Frame, type Point, type ResizeHandle,
 } from '@/domain/canvas/geometry'
 import { createHistory } from '@/domain/canvas/history'
-import { drawArrow, drawBoardBackground, drawCard, drawLegacy, drawText, layoutArrowLabel, layoutText, readBoardPalette, type BoardPalette, type LabelLayout, type TextLayout } from './board-render'
+import { drawArrow, drawBoardBackground, drawCard, drawLegacy, drawText, layoutArrowLabel, layoutText, readBoardPalette, resetTextCaches, type BoardPalette, type LabelLayout, type TextLayout } from './board-render'
 import { drawDraw, drawGeo, drawImage, drawLine, drawNote, geoHeight, layoutLabel, linePath, noteSize } from './board-render-shapes'
 import type { BoardEntitySummary } from './board-types'
 
@@ -140,7 +140,13 @@ export function createBoardEditor(host: HTMLElement, options: {
     textLayouts.set(shape.id, { key, layout })
     return layout
   }
-  const shapeById = (id: string) => shapes.find((shape) => shape.id === id)
+  // Índice por ID, refeito só quando a lista muda: cada item desenhado se busca a cada quadro.
+  let byIdFor: BoardShape[] | null = null
+  let byId = new Map<string, BoardShape>()
+  const shapeById = (id: string) => {
+    if (byIdFor !== shapes) { byId = new Map(shapes.map((shape) => [shape.id, shape])); byIdFor = shapes }
+    return byId.get(id)
+  }
 
   const originFrame = (shape: Pick<BoardShape, 'x' | 'y' | 'rotation'>): Frame => ({ x: shape.x, y: shape.y, w: 0, h: 0, rotation: shape.rotation })
   const strokeOf = (shape: BoardDraw | BoardLine) => STROKE_WIDTHS[shape.size] * shape.scale
@@ -151,7 +157,14 @@ export function createBoardEditor(host: HTMLElement, options: {
     const box = boundsOf(localPath(shape)), pad = strokeOf(shape) / 2
     return { ...toPage(originFrame(shape), { x: box.x - pad, y: box.y - pad }), w: Math.max(1, box.w + pad * 2), h: Math.max(1, box.h + pad * 2), rotation: shape.rotation }
   }
-  const labelLayoutOf = (shape: BoardNote | BoardGeo) => layoutLabel(measure, editingId === shape.id ? { ...shape, text: shape.text || ' ' } : shape, shape.kind === 'note' ? noteSize(shape).w : shape.w, palette)
+  const labelCache = new WeakMap<BoardNote | BoardGeo, ReturnType<typeof layoutLabel>>()
+  const labelLayoutOf = (shape: BoardNote | BoardGeo) => {
+    if (editingId === shape.id) return computeLabel(shape)
+    let layout = labelCache.get(shape)
+    if (!layout) { layout = computeLabel(shape); labelCache.set(shape, layout) }
+    return layout
+  }
+  const computeLabel = (shape: BoardNote | BoardGeo) => layoutLabel(measure, editingId === shape.id ? { ...shape, text: shape.text || ' ' } : shape, shape.kind === 'note' ? noteSize(shape).w : shape.w, palette)
   /** Notas e formas crescem para baixo quando o rótulo não cabe, como o `growY` do tldraw. */
   const withGrowth = <T extends BoardNote | BoardGeo>(shape: T): T => {
     const needed = layoutLabel(measure, shape, shape.kind === 'note' ? NOTE_SIZE * shape.scale : shape.w, palette).height
@@ -159,8 +172,35 @@ export function createBoardEditor(host: HTMLElement, options: {
     return { ...shape, growY: Math.max(0, needed - shape.h) }
   }
 
+  // As formas são imutáveis (cada mudança cria um objeto novo), então medidas ficam em cache por
+  // objeto. Só a seta depende de outras formas: sua geometria é refeita quando a seta ou uma das
+  // formas ligadas a ela muda. Pan, zoom e arraste reaproveitam o resto.
+  let frameCache = new WeakMap<BoardShape, Frame>()
+  let arrowCache = new WeakMap<BoardArrow, { start: BoardShape | undefined; end: BoardShape | undefined; geometry: ArrowGeometry }>()
+  let boundsCache = new WeakMap<BoardShape | ArrowGeometry, Rect>()
+  let labelCacheByGeometry = new WeakMap<ArrowGeometry, LabelLayout | null>()
+  const invalidateGeometry = () => { frameCache = new WeakMap(); arrowCache = new WeakMap(); boundsCache = new WeakMap(); labelCacheByGeometry = new WeakMap() }
   /** Moldura de uma forma na página (para acerto, seleção e vínculo de setas). */
   const frameOf = (shape: BoardShape): Frame => {
+    if (shape.kind === 'arrow') return computeFrame(shape)
+    let frame = frameCache.get(shape)
+    if (!frame) { frame = computeFrame(shape); frameCache.set(shape, frame) }
+    return frame
+  }
+  /** Caixa na página com folga para sombras e rótulos, usada para não desenhar o que está fora da vista. */
+  const visualBounds = (shape: BoardShape): Rect => {
+    const key = shape.kind === 'arrow' ? geometryOf(shape) : shape
+    let box = boundsCache.get(key)
+    if (!box) {
+      const corners = frameCorners(frameOf(shape))
+      if (shape.kind === 'arrow') { const label = labelOf(shape); if (label) corners.push({ x: label.center.x - label.width / 2, y: label.center.y - label.height / 2 }, { x: label.center.x + label.width / 2, y: label.center.y + label.height / 2 }) }
+      const b = boundsOf(corners), pad = 24
+      box = { x: b.x - pad, y: b.y - pad, w: b.w + pad * 2, h: b.h + pad * 2 }
+      boundsCache.set(key, box)
+    }
+    return box
+  }
+  const computeFrame = (shape: BoardShape): Frame => {
     switch (shape.kind) {
       case 'card': case 'legacy': case 'image': return { x: shape.x, y: shape.y, w: shape.w, h: shape.h, rotation: shape.rotation }
       case 'note': return { x: shape.x, y: shape.y, ...noteSize(shape), rotation: shape.rotation }
@@ -171,8 +211,20 @@ export function createBoardEditor(host: HTMLElement, options: {
     }
   }
   const bindableFrame = (id: string) => { const shape = shapeById(id); return shape && shape.kind !== 'arrow' ? frameOf(shape) : null }
-  const geometryOf = (arrow: BoardArrow): ArrowGeometry => arrowGeometry(arrow, bindableFrame)
-  const labelOf = (arrow: BoardArrow, geometry = geometryOf(arrow)): LabelLayout | null => layoutArrowLabel(measure, editingId === arrow.id ? { ...arrow, text: arrow.text || ' ' } : arrow, geometry, palette)
+  const geometryOf = (arrow: BoardArrow): ArrowGeometry => {
+    const start = arrow.startBinding ? shapeById(arrow.startBinding.shapeId) : undefined
+    const end = arrow.endBinding ? shapeById(arrow.endBinding.shapeId) : undefined
+    const cached = arrowCache.get(arrow)
+    if (cached && cached.start === start && cached.end === end) return cached.geometry
+    const geometry = arrowGeometry(arrow, bindableFrame)
+    arrowCache.set(arrow, { start, end, geometry })
+    return geometry
+  }
+  const labelOf = (arrow: BoardArrow, geometry = geometryOf(arrow)): LabelLayout | null => {
+    if (editingId === arrow.id) return layoutArrowLabel(measure, { ...arrow, text: arrow.text || ' ' }, geometry, palette)
+    if (!labelCacheByGeometry.has(geometry)) labelCacheByGeometry.set(geometry, layoutArrowLabel(measure, arrow, geometry, palette))
+    return labelCacheByGeometry.get(geometry) ?? null
+  }
 
   // ---------- Desenho ----------
   const backgroundNode = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc: (context: Context) => drawBoardBackground(context._context, viewport.w, viewport.h, palette) })
@@ -193,6 +245,16 @@ export function createBoardEditor(host: HTMLElement, options: {
     }
   }
   const nodes = new Map<string, K.Shape>()
+  /** Esconde do Konva os itens fora da vista (com folga), para cada quadro desenhar só o visível. */
+  const cull = () => {
+    const view = viewportPageBounds(camera, viewport)
+    for (const shape of shapes) {
+      const node = nodes.get(shape.id)
+      if (!node) continue
+      const b = visualBounds(shape)
+      node.visible(b.x <= view.x + view.w && b.x + b.w >= view.x && b.y <= view.y + view.h && b.y + b.h >= view.y)
+    }
+  }
   const syncNodes = () => {
     const ids = new Set(shapes.map((shape) => shape.id))
     for (const [id, node] of nodes) if (!ids.has(id)) { node.destroy(); nodes.delete(id); textLayouts.delete(id) }
@@ -209,6 +271,7 @@ export function createBoardEditor(host: HTMLElement, options: {
       else node.setAttrs({ x: shape.x, y: shape.y, rotation: deg(shape.rotation) })
       node.zIndex(index)
     })
+    cull()
     shapeLayer.batchDraw()
   }
 
@@ -320,6 +383,7 @@ export function createBoardEditor(host: HTMLElement, options: {
   // ---------- Câmera ----------
   const applyCamera = () => {
     for (const layer of [shapeLayer, overlayLayer]) { layer.scale({ x: camera.z, y: camera.z }); layer.position({ x: camera.x * camera.z, y: camera.y * camera.z }) }
+    cull()
     stage.batchDraw()
     positionEditor()
     callbacks.cameraChanged()
@@ -1254,7 +1318,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     applyCamera()
   })
   observer.observe(host)
-  void document.fonts?.ready.then(() => { palette = readBoardPalette(host); textLayouts.clear(); stage.batchDraw() })
+  void document.fonts?.ready.then(() => { palette = readBoardPalette(host); textLayouts.clear(); resetTextCaches(); invalidateGeometry(); syncNodes(); stage.batchDraw() })
 
   syncNodes()
   if (!options.camera && shapes.length) zoomToBounds(contentBounds(shapes), false)

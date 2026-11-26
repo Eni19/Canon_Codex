@@ -79,14 +79,45 @@ function fillShape(ctx: Ctx, points: Point[], fill: BoardGeo['fill'], color: Boa
 export const geoHeight = (shape: Pick<BoardGeo, 'h' | 'growY'>) => shape.h + shape.growY
 export const noteSize = (shape: Pick<BoardNote, 'scale' | 'growY'>) => ({ w: 200 * shape.scale, h: (200 + shape.growY) * shape.scale })
 
+// Cada objeto de forma é substituído quando muda, então dá para guardar o que é caro de calcular.
+const geoPaths = new WeakMap<BoardGeo, { outline: Point[]; stroke: Point[]; marks: Point[][] }>()
+function geoPathsOf(shape: BoardGeo) {
+  let paths = geoPaths.get(shape)
+  if (!paths) {
+    const sw = STROKE_WIDTHS[shape.size] * shape.scale
+    const { outline, marks } = geoOutline(shape.geo, shape.w, geoHeight(shape))
+    const hand = shape.dash === 'draw'
+    paths = {
+      outline,
+      stroke: hand ? handDrawnPath(outline, true, shape.id, sw) : outline,
+      marks: marks.map((mark, i) => hand ? handDrawnPath(mark, false, `${shape.id}:${i}`, sw) : mark),
+    }
+    geoPaths.set(shape, paths)
+  }
+  return paths
+}
+
+/** Traço já calculado (desenhado à mão ou não), com o tipo de linha da forma. */
+function strokePrepared(ctx: Ctx, points: Point[], closed: boolean, dash: BoardDash, strokeWidth: number, color: string) {
+  ctx.save()
+  ctx.strokeStyle = color
+  ctx.lineWidth = strokeWidth
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+  if (dash === 'dashed') ctx.setLineDash([strokeWidth * 2, strokeWidth * 2])
+  if (dash === 'dotted') ctx.setLineDash([0, strokeWidth * 2])
+  tracePath(ctx, points, closed && dash !== 'draw')
+  ctx.stroke()
+  ctx.restore()
+}
+
 export function drawGeo(ctx: Ctx, shape: BoardGeo, label: LabelLayout | null, editing: boolean) {
   const w = shape.w, h = geoHeight(shape)
   const sw = STROKE_WIDTHS[shape.size] * shape.scale
-  const { outline, marks } = geoOutline(shape.geo, w, h)
+  const { outline, stroke, marks } = geoPathsOf(shape)
   const color = BOARD_PALETTE[shape.color].solid
   fillShape(ctx, outline, shape.fill, shape.color, { w, h })
-  strokeStyled(ctx, outline, true, shape.dash, sw, color, shape.id)
-  marks.forEach((mark, i) => strokeStyled(ctx, mark, false, shape.dash, sw, color, `${shape.id}:${i}`))
+  strokePrepared(ctx, stroke, true, shape.dash, sw, color)
+  marks.forEach((mark) => strokePrepared(ctx, mark, false, shape.dash, sw, color))
   if (label && !editing) drawLabel(ctx, label, w, h, shape.align, shape.verticalAlign, BOARD_PALETTE[shape.labelColor].solid, shape.scale)
 }
 
@@ -113,13 +144,22 @@ export function freehandOutline(points: BoardDraw['points'], strokeWidth: number
   })
 }
 
+const freehandCache = new WeakMap<BoardDraw, number[][]>()
+/** O contorno do perfect-freehand só é recalculado quando o traço muda. */
+function freehandOf(shape: BoardDraw, strokeWidth: number, complete: boolean) {
+  if (!complete) return freehandOutline(shape.points, strokeWidth, shape.isPen, false)
+  let outline = freehandCache.get(shape)
+  if (!outline) { outline = freehandOutline(shape.points, strokeWidth, shape.isPen, true); freehandCache.set(shape, outline) }
+  return outline
+}
+
 export function drawDraw(ctx: Ctx, shape: BoardDraw, complete = true) {
   const sw = STROKE_WIDTHS[shape.size] * shape.scale
   const color = BOARD_PALETTE[shape.color].solid
   const points = shape.points.map(([x, y]) => ({ x, y }))
   if (shape.isClosed) fillShape(ctx, points, shape.fill, shape.color, { w: 1e5, h: 1e5 })
   if (shape.dash === 'draw') {
-    const outline = freehandOutline(shape.points, sw, shape.isPen, complete)
+    const outline = freehandOf(shape, sw, complete)
     if (outline.length < 2) return
     ctx.save()
     ctx.fillStyle = color
@@ -153,8 +193,12 @@ function smoothPoints(points: Point[]): Point[] {
 
 export const linePath = (shape: Pick<BoardLine, 'points' | 'spline'>) => shape.spline === 'cubic' ? smoothPoints(shape.points) : shape.points
 
+const linePaths = new WeakMap<BoardLine, Point[]>()
 export function drawLine(ctx: Ctx, shape: BoardLine) {
-  strokeStyled(ctx, linePath(shape), false, shape.dash, STROKE_WIDTHS[shape.size] * shape.scale, BOARD_PALETTE[shape.color].solid, shape.id)
+  const sw = STROKE_WIDTHS[shape.size] * shape.scale
+  let path = linePaths.get(shape)
+  if (!path) { path = shape.dash === 'draw' ? handDrawnPath(linePath(shape), false, shape.id, sw) : linePath(shape); linePaths.set(shape, path) }
+  strokePrepared(ctx, path, false, shape.dash, sw, BOARD_PALETTE[shape.color].solid)
 }
 
 export function drawImage(ctx: Ctx, shape: BoardImage, img: HTMLImageElement | null, palette: BoardPalette) {

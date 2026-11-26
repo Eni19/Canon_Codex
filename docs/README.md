@@ -70,6 +70,7 @@ Cada perfil traz protocolo, ambiente e dados sintéticos; os arquivos `.json` e 
 evidências brutas citadas por eles.
 
 - [Grafo de relacionamentos](performance/relationship-graph.md).
+- [Quadro de investigação](performance/board.md).
 - [Calendário em produção](performance/calendar-production.md) e
   [referência inicial de metadados](performance/calendar-metadata-baseline.md).
 - [Linha do Tempo: mapa espacial](performance/timeline-cosmic-canvas.md).

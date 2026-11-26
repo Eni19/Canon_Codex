@@ -53,15 +53,37 @@ type Ctx = CanvasRenderingContext2D
  * como Ã ficam dentro da linha, iguais ao HTML.
  */
 export function fillCentered(ctx: Ctx, text: string, x: number, centerY: number) {
-  const metrics = ctx.measureText('Hg')
-  const ascent = metrics.fontBoundingBoxAscent ?? metrics.actualBoundingBoxAscent
-  const descent = metrics.fontBoundingBoxDescent ?? metrics.actualBoundingBoxDescent
+  const { ascent, descent } = fontMetrics(ctx)
+  // Abaixo de 3 px na tela o texto é só um borrão: pular não muda o que se vê e poupa o quadro
+  // inteiro quando está afastado.
+  const m = ctx.getTransform()
+  if ((ascent + descent) * Math.hypot(m.a, m.b) < MIN_READABLE_PX) return
   ctx.fillText(text, x, centerY + (ascent - descent) / 2)
 }
+
+const MIN_READABLE_PX = 3
+const metricsCache = new Map<string, { ascent: number; descent: number }>()
+/** Ascendente e descendente da fonte atual, medidas uma vez por fonte. */
+function fontMetrics(ctx: Ctx) {
+  let metrics = metricsCache.get(ctx.font)
+  if (!metrics) {
+    const m = ctx.measureText('Hg')
+    metrics = { ascent: m.fontBoundingBoxAscent ?? m.actualBoundingBoxAscent, descent: m.fontBoundingBoxDescent ?? m.actualBoundingBoxDescent }
+    metricsCache.set(ctx.font, metrics)
+  }
+  return metrics
+}
+/** Esquece medidas guardadas quando as fontes terminam de carregar. */
+export function resetTextCaches() { metricsCache.clear(); wrapCache.clear() }
+const wrapCache = new Map<string, string[]>()
 const setSpacing = (ctx: Ctx, px: number) => { if ('letterSpacing' in ctx) (ctx as Ctx & { letterSpacing: string }).letterSpacing = `${px}px` }
 
 /** Quebra em linhas como o navegador (por palavras; palavra longa demais transborda). */
 export function wrapLines(ctx: Ctx, text: string, maxWidth: number | null): string[] {
+  const key = `${ctx.font}|${(ctx as Ctx & { letterSpacing?: string }).letterSpacing ?? ''}|${maxWidth}|${text}`
+  const cached = wrapCache.get(key)
+  if (cached) return cached
+  if (wrapCache.size > 5000) wrapCache.clear()
   const lines: string[] = []
   for (const paragraph of text.split('\n')) {
     if (maxWidth === null) { lines.push(paragraph); continue }
@@ -74,6 +96,7 @@ export function wrapLines(ctx: Ctx, text: string, maxWidth: number | null): stri
     }
     lines.push(line)
   }
+  wrapCache.set(key, lines)
   return lines
 }
 
@@ -194,9 +217,31 @@ type IconGetter = () => HTMLImageElement | null
 const VIEW_COLUMNS: Record<BoardCard['viewMode'], number | null> = { minimal: null, card: 0.35, portrait: 0.58, dossier: 0.42, wide: 0.72 }
 
 /** Imagem com `object-fit: cover` (ou `contain`) e `object-position` em porcentagem. */
-function drawImageFit(ctx: Ctx, img: HTMLImageElement, x: number, y: number, w: number, h: number, fit: 'cover' | 'contain', posX: number, posY: number) {
-  const scale = fit === 'cover' ? Math.max(w / img.naturalWidth, h / img.naturalHeight) : Math.min(w / img.naturalWidth, h / img.naturalHeight)
-  const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale
+const FILTERED_MAX_SIDE = 1024
+const filteredImages = new WeakMap<HTMLImageElement, HTMLCanvasElement>()
+/**
+ * Imagem do cartão com o filtro do CSS (`saturate(.75) contrast(1.05)`) aplicado uma vez, numa
+ * cópia de até 1.024 px. Aplicar `ctx.filter` a cada quadro custava caro com muitos cartões.
+ */
+function filteredImage(img: HTMLImageElement): HTMLCanvasElement {
+  let canvas = filteredImages.get(img)
+  if (!canvas) {
+    const scale = Math.min(1, FILTERED_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight))
+    canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
+    const ctx = canvas.getContext('2d')!
+    ctx.filter = 'saturate(0.75) contrast(1.05)'
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    filteredImages.set(img, canvas)
+  }
+  return canvas
+}
+
+function drawImageFit(ctx: Ctx, img: HTMLImageElement | HTMLCanvasElement, x: number, y: number, w: number, h: number, fit: 'cover' | 'contain', posX: number, posY: number) {
+  const iw = img instanceof HTMLImageElement ? img.naturalWidth : img.width, ih = img instanceof HTMLImageElement ? img.naturalHeight : img.height
+  const scale = fit === 'cover' ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih)
+  const dw = iw * scale, dh = ih * scale
   ctx.drawImage(img, x + (w - dw) * posX, y + (h - dh) * posY, dw, dh)
 }
 
@@ -251,9 +296,9 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
       ctx.save()
       ctx.beginPath(); ctx.rect(innerX, innerY, col1, innerH); ctx.clip()
       if (mode === 'wide') { ctx.fillStyle = palette.background; ctx.fillRect(innerX, innerY, col1, innerH) }
-      if (supportsFilter) ctx.filter = 'saturate(0.75) contrast(1.05)'
-      if (mode === 'wide') drawImageFit(ctx, img, innerX, innerY, col1, innerH, 'contain', 0.5, 0.5)
-      else drawImageFit(ctx, img, innerX, innerY, col1, innerH, 'cover', 0.5, mode === 'portrait' ? 0.15 : 0)
+      const source = supportsFilter ? filteredImage(img) : img
+      if (mode === 'wide') drawImageFit(ctx, source, innerX, innerY, col1, innerH, 'contain', 0.5, 0.5)
+      else drawImageFit(ctx, source, innerX, innerY, col1, innerH, 'cover', 0.5, mode === 'portrait' ? 0.15 : 0)
       ctx.restore()
     }
     bodyX = innerX + col1
