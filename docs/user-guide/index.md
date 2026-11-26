@@ -1,5 +1,7 @@
 # Guia de uso
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rotas da tabela contra `src/app/`.
+
 O Canon Codex é uma aplicação local. O fluxo normal é: escolher um mundo na biblioteca, criar
 registros, enriquecer o conteúdo, conectar referências e, quando necessário, preparar um quadro ou
 uma cena para apresentação.

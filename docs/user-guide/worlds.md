@@ -1,5 +1,8 @@
 # Mundos e biblioteca
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 ## Selecionar um mundo
 
 Abra `/`. A biblioteca lista os mundos ativos: o mundo ativo aparece em
@@ -109,12 +112,12 @@ já gravadas como `AAAA-MM-DD` continuam legíveis e não são reescritas por es
 editar um registro, campos `kind: 'date'` usam esse calendário para aceitar ano, mês, dia, ano zero,
 anos negativos, aproximação e intervalo; o formato persistido e a compatibilidade ISO estão em
 [Armazenamento e modelo de dados](../data/storage.md). Para converter strings antigas, abra
-**Prévia e conversão das datas antigas deste mundo** na tela do calendário; o procedimento e a
+**Converter datas antigas** na tela do calendário; o procedimento e a
 recuperação estão no [guia de migração](../data/migrations.md).
 
 Para vincular um acontecimento ao ano zero, crie um **Evento** com data completa e marque **Evento
 de origem**. A criação coloca a data no ano zero, no mês e dia informados. Só pode haver um Evento
-de origem por mundo. Para trocar, abra **Ver ou substituir o Evento de origem** no calendário,
+de origem por mundo. Para trocar, abra **Gerenciar Evento de origem** no calendário,
 selecione outro Evento, revise a prévia do deslocamento de dias e confirme. A troca remarca as datas
 de propriedades em registros ativos e na lixeira. A precisão de ano ou mês é preservada quando o
 intervalo deslocado ainda coincide com uma unidade inteira; caso contrário, a prévia avisa sobre a

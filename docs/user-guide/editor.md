@@ -1,5 +1,8 @@
 # Editor e conteúdo
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 ## Páginas e salvamento
 
 O conteúdo fica separado dos metadados em `content.json`, no formato `tiptap-json`, com uma lista

@@ -1,5 +1,8 @@
 # Roteiro: validar o Canon Codex com uma campanha real
 
+> **Estado:** implementado (roteiro; nenhuma sessão de validação registrada ainda) ·
+> **Última verificação:** 26/11/2026, comandos `pnpm storage` e destinos de registro (issues).
+
 Objetivo: usar o app durante a preparação e a condução de uma campanha de verdade para
 encontrar atritos no fluxo do mestre. Os dados da campanha são privados e ficam fora do
 repositório. Este roteiro diz o que exercitar e onde registrar o que aparecer.
