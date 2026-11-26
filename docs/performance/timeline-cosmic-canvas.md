@@ -1,5 +1,8 @@
 # Cosmic Canvas — validação de 500 aparições
 
+> **Estado:** histórico · **Última verificação:** 15/10/2026, mapa espacial com 500 aparições
+> sintéticas em desktop, celular e tablet emulados.
+
 Verificação em **15/10/2026**, Windows, navegador integrado Chrome 155. Dados exclusivamente
 sintéticos no diretório temporário canon-timeline-visual-tl12. Nenhum conteúdo privado foi acessado.
 

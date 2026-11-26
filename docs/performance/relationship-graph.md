@@ -1,5 +1,8 @@
 # Grafo de relacionamentos: verificação e desempenho
 
+> **Estado:** histórico · **Última verificação:** 25/11/2026, build de produção em Chrome headless
+> com 500 registros e 1.500 vínculos sintéticos; cada seção traz a própria data e protocolo.
+
 ## Desenho em lote e hit graph sob demanda · 25/11/2026
 
 Build de produção Next.js 16.3.4, Windows, Ryzen 7 5700U, Chrome em modo headless a

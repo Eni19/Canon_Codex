@@ -1,5 +1,7 @@
 # TL-12 — Apresentação e movimento das Linhas do Tempo
 
+> **Estado:** histórico · **Última verificação:** 14/10/2026, interface anterior ao mapa espacial.
+
 > Relatório histórico. A interface foi substituída em 15/10/2026 pelo
 > [Cosmic Canvas](timeline-cosmic-canvas.md); medidas abaixo pertencem à versão anterior.
 
