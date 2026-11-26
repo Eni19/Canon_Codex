@@ -91,7 +91,7 @@ calendário e usa o lock e a escrita atômica do mundo. Alterações estruturais
 houver luas. A troca de origem desloca as referências lunares e apresenta cada mudança na prévia; se o
 destino for um dia intercalar independente, a prévia recusa a troca pois a referência lunar ainda não o representa.
 
-No `World` v23, `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
+Desde o `World` v23 (versão atual em [migrações](migrations.md#versões-atuais)), `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
 intercalar independente, `calendarLandmarks` guarda categorias e marcos únicos ou anuais, e
 `calendarAppearance` guarda o tema ativo e temas personalizados. As mutações por seção usam lock,
 escrita atômica e comparação com o valor e calendário anteriores. Imagens referenciadas por temas são

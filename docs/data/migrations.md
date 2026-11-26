@@ -13,6 +13,23 @@ Uma migração ausente, JSON ilegível, transformação que falha ou resultado q
 interrompe a leitura. A leitura normal não grava de volta o resultado. A exceção documentada é o
 importador de mundos, que copia a pasta e grava o `world.json` já migrado no destino.
 
+## Versões atuais
+
+Esta tabela é a fonte única das versões de schema citadas na documentação. Os outros documentos
+linkam para cá em vez de repetir o número. Ao subir uma constante, atualize esta tabela no mesmo commit.
+
+| Registro | Versão atual | Constante no código |
+| --- | ---: | --- |
+| `World` | 24 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
+| `Entity` | 4 | `ENTITY_SCHEMA_VERSION` em [`src/domain/entities/entity.ts`](../../src/domain/entities/entity.ts) |
+| `ContentDocument` | 2 | `CONTENT_SCHEMA_VERSION` em [`src/domain/content/contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
+| Linha do tempo | 2 | `TIMELINE_SCHEMA_VERSION` em [`src/domain/timelines/timeline.ts`](../../src/domain/timelines/timeline.ts) |
+| Grafo de relacionamentos | 4 | `schemaVersion: 4` em [`src/domain/relations/graphSettings.ts`](../../src/domain/relations/graphSettings.ts) |
+| `Asset` | 1 | `ASSET_SCHEMA_VERSION` em [`src/domain/assets/asset.ts`](../../src/domain/assets/asset.ts) |
+| `BoardDocument` | 1 | `BOARD_SCHEMA_VERSION` em [`src/domain/boards/board.ts`](../../src/domain/boards/board.ts) |
+| `Scene` | 1 | `SCENE_SCHEMA_VERSION` em [`src/domain/scenes/scene.ts`](../../src/domain/scenes/scene.ts) |
+| `Playlist` | 1 | `PLAYLIST_SCHEMA_VERSION` em [`src/domain/playlists/playlist.ts`](../../src/domain/playlists/playlist.ts) |
+
 ## Linha do Tempo: v1 → v2
 
 `timeline.json` usa o parser local `parseTimelineData` em
@@ -62,6 +79,7 @@ Registry: `worldMigrations` em
 | 20 | 21 | remove as definições `profile` (Perfil) e `firstAppearance` (Primeira aparição) de Personagem |
 | 21 | 22 | adiciona `calendarMoons` vazio, preservando calendário e demais dados |
 | 22 | 23 | adiciona estações e marcos vazios, Hoje em aberto e aparência padrão Codex, preservando o calendário e as luas |
+| 23 | 24 | acrescenta sete definições opcionais às fichas, preservando definições com a mesma chave e os dados das entidades |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
@@ -139,13 +157,13 @@ aplicação podem impedir a conclusão e exigir restauração seguida de nova pr
 `pages: [{ id: 'principal', title: 'Principal', body }]` e removendo o campo antigo. O documento
 continua limitado a 1–50 páginas e o corpo continua opaco ao domínio.
 
-## Assets, quadros e cenas
+## Assets, quadros, cenas e playlists
 
 - `assetMigrations` tem `currentVersion: 1` e nenhum passo. `AssetSchema` valida a versão atual;
   não existe conversão de assets legados.
 - Quadros usam `BOARD_SCHEMA_VERSION = 1`, e cenas usam `SCENE_SCHEMA_VERSION = 1`, mas seus
   repositórios leem diretamente com `readJsonFile` + schema. Eles ainda não estão conectados ao
-  registry de migrações.
+  registry de migrações. Playlists seguem o mesmo padrão com `PLAYLIST_SCHEMA_VERSION = 1`.
 - Uma alteração futura de `BoardDocument` ou `Scene` precisa adicionar migração (ou registrar
   formalmente por que a compatibilidade não será mantida), testes de arquivos legados e atualização
   de [storage](storage.md) e [backup](backup-and-restore.md).

@@ -1,6 +1,6 @@
 # Plano de implementação do calendário visual
 
-**Estado da proposta** · 13/11/2026 · Etapa 7 com build, testes, revisão em Chrome e Edge e medição em produção com dados sintéticos. A fala de leitor de tela permanece sem verificação. Após a medição, o Celeste estendeu a paleta azul-noturna da capa às vistas internas e aos formulários. Acompanhe as pendências no [#47](https://github.com/Eni19/Canon_Codex/issues/47).
+**Estado da proposta** · 13/11/2026 · Etapa 7 com build, testes, revisão em Chrome e Edge e medição em produção com dados sintéticos. A fala de leitor de tela permanece sem verificação. Após a medição, o Celeste estendeu a paleta azul-noturna da capa às vistas internas e aos formulários. Acompanhe as pendências no [#47](https://github.com/Eni19/Canon_Codex/issues/47). As versões de schema citadas abaixo são as da época do plano (histórico); a versão atual fica em [migrações](data/migrations.md#versões-atuais).
 
 A aba **Calendário** abre no mês da campanha e permite consultar o ano, editar o calendário do mundo e registrar o que aconteceu em um dia. Cada mundo tem sua própria configuração e seu próprio **Hoje da campanha**. A linha do tempo continua usando o mesmo cálculo de datas para ordenar suas aparições.
 
