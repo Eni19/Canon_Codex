@@ -83,6 +83,8 @@
   --nb-fill: oklch(0.72 0.06 245);
   --nb-paper-shade: oklch(0.86 0.03 80);
   --nb-paper-aged: oklch(0.82 0.045 75);
+  /* Behind the pictures in the notebook's polaroids (seen around a full figure). */
+  --nb-photo-backing: oklch(0.3 0.006 250);
   --nb-card: oklch(0.97 0.008 90);
   --nb-ink: oklch(0.27 0.03 260);
   --nb-ink-soft: oklch(0.45 0.03 255);

@@ -180,7 +180,7 @@ Os schemas Zod em `src/domain/` são a referência canônica. As versões atuais
 | `World` | 20 | UUID, slug/nome não vazios, `entityTypes[]`, `calendar`, `timelineScaleDefaults`, `originEventId?`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) e [`calendar.ts`](../../src/domain/worlds/calendar.ts) |
 | `Entity` | 4 | UUID, `worldId`, tipo/título/slug, aliases/tags, properties, relations, timestamps; capa/galeria referenciam UUIDs | [`entity.ts`](../../src/domain/entities/entity.ts) |
 | `TimelineData` | 2 | IDs do mundo e da linha, timestamp e aparições com ID, referência, apresentação e data opcional; leitor migra v1 em memória | [`timeline.ts`](../../src/domain/timelines/timeline.ts) |
-| `EntityTypeDefinition` | — | id, rótulos, ícone, propriedades, layout limitado a oito blocos e `showInSidebar` | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
+| `EntityTypeDefinition` | — | id, rótulos, ícone (Lucide), propriedades, layout limitado a oito blocos e `showInSidebar`; na leitura, ícones padrão aposentados de tipos nativos viram os atuais (`artifact`: `Gem` → `KeyRound`; `cosmology`: `Orbit` → `Eclipse`) e são gravados assim no próximo salvamento | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
 | `Relation` | — | UUIDs de source/target, tipo não vazio, label opcional, direcionalidade e metadata | [`relation.ts`](../../src/domain/relations/relation.ts) |
 | `ContentDocument` | 2 | `format = tiptap-json`, 1–50 páginas; título de página até 40; body opaco | [`contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
 | `Asset` | 1 | UUID, MIME/nome/tamanho, dimensões positivas opcionais, `hasThumbnail` | [`asset.ts`](../../src/domain/assets/asset.ts) |

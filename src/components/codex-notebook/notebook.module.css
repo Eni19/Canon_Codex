@@ -385,7 +385,7 @@
   display: block;
   overflow: hidden;
   aspect-ratio: 1 / 1.04;
-  background: var(--nb-paper-shade);
+  background: var(--nb-photo-backing);
 }
 
 .polaroidPhoto img {
@@ -395,6 +395,12 @@
   /* Portraits keep the face: the crop sits near the top of the picture, not its middle. */
   object-position: 50% 18%;
   filter: sepia(0.18) saturate(0.9) contrast(1.04);
+}
+
+/* Full figures (characters, creatures): the whole picture, head to feet, in the same frame. */
+.polaroidPhoto[data-whole] img {
+  object-fit: contain;
+  object-position: 50% 50%;
 }
 
 /* A record without an image gets a pencil-hatched placeholder with its type icon. */

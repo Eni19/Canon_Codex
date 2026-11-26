@@ -213,6 +213,10 @@ JPEG, WebP e GIF. A importação copia o arquivo para o workspace, atribui um as
 thumbnail. Ao remover ou substituir uma capa, o asset antigo é movido para `trash/` quando não há
 outra referência encontrada.
 
+Nos catálogos e na lista de todos os conteúdos, os cartões de **Personagens** e **Criaturas** são
+mais altos (3:4) e mostram a imagem inteira, sem cortar o corpo; o espaço que sobra é preenchido
+pela própria imagem, desfocada. Os demais tipos recortam a capa para preencher o cartão.
+
 ## Excluir e limitações
 
 **Excluir** um registro move sua pasta inteira, inclusive `content.json`, para `trash/`; ele some

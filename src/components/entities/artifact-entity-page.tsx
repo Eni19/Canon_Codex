@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Archive, Crosshair, Gem, Pencil, Ruler } from 'lucide-react'
+import { Archive, Crosshair, KeyRound, Pencil, Ruler } from 'lucide-react'
 import { useState } from 'react'
 import { ContentRenderer } from '@/components/editor/content-renderer'
 import { BacklinksPanel } from '@/components/entities/backlinks-panel'
@@ -56,7 +56,7 @@ export function ArtifactEntityPage({ entity, entityType, worldName, content, ent
           <div className={styles.photoHeader}><span>Registro fotográfico</span><span>{registration}</span></div>
           <div className={styles.photoArea}>
             <div className={styles.measureVertical}><i/><i/><i/><i/><i/></div>
-            {entity.coverAssetId ? <Image src={assetVariantUrl(entity.coverAssetId, 'original')} alt={entity.title} fill sizes="(min-width: 1100px) 54vw, 90vw" className={styles.objectPhoto} priority/> : <div className={styles.noPhoto}><Gem/><span>Objeto ainda não fotografado</span></div>}
+            {entity.coverAssetId ? <Image src={assetVariantUrl(entity.coverAssetId, 'original')} alt={entity.title} fill sizes="(min-width: 1100px) 54vw, 90vw" className={styles.objectPhoto} priority/> : <div className={styles.noPhoto}><KeyRound/><span>Objeto ainda não fotografado</span></div>}
             {details.map((detail, index) => <button key={detail.id} type="button" aria-label={detail.label} aria-pressed={activeId === detail.id} onClick={() => setActiveId(detail.id)} className={styles.hotspot} data-active={activeId === detail.id} style={{ left: `${detail.x}%`, top: `${detail.y}%` }}>{index + 1}</button>)}
           </div>
           <div className={styles.scale}><Ruler/><div><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div><span>escala de referência</span></div>

@@ -94,9 +94,9 @@ Referências estudadas:
   larga, que forma um círculo de luz sobre o caderno e escurece até as bordas da mesa, com sombras
   suaves; um pouco de luz do céu (hemisférica) e um preenchimento frio e fraco da direita
   (`--nb-fill`) para a caneta. As páginas não são iluminadas, então não mudam.
-- Abrir um registro a partir do caderno usa uma transição de máscara de texto
+- Abrir um registro a partir do caderno, ou uma categoria pelo **ver todos**, usa uma transição de máscara de texto
   (`src/components/record-reveal/`): a tela escurece e o nome do registro sobe em letras enormes
-  (Alfa Slab One), preenchidas com o papel pautado do caderno, desenhado em vetor: está pronto no primeiro quadro, então nada é carregado nem trocado enquanto a página carrega (a imagem do registro chegou a ser usada, mas a página carrega tão rápido que a troca da miniatura pela imagem cheia causava estranheza); enquanto a página carrega, o nome fica na tela no
+  (Alfa Slab One; no **ver todos**, o nome da categoria), preenchidas com o papel pautado do caderno, desenhado em vetor: está pronto no primeiro quadro, então nada é carregado nem trocado enquanto a página carrega (a imagem do registro chegou a ser usada, mas a página carrega tão rápido que a troca da miniatura pela imagem cheia causava estranheza); enquanto a página carrega, o nome fica na tela no
   lugar de um carregamento genérico. Quando a nova rota é exibida, as letras viram janelas para a
   página por baixo do papel, de uma vez, e só o papel se dissolve, de baixo para cima, atrás de uma
   borda suave presa às letras (fazer o papel sumir e abrir a máscara escura ao mesmo tempo
@@ -106,7 +106,9 @@ Referências estudadas:
   descoberta por um instante antes da transição. A sobreposição vive no
   `WikiShell`, que continua montado entre as rotas; sem a nova página em 10 s, ela some. Com
   `prefers-reduced-motion`, ou com cliques para nova aba, a navegação é a normal. Os polaroids
-  enquadram as imagens pelo alto (`object-position: 50% 18%`), para mostrar o rosto dos retratos.
+  enquadram as imagens pelo alto (`object-position: 50% 18%`), para mostrar o rosto dos retratos;
+  os de Personagens e Criaturas (em observação) encaixam a imagem inteira no mesmo quadro, sem
+  cortar cabeça nem pés (`data-whole`, `object-fit: contain`).
 - Uma tela de carregamento breve e simples (`notebook-loading.tsx`) cobre o caderno: só o nome
   "Canon Codex", datilografado, pulsando de leve sobre o fundo escuro. Ela aparece
   enquanto ele é montado: primeiro enquanto o código carrega (o `loading` do `next/dynamic`), depois

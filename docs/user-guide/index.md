@@ -42,7 +42,8 @@ Cada página dupla é uma área:
 Para virar, arraste a página, clique nela (fora dos links), use as setas desenhadas nos cantos
 (**continue** e **voltar**), as setas do teclado ou uma linha do índice ao lado do livro. Clicar fora
 do caderno, a seta **fechar** da primeira página ou `Esc` fecham o caderno. Ao clicar num registro,
-o nome dele toma a tela e a página do registro surge por dentro das letras. Depois de abrir um
+o nome dele toma a tela e a página do registro surge por dentro das letras; o **ver todos** de
+uma categoria faz o mesmo com o nome dela. Depois de abrir um
 registro a partir do caderno, o botão voltar do navegador reabre o caderno na mesma página. Para
 abrir direto numa página, use `/codex?pagina=<tipo>` (por exemplo, `?pagina=character`).
 

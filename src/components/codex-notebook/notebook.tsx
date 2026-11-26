@@ -353,8 +353,9 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
   }, [])
 
   /**
-   * Following a link out of the notebook: remembers the open spread, and opens a record's page with
-   * the name-mask transition (a plain click only; new-tab clicks keep the browser's behaviour).
+   * Following a link out of the notebook: remembers the open spread, and opens a record's page, or a
+   * category's ("ver todos"), with the name-mask transition (a plain click only; new-tab clicks keep
+   * the browser's behaviour). The name shown is the link's `data-reveal-title`, or a record link's text.
    */
   const followLink = (event: React.MouseEvent) => {
     const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
@@ -366,9 +367,10 @@ export function Notebook({ world, types, initialSpread }: NotebookProps) {
     }
     const href = anchor.getAttribute('href') ?? ''
     const plain = event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
-    if (!reveal || !plain || !href.startsWith('/entity/')) return
+    const title = anchor.dataset.revealTitle ?? (href.startsWith('/entity/') ? anchor.textContent?.trim() : undefined)
+    if (!reveal || !plain || !title) return
     event.preventDefault()
-    reveal({ href, title: anchor.dataset.revealTitle ?? anchor.textContent?.trim() ?? '' })
+    reveal({ href, title })
   }
 
   // Keys: arrows turn, Escape closes, Enter opens.

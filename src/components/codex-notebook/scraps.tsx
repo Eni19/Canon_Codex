@@ -28,9 +28,10 @@ export function Tape({ color = 'cream', length = 90, ...at }: Placement & { colo
   return <span aria-hidden className={styles.tape} data-color={color} style={place(at, { width: length })}/>
 }
 
-export function Polaroid({ src, caption, href, icon, date, ...at }: Placement & { src?: string; caption: string; href?: string; icon?: string; date?: string }) {
+/** A polaroid; `whole` fits the whole picture in the frame (a full figure) instead of cropping it to fill. */
+export function Polaroid({ src, caption, href, icon, date, whole, ...at }: Placement & { src?: string; caption: string; href?: string; icon?: string; date?: string; whole?: boolean }) {
   const body = <>
-    <span className={styles.polaroidPhoto}>
+    <span className={styles.polaroidPhoto} data-whole={whole || undefined}>
       {src
         // Asset thumbnails are served by our own route; next/image adds nothing for these.
         // eslint-disable-next-line @next/next/no-img-element
@@ -129,6 +130,7 @@ export function StickyFlags(at: Placement) {
 }
 
 /** A link written by hand, with a marker swipe behind it on hover. */
-export function HandLink({ href, children, size = 26, ...at }: Placement & { href: string; children: ReactNode; size?: number }) {
-  return <Link href={href} className={`${styles.piece} ${styles.handLink} ${styles.interactive}`} style={place(at, { fontSize: size })}>{children}</Link>
+/** A handwritten link; with `revealTitle`, following it plays the name-mask transition with that name. */
+export function HandLink({ href, children, size = 26, revealTitle, ...at }: Placement & { href: string; children: ReactNode; size?: number; revealTitle?: string }) {
+  return <Link href={href} className={`${styles.piece} ${styles.handLink} ${styles.interactive}`} style={place(at, { fontSize: size })} data-reveal-title={revealTitle}>{children}</Link>
 }

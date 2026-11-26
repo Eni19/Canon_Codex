@@ -15,13 +15,16 @@ export interface NotebookWorld {
   description?: string
   recordCount: number
   createdYear: string
-  recent: (NotebookRecord & { typeLabel: string; href: string })[]
+  recent: (NotebookRecord & { typeId: string; typeLabel: string; href: string })[]
 }
 
 export interface SpreadPages {
   left: ReactNode
   right: ReactNode
 }
+
+/** Types whose pictures are full figures: their polaroids show the whole picture instead of cropping it. */
+const WHOLE_FIGURE_TYPES = new Set(['character', 'creature'])
 
 const thumbnail = (record: NotebookRecord) => record.coverAssetId ? `/api/assets/${record.coverAssetId}/thumbnail` : undefined
 
@@ -129,7 +132,7 @@ function prefacePages(world: NotebookWorld, spreads: Spread[], leftNumber: numbe
     right: <Sheet side="right" paper="grid" number={rightNumber}>
       {latest
         ? <>
-          <Polaroid x={70} y={54} r={-3} w={260} src={thumbnail(latest)} caption={latest.title} date={latest.typeLabel} href={latest.href}/>
+          <Polaroid x={70} y={54} r={-3} w={260} src={thumbnail(latest)} caption={latest.title} date={latest.typeLabel} href={latest.href} whole={WHOLE_FIGURE_TYPES.has(latest.typeId)}/>
           <Tape x={150} y={40} r={4} length={100}/>
         </>
         : <TornNote x={70} y={70} r={-3} w={260} paper="yellow"><p className={styles.noteText}>O primeiro registro vai aparecer aqui.</p></TornNote>}
@@ -178,7 +181,7 @@ function typePages(spread: Extract<Spread, { kind: 'type' }>, leftNumber: number
         <p className={styles.noteText}>{formatRecordCount(type.count)} neste arquivo.</p>
       </TornNote>
       <Tape x={150} y={458} r={tilt(16)} length={80} color={TAPES[Math.floor(next() * TAPES.length)]}/>
-      <HandLink x={96} y={630} r={-2} href={href} size={30}>ver todos →</HandLink>
+      <HandLink x={96} y={630} r={-2} href={href} size={30} revealTitle={type.pluralLabel}>ver todos →</HandLink>
       <HandLink x={300} y={690} r={2} href={`${href}/new`} size={26}>+ novo registro</HandLink>
       <StarSticker x={500} y={640} r={tilt(40)} tone={next() > 0.5 ? 'brass' : 'red'}/>
     </Sheet>,
@@ -188,7 +191,7 @@ function typePages(spread: Extract<Spread, { kind: 'type' }>, leftNumber: number
           const slot = slots[index]
           const angle = tilt(10)
           return <div key={record.id}>
-            <Polaroid x={slot.x} y={slot.y} r={angle} w={215} src={thumbnail(record)} caption={record.title} href={`/entity/${record.id}`} icon={type.icon}/>
+            <Polaroid x={slot.x} y={slot.y} r={angle} w={215} src={thumbnail(record)} caption={record.title} href={`/entity/${record.id}`} icon={type.icon} whole={WHOLE_FIGURE_TYPES.has(type.id)}/>
             <Tape x={slot.x + 60 + tilt(30)} y={slot.y - 12} r={angle + tilt(20)} length={86} color={TAPES[(index + Math.floor(next() * 4)) % 4]}/>
           </div>
         })

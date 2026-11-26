@@ -3,11 +3,13 @@ import {
   CalendarClock,
   Circle,
   Dna,
+  Eclipse,
   FileText,
   Fingerprint,
   FolderSearch,
   Gem,
   History,
+  KeyRound,
   Lightbulb,
   Microscope,
   BookOpenText,
@@ -35,11 +37,13 @@ const ICONS: Record<string, LucideIcon> = {
   PawPrint,
   Sparkles,
   Gem,
+  KeyRound,
   Lightbulb,
   Microscope,
   History,
   BookOpenText,
   Orbit,
+  Eclipse,
 }
 
 export function EntityTypeIcon({ name, className }: { name: string; className?: string }) {

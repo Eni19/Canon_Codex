@@ -38,6 +38,7 @@ export default async function HomePage(props: PageProps<'/codex'>) {
       createdYear: world.createdAt.slice(0, 4),
       recent: newestFirst.slice(0, RECENT_OVERALL).map((entity) => ({
         ...toRecord(entity),
+        typeId: entity.type,
         typeLabel: labelByType.get(entity.type) ?? 'Registro',
         href: `/entity/${entity.id}`,
       })),
