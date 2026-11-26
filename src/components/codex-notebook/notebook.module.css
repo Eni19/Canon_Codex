@@ -1,0 +1,710 @@
+/* Codex notebook: a 3D notebook (three.js) on a desk. While pages lie still, their HTML is laid
+   exactly over the 3D pages (sharp and clickable); while they move, the 3D pages wear pictures of
+   that HTML. Pages are composed on a 600 × 820 sheet. Colours come from the --nb-* tokens. */
+
+.stage {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  background: radial-gradient(75% 70% at 50% 48%, var(--nb-backdrop), var(--nb-backdrop-deep));
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* ---------------------------------------------------------------- overlays */
+
+.overlays {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.overlayPage,
+.overlayIndex {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  visibility: hidden;
+}
+
+.overlayPage {
+  width: 600px;
+  height: 820px;
+}
+
+.overlayPage[data-visible],
+.overlayIndex[data-visible] {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/*
+ * Still clickable, but the 3D page's picture is what shows: the paper and every piece are invisible,
+ * except the piece under the pointer, which appears over its own picture and lifts as usual.
+ */
+.overlayPage[data-ghost] .sheet {
+  background: none;
+  box-shadow: none;
+}
+
+.overlayPage[data-ghost] .sheet::before,
+.overlayPage[data-ghost] .sheet::after {
+  display: none;
+}
+
+/* No transition on the way out: a fade there showed the HTML page for a moment after every turn. */
+.overlayPage[data-ghost] .sheet > * {
+  opacity: 0;
+}
+
+.overlayPage[data-ghost] .sheet > :is(.interactive, .pageArrow):hover,
+.overlayPage[data-ghost] .sheet > :has(.interactive:hover) {
+  opacity: 1;
+  transition: opacity 140ms ease;
+}
+
+/* The 3D book already draws the page's edge and shadow; the HTML copy only needs no shadow of its own. */
+.overlayPage .sheet {
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* ---------------------------------------------------------------- index card */
+
+.indexCard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 26px 26px 20px;
+  background-color: var(--nb-card);
+  background-image: repeating-linear-gradient(transparent 0 27px, var(--nb-rule) 27px 28px);
+  background-position: 0 62px;
+  color: var(--nb-ink);
+}
+
+.indexTape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 96px;
+  height: 26px;
+  background: var(--nb-tape);
+  translate: -50% 0;
+  rotate: -3deg;
+}
+
+.indexCard ol {
+  display: grid;
+}
+
+.indexCard button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  color: var(--nb-ink);
+  font: 22px/28px var(--font-hand);
+  text-align: left;
+}
+
+.indexCard button i {
+  flex: 1;
+  border-bottom: 2px dotted color-mix(in oklch, var(--nb-ink) 35%, transparent);
+}
+
+.indexCard button small {
+  font: 13px var(--font-type);
+}
+
+.indexCard button:hover span,
+.indexCard button[data-current] span {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.indexCard button[data-current] {
+  font-weight: 700;
+}
+
+.indexCard button:focus-visible,
+.pageArrow:focus-visible,
+.openHint:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+/* Hand-drawn arrows in the bottom corners of each page: the next page on the right, the previous on the left. */
+.pageArrow {
+  position: absolute;
+  white-space: nowrap;
+  bottom: 40px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  color: var(--nb-ink);
+  font: 26px var(--font-hand);
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms ease;
+}
+
+.pageArrow svg {
+  width: 64px;
+  height: 40px;
+}
+
+.pageArrow[data-dir='next'] {
+  right: 70px;
+}
+
+.pageArrow[data-dir='prev'] {
+  left: 70px;
+}
+
+.pageArrow[data-dir='prev'] svg {
+  scale: -1 1;
+}
+
+.pageArrow[data-dir='next']:hover {
+  translate: 6px 0;
+}
+
+.pageArrow[data-dir='prev']:hover {
+  translate: -6px 0;
+}
+
+
+/* A brief cover while the notebook is put together (3D scene, page pictures). */
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(75% 70% at 50% 48%, var(--nb-backdrop), var(--nb-backdrop-deep));
+  transition: opacity 500ms ease, visibility 500ms;
+}
+
+.loading[data-done] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loadingName {
+  color: var(--nb-paper-shade);
+  font: 14px var(--font-type);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  animation: loading-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingName {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.openHint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  z-index: 2;
+  padding: 8px 16px;
+  color: var(--nb-paper);
+  font: 26px var(--font-hand);
+  translate: -50% 0;
+  opacity: 0.8;
+  transition: opacity 160ms ease;
+}
+
+.openHint:hover {
+  opacity: 1;
+}
+
+/* Off-screen copies of the pages, photographed into the 3D book's textures. */
+.snapshots {
+  position: fixed;
+  top: 0;
+  left: -20000px;
+  pointer-events: none;
+}
+
+.snapshot {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- sheet */
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--nb-paper);
+  box-shadow: 0 30px 50px -18px var(--nb-shadow), 0 2px 0 var(--nb-paper-shade);
+}
+
+.sheet[data-side='left'] {
+  border-radius: 6px 2px 2px 6px;
+}
+
+.sheet[data-side='right'] {
+  border-radius: 2px 6px 6px 2px;
+}
+
+.sheet[data-paper='grid'] {
+  background-image:
+    linear-gradient(var(--nb-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nb-rule) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position: 13px 13px;
+}
+
+.sheet[data-paper='lined'] {
+  background-image:
+    linear-gradient(90deg, transparent 62px, var(--nb-margin) 62px 64px, transparent 64px),
+    repeating-linear-gradient(transparent 0 33px, var(--nb-rule) 33px 34px);
+  background-position: 0 0, 0 18px;
+}
+
+/* Paper grain, and the shadow where the page curves into the binding. */
+.sheet::before,
+.sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sheet::before {
+  z-index: 0;
+  background: var(--grain);
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+}
+
+.sheet::after {
+  z-index: 30;
+}
+
+.sheet[data-side='left']::after {
+  background: linear-gradient(270deg, color-mix(in oklch, var(--nb-shadow) 70%, transparent), transparent 9%);
+}
+
+.sheet[data-side='right']::after {
+  background: linear-gradient(90deg, color-mix(in oklch, var(--nb-shadow) 70%, transparent), transparent 9%);
+}
+
+.pageNumber {
+  position: absolute;
+  bottom: 22px;
+  z-index: 2;
+  color: var(--nb-ink-soft);
+  font: 15px var(--font-type);
+}
+
+.sheet[data-side='left'] .pageNumber {
+  left: 34px;
+}
+
+.sheet[data-side='right'] .pageNumber {
+  right: 34px;
+}
+
+.coverIndexTitle {
+  margin-bottom: 6px;
+  color: var(--nb-red);
+  font: 26px var(--font-hand);
+}
+
+/* ---------------------------------------------------------------- collage pieces */
+
+.piece {
+  position: absolute;
+  z-index: 2;
+}
+
+.interactive {
+  cursor: pointer;
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1), scale 220ms cubic-bezier(0.23, 1, 0.32, 1), filter 220ms ease;
+}
+
+.interactive:hover {
+  translate: 0 -5px;
+  scale: 1.02;
+  filter: drop-shadow(0 14px 12px var(--nb-shadow));
+}
+
+.interactive:active {
+  scale: 0.98;
+}
+
+.tape {
+  position: absolute;
+  z-index: 6;
+  height: 28px;
+  background: var(--nb-tape);
+  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 0, 88% 0, 92% 10%, 96% 0, 100% 8%, 100% 92%, 96% 100%, 92% 90%, 88% 100%, 12% 100%, 8% 90%, 4% 100%, 0 92%);
+  mix-blend-mode: multiply;
+}
+
+.tape[data-color='blue'] { background: var(--nb-tape-blue); }
+.tape[data-color='rose'] { background: var(--nb-tape-rose); }
+.tape[data-color='green'] { background: var(--nb-tape-green); }
+
+.polaroid {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 0;
+  background: var(--nb-card);
+  box-shadow: 0 10px 18px -6px var(--nb-shadow), 0 1px 2px var(--nb-shadow);
+}
+
+.polaroidPhoto {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.04;
+  background: var(--nb-paper-shade);
+}
+
+.polaroidPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Portraits keep the face: the crop sits near the top of the picture, not its middle. */
+  object-position: 50% 18%;
+  filter: sepia(0.18) saturate(0.9) contrast(1.04);
+}
+
+/* A record without an image gets a pencil-hatched placeholder with its type icon. */
+.polaroidSketch {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in oklch, var(--nb-ink) 14%, transparent) 7px 8px),
+    var(--nb-paper);
+  color: var(--nb-ink-soft);
+}
+
+.polaroidSketch svg {
+  width: 34%;
+  height: 34%;
+  stroke-width: 1.2;
+}
+
+.polaroidCaption {
+  overflow: hidden;
+  padding: 8px 4px 2px;
+  color: var(--nb-ink);
+  font: 26px/1.1 var(--font-hand);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.polaroidDate {
+  padding-bottom: 10px;
+  color: var(--nb-ink-soft);
+  font: 12px var(--font-type);
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.polaroid:not(:has(.polaroidDate)) .polaroidCaption {
+  padding-bottom: 14px;
+}
+
+.tornNote {
+  padding: 26px 24px 28px;
+  background-color: var(--nb-card);
+  clip-path: polygon(0 3%, 6% 0, 13% 2%, 21% 0, 30% 3%, 40% 0, 52% 2%, 63% 0, 74% 3%, 85% 0, 93% 2%, 100% 0, 100% 97%, 92% 100%, 82% 97%, 70% 100%, 58% 98%, 46% 100%, 34% 97%, 22% 100%, 11% 98%, 0 100%);
+  filter: drop-shadow(0 6px 8px var(--nb-shadow));
+}
+
+.tornNote[data-paper='grid'] {
+  background-image:
+    linear-gradient(var(--nb-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nb-rule) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.tornNote[data-paper='lined'] {
+  background-image: repeating-linear-gradient(transparent 0 29px, var(--nb-rule) 29px 30px);
+  background-position: 0 14px;
+}
+
+.tornNote[data-paper='yellow'] {
+  background-color: color-mix(in oklch, var(--nb-highlight) 70%, var(--nb-card));
+}
+
+.noteText {
+  color: var(--nb-ink);
+  font: 26px/1.25 var(--font-hand);
+}
+
+.noteList {
+  display: grid;
+  gap: 2px;
+}
+
+.noteList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.noteList a {
+  overflow: hidden;
+  color: var(--nb-ink);
+  font: 24px/30px var(--font-hand);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteList a:hover {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.noteList small {
+  flex: none;
+  color: var(--nb-ink-soft);
+  font: 11px var(--font-type);
+  text-transform: uppercase;
+}
+
+.tallyTitle {
+  margin-bottom: 6px;
+  color: var(--nb-red);
+  font: 13px var(--font-type);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tally button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  color: var(--nb-ink);
+  font: 25px/32px var(--font-hand);
+  text-align: left;
+}
+
+.tally button:hover span {
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 85% / 100% 45% no-repeat;
+}
+
+.tally b {
+  font: 16px var(--font-type);
+}
+
+.ticket {
+  display: flex;
+  min-height: 96px;
+  background: var(--nb-paper-aged);
+  color: var(--nb-red);
+  box-shadow: 0 8px 14px -6px var(--nb-shadow);
+  font-family: var(--font-type);
+}
+
+.ticketSerial {
+  display: grid;
+  width: 34px;
+  place-items: center;
+  border-right: 2px dashed color-mix(in oklch, var(--nb-red) 50%, transparent);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+}
+
+.ticketBody {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  gap: 2px;
+  margin: 8px;
+  padding: 8px 14px;
+  border: 2px solid color-mix(in oklch, var(--nb-red) 60%, transparent);
+}
+
+.ticketBody strong {
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ticketBody small {
+  overflow: hidden;
+  color: var(--nb-ink-soft);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.postmark {
+  height: auto;
+  color: var(--nb-red);
+  opacity: 0.55;
+  font-family: var(--font-type);
+  overflow: visible;
+  mix-blend-mode: multiply;
+}
+
+.star {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(140deg, var(--nb-brass), color-mix(in oklch, var(--nb-brass) 55%, var(--nb-desk-deep)));
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 2px 1px var(--nb-shadow));
+}
+
+.star[data-tone='red'] { background: linear-gradient(140deg, var(--nb-red), var(--nb-cover-deep)); }
+.star[data-tone='paper'] { background: linear-gradient(140deg, var(--nb-card), var(--nb-paper-aged)); }
+
+.paperclip {
+  z-index: 7;
+  width: 28px;
+  height: 84px;
+  color: color-mix(in oklch, var(--nb-paper) 60%, var(--nb-ink));
+  filter: drop-shadow(2px 3px 2px var(--nb-shadow));
+}
+
+.handArrow {
+  width: 84px;
+  height: 56px;
+  color: var(--nb-ink);
+}
+
+.turnHint {
+  width: 90px;
+  height: 64px;
+  padding: 0;
+  cursor: pointer;
+  transition: translate 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.turnHint:hover {
+  translate: 6px -2px;
+}
+
+.cutout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.12em 0.4em;
+  line-height: 1;
+}
+
+.cutoutWord {
+  display: inline-flex;
+}
+
+.cutoutLetter {
+  display: inline-block;
+  margin: 0 0.02em;
+  padding: 0.05em 0.1em 0.02em;
+  box-shadow: 0 2px 3px var(--nb-shadow);
+}
+
+.cutoutLetter[data-paper='0'] { background: var(--nb-card); color: var(--nb-ink); }
+.cutoutLetter[data-paper='1'] { background: var(--nb-paper-aged); color: var(--nb-cover-deep); }
+.cutoutLetter[data-paper='2'] { background: var(--nb-red); color: var(--nb-card); }
+.cutoutLetter[data-paper='3'] { background: var(--nb-ink); color: var(--nb-paper); }
+.cutoutLetter[data-paper='4'] { background: color-mix(in oklch, var(--nb-highlight) 80%, var(--nb-card)); color: var(--nb-ink); }
+
+.cutoutLetter[data-face='0'] { font-family: var(--font-serif); font-weight: 700; }
+.cutoutLetter[data-face='1'] { font-family: var(--font-type); }
+.cutoutLetter[data-face='2'] { font-family: var(--font-sans); font-weight: 900; font-style: italic; }
+
+.handwriting {
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  line-height: 1.28;
+}
+
+.handwriting[data-tone='soft'] { color: var(--nb-ink-soft); }
+.handwriting[data-tone='red'] { color: var(--nb-red); }
+
+.typeLabel {
+  padding: 5px 12px;
+  background: var(--nb-card);
+  color: var(--nb-ink);
+  font: 15px var(--font-type);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px var(--nb-shadow);
+}
+
+.typeLabel[data-dark] {
+  background: var(--nb-ink);
+  color: var(--nb-paper);
+}
+
+.stickyFlags {
+  display: grid;
+  gap: 6px;
+}
+
+.stickyFlags span {
+  display: block;
+  width: 70px;
+  height: 26px;
+  opacity: 0.9;
+}
+
+.stickyFlags span[data-color='rose'] { background: var(--nb-tape-rose); }
+.stickyFlags span[data-color='cream'] { background: var(--nb-highlight); }
+.stickyFlags span[data-color='blue'] { background: var(--nb-tape-blue); }
+
+.handLink {
+  /* The page picture lays text out slightly wider; without this, "ver todos →" broke its arrow onto a new line. */
+  white-space: nowrap;
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  line-height: 1.1;
+  background: linear-gradient(var(--nb-highlight), var(--nb-highlight)) 0 88% / 0% 42% no-repeat;
+  transition: background-size 260ms cubic-bezier(0.23, 1, 0.32, 1), translate 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.handLink:hover {
+  background-size: 100% 42%;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive,
+  .indexTag,
+  .handLink,
+  .turnHint {
+    transition: none;
+  }
+}

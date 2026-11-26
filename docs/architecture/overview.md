@@ -36,6 +36,15 @@ cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepos
 `workspace/`. `SQLITE_DATABASE_PATH` seleciona o arquivo diretamente.
 `PERSISTENCE_DRIVER=filesystem` seleciona o driver legado. Veja [SQLite local](../data/sqlite.md).
 
+## Caderno do Codex
+
+`/codex` é um Server Component que reúne contagens e registros recentes por tipo e entrega ao
+`Notebook` (`src/components/codex-notebook/`). O caderno e a mesa são uma cena three.js carregada
+só no navegador; as páginas são HTML fotografado em textura para as páginas 3D, com uma cópia
+invisível do HTML por cima para os cliques. Abrir um registro a partir do caderno usa a transição de
+máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
+ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do

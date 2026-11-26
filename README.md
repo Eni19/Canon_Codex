@@ -22,6 +22,11 @@ pnpm dev
 Abra <http://localhost:3000>. Num banco novo, o app cria o mundo inicial `Canon Codex`. Daí em
 diante, siga o [guia de uso](docs/user-guide/index.md).
 
+No Windows, `Iniciar Canon Codex.cmd` faz o mesmo com um duplo clique: instala as dependências se
+`node_modules/` não existir, roda `pnpm dev --port 3000` e abre o navegador quando a porta
+responde. Se o servidor já estiver rodando, apenas abre o navegador. Fechar a janela encerra o
+servidor.
+
 ## Onde ficam os dados
 
 O banco padrão é `workspace/canon-codex.sqlite`. A pasta `workspace/` é privada e fica fora do
