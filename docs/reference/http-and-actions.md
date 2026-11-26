@@ -86,6 +86,9 @@ variantes e os metadados em uma transação.
 
 Consumidores: command palette, sugestão @ do editor e busca lateral de quadros.
 
+A resposta usa `Cache-Control: no-store`. Cada consulta lê os registros ativos do mundo
+selecionado e reflete criações, renomeações e exclusões já concluídas.
+
 Ao trocar a consulta na busca geral, a interface cancela a requisição anterior.
 Uma resposta ou falha atrasada dessa requisição é descartada.
 

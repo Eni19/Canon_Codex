@@ -11,5 +11,5 @@ export async function GET(request: Request) {
 
   const world = await getCurrentWorld()
   const results = await searchEntities(world.id, query, { type, limit })
-  return NextResponse.json(results)
+  return NextResponse.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }
