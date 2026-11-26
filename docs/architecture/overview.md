@@ -256,6 +256,20 @@ e formatação de datas fictícias.
 - A projeção de uma entidade abre `/display/entity/<entityId>` em popup e renderiza a mesma tela de
   leitura em modo simples.
 
+## Componentes reutilizáveis
+
+- **CardPicker** (`src/components/ui/card-picker.tsx`): seletor em modal com cartões quadrados
+  (imagem por `assetId`, título, subtítulo, descrição) e busca por nome sem distinguir acentos.
+  Use-o sempre que o usuário precisar escolher um item entre muitos, em vez de um `<select>`.
+  `CardPickerField` é a versão para formulários (botão que abre o modal e envia o id por um
+  `<input type="hidden">`). Exemplos: `ScenePicker` (trocar de cena) e o campo "Local" em
+  `SceneCreateForm`.
+- Todos os campos `reference` e `referenceList` das entidades usam `CardPickerField` /
+  `CardPickerMultiField` (via `ReferenceField` / `ReferenceListField`). Uma propriedade
+  `referenceList` com `optionsFrom: '<outra chave>'` só oferece itens já escolhidos nessa outra
+  propriedade (ex.: líderes de uma organização saem dos membros); o estado compartilhado fica em
+  `ReferenceSelectionProvider`.
+
 ## Onde mudar cada coisa
 
 | Mudança | Camada principal | Verificação documental/teste |
