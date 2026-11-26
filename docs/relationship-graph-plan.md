@@ -198,7 +198,7 @@ em dispositivos físicos seguem pendentes.
 
 Estes passos precisam de uma pessoa com o dispositivo real; o ambiente automatizado não substitui
 leitor de tela, trackpad ou tela de toque físicos. Use um mundo sintético (veja o
-[perfil do grafo](performance/relationship-graph.md)) e registre falhas em [bugs.md](bugs.md).
+[perfil do grafo](performance/relationship-graph.md)) e registre falhas em um [issue com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
 1. **Leitor de tela (NVDA no Windows ou VoiceOver no macOS).** Abra **Relacionamentos**, navegue
    com Tab até a barra de ferramentas e confirme que cada botão é lido com nome e estado

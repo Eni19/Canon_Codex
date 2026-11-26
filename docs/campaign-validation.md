@@ -27,7 +27,7 @@ Para cada passo, anote o tempo aproximado, onde travou e o que esperava acontece
 
 ## Onde registrar
 
-- **Algo quebrado** (contradiz o comportamento documentado): [bugs.md](bugs.md), com passos
+- **Algo quebrado** (contradiz o comportamento documentado): [issue com label `bug`](https://github.com/Eni19/Canon_Codex/issues?q=is%3Aissue+is%3Aopen+label%3Abug), com passos
   mínimos e dados sintéticos que reproduzam o problema. Não copie nomes ou textos da campanha.
 - **Algo que falta ou atrapalha** (funciona, mas não serve ao mestre): [ideas.md](ideas.md).
 - **Algo que já está planejado**: comente no item correspondente de [work-items.md](work-items.md).
