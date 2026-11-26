@@ -1,11 +1,13 @@
 # ADR-005: Design system com tokens semânticos, tema "dossiê editorial"
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, tokens semânticos em `src/app/globals.css`.
+
 ## Estado atual em 23/09/2026
 
 Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
 quadros e cenas também usa componentes próprios e tldraw, mas isso não altera a decisão de tokens:
 novos estilos devem continuar referenciando o sistema semântico. A visão e as limitações de
-segurança/operação da aplicação estão em [`docs/operations-and-privacy.md`](../operations-and-privacy.md).
+segurança/operação da aplicação estão em [`docs/reference/operations-and-privacy.md`](../reference/operations-and-privacy.md).
 
 ## Contexto
 
@@ -43,6 +45,11 @@ visual futura force uma reescrita de componente por componente.
   shadcn/Radix já resolve; não há necessidade concreta de fugir dele ainda.
 
 ## Consequências
+
+### Atualização: caderno do Codex (25/11/2026, experimental)
+
+O caderno do início do mundo usa os tokens `--nb-*`, definidos em `:root` porque a mesa e o papel
+são os mesmos nos dois temas. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
 ### Atualização: canvas de relacionamentos (16/11/2026)
 

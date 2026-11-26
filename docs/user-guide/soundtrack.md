@@ -1,5 +1,8 @@
 # Trilha sonora
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
+
 O player do YouTube é preparado ao abrir a área da trilha sonora, abrir o seletor de playlists
 ou iniciar uma fila. Navegar pela wiki sem usar a trilha não abre o player.
 
@@ -34,7 +37,7 @@ anterior/próxima, barra de progresso, volume, aleatório e repetição (desliga
 Se uma faixa não puder tocar, o site avisa e passa para a próxima. Com a barra lateral recolhida o
 vídeo diminui para uma miniatura, mas continua visível. O volume é lembrado neste navegador.
 
-O botão de trocar de Codex (`/`) e o recarregamento da página interrompem a música.
+O botão de trocar de mundo (`/`) e o recarregamento da página interrompem a música.
 
 ## No Scene Runner (aba Mestrar)
 

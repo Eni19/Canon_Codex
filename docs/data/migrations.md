@@ -1,5 +1,8 @@
 # Migrações e compatibilidade
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, constantes de versão em
+> `src/domain/` e registry em `src/repositories/filesystem/migrations.ts`.
+
 Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
 validadas pelo importador. Os procedimentos que citam arquivos descrevem o driver legado.
 No SQLite, a conversão de datas e a recuperação operam em transações, com histórico no banco.
@@ -13,6 +16,25 @@ Uma migração ausente, JSON ilegível, transformação que falha ou resultado q
 interrompe a leitura. A leitura normal não grava de volta o resultado. A exceção documentada é o
 importador de mundos, que copia a pasta e grava o `world.json` já migrado no destino.
 
+## Versões atuais
+
+Esta tabela é a fonte única das versões de schema citadas na documentação. Os outros documentos
+linkam para cá em vez de repetir o número. Ao subir uma constante, atualize esta tabela no mesmo commit.
+
+| Registro | Versão atual | Constante no código |
+| --- | ---: | --- |
+| `World` | 26 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
+| `Entity` | 4 | `ENTITY_SCHEMA_VERSION` em [`src/domain/entities/entity.ts`](../../src/domain/entities/entity.ts) |
+| `ContentDocument` | 2 | `CONTENT_SCHEMA_VERSION` em [`src/domain/content/contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
+| Linha do tempo | 2 | `TIMELINE_SCHEMA_VERSION` em [`src/domain/timelines/timeline.ts`](../../src/domain/timelines/timeline.ts) |
+| Grafo de relacionamentos | 4 | `schemaVersion: 4` em [`src/domain/relations/graphSettings.ts`](../../src/domain/relations/graphSettings.ts) |
+| `Asset` | 1 | `ASSET_SCHEMA_VERSION` em [`src/domain/assets/asset.ts`](../../src/domain/assets/asset.ts) |
+| `BoardDocument` | 1 | `BOARD_SCHEMA_VERSION` em [`src/domain/boards/board.ts`](../../src/domain/boards/board.ts) |
+| `Scene` | 1 | `SCENE_SCHEMA_VERSION` em [`src/domain/scenes/scene.ts`](../../src/domain/scenes/scene.ts) |
+| Canvas do quadro (`canvasSnapshot`) | 1 | `BOARD_CANVAS_VERSION` em [`src/domain/boards/boardCanvas.ts`](../../src/domain/boards/boardCanvas.ts) |
+| Canvas da cena (`canvasSnapshot`) | 1 | `SCENE_CANVAS_VERSION` em [`src/domain/scenes/sceneCanvas.ts`](../../src/domain/scenes/sceneCanvas.ts) |
+| `Playlist` | 1 | `PLAYLIST_SCHEMA_VERSION` em [`src/domain/playlists/playlist.ts`](../../src/domain/playlists/playlist.ts) |
+
 ## Linha do Tempo: v1 → v2
 
 `timeline.json` usa o parser local `parseTimelineData` em
@@ -21,6 +43,80 @@ O leitor valida arquivos v1, acrescenta `title: null`, `note: null`, `minimumSca
 `showCover: true` a cada aparição, e expõe o documento como v2 em memória. A leitura não regrava o
 arquivo; a próxima inclusão ou edição persiste a versão 2. Versões desconhecidas falham. Uma linha
 legada sem `timeline.json` é lida como vazia.
+
+## Canvas da cena: snapshot tldraw → canon-scene-canvas v1
+
+O campo `canvasSnapshot` da `Scene` continua opaco para o schema da cena, então
+`SCENE_SCHEMA_VERSION` não muda. O conteúdo passou a ter formato próprio, lido por
+`readSceneCanvas` em [`src/domain/scenes/sceneCanvas.ts`](../../src/domain/scenes/sceneCanvas.ts):
+
+    {
+      "format": "canon-scene-canvas",
+      "version": 1,
+      "shapes": [
+        {"id": "shape:a", "kind": "poi", "x": 0, "y": 0, "rotation": 0, "w": 180, "h": 38,
+         "poiId": "<uuid>", "visibility": "visible"},
+        {"id": "shape:b", "kind": "token", "x": 0, "y": 0, "rotation": 0, "w": 180, "h": 280,
+         "entityId": "<uuid>", "representation": "cutout", "visibility": "visible",
+         "locked": false, "flipX": false}
+      ],
+      "legacyTldraw": {}
+    }
+
+- `shapes` está em ordem de desenho (o primeiro fica mais ao fundo). O fundo não é guardado: vem
+  de `background` da cena. `x`/`y` são o canto superior esquerdo e a rotação (radianos) gira em
+  torno desse ponto, a mesma convenção do tldraw.
+- `null` é uma cena nova, sem formas.
+- Um snapshot do tldraw (`{ document: { store } }`) é convertido em memória: entram as formas
+  `scene-token` e `scene-poi`, ordenadas pelo índice do tldraw; `meta.flipX` vira `flipX`;
+  valores ausentes recebem os padrões do editor; outros tipos são ignorados.
+- A leitura não grava. O primeiro salvamento depois de uma alteração grava o formato novo, com o
+  documento tldraw original intacto em `legacyTldraw`. Para voltar ao editor anterior, basta
+  devolver `legacyTldraw` ao campo `canvasSnapshot`; perdem-se só as alterações feitas depois.
+- Um canvas que não é legível (nem formato Canon nem snapshot tldraw) não abre o editor e não é
+  sobrescrito. `PUT /api/scenes/<sceneId>` só aceita o formato novo.
+- Builds anteriores a esta mudança não abrem cenas já gravadas no formato novo.
+
+## Canvas do quadro: snapshot tldraw → canon-board-canvas v1
+
+Mesmo esquema do canvas da cena: o `canvasSnapshot` do `BoardDocument` continua opaco para o schema
+do quadro (`BOARD_SCHEMA_VERSION` não muda) e é lido por `readBoardCanvas` em
+[`src/domain/boards/boardCanvas.ts`](../../src/domain/boards/boardCanvas.ts).
+
+    {
+      "format": "canon-board-canvas",
+      "version": 1,
+      "shapes": [
+        {"id": "shape:a", "kind": "card", "x": 0, "y": 0, "rotation": 0, "opacity": 1, "locked": false,
+         "w": 280, "h": 170, "entityId": "<uuid>", "viewMode": "card", "showImage": true,
+         "showType": true, "showTags": true, "showStatus": true, "customLabel": ""},
+        {"id": "shape:b", "kind": "arrow", "x": 0, "y": 0, "rotation": 0, "opacity": 1, "locked": false,
+         "start": {"x": 0, "y": 0}, "end": {"x": 200, "y": 0}, "bend": 0, "color": "black",
+         "labelColor": "black", "size": "m", "font": "draw", "dash": "draw", "arrowheadStart": "none",
+         "arrowheadEnd": "arrow", "text": "", "labelPosition": 0.5, "scale": 1,
+         "startBinding": {"shapeId": "shape:a", "anchor": {"x": 0.5, "y": 0.5}, "isPrecise": false, "isExact": false},
+         "endBinding": null}
+      ],
+      "legacyTldraw": {}
+    }
+
+- `shapes` está em ordem de desenho. Tipos: `card` (cartão de registro), `text`, `arrow`,
+  `note`, `geo` (20 formas geométricas), `draw` (pontos `[x, y, pressão]`), `line`, `image`
+  (com o UUID do asset do Canon em `assetId`) e `legacy`. Cores, tamanhos, fontes, preenchimentos
+  e traços usam os nomes do tldraw.
+- Na conversão, os vínculos das setas (registros `binding` do tldraw) passam para dentro da seta
+  (`startBinding`/`endBinding`); vínculos para formas que não existem são descartados. O
+  `richText` de textos e rótulos vira texto simples, um parágrafo por linha: negrito, itálico e
+  links se perdem.
+- Notas, formas geométricas, linhas e imagens do tldraw são convertidas; a imagem usa o
+  `meta.wikiAssetId` do registro `asset` correspondente. Desenhos livres (pontos codificados em
+  base64 pelo tldraw), imagens sem asset do Canon e outros tipos viram `legacy`: o registro
+  original fica intacto em `record` e o quadro mostra uma caixa tracejada no lugar.
+- A leitura não grava. O primeiro salvamento depois de uma alteração grava o formato novo, com o
+  documento tldraw original intacto em `legacyTldraw`. Para voltar ao editor anterior, basta
+  devolver `legacyTldraw` ao campo `canvasSnapshot`; perdem-se só as alterações feitas depois.
+- Um canvas ilegível não abre o editor e não é sobrescrito. `PUT /api/boards/<boardId>` só aceita
+  o formato novo. Builds anteriores a esta mudança não abrem quadros já gravados no formato novo.
 
 ## Grafo de relacionamentos: v1/v2/v3 → v4
 
@@ -33,7 +129,7 @@ com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds
 podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
 original de `directional`.
 
-## Mundo: v1 → v24
+## Mundo: v1 → v26
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -62,6 +158,9 @@ Registry: `worldMigrations` em
 | 20 | 21 | remove as definições `profile` (Perfil) e `firstAppearance` (Primeira aparição) de Personagem |
 | 21 | 22 | adiciona `calendarMoons` vazio, preservando calendário e demais dados |
 | 22 | 23 | adiciona estações e marcos vazios, Hoje em aberto e aparência padrão Codex, preservando o calendário e as luas |
+| 23 | 24 | acrescenta sete definições opcionais às fichas, preservando definições com a mesma chave e os dados das entidades |
+| 24 | 25 | renomeia o tipo `artifact` de "Objeto / Artefato" para "Objeto" (plural "Objetos"); nomes personalizados ficam |
+| 25 | 26 | tira "Número de registro" e "Materiais" da ficha de Objeto; valores já preenchidos ficam nos registros |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
@@ -70,7 +169,15 @@ Ao editar uma ficha, propriedades antigas fora do formulário continuam nas chav
 
 A migração v23 → v24 acrescenta sete definições opcionais às fichas. Preserva definições com a mesma chave e os dados das entidades.
 
-O seed atual já é v24, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
+A migração v24 → v25 troca só os nomes padrão do tipo `artifact` (`renameObjectType` em
+`src/domain/worlds/objectLabelsV25.ts`). O ID continua `artifact`, então registros, links e rotas
+não mudam. No SQLite, a mesma regra roda uma vez como migração do schema SQL.
+
+A migração v25 → v26 tira as definições `registrationNumber` e `materials` do tipo `artifact`
+(`removeObjectFields` em `src/domain/worlds/objectFieldsV26.ts`), também espelhada numa migração SQL.
+Os valores já gravados continuam nas propriedades dos registros, fora do formulário.
+
+O seed atual já é v26, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
@@ -139,13 +246,13 @@ aplicação podem impedir a conclusão e exigir restauração seguida de nova pr
 `pages: [{ id: 'principal', title: 'Principal', body }]` e removendo o campo antigo. O documento
 continua limitado a 1–50 páginas e o corpo continua opaco ao domínio.
 
-## Assets, quadros e cenas
+## Assets, quadros, cenas e playlists
 
 - `assetMigrations` tem `currentVersion: 1` e nenhum passo. `AssetSchema` valida a versão atual;
   não existe conversão de assets legados.
 - Quadros usam `BOARD_SCHEMA_VERSION = 1`, e cenas usam `SCENE_SCHEMA_VERSION = 1`, mas seus
   repositórios leem diretamente com `readJsonFile` + schema. Eles ainda não estão conectados ao
-  registry de migrações.
+  registry de migrações. Playlists seguem o mesmo padrão com `PLAYLIST_SCHEMA_VERSION = 1`.
 - Uma alteração futura de `BoardDocument` ou `Scene` precisa adicionar migração (ou registrar
   formalmente por que a compatibilidade não será mantida), testes de arquivos legados e atualização
   de [storage](storage.md) e [backup](backup-and-restore.md).

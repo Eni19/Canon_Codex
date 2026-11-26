@@ -1,4 +1,6 @@
 import { addWorldV24Fields } from '@/domain/worlds/entityFieldsV24'
+import { renameObjectType } from '@/domain/worlds/objectLabelsV25'
+import { removeObjectFields } from '@/domain/worlds/objectFieldsV26'
 import 'server-only'
 import { ASSET_SCHEMA_VERSION } from '@/domain/assets/asset'
 import { CONTENT_SCHEMA_VERSION } from '@/domain/content/contentDocument'
@@ -326,6 +328,16 @@ export const worldMigrations: MigrationRegistry = {
       ...data,
       schemaVersion: 24,
       entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map(addWorldV24Fields),
+    }),
+    24: (data) => ({
+      ...data,
+      schemaVersion: 25,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map(renameObjectType),
+    }),
+    25: (data) => ({
+      ...data,
+      schemaVersion: 26,
+      entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map(removeObjectFields),
     }),
   },
 }

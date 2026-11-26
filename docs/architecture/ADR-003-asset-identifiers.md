@@ -1,5 +1,7 @@
 # ADR-003: Assets referenciados por ID opaco, nunca por path
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, cookie `canon-codex-world` em `src/app/actions/worlds.ts` e rota `src/app/api/assets/[assetId]/[variant]/route.ts`.
+
 ## Estado atual em 24/11/2026
 
 IDs opacos, importação de imagens, variantes e entrega por Route Handler estão implementados.

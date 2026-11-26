@@ -1,8 +1,11 @@
-# Entidades, tipos e relações
+# Registros, tipos e relações
+
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/`.
 
 ## Criar e editar
 
-1. Em `/codex`, escolha um catálogo ou abra `/<entityType>`.
+1. Em `/codex`, abra a página do tipo no caderno e clique em **ver todos**, ou abra `/<entityType>`.
 2. Clique em **Nova entidade**.
 3. Preencha o formulário completo, que é o mesmo da edição: nome, apelidos (quando exibidos) e tags
    no topo; **Ficha** com as propriedades curtas e referências; **Detalhes** com os textos longos;
@@ -54,7 +57,7 @@ em outra aba não altera o que já estava preenchido.
 - **Criatura** — Comportamento típico.
 - **Evento** — Consequências.
 - **Fenômeno** — Condições de manifestação.
-- **Objeto / Artefato** — Efeito conhecido.
+- **Objeto** — Efeito conhecido.
 
 Na Pista, selecione evidências do mundo atual. Fichas antigas podem receber os novos valores ao editar.
 
@@ -77,7 +80,7 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `creature` | Criatura | natureza, apresentação da imagem, classificação, habitat e perigo |
 | `naturalScience` | Natureza / Medicina | disciplina, subtipo, habitat, sintomas, toxicidade e tratamento |
 | `phenomenon` | Fenômeno | tipo, primeira observação e locais afetados |
-| `artifact` | Objeto / Artefato | catálogo, registro, materiais, conservação e detalhes posicionáveis |
+| `artifact` | Objeto | bancada de estudo, tipo, origem, dimensões, conservação e detalhes posicionáveis |
 | `concept` | Conceito | texto base e até 40 blocos de referência |
 | `cosmology` | Registro Cosmológico | entidade/divindade/reino, domínios, símbolo e artefatos |
 | `timeline` | Linha do Tempo | escopo, início e fim; página com vistas vertical e horizontal de aparições |
@@ -93,7 +96,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
-- evidências aceitam até 24 descobertas;
+- evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
 - artefatos aceitam até 24 detalhes com posição, rótulo e descrição;
 - conceitos aceitam até 40 blocos entre visão geral, operação, estrutura, regras, exemplos,
@@ -103,13 +106,48 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 - tipos que não possuem composição específica usam o compositor de header, propriedades, conteúdo,
   relações e backlinks conforme o layout do mundo.
 
+
+### Parede da Evidência
+
+A página de uma Evidência é uma parede com as peças pregadas e ligadas por linha vermelha: a
+polaroide da evidência, as polaroides dos personagens relacionados, o conteúdo como folhas de
+relatório datilografadas (texto que não cabe vira folha nova) e notas adesivas com propriedades,
+apresentação, cada descoberta, notas contextuais, relações e referências.
+
+- **Arraste** uma peça para reorganizá-la; ela não sai da parede. A arrumação fica salva neste
+  navegador; **Reorganizar** volta à arrumação inicial.
+- **Clique** numa peça para chegar perto e abrir a leitura completa ao lado; **Esc** ou um clique na
+  parede fecha.
+- **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
+- A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
+- Sem WebGL, a página mostra o quadro em HTML.
+
+### Bancada do Objeto
+
+A página de um Objeto é uma bancada de estudo: a foto técnica do objeto num tapete de corte, com
+ferramentas, notas adesivas (identificação, proveniência, efeito conhecido, outros nomes, relações e
+referências), etiquetas (tipo e marcadores) e o conteúdo como folhas do relatório de conservação.
+
+- **Paquímetro:** leve-o até a foto e ele abre os bicos e mostra no visor a medida de **Dimensões**
+  (o primeiro número e a unidade). Clique nele para ler o texto completo.
+- **Lupa:** sobre a foto, o vidro amplia o que está embaixo. Os detalhes marcados na edição só
+  aparecem dentro da lente, como adesivos numerados; clique num deles para ler aquele detalhe.
+  Clique na lupa para a lista de todos.
+- **Clique** numa peça para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na bancada
+  fecha.
+- **Arraste** peças e ferramentas para reorganizar; nada sai da bancada. A arrumação fica salva
+  neste navegador; **Reorganizar** volta à inicial. Arraste a bancada para movê-la e use a roda do
+  mouse para aproximar.
+- O texto guia na barra de baixo tem um **×** para fechá-lo; fechado, não volta neste navegador.
+- Sem WebGL, a página mostra a ficha de catalogação em HTML.
+
 ## Referências e relações
 
 Propriedades `reference` e `referenceList` oferecem candidatos de outros registros do tipo
 esperado. Essas referências guardam IDs; renomear o alvo não quebra a seleção.
 
 Na seção **Relacionado**, adicione uma relação escolhendo o alvo, tipo, rótulo opcional e marque **Relação mútua** quando o vínculo valer nos dois sentidos. Com a caixa desmarcada, o vínculo vai da origem ao alvo. A relação fica no registro fonte. O alvo mostra o vínculo em **Backlinks**, calculado
-por varredura de todas as entidades. Remover a relação altera somente o registro fonte.
+por varredura de todos os registros. Remover a relação altera somente o registro fonte.
 
 **Relacionamentos** ocupa a área ao lado do menu ou abaixo da navegação móvel. Arraste o fundo
 para mover a câmera ou o cartão para fixar sua posição. Use a roda, pinça ou os botões de zoom;
@@ -181,7 +219,7 @@ as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
 
-Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de entidades usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
 
 **Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
 encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com
@@ -200,7 +238,7 @@ Na busca, aparecem os locais encontrados e o caminho de regiões até eles; quan
 encontrada, ela aparece com tudo o que contém. Referências circulares (A dentro de B e B dentro de
 A) não somem da lista: o ciclo é quebrado no primeiro local em ordem alfabética.
 
-Essa busca é diferente da navegação por relações: pesquisar encontra entidades existentes, enquanto referências e backlinks mostram como elas se conectam.
+Essa busca é diferente da navegação por relações: pesquisar encontra registros existentes, enquanto referências e backlinks mostram como elas se conectam.
 
 ## Imagens
 
@@ -210,11 +248,15 @@ JPEG, WebP e GIF. A importação copia o arquivo para o workspace, atribui um as
 thumbnail. Ao remover ou substituir uma capa, o asset antigo é movido para `trash/` quando não há
 outra referência encontrada.
 
+Nos catálogos e na lista de todos os conteúdos, os cartões de **Personagens** e **Criaturas** são
+mais altos (3:4) e mostram a imagem inteira, sem cortar o corpo; o espaço que sobra é preenchido
+pela própria imagem, desfocada. Os demais tipos recortam a capa para preencher o cartão.
+
 ## Excluir e limitações
 
-**Excluir** uma entidade move sua pasta inteira, inclusive `content.json`, para `trash/`; ela some
+**Excluir** um registro move sua pasta inteira, inclusive `content.json`, para `trash/`; ele some
 dos catálogos e não há botão de restaurar. Referências ou cartões de quadro que ainda guardem o ID
-podem mostrar “entidade indisponível”. Não existe exclusão permanente exposta pela aplicação.
+podem mostrar **Entidade indisponível**. Não existe exclusão permanente exposta pela aplicação.
 
 Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, nota e data, com aviso
 **Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira

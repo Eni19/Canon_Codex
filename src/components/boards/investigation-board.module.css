@@ -16,11 +16,27 @@
 .spinner { width: .75rem; height: .75rem; border: 1px solid var(--muted-foreground); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .canvasStage { position: absolute; inset: 3.5rem 0 0; }
-.canvasStage :global(.tl-canvas) { background-color: var(--background); background-image: radial-gradient(circle at center, color-mix(in oklch, var(--primary) 14%, transparent) 1px, transparent 1px); background-size: 24px 24px; }
-.canvasStage :global(.tl-background) { background: transparent !important; }
-/* The minimap is disabled; its toggle would do nothing. */
-.canvasStage :global([data-testid='minimap.toggle-button']) { display: none; }
-.canvasStage :global(.tlui-layout) { --color-panel: color-mix(in oklch, var(--sidebar) 96%, transparent); --color-low: var(--surface); --color-text: var(--foreground); --color-text-1: var(--foreground); --color-text-3: var(--muted-foreground); --color-primary: var(--primary); }
+/* Canvas Konva. Barras e menus com as cores do site: fundo da barra lateral, borda e --primary no item ativo. */
+.toolbar, .quickActions, .zoomMenu, .styleMenu { position: absolute; z-index: 950; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--border); background: color-mix(in oklch, var(--sidebar) 96%, transparent); box-shadow: 0 12px 32px color-mix(in oklch, black 35%, transparent); color: var(--muted-foreground); backdrop-filter: blur(14px); }
+.toolbar button, .quickActions button, .zoomMenu button { display: grid; place-items: center; width: 40px; height: 40px; color: inherit; transition: background .12s ease, color .12s ease; }
+.toolbar button:hover, .quickActions button:hover:not(:disabled), .zoomMenu button:hover { background: var(--accent); color: var(--foreground); }
+.toolbar button[data-active="true"] { background: var(--primary); color: var(--primary-foreground); }
+.toolbar svg, .quickActions svg, .zoomMenu svg { width: 18px; height: 18px; }
+.toolbar { align-items: center; }.toolSlot { position: relative; display: grid; }
+/* Menu de cor e espessura, acima do botão da ferramenta. */
+.styleMenu { bottom: calc(100% + 10px); left: 50%; display: block; width: 176px; transform: translateX(-50%); }
+.styleColors, .styleSizes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+.styleColors { padding-bottom: 4px; border-bottom: 1px solid var(--border); }.styleSizes { padding-top: 4px; }
+.styleColors button, .styleSizes button { display: grid; place-items: center; height: 36px; }
+.styleColors button:hover, .styleSizes button:hover { background: var(--accent); }
+.styleColors button[data-active="true"], .styleSizes button[data-active="true"] { background: var(--accent); box-shadow: inset 0 0 0 1px var(--primary); }
+.styleColors i { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in oklch, black 30%, transparent); }
+.styleSizes i { border-radius: 50%; background: var(--foreground); }
+.canvasHost { position: absolute; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.canvasError { position: absolute; z-index: 900; top: 50%; left: 50%; display: grid; justify-items: center; gap: .35rem; transform: translate(-50%, -50%); padding: 1.2rem 1.4rem; border: 1px solid var(--border); background: var(--sidebar); text-align: center; font-size: .7rem; color: var(--muted-foreground); }.canvasError svg { width: 1.4rem; color: var(--warning); }.canvasError strong { color: var(--foreground); font-size: .8rem; }
+.toolbar { bottom: .75rem; left: 50%; transform: translateX(-50%); }
+.quickActions { top: .75rem; left: 50%; transform: translateX(-50%); }.quickActions button { width: 36px; height: 36px; }.quickActions button:disabled { opacity: .35; }
+.zoomMenu { bottom: .75rem; left: .75rem; align-items: center; }.zoomMenu button { width: 32px; height: 32px; }.zoomMenu .zoomValue { width: auto; min-width: 3.4rem; padding: 0 .4rem; font-size: .72rem; font-variant-numeric: tabular-nums; }
 
 .worldPanel { position: absolute; z-index: 1000; top: 4.25rem; bottom: 4.5rem; left: .75rem; width: 16.5rem; border: 1px solid var(--border); background: color-mix(in oklch, var(--sidebar) 95%, transparent); box-shadow: 0 18px 50px color-mix(in oklch, black 35%, transparent); transition: transform .22s ease; }
 .worldPanelClosed { transform: translateX(calc(-100% - .75rem)); }.panelToggle { position: absolute; left: 100%; top: 1.35rem; display: grid; place-items: center; width: 1.65rem; height: 2.5rem; border: 1px solid var(--border); border-left: 0; background: var(--sidebar); color: var(--muted-foreground); }.panelToggle svg { width: .9rem; }

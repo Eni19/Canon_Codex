@@ -1,5 +1,7 @@
 # Configuração e ambientes
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, `.env.example` e `next.config.ts`.
+
 ## Variáveis suportadas
 
 As variáveis documentadas em .env.example são lidas no servidor:
@@ -18,12 +20,10 @@ Exemplo seguro:
 Use .env.local, que é ignorado pelo Git. Não coloque conteúdo de usuário, tokens ou chaves reais
 em .env.example, README, testes ou commits.
 
-## Variáveis referenciadas mas não declaradas
+## Variáveis que não são mais lidas
 
-Os componentes tldraw leem NEXT_PUBLIC_TLDRAW_LICENSE_KEY, mas a variável não está em
-.env.example e o código não documenta se ela é necessária para a versão instalada. O valor não é
-reproduzido aqui; confirmar essa necessidade é o item DOC-GAP-003 em
-[work-items.md](../work-items.md).
+`NEXT_PUBLIC_TLDRAW_LICENSE_KEY` era a chave do tldraw de Quadros e Cenas. Os dois canvas usam
+Konva e nenhum código lê mais a variável; ela pode sair do `.env.local`.
 
 ## Desenvolvimento e produção local
 

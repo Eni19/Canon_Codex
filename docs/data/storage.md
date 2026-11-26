@@ -1,5 +1,8 @@
 # Armazenamento e modelo de dados
 
+> **Estado:** implementado (driver legado) · **Última verificação:** 26/11/2026, árvore de pastas em
+> `src/lib/fs/paths.ts` e schemas em `src/domain/`.
+
 Para o driver atual, consulte [armazenamento, migração e backup do SQLite](sqlite.md).
 Esta página descreve a árvore JSON do driver legado `filesystem`, ainda aceita para importação.
 
@@ -91,7 +94,7 @@ calendário e usa o lock e a escrita atômica do mundo. Alterações estruturais
 houver luas. A troca de origem desloca as referências lunares e apresenta cada mudança na prévia; se o
 destino for um dia intercalar independente, a prévia recusa a troca pois a referência lunar ainda não o representa.
 
-No `World` v23, `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
+Desde o `World` v23 (versão atual em [migrações](migrations.md#versões-atuais)), `calendarSeasons` registra inícios anuais, `campaignToday` pode guardar data comum ou
 intercalar independente, `calendarLandmarks` guarda categorias e marcos únicos ou anuais, e
 `calendarAppearance` guarda o tema ativo e temas personalizados. As mutações por seção usam lock,
 escrita atômica e comparação com o valor e calendário anteriores. Imagens referenciadas por temas são
@@ -164,7 +167,7 @@ mesmo ID e posição mediante token de concorrência, sem criar um segundo regis
 - `Entity.slug` é derivado do título, apenas cosmético. Relações, links Tiptap e propriedades de
   referência guardam IDs.
 - Uma cena guarda `background.locationId` e `background.assetId`; um quadro guarda IDs nas formas
-  do snapshot tldraw. Esses alvos não são copiados ao duplicar uma cena ou um quadro.
+  do canvas. Esses alvos não são copiados ao duplicar uma cena ou um quadro.
 - Backlinks, índices de busca e thumbnails são derivados. Backlinks e busca são reconstruídos em
   memória; uma thumbnail pode faltar sem remover o original.
 
@@ -177,7 +180,7 @@ Os schemas Zod em `src/domain/` são a referência canônica. As versões atuais
 | `World` | 20 | UUID, slug/nome não vazios, `entityTypes[]`, `calendar`, `timelineScaleDefaults`, `originEventId?`, timestamps ISO | [`world.ts`](../../src/domain/worlds/world.ts) e [`calendar.ts`](../../src/domain/worlds/calendar.ts) |
 | `Entity` | 4 | UUID, `worldId`, tipo/título/slug, aliases/tags, properties, relations, timestamps; capa/galeria referenciam UUIDs | [`entity.ts`](../../src/domain/entities/entity.ts) |
 | `TimelineData` | 2 | IDs do mundo e da linha, timestamp e aparições com ID, referência, apresentação e data opcional; leitor migra v1 em memória | [`timeline.ts`](../../src/domain/timelines/timeline.ts) |
-| `EntityTypeDefinition` | — | id, rótulos, ícone, propriedades, layout limitado a oito blocos e `showInSidebar` | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
+| `EntityTypeDefinition` | — | id, rótulos, ícone (Lucide), propriedades, layout limitado a oito blocos e `showInSidebar`; na leitura, ícones padrão aposentados de tipos nativos viram os atuais (`artifact`: `Gem` → `KeyRound`; `cosmology`: `Orbit` → `Eclipse`) e são gravados assim no próximo salvamento | [`entityType.ts`](../../src/domain/entities/entityType.ts) |
 | `Relation` | — | UUIDs de source/target, tipo não vazio, label opcional, direcionalidade e metadata | [`relation.ts`](../../src/domain/relations/relation.ts) |
 | `ContentDocument` | 2 | `format = tiptap-json`, 1–50 páginas; título de página até 40; body opaco | [`contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
 | `Asset` | 1 | UUID, MIME/nome/tamanho, dimensões positivas opcionais, `hasThumbnail` | [`asset.ts`](../../src/domain/assets/asset.ts) |

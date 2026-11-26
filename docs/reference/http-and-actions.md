@@ -1,5 +1,8 @@
 # Referência HTTP e Server Actions
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, todas as rotas de `src/app/api/` e
+> todas as actions exportadas de `src/app/actions/` têm seção aqui.
+
 Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
 escritas de arquivos nesta referência descrevem o driver legado. Elas usam o mundo ativo
 selecionado pelo cookie canon-codex-world; não há autenticação, versionamento ou promessa de
@@ -129,29 +132,30 @@ Não há consumidor local encontrado na auditoria. Sem corpo ou query string.
 
 ### PUT /api/boards/[boardId]
 
-Consumidor: InvestigationBoard. Recebe JSON com propriedade obrigatória snapshot; o valor pode ser
-qualquer JSON, inclusive null se enviado explicitamente.
+Consumidor: InvestigationBoard. Recebe JSON com a propriedade obrigatória snapshot, o canvas no
+formato `canon-board-canvas` validado por `BoardCanvasSchema`
+([formato](../data/migrations.md#canvas-do-quadro-snapshot-tldraw--canon-board-canvas-v1)).
 
     {
-      "snapshot": {
-        "document": {
-          "store": {}
-        }
-      }
+      "snapshot": {"format": "canon-board-canvas", "version": 1, "shapes": []}
     }
 
 - 400 {"error":"Snapshot ausente"} se a propriedade estiver ausente;
+- 400 {"error":"Canvas inválido"} se o snapshot não passar no schema; nada é gravado. Snapshots
+  antigos do tldraw também são recusados: a conversão só acontece na leitura;
 - 200 {"updatedAt":"2026-09-23T12:00:00.000Z"} após validação e escrita atômica;
-- JSON inválido, board inexistente ou erro de schema não têm tratamento próprio no handler e
-  dependem da resposta de erro do Next.js.
+- JSON inválido ou board inexistente não têm tratamento próprio no handler e dependem da resposta
+  de erro do Next.js.
 
 ### PUT /api/scenes/[sceneId]
 
-Consumidor: SceneRunner. Recebe JSON com snapshot opcional e grid opcional. A grade deve seguir
-SceneGridSchema:
+Consumidor: SceneRunner. Recebe JSON com snapshot opcional e grid opcional. O snapshot é o canvas
+da cena no formato `canon-scene-canvas` e deve seguir `SceneCanvasSchema`
+([formato](../data/migrations.md#canvas-da-cena-snapshot-tldraw--canon-scene-canvas-v1)); a grade
+deve seguir SceneGridSchema:
 
     {
-      "snapshot": {"document": {}},
+      "snapshot": {"format": "canon-scene-canvas", "version": 1, "shapes": []},
       "grid": {
         "enabled": true,
         "type": "square",
@@ -163,9 +167,49 @@ SceneGridSchema:
       }
     }
 
-cellSize fica entre 20 e 300; opacity entre 0 e 1. A resposta de sucesso é
-200 {"updatedAt":"..."}. JSON inválido, cena inexistente ou grade inválida propagam erro do
-handler, sem envelope/status específico implementado.
+cellSize fica entre 20 e 300; opacity entre 0 e 1. Respostas:
+
+- 400 {"error":"Canvas ou grade inválidos"} se o snapshot ou a grade não passarem no schema; nada
+  é gravado. Snapshots antigos do tldraw também são recusados: a conversão só acontece na leitura;
+- 200 {"updatedAt":"..."} após validação e escrita;
+- JSON inválido ou cena inexistente propagam erro do handler, sem envelope/status específico.
+
+### GET /api/playlists
+
+Consumidor: `SoundtrackBrowser` (`src/components/soundtrack/soundtrack-browser.tsx`), que busca a
+lista com `cache: 'no-store'`. Sem corpo ou query string.
+
+- 200 com um array de `PlaylistSummary`: os campos da playlist sem `tracks`, mais `trackCount` e
+  `previewExternalIds` (IDs do YouTube das quatro primeiras faixas, usados na capa do cartão);
+- a lista contém só playlists não excluídas do mundo ativo, da mais recente para a mais antiga por
+  `updatedAt`; um mundo sem playlists retorna `[]`;
+- falhas de leitura são exceções do servidor, sem envelope de erro próprio no handler.
+
+Exemplo sintético:
+
+    [
+      {
+        "schemaVersion": 1,
+        "id": "00000000-0000-4000-8000-000000000001",
+        "worldId": "mundo-exemplo",
+        "title": "Trilha de exemplo",
+        "tags": ["ambiente"],
+        "createdAt": "2026-11-01T12:00:00.000Z",
+        "updatedAt": "2026-11-01T12:00:00.000Z",
+        "trackCount": 1,
+        "previewExternalIds": ["xxxxxxxxxxx"]
+      }
+    ]
+
+### GET /api/playlists/[playlistId]
+
+Consumidor: `SoundtrackBrowser`, ao abrir uma playlist para tocar. Sem corpo ou query string.
+
+- 200 com a `Playlist` completa (`PlaylistSchema` em `src/domain/playlists/playlist.ts`), incluindo
+  `tracks` com `provider: "youtube"`, `externalId`, `title`, `author` opcional e `addedAt`;
+- 404 {"error":"Playlist não encontrada"} se o ID não existir ou estiver excluído no mundo ativo.
+
+As faixas guardam apenas o ID do vídeo e metadados; nenhum áudio é baixado.
 
 ## Server Actions por fluxo
 
@@ -187,6 +231,23 @@ uma mensagem de erro para o formulário. Também rejeita o envio quando o mundo 
 abertura do formulário ou quando uma alteração estrutural encontra campos de data preenchidos no
 mundo, inclusive na lixeira. Não é uma API pública; o `worldId` enviado pelo navegador é conferido contra
 o mundo selecionado pelo cookie ativo.
+
+As seções de configuração do calendário têm uma action cada, todas com o mesmo contrato:
+`(estadoAnterior, formData) → CalendarActionState`. O formulário envia `worldId`, o valor novo
+serializado em JSON e o valor esperado (o que a página leu) para detectar edição concorrente.
+A action valida com o schema da seção, confere o mundo ativo, grava pelo `WorldRepository` e
+revalida `/calendar`. Erros voltam como mensagem para o formulário, sem exceção.
+
+| Action | Campo com o valor novo | Valores esperados | Schema |
+| --- | --- | --- | --- |
+| `updateCampaignTodayAction` | `date` e `operation` (`set` ou `advance`) | `expectedToday`, `expectedCalendar` | `CalendarExactDateSchema` |
+| `updateCalendarAppearanceAction` | `appearance` | `expectedAppearance` | `CalendarAppearanceSchema` |
+| `updateCalendarLandmarksAction` | `landmarks` | `expectedLandmarks`, `expectedCalendar` | `CalendarLandmarksSchema` |
+| `updateCalendarSeasonsAction` | `seasons` | `expectedSeasons`, `expectedCalendar` | `CalendarSeasonsSchema` |
+| `updateCalendarMoonsAction` | `moons` | `expectedMoons`, `expectedCalendar` | `CalendarMoonsSchema` |
+
+`updateCampaignTodayAction` recusa `advance` quando o Hoje da campanha mudou desde a leitura e
+datas com ano além de ±1.000.000. Além de `/calendar`, ela revalida o layout raiz.
 
 `startDateMigrationAction` confirma a prévia de `/calendar/migration` por fingerprint dos arquivos,
 do calendário e das definições de tipos do mundo ativo. `recoverDateMigrationAction` retoma uma execução interrompida ou
@@ -271,3 +332,17 @@ createBoardAction e createSceneAction validam os campos do formulário e redirec
 recurso criado. A cena exige um asset de imagem com dimensões válidas. deleteBoardAction e
 deleteSceneAction fazem exclusão lógica; duplicateSceneAction mantém referências e snapshot com
 novo ID.
+
+### Playlists
+
+As actions ficam em `src/app/actions/playlists.ts` e operam no mundo ativo.
+
+- `createPlaylistAction(formData)` lê `title`, `description` e `tags` (separadas por vírgula),
+  cria a playlist e redireciona para `/soundtrack/<id>`;
+- `updatePlaylistAction(playlistId, formData)` atualiza os mesmos campos e revalida a lista e a
+  página da playlist;
+- `deletePlaylistAction(playlistId)` faz exclusão lógica; ID inexistente lança `PlaylistNotFoundError`;
+- `addVideosAction(playlistId, videoIds)` descarta IDs inválidos, limita a 300 por chamada, consulta
+  os metadados no YouTube e retorna `{ added, duplicates, unavailable }`, em que `unavailable` conta
+  vídeos privados, removidos ou sem incorporação;
+- `removeTrackAction(playlistId, trackId)` remove uma faixa da playlist.

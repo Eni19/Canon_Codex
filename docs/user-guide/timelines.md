@@ -1,5 +1,8 @@
 # Linhas do Tempo
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> de `src/` e o mundo de demonstração de `scripts/seed-timeline-demo.test.ts`.
+
 A página existente de cada Linha do Tempo é um mapa estrelado em duas dimensões. A orientação
 horizontal é inicial; **Vista vertical** oferece outra distribuição das mesmas aparições.
 Título, filtros, controles e painéis permanecem sobre o mapa durante a exploração.
@@ -48,7 +51,7 @@ de 50 correspondente; o mapa atual não tem paginação. Os filtros da bibliotec
 
 ## Incluir, editar e remover
 
-Crie a entidade **Linha do Tempo** no catálogo. **Sobre esta linha** abre conteúdo, propriedades,
+Crie o registro **Linha do Tempo** no catálogo. **Sobre esta linha** abre conteúdo, propriedades,
 relações, backlinks, padrões de escala do mundo e **Editar linha e conteúdo**, sem deslocar o mapa.
 O botão de projeção continua disponível acima dos controles inferiores.
 
@@ -96,8 +99,8 @@ próprias de 50 itens. Os dados completos continuam carregados; essa otimizaçã
 
 O fundo tem duas camadas de estrelas em deriva e cintilação, com uma névoa lenta em tons de
 âmbar. Ele fica atrás do mapa, sem interceptar gestos. Filtros/seleção usam transições de 180 ms e controles de
-câmera 200 ms. Gestos respondem por quadro, sem tween atrasado. **Reduzir movimento** desativa
-animações/transições e torna os controles imediatos. Foco visível e alternativas por teclado
+câmera 200 ms. Gestos respondem por quadro, sem tween atrasado. A preferência do sistema de reduzir movimento
+desativa animações/transições e torna os controles imediatos. Foco visível e alternativas por teclado
 permanecem. Medidas, ensaios e limites: [perfil do canvas](../performance/timeline-cosmic-canvas.md).
 As [referências pesquisadas](../research/timeline-cosmic-canvas.md) documentam a escolha técnica.
 

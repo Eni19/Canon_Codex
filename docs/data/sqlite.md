@@ -1,5 +1,9 @@
 # Armazenamento em SQLite
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, tabelas em
+> `src/repositories/sqlite/schema.ts` e comandos `preview`, `import` e `backup` de
+> `scripts/sqlite-storage.ts`.
+
 SQLite é o driver padrão. Uma biblioteca usa um arquivo `canon-codex.sqlite`, que reúne os
 mundos, registros, documentos, imagens, quadros, cenas, playlists, lixeira e históricos de conversão
 e troca de origem. O servidor cria um mundo inicial na primeira abertura de uma biblioteca nova.
@@ -52,10 +56,13 @@ O aplicativo ainda não oferece exportação de um mundo isolado em formato lega
 
 ## Schema e leitura de artigos
 
-O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Mundos e registros
+O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Uma migração SQL pode
+alterar documentos quando o JSON gravado precisa mudar; a terceira renomeia o tipo `artifact` para
+"Objeto" nos mundos que ainda usam o nome padrão e os leva ao mundo v25; a quarta tira número de
+registro e materiais da ficha de Objeto e os leva ao mundo v26. Mundos e registros
 preservam seus IDs. Relações e aparições ficam em tabelas com escopo de mundo e ordem explícita.
-O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap e snapshots
-tldraw. Imagens e variantes são BLOBs separados dos metadados.
+O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap, o canvas
+dos quadros e das cenas. Imagens e variantes são BLOBs separados dos metadados.
 
 Operações compostas usam uma transação SQLite. A lixeira é representada por exclusão lógica.
 A remoção de um registro da lista ativa preserva suas aparições enquanto o registro existir na lixeira.

@@ -114,4 +114,44 @@ export const migrations = [
     document TEXT NOT NULL CHECK (json_valid(document))
   ) STRICT;
   `,
+  // Mundo v25: o tipo artifact passa a "Objeto" / "Objetos" quando ainda tem o nome padrão antigo
+  // (mesma regra de renameObjectType); nomes personalizados ficam como estão.
+  `
+  UPDATE worlds SET document = (
+    SELECT json_set(worlds.document, '$.entityTypes[' || item.key || '].label', 'Objeto')
+    FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact' AND json_extract(item.value, '$.label') = 'Objeto / Artefato'
+  )
+  WHERE EXISTS (
+    SELECT 1 FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact' AND json_extract(item.value, '$.label') = 'Objeto / Artefato'
+  );
+  UPDATE worlds SET document = (
+    SELECT json_set(worlds.document, '$.entityTypes[' || item.key || '].pluralLabel', 'Objetos')
+    FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact' AND json_extract(item.value, '$.pluralLabel') = 'Objetos / Artefatos'
+  )
+  WHERE EXISTS (
+    SELECT 1 FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact' AND json_extract(item.value, '$.pluralLabel') = 'Objetos / Artefatos'
+  );
+  UPDATE worlds SET document = json_set(document, '$.schemaVersion', 25) WHERE json_extract(document, '$.schemaVersion') = 24;
+  `,
+  // Mundo v26: a ficha de Objeto perde número de registro e materiais (mesma regra de
+  // removeObjectFields); valores já preenchidos ficam nos registros.
+  `
+  UPDATE worlds SET document = (
+    SELECT json_set(worlds.document, '$.entityTypes[' || item.key || '].properties', (
+      SELECT json_group_array(json(field.value)) FROM json_each(item.value, '$.properties') AS field
+      WHERE json_extract(field.value, '$.key') NOT IN ('registrationNumber', 'materials')
+    ))
+    FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact'
+  )
+  WHERE EXISTS (
+    SELECT 1 FROM json_each(worlds.document, '$.entityTypes') AS item
+    WHERE json_extract(item.value, '$.id') = 'artifact'
+  );
+  UPDATE worlds SET document = json_set(document, '$.schemaVersion', 26) WHERE json_extract(document, '$.schemaVersion') = 25;
+  `,
 ]

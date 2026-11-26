@@ -8,6 +8,12 @@ import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import styles from './entity-card.module.css'
 
+/**
+ * Types whose pictures are full figures (portraits of characters, creatures): the card is taller and
+ * shows the whole picture instead of cropping it, so the body is not cut off.
+ */
+const FULL_FIGURE_TYPES = new Set(['character', 'creature'])
+
 function text(value: unknown) {
   return typeof value === 'string' ? value : ''
 }
@@ -34,15 +40,25 @@ export function EntityCard({
     </Link>
   }
 
+  const fullFigure = FULL_FIGURE_TYPES.has(entityType.id)
+  const tall = entityType.id === 'tale' || fullFigure
+  const picture = entity.coverAssetId ? assetVariantUrl(entity.coverAssetId, entityType.id === 'tale' ? 'original' : 'thumbnail') : null
+
   return (
     <Link
       href={`/entity/${entity.id}`}
       className="group flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <div className={`relative w-full shrink-0 bg-muted ${entityType.id === 'tale' ? 'aspect-3/4' : 'aspect-4/3'}`}>
-        {entity.coverAssetId ? (
+      <div className={`relative w-full shrink-0 overflow-hidden bg-muted ${tall ? 'aspect-3/4' : 'aspect-4/3'}`}>
+        {picture && fullFigure ? (
+          <>
+            {/* The same picture, blurred and dimmed, fills the space the whole figure leaves free. */}
+            <Image src={picture} alt="" fill sizes="(max-width: 640px) 50vw, 240px" className="scale-110 object-cover opacity-45 blur-xl" unoptimized aria-hidden/>
+            <Image src={picture} alt="" fill sizes="(max-width: 640px) 50vw, 240px" className="object-contain" unoptimized/>
+          </>
+        ) : picture ? (
           <Image
-            src={assetVariantUrl(entity.coverAssetId, entityType.id === 'tale' ? 'original' : 'thumbnail')}
+            src={picture}
             alt=""
             fill
             sizes="(max-width: 640px) 50vw, 240px"

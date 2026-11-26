@@ -1,5 +1,8 @@
 # Visão de arquitetura
 
+> **Estado:** implementado · **Última verificação:** 26/11/2026, mapa do código contra a árvore de
+> `src/` e contratos em `src/repositories/index.ts`.
+
 A arquitetura mantém a aplicação e os dados locais. As decisões de produto estão nos [ADRs](.).
 
 ## Mapa do código
@@ -10,15 +13,20 @@ src/app/                         entrada HTTP e navegação Next App Router
   (wiki)/                        calendário, catálogos e telas de edição/leitura
   actions/                       mutações de negócio via Server Actions
   api/                           upload, leitura de assets, busca e snapshots
-src/components/                  UI client/server, Tiptap, tldraw e projeção
+src/components/                  UI client/server, Tiptap, Konva e projeção
 src/services/                    casos de uso: mundos, busca e referência de assets
 src/domain/                      schemas Zod, tipos e formatos persistidos
 src/repositories/contracts/      fronteiras de persistência
 src/repositories/sqlite/        driver SQLite padrão
 src/repositories/filesystem/    driver JSON legado
-src/lib/fs/                      caminhos, existência e escrita atômica
+src/lib/fs/                      caminhos (paths.ts) e escrita atômica (atomicWrite.ts)
 src/lib/migrations/              aplicação lazy de versões
 ```
+
+Bibliotecas com uso localizado: Konva desenha a cena do grafo de relações, pdf-lib gera o PDF do
+calendário em `src/services/worlds/calendarPdf.ts`, sharp processa imagens no repositório de assets e
+no upload de fundo do calendário, e animejs anima fichas e o editor de entidades. A lista completa
+fica em [PROJECT.md](../../PROJECT.md#stack).
 
 `domain/` não faz I/O. Componentes não devem conhecer nomes de arquivos. A factory em
 `src/repositories/index.ts` mantém a escolha do driver em um único lugar. No estado atual existem
@@ -28,12 +36,57 @@ cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepos
 `workspace/`. `SQLITE_DATABASE_PATH` seleciona o arquivo diretamente.
 `PERSISTENCE_DRIVER=filesystem` seleciona o driver legado. Veja [SQLite local](../data/sqlite.md).
 
+## Caderno do Codex
+
+`/codex` é um Server Component que reúne contagens e registros recentes por tipo e entrega ao
+`Notebook` (`src/components/codex-notebook/`). O caderno e a mesa são uma cena three.js carregada
+só no navegador; as páginas são HTML fotografado em textura para as páginas 3D, com uma cópia
+invisível do HTML por cima para os cliques. Abrir um registro a partir do caderno usa a transição de
+máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
+ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+
+## Parede de evidências
+
+A página de Evidência (`src/components/entities/evidence-board-page.tsx`) monta no servidor os dados
+da parede e os painéis de leitura em HTML (conteúdo, relações e referências) e os entrega a
+`EvidenceWall` (`src/components/evidence-wall/`), carregado só no navegador. A cena é three.js
+(React Three Fiber): parede, polaroides, folhas e notas são texturas desenhadas em canvas, sem
+fotografar HTML, e o texto das folhas vem de `contentTextBlocks` (`src/components/editor/content-text.ts`),
+que conhece o formato Tiptap. Posições iniciais, limites da parede, linhas entre peças e leitura da
+arrumação salva são regras puras em `src/domain/evidence/evidenceWall.ts`. A arrumação fica no
+`localStorage` do navegador. Sem WebGL, a página mostra o quadro em HTML.
+
+## Bancada de Objetos
+
+A página de Objeto (`src/components/entities/object-bench-page.tsx`) segue o mesmo desenho: o
+servidor monta os dados e os painéis de leitura e os entrega a `ObjectBench`
+(`src/components/object-bench/`), carregado só no navegador. A base comum das superfícies 3D com
+peças (câmera com limites e paralaxe, arraste com peso, foco numa peça) fica em
+`src/components/surface-3d/surface-board.tsx`; cada página traz a superfície, as luzes e os modelos
+próprios. A bancada desenha as ferramentas em geometria (paquímetro e lupa) e reage a elas sobre a
+foto do objeto: a lente mostra uma cópia ampliada da textura da foto e os detalhes que caem dentro dela. Arrumação inicial, limites e a leitura do paquímetro a partir do texto de
+"Dimensões" são regras puras em `src/domain/objects/objectBench.ts`; leitura e gravação da arrumação
+ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem a própria cena.
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do
 mundo. `RelationshipView` mantém filtros, ferramentas, painéis HTML e formulários; a cena Konva
 mantém câmera, alvos do ponteiro e nós por ID em duas camadas. Armazenamento e formulários
 continuam delegando às [Server Actions](../reference/http-and-actions.md).
+
+O grafo Konva usa a área útil da rota, com ferramentas e painéis HTML sobrepostos. A cena mantém a
+câmera ao filtrar ou salvar; a vista salva posições, preferências, estilos, anotações e pastas por
+mundo. Pastas no canto da tela agrupam registros de qualquer tipo. Abrir uma pasta mostra seus
+cartões no canvas inteiro; arrastar um cartão até uma pasta move o registro para ela.
+A busca esmaece itens enquanto o texto muda, e a vizinhança pode seguir ida, volta
+ou ambos. O catálogo guarda tipos de seta reutilizáveis. Uma seta entre dois cartões abre o
+formulário de um vínculo gravado na ficha de origem.
+A escolha do Konva e a migração de Quadros e Cenas estão em
+[ADR-007](ADR-007-konva-canvas.md).
+O [guia de entidades](../user-guide/entities.md) explica os fluxos. A migração de
+Quadros, Cenas e Linha do Tempo depende das verificações do
+[plano de relacionamentos](../plans/relationship-graph-plan.md).
 
 Máscaras de IDs preservam posições ao filtrar ou abrir uma pasta. A navegação de pastas fica em
 HTML no canto do canvas; a cena informa as coordenadas do ponteiro durante o arraste para
@@ -46,6 +99,77 @@ contra o viewport e atualiza apenas as conexões incidentes no arraste. Na visã
 curvas com o mesmo estilo são desenhadas em lote; vínculos selecionados ou em movimento
 mantêm desenho individual. Edições concluídas da vista são agrupadas e gravadas em série usando
 a revisão existente.
+
+## Calendário por mundo
+
+O documento também guarda `calendar`, validado por `src/domain/worlds/calendar.ts`, com dias da
+semana, meses com duração própria, horas por dia, eras, origem e regras intercalares.
+A rota `/calendar` apresenta consultas mensais, anuais e uma agenda de Eventos no servidor, com
+data na URL e janelas de até seis semanas para meses longos; dias intercalares independentes são
+selecionáveis após o mês. A vista mensal apresenta marcos e estações da projeção e a anual os resume.
+A agenda pagina os Eventos ativos que intersectam o mês, preservando datas
+parciais, aproximadas e intervalos. A seção de luas salva até cinco configurações por mundo; a grade
+mensal exibe seus discos, permite filtrá-los e o dia selecionado informa fases e percentuais iluminados.
+A aparência oferece três temas, personalização e fundo local. O Hoje da campanha pode ser definido,
+avançado e usado como sugestão na criação de Eventos e na linha do tempo.
+O documento do mundo também persiste estações, data de campanha, categorias e marcos, além da aparência;
+a projeção de domínio combina esses dados em janelas limitadas. Luas, estações, marcos e aparência têm
+formulários de configuração. Datas de Eventos e aparições podem identificar dias intercalares
+independentes por ano e ID da regra; a troca de origem inclui as datas do mundo na prévia e no backup.
+O campo opcional `originEventId` identifica um único Evento de origem. Criá-lo posiciona sua data
+no ano zero. A troca exige prévia com fingerprint, desloca datas de propriedades por ordinal sob
+transação SQLite e guarda o histórico das mudanças. No filesystem legado, a troca usa o lock do
+mundo e restaura uma operação interrompida antes da próxima leitura ou gravação de metadados.
+
+Propriedades com `kind: 'date'` usam o contrato `{ start, end? }` de
+`src/domain/worlds/calendar-date.ts`, com precisão de ano/mês/dia e aproximação por limite. ISO
+legado continua aceito na leitura e edição durante a transição; strings ISO permanecem intactas em
+salvamentos comuns. A conversão explícita por mundo oferece prévia, relatório de inválidos, backup,
+retomada e restauração em `/calendar/migration`. Mudanças estruturais do calendário continuam
+bloqueadas enquanto houver propriedades, aparições datadas ou luas, pois remarcá-las para outra estrutura
+ainda requer uma operação própria.
+
+A rota `/calendar` usa a URL para conservar o período, o dia, a vista e o filtro lunar. O tema
+Celeste aplica tons de azul-noturno e destaques dourados na capa, nas vistas internas e nos
+formulários. A prévia de aparência reutiliza o componente de capa e os tokens da página. Os cinco
+editores são carregados ao abrir suas seções. Consulte o [guia de mundos](../user-guide/worlds.md#configurar-o-calendário).
+A Agenda usa `WorldRepository.listCalendarAgenda` para obter os Eventos ativos antes de projetar
+o mês. A implementação em filesystem mantém uma projeção em memória conferida com os metadados
+a cada consulta. Consulte [armazenamento legado](../data/storage.md#calendário-por-mundo).
+
+## Linha do Tempo
+
+Linhas do Tempo têm canvas espacial com aparições datadas ou sem data armazenadas separadamente.
+Cartões têm título, nota, data, escala mínima e opção de capa próprios. Biblioteca, inclusão em
+lote, remoção/Desfazer e Eventos rápidos permanecem disponíveis. Filtros
+cronológicos/categorias/busca usam a URL; ampliação espacial e posição da câmera são locais à
+página. O mapa inicial é horizontal, com opção vertical.
+
+O ciclo de vida das aparições distingue registros ativos, na lixeira e ausentes definitivamente.
+Consultas de linha e origem, além da criação de origem, reconciliam referências no repositório.
+Cartões na lixeira mantêm campos próprios e aviso de indisponibilidade; ausência definitiva remove
+todas as aparições nas linhas ativas e na lixeira e limpa somente o vínculo de origem, preservando
+o calendário. Erros de leitura impedem a limpeza. O SQLite grava a reconciliação em transação. O
+filesystem legado faz escritas atômicas por arquivo com retomada idempotente. Veja [SQLite
+local](../data/sqlite.md) e [ciclo de vida no
+filesystem](../data/storage.md#reconciliação-de-registros-em-linhas-do-tempo-tl-10).
+
+O Cosmic Canvas (15/10/2026) substitui a paginação visual TL-11/TL-12 por coordenadas fixas para a
+coleção inteira e cartões limitados ao viewport (teto 96; abaixo de 28%, visão geral por pontos).
+As faixas cronológicas não codificam duração proporcional. Biblioteca e navegador mantêm listas de
+50; URLs antigas com page são interpretadas como localização inicial. Há um único editor modal.
+Filtros alteram visibilidade sem mover a câmera nem reconstruir o layout; detalhes e demais
+painéis ficam sobrepostos. Orientação e alterações reais de datas podem redistribuir coordenadas.
+A câmera usa Pointer Events, wheel e requestAnimationFrame, sem nova dependência. SVG memoizado
+mantém pontos/conexões; cartões são reutilizados. A câmera transforma o plano, único elemento com
+will-change explícito. O fundo anima duas camadas de estrelas e uma névoa por CSS,
+independentemente da câmera e sem interceptar ponteiros. Três camadas separam estrelas, mapa e UI
+fixa. Tokens cósmicos centralizados aplicam preto profundo, texto pergaminho/cinza quente e acento
+âmbar/latão do aplicativo, com fundo e superfícies escurecidos apenas à linha/painéis, conforme a
+atualização do ADR-005. CSS usa transições de 180 ms, controles de câmera 200 ms e movimento
+reduzido imediato. Não há mudança de schema, persistência ou contratos das actions. Referências,
+uso e limites: [pesquisa](../research/timeline-cosmic-canvas.md),
+[guia](../user-guide/timelines.md) e [perfil](../performance/timeline-cosmic-canvas.md).
 
 ## Leitura e gravação de entidade
 
@@ -155,19 +279,38 @@ e formatação de datas fictícias.
 ## Quadros, cenas e projeção
 
 - Quadros são `BoardDocument`. No filesystem legado, ficam em `boards/<boardId>/board.json`. A página carrega todas as entidades
-  como resumos; `InvestigationBoard` guarda o snapshot tldraw por `PUT /api/boards/<boardId>` e
-  mantém uma cópia de sessão no `localStorage` do navegador. Imagens inseridas no quadro passam
-  pelo mesmo `POST /api/assets`.
+  como resumos; `InvestigationBoard` usa o editor Konva `createBoardEditor` (`board-stage.ts`,
+  desenho em `board-render.ts`), guarda o canvas validado por `PUT /api/boards/<boardId>` e a
+  câmera no `localStorage` do navegador. Formato, conversão do tldraw e geometria das setas estão
+  em `src/domain/boards/`; câmera, geometria e histórico comuns, em `src/domain/canvas/`.
+  Quadros e Cenas salvam na hora uma alteração pendente ao sair da página (ou fechar a aba) e
+  guardam a última versão em memória (`src/lib/canvas/canvas-drafts.ts`); assim, voltar pelo
+  roteador do cliente, que pode reaproveitar a página carregada antes, reabre o estado mais novo.
 - Cenas são `Scene`. No filesystem legado, ficam em `scenes/<sceneId>/scene.json`. Uma cena referencia um local e um asset de
-  fundo por UUID, valida a grade, salva snapshots por `PUT /api/scenes/<sceneId>` e pode ser
-  duplicada mantendo essas referências e o snapshot. O `SceneRunner` oferece modos preparar,
-  mestrar e apresentar.
+  fundo por UUID, valida a grade e o canvas, salva o canvas por `PUT /api/scenes/<sceneId>` e pode
+  ser duplicada mantendo essas referências e o canvas. O `SceneRunner` oferece modos preparar,
+  mestrar e apresentar sobre o editor Konva `createSceneEditor` (`scene-stage.ts`). Formato,
+  conversão do tldraw e geometria são regras puras em `src/domain/scenes/`.
 - A projeção de cena não cria uma sessão no servidor. O mestre abre `/projection/<sessionId>` e os
   dois contextos se conectam ao mesmo `BroadcastChannel` do navegador. O mestre publica estado
   completo e atualizações incrementais; `buildProjectionState` remove tokens/POIs ocultos antes de
   enviar. A janela solicita estado completo se perder uma revisão.
 - A projeção de uma entidade abre `/display/entity/<entityId>` em popup e renderiza a mesma tela de
   leitura em modo simples.
+
+## Componentes reutilizáveis
+
+- **CardPicker** (`src/components/ui/card-picker.tsx`): seletor em modal com cartões quadrados
+  (imagem por `assetId`, título, subtítulo, descrição) e busca por nome sem distinguir acentos.
+  Use-o sempre que o usuário precisar escolher um item entre muitos, em vez de um `<select>`.
+  `CardPickerField` é a versão para formulários (botão que abre o modal e envia o id por um
+  `<input type="hidden">`). Exemplos: `ScenePicker` (trocar de cena) e o campo "Local" em
+  `SceneCreateForm`.
+- Todos os campos `reference` e `referenceList` das entidades usam `CardPickerField` /
+  `CardPickerMultiField` (via `ReferenceField` / `ReferenceListField`). Uma propriedade
+  `referenceList` com `optionsFrom: '<outra chave>'` só oferece itens já escolhidos nessa outra
+  propriedade (ex.: líderes de uma organização saem dos membros); o estado compartilhado fica em
+  `ReferenceSelectionProvider`.
 
 ## Onde mudar cada coisa
 
@@ -179,7 +322,7 @@ e formatação de datas fictícias.
 | Busca | `src/services/search/` + handler | limites em [HTTP e actions](../reference/http-and-actions.md) |
 | Persistência | contrato + adaptador em `repositories/` | migração, backup e testes de repositório |
 | Upload/asset | `AssetStore`, handler e actions | MIME, thumbnail, privacidade e ADR-003 |
-| Quadro/cena | contrato, domínio e componente tldraw | snapshot, exclusão lógica e guia de quadros/cenas |
+| Quadro/cena | contrato, domínio e editor Konva | snapshot, exclusão lógica e guia de quadros/cenas |
 
 Se a mudança atravessar uma dessas fronteiras, atualize também a página documental canônica na
 mesma tarefa.
