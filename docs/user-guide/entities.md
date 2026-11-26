@@ -9,7 +9,11 @@
    o editor específico do tipo, quando existe; e **Conteúdo**. Imagem principal, símbolo (cosmologia),
    cor e status aparecem à direita em telas largas e abaixo do conteúdo em telas estreitas.
 4. Escolha **Criar registro**. Para alterar depois, use **Editar** na página e **Salvar
-   alterações**. `Ctrl+S` salva nos dois casos.
+   alterações**. O botão de salvar fica no cabeçalho durante a rolagem. `Ctrl+S` salva nos dois casos.
+
+No celular, os campos da **Ficha** aparecem um abaixo do outro. Em telas maiores, os campos
+curtos ocupam duas colunas e as datas e listas de referências ocupam a linha inteira.
+Na criação e na edição, as seções seguem a mesma ordem, com o título logo acima dos campos.
 
 Não há mais uma tela intermediária: imagens, conteúdo e editores específicos podem ser preenchidos
 antes de o registro existir. A imagem é enviada à biblioteca de assets do mundo assim que é

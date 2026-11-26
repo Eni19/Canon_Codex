@@ -182,12 +182,12 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   return (
     <div data-character-theme={themed ? theme : undefined} className="min-h-full">
       <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm lg:min-h-14 lg:gap-6 lg:px-8">
-        <Breadcrumbs items={[
+        <div className="min-w-0 max-w-full overflow-x-auto"><Breadcrumbs items={[
           { label: worldName, href: '/codex' },
           { label: entityType.pluralLabel, href: `/${entityType.id}` },
           ...(entity ? [{ label: entity.title, href: `/entity/${entity.id}` }, { label: 'Editar' }] : [{ label: 'Novo registro' }]),
-        ]}/>
-        <div className="flex shrink-0 items-center gap-2">
+        ]}/></div>
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
           <span className="mr-2 hidden text-xs text-muted-foreground lg:inline">
             <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">Ctrl</kbd> <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">S</kbd> para salvar
           </span>
@@ -206,7 +206,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
           <input type="hidden" name="type" value={entityType.id}/>
           <input type="hidden" name="worldId" value={worldId}/>
 
-          <div className="flex min-w-0 flex-col gap-12">
+          <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
             <section aria-label="Identificação" data-reveal={0}>
               {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
               <label className="group/title relative block">
@@ -236,8 +236,8 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </section>
 
             {(shortFields.length > 0 || (mode === 'create' && entityType.id === 'event')) && <EditorSection title="Ficha" reveal={2}>
-              <div className="grid grid-cols-2 gap-x-5 gap-y-5">
-                {shortFields.map((property) => <div key={property.key} className={isWideField(property) ? 'col-span-2' : undefined}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                {shortFields.map((property) => <div key={property.key} className={cn('min-w-0', isWideField(property) && 'sm:col-span-2')}>
                   <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
                   <FieldError name={property.key} message={fieldErrors[property.key]}/>
                 </div>)}
@@ -249,7 +249,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
             </EditorSection>}
 
             {longFields.length > 0 && <EditorSection title="Detalhes" reveal={3}>
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4 sm:gap-5">
                 {longFields.map((property) => <div key={property.key} className="flex flex-col gap-1.5">
                   <Label htmlFor={'property-' + property.key}>{property.label}</Label>
                   <textarea
@@ -340,8 +340,8 @@ function FieldError({ name, message }: { name: string; message?: string }) {
 }
 
 function EditorSection({ title, children, reveal }: { title: string; children: ReactNode; reveal: number }) {
-  return <section data-reveal={reveal}>
-    <h2 className="mb-4 font-serif text-xl font-medium">{title}</h2>
+  return <section aria-labelledby={'entity-section-' + reveal} data-reveal={reveal} className="min-w-0 border-t border-border pt-4 sm:pt-5">
+    <h2 id={'entity-section-' + reveal} className="mb-3 font-serif text-xl font-medium sm:mb-4">{title}</h2>
     {children}
   </section>
 }
