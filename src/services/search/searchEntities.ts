@@ -62,7 +62,8 @@ export async function searchEntities(
       { name: 'aliases', weight: 0.3 },
       { name: 'tags', weight: 0.2 },
     ],
-    threshold: 0.4,
+    // Very short fragments must occur literally; longer terms tolerate typos such as Auorra.
+    threshold: text.length <= 3 ? 0 : 1 / 3,
     ignoreLocation: true,
   })
 

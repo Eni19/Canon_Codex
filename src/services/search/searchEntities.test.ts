@@ -6,12 +6,25 @@ vi.mock('@/repositories', () => ({
     getWorld: async () => ({ entityTypes: [] }),
     listEntities: async () => [
       { id: 'tag', type: 'location', title: 'Mirante', aliases: [], tags: ['aurora'] },
-      { id: 'title', type: 'character', title: 'Aurora', aliases: [], tags: [] },
+      { id: 'title', type: 'character', title: 'Aurora', aliases: ['Estrela da Manhã'], tags: [] },
     ],
   }),
 }))
 
 describe('ordenação da busca de entidades', () => {
+  it.each([
+    ['apelido cadastrado', 'Estrela da Manhã'],
+    ['trecho interno do título', 'ror'],
+    ['letras trocadas', 'Auorra'],
+  ])('encontra Aurora por %s', async (_caso, consulta) => {
+    const results = await searchEntities('world', consulta)
+    expect(results[0]?.id).toBe('title')
+  })
+
+  it('evita aproximar um trecho de três letras que não ocorre nos registros', async () => {
+    await expect(searchEntities('world', 'rir')).resolves.toEqual([])
+  })
+
   it('apresenta o título exato antes da correspondência por tag', async () => {
     const results = await searchEntities('world', 'Aurora')
     expect(results.map(item => item.id)).toEqual(['title', 'tag'])

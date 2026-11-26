@@ -108,6 +108,8 @@ Resposta 200:
 
 A busca carrega entidades do mundo em memória por chamada. Dentro do filtro de tipo, os títulos
 iguais ao termo aparecem primeiro, ignorando maiúsculas, minúsculas e espaços nas extremidades.
+Consultas de até três caracteres encontram trechos literais, inclusive no meio do nome. Termos
+mais longos admitem aproximação: `Auorra` encontra `Aurora`, que também pode ser buscada por seu apelido cadastrado.
 O Fuse.js ordena os demais resultados por relevância, com maior peso para títulos, depois apelidos
 e tags. O limite considera primeiro os títulos exatos. Falhas de leitura do mundo/repositório são exceções do servidor; o handler
 não define um envelope de erro próprio.
