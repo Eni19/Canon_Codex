@@ -1,5 +1,7 @@
 # ADR-004: Tiptap isolado atrás de um ContentDocument versionado
 
+> **Estado:** implementado · **Última verificação:** 25/11/2026, `ContentDocumentSchema` (`format: 'tiptap-json'`, `pages[]`) em `src/domain/content/contentDocument.ts` e o nó `src/components/editor/extensions/entity-link.ts`.
+
 ## Estado atual em 23/09/2026
 
 O domínio atual usa `ContentDocument` versão 2 com `pages[]`. A documentação original desta ADR

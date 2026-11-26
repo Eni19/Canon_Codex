@@ -1,5 +1,7 @@
 # ADR-002: Entidade genérica + EntityTypeDefinition configurável, em vez de tabelas por tipo
 
+> **Estado:** implementado, com modelo híbrido descrito abaixo · **Última verificação:** 25/11/2026, os 17 tipos de `src/domain/worlds/defaultWorldSeed.ts` e os renderizadores de `src/components/entities/entity-page.tsx`.
+
 ## Estado atual em 28/09/2026
 
 O modelo persistido continua genérico e o mundo semente possui **17 tipos** em
