@@ -49,7 +49,7 @@ visual futura force uma reescrita de componente por componente.
 ### Atualização: caderno do Codex (25/11/2026, experimental)
 
 O caderno do início do mundo usa os tokens `--nb-*`, definidos em `:root` porque a mesa e o papel
-são os mesmos nos dois temas. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+são os mesmos nos dois temas. Veja o [ADR-008](ADR-008-codex-notebook-home.md).
 
 ### Atualização: canvas de relacionamentos (16/11/2026)
 

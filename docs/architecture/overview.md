@@ -43,7 +43,7 @@ cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepos
 só no navegador; as páginas são HTML fotografado em textura para as páginas 3D, com uma cópia
 invisível do HTML por cima para os cliques. Abrir um registro a partir do caderno usa a transição de
 máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
-ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
+ficam em módulos separados. Veja o [ADR-008](ADR-008-codex-notebook-home.md).
 
 ## Formação holográfica
 
