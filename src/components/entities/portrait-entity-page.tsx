@@ -47,7 +47,7 @@ export function PortraitEntityPage({
   const attributes = portraitAttributes(entityType, entity.aliases, entity.properties, entityTitleById)
 
   return (
-    <div data-character-theme={entity.theme ?? 'amber'} data-holo-root className="px-4 pt-6 sm:px-8 sm:pt-8">
+    <div data-character-theme={entity.theme ?? 'amber'} data-holo-root data-holo-pending={entity.type === 'character' || undefined} className="px-4 pt-6 sm:px-8 sm:pt-8">
       <PageScrollLock />
       {/* Personagens: a página se forma a partir de um fluido holográfico, primeiro a figura. */}
       {entity.type === 'character' && <HoloFormation rootSelector="[data-holo-root]" imageSelector="img[data-framing-target]" />}

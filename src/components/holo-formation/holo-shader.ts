@@ -90,6 +90,9 @@ void main() {
   color = mix(color, imageColor, image.a * max(formed, 0.35 * edge));
   alpha = max(alpha, image.a * (0.35 + 0.65 * formed));
   alpha = max(alpha, edge * 0.6);
-  gl_FragColor = vec4(color, clamp(alpha, 0.0, 1.0));
+  // Cor já multiplicada pela opacidade: é o formato que todo navegador compõe igual. Com a cor
+  // "solta", o Chromium no Windows somava o fluido à página mesmo onde ele já era transparente.
+  float a = clamp(alpha, 0.0, 1.0);
+  gl_FragColor = vec4(color * a, a);
 }
 `

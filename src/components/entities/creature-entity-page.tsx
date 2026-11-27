@@ -14,7 +14,7 @@ import type { EntityPageProps } from './entity-page'
 import styles from './creature-entity-page.module.css'
 
 export function CreatureEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
-  return <div data-character-theme={entity.theme ?? 'amber'} data-holo-root className={styles.shell}>
+  return <div data-character-theme={entity.theme ?? 'amber'} data-holo-root data-holo-pending className={styles.shell}>
     <PageScrollLock />
     {/* A página se forma a partir de um fluido holográfico, primeiro a criatura. */}
     <HoloFormation rootSelector="[data-holo-root]" imageSelector="img[data-framing-target]" />

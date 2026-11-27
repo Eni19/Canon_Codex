@@ -345,3 +345,13 @@ body:has([data-cosmic-timeline]) [data-page-projection] {
     bottom: 132px;
   }
 }
+
+/*
+ * Formação holográfica (HoloFormation): a página chega escondida e só aparece quando o fluido já a
+ * cobre, para nenhum navegador mostrar a página pronta por um instante antes da animação. Se o
+ * script não rodar, ela aparece sozinha depois de 2,5 s.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-holo-pending] { visibility: hidden; animation: holo-safety 0s linear 2.5s forwards; }
+}
+@keyframes holo-safety { to { visibility: visible; } }

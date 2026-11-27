@@ -55,8 +55,15 @@ parte opaca da figura fica perto) e da distância até ela; a frente da formaç�
 película. O shader redesenha a imagem no mesmo lugar em que a página a mostra (caixa já com o
 enquadramento, encaixe lido de `object-fit` e `object-position` e corte vertical do contêiner),
 deformada até assentar; nesse meio-tempo a imagem real fica invisível e volta quando o canvas sai.
+Canvas e imagem são medidos de novo a cada quadro, porque a página ainda se mexe depois que a
+animação começa (no Edge, a barra de rolagem some quando a rolagem é travada e o conteúdo anda
+alguns pixels). O shader entrega a cor já multiplicada pela opacidade, o formato que todos os
+navegadores compõem igual. O brilho em volta da figura (o `drop-shadow` de um ancestral da imagem)
+começa apagado na cor de destaque e acende com transição depois da troca.
 As páginas de Personagem (`portrait-entity-page.tsx`) e de Criatura (`creature-entity-page.tsx`)
-usam a entrada.
+usam a entrada. A raiz dessas páginas vem do servidor com `data-holo-pending`, que a esconde por
+CSS (`globals.css`) até o canvas cobri-la; assim nenhum navegador pinta a página pronta antes do
+fluido. Sem script, ela aparece sozinha depois de 2,5 s; com movimento reduzido, nunca se esconde.
 
 ## Parede de evidências
 
