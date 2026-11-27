@@ -35,13 +35,13 @@ export function WorldManageDialog({ world, onClose }: { world: World; onClose: (
       <form
         action={action}
         className="-mx-6 -mb-6 flex items-center justify-between gap-4 rounded-b-xl border-t border-border bg-destructive/5 px-6 py-4"
-        onSubmit={(event) => { if (!window.confirm('Excluir “' + world.name + '” da biblioteca? Os arquivos serão movidos para a lixeira interna.')) event.preventDefault() }}
+        onSubmit={(event) => { if (!window.confirm('Excluir “' + world.name + '” da biblioteca? Ele fica 7 dias na lixeira, onde pode ser restaurado, e depois é apagado de vez.')) event.preventDefault() }}
       >
         <input type="hidden" name="worldId" value={world.id}/>
         <input type="hidden" name="intent" value="delete"/>
         <div>
           <p className="text-sm font-medium">Excluir este Codex</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">O mundo sai da biblioteca e vai para a pasta de lixeira.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">O mundo sai da biblioteca e fica 7 dias na lixeira.</p>
         </div>
         <Button type="submit" variant="destructive" disabled={pending}><Trash2/>Excluir</Button>
       </form>

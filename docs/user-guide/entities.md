@@ -292,12 +292,22 @@ pela própria imagem, desfocada. Os demais tipos recortam a capa para preencher 
 
 ## Excluir e limitações
 
-**Excluir** um registro move sua pasta inteira, inclusive `content.json`, para `trash/`; ele some
-dos catálogos e não há botão de restaurar. Referências ou cartões de quadro que ainda guardem o ID
-podem mostrar **Entidade indisponível**. Não existe exclusão permanente exposta pela aplicação.
+**Excluir** um registro o leva para a **Lixeira** (barra lateral, em Ferramentas, ou `/trash`); ele
+some dos catálogos, e referências ou cartões de quadro que ainda guardem o ID mostram **Entidade
+indisponível**. A lixeira lista registros, quadros, cenas e playlists excluídos, com a data da
+exclusão e o tempo que falta para o descarte, como "Será apagado em 6 dias". Cada item tem:
+
+- **Restaurar**: devolve o item ao lugar, com relações, conteúdo e aparições;
+- **Apagar agora**: pede confirmação e apaga de vez, sem volta.
+
+Sete dias depois da exclusão o item é apagado de vez automaticamente, ao abrir o app ou, com ele
+aberto, na checagem de hora em hora. Depois disso só um [backup](../data/sqlite.md#backup-e-restauração)
+recupera o item. No driver filesystem legado não há prazo nem restauração: o registro vai para
+`trash/` e a tela da lixeira pede a conversão para SQLite.
 
 Nas linhas do tempo, registros na lixeira mantêm cartões, título próprio, nota e data, com aviso
-**Registro indisponível** e sem link para abrir o registro. Ausência definitiva também da lixeira
+**Registro indisponível** e sem link para abrir o registro. Apagar o registro de vez, pela lixeira ou
+pelo fim do prazo, remove suas aparições e relações; no filesystem legado, a ausência definitiva
 provoca a remoção das aparições na próxima consulta de linha ou origem, ou ao criar uma origem. Se o registro era o
 Evento de origem, o vínculo é limpo e o calendário preservado. Veja [linhas do tempo](timelines.md).
 

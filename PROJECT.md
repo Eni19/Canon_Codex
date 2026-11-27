@@ -64,7 +64,8 @@ src/lib/            caminhos, escrita atômica e registry de migrações
 **[fixa]** Telas, componentes e Server Actions dependem só dos contratos de repositório. A factory
 em `src/repositories/index.ts` escolhe o driver e entrega cinco contratos: `WorldRepository`,
 `AssetStore`, `BoardRepository`, `SceneRepository` e `PlaylistRepository`
-([ADR-001](docs/architecture/ADR-001-local-first-storage.md)).
+([ADR-001](docs/architecture/ADR-001-local-first-storage.md)). No SQLite entrega também o
+`TrashRepository`; no filesystem, `getTrashRepository()` devolve `null`.
 
 - SQLite é o driver padrão ([ADR-006](docs/architecture/ADR-006-sqlite-storage.md)); o filesystem
   JSON continua para bibliotecas antigas com `PERSISTENCE_DRIVER=filesystem`.
@@ -75,8 +76,10 @@ em `src/repositories/index.ts` escolhe o driver e entrega cinco contratos: `Worl
   [migrações](docs/data/migrations.md#versões-atuais).
 - Escritas que afetam vários registros usam uma transação SQLite. No filesystem, cada arquivo é
   gravado por substituição atômica, sem transação entre arquivos.
-- Excluir é exclusão lógica: `deleted_at` no SQLite, `trash/` no filesystem. Não há restauração nem
-  descarte definitivo pela interface (#50).
+- Excluir é exclusão lógica: `deleted_at` no SQLite, `trash/` no filesystem. No SQLite o item fica
+  7 dias na lixeira, pode ser restaurado ou apagado de vez em `/trash` e, vencido o prazo, é apagado
+  de forma definitiva na abertura do app ou na checagem de hora em hora
+  ([ADR-009](docs/architecture/ADR-009-trash-retention.md)). O filesystem não tem prazo nem restauração.
 
 Detalhes em [SQLite](docs/data/sqlite.md) e [armazenamento legado](docs/data/storage.md).
 

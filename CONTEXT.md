@@ -54,14 +54,16 @@ _Evitar_: documento, nota, aba.
 _No código_: item de `ContentDocument.pages`.
 
 **Lixeira**:
-Estado de um registro, quadro, cena ou playlist excluído pela interface. Ele some dos catálogos,
-mas continua existindo e suas referências mostram que está indisponível.
+Estado de um registro, quadro, cena, playlist ou Codex excluído pela interface. Ele some dos
+catálogos, mas continua existindo por 7 dias e suas referências mostram que está indisponível.
+Nesse prazo pode ser restaurado ou apagado agora; depois é apagado de vez.
 _Evitar_: exclusão permanente, apagado.
 _No código_: `trash/` no driver legado e `deleted_at` no SQLite.
 
 **Ausência definitiva**:
-Situação em que um registro não existe nem na lixeira. Só acontece fora da interface e faz o app
-limpar as aparições e referências que apontavam para ele.
+Situação em que um registro não existe nem na lixeira: venceu o prazo da lixeira, foi apagado
+agora na lixeira ou sumiu fora da interface. Faz o app limpar as aparições e referências que
+apontavam para ele.
 _Evitar_: lixeira, registro indisponível.
 
 ## Relações

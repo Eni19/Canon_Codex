@@ -326,6 +326,20 @@ evitar sobrescrever outra aba. A criação e a edição exigem registros ativos 
 O campo opcional `bidirectional` habilita os dois sentidos de uma relação direcional. O vínculo
 continua gravado na ficha de origem e a ficha de destino deriva a referência de entrada.
 
+### Lixeira
+
+As actions ficam em `src/app/actions/trash.ts`, exigem o SQLite (`getTrashRepository()`) e devolvem
+`{ error?: string }` em vez de lançar. Todas revalidam `/` com `layout`, porque um item restaurado
+volta aos catálogos.
+
+- `restoreTrashItemAction(worldId, kind, id)` e `discardTrashItemAction(worldId, kind, id)` conferem
+  que `worldId` é o Codex ativo; `kind` é `entity`, `board`, `scene` ou `playlist`. Item vencido
+  ou fora da lixeira volta como o erro "Este item não está mais na lixeira.";
+- `restoreWorldAction(worldId)` e `discardWorldAction(worldId)` agem sobre um Codex na lixeira da
+  biblioteca. Restaurar troca o slug por um livre se outro Codex ativo o ocupou.
+
+O prazo e a limpeza automática estão no [ADR-009](../architecture/ADR-009-trash-retention.md).
+
 ### Quadros e cenas
 
 createBoardAction e createSceneAction validam os campos do formulário e redirecionam para o

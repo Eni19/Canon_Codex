@@ -1,13 +1,17 @@
 import { cookies } from 'next/headers'
 import { CodexLauncher } from '@/components/wiki/codex-launcher'
-import { getWorldRepository, LegacyMigrationRequiredError } from '@/repositories'
+import { describeTrashRemaining } from '@/domain/trash/trash'
+import { getTrashRepository, getWorldRepository, LegacyMigrationRequiredError } from '@/repositories'
 
 async function loadLibrary() {
   try {
     const repository = getWorldRepository()
     const worlds = await repository.listWorlds()
     const missingWorldMetadata = await repository.listMissingWorldMetadata()
-    return { worlds, missingWorldMetadata }
+    const now = new Date()
+    const trashedWorlds = (await getTrashRepository()?.listTrashedWorlds(now) ?? [])
+      .map((world) => ({ id: world.id, name: world.name, remaining: describeTrashRemaining(world.expiresAt, now) }))
+    return { worlds, missingWorldMetadata, trashedWorlds }
   } catch (error) {
     if (error instanceof LegacyMigrationRequiredError) return null
     throw error
@@ -27,5 +31,5 @@ export default async function LibraryPage() {
       </main>
     )
   }
-  return <CodexLauncher worlds={library.worlds} activeWorldId={activeWorldId} missingWorldMetadata={library.missingWorldMetadata}/>
+  return <CodexLauncher worlds={library.worlds} activeWorldId={activeWorldId} missingWorldMetadata={library.missingWorldMetadata} trashedWorlds={library.trashedWorlds}/>
 }

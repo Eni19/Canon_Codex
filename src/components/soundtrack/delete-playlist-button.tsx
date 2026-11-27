@@ -16,7 +16,7 @@ export function DeletePlaylistButton({ playlistId, title, redirectTo }: { playli
       aria-label={`Excluir ${title}`}
       title="Excluir playlist"
       onClick={() => {
-        if (!window.confirm(`Mover a playlist “${title}” para a lixeira?`)) return
+        if (!window.confirm(`Mover a playlist “${title}” para a lixeira? Ela pode ser restaurada por 7 dias.`)) return
         startTransition(async () => {
           await deletePlaylistAction(playlistId)
           if (redirectTo) router.push(redirectTo)

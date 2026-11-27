@@ -4,6 +4,8 @@ import { useActionState, useState, type ComponentProps, type CSSProperties, type
 import { useFormStatus } from 'react-dom'
 import { ArrowRight, FolderInput, Globe, HardDrive, Loader2, Plus, Settings2, Sparkles } from 'lucide-react'
 import { archiveIncompleteWorldAction, openWorldAction } from '@/app/actions/worlds'
+import { discardWorldAction, restoreWorldAction } from '@/app/actions/trash'
+import { TrashItemActions } from '@/components/trash/trash-item-actions'
 import type { World } from '@/domain/worlds/world'
 import { Button } from '@/components/ui/button'
 import { CreateWorldDialog, ImportWorldDialog } from '@/components/wiki/world-library-dialogs'
@@ -11,6 +13,9 @@ import { WorldManageDialog } from '@/components/wiki/world-manage-dialog'
 import { cn } from '@/lib/utils'
 
 type Panel = 'create' | 'import' | null
+
+/** Codex na lixeira, com o tempo restante já descrito no servidor. */
+export type TrashedWorldRow = { id: string; name: string; remaining: string }
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' })
 
@@ -22,7 +27,7 @@ const stagger = (index: number): CSSProperties => ({ animationDelay: `${index * 
  * World library at `/` — the one route rendered outside WikiShell, so it reproduces the shell's
  * rail (same width, tokens and link style as WikiSidebar) to read as part of the same app.
  */
-export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = [] }: { worlds: World[]; activeWorldId?: string; missingWorldMetadata?: string[] }) {
+export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = [], trashedWorlds = [] }: { worlds: World[]; activeWorldId?: string; missingWorldMetadata?: string[]; trashedWorlds?: TrashedWorldRow[] }) {
   const [panel, setPanel] = useState<Panel>(null)
   const [managedWorld, setManagedWorld] = useState<World | null>(null)
   const active = worlds.find((world) => world.id === activeWorldId) ?? worlds[0]
@@ -82,12 +87,30 @@ export function CodexLauncher({ worlds, activeWorldId, missingWorldMetadata = []
                   </div>}
             </section>
           </div>}
+      <TrashedWorlds worlds={trashedWorlds}/>
     </main>
 
     <CreateWorldDialog open={panel === 'create'} onOpenChange={(open) => setPanel(open ? 'create' : null)}/>
     <ImportWorldDialog open={panel === 'import'} onOpenChange={(open) => setPanel(open ? 'import' : null)}/>
     {managedWorld && <WorldManageDialog world={managedWorld} onClose={() => setManagedWorld(null)}/>}
   </div>
+}
+
+function TrashedWorlds({ worlds }: { worlds: TrashedWorldRow[] }) {
+  if (worlds.length === 0) return null
+  return <section aria-labelledby="trashed-worlds" className="mx-auto max-w-4xl px-12 pb-14">
+    <h2 id="trashed-worlds" className="text-xl font-medium">Lixeira</h2>
+    <p className="mt-1 text-sm text-muted-foreground">Codex excluídos ficam aqui por 7 dias e depois são apagados de vez.</p>
+    <ul className="mt-4 border-t border-border">
+      {worlds.map((world) => <li key={world.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-2 py-3">
+        <span className="min-w-0">
+          <strong className="block truncate font-serif text-base font-medium">{world.name}</strong>
+          <span className="text-xs text-muted-foreground">{world.remaining}</span>
+        </span>
+        <TrashItemActions title={world.name} restore={restoreWorldAction.bind(null, world.id)} discard={discardWorldAction.bind(null, world.id)}/>
+      </li>)}
+    </ul>
+  </section>
 }
 
 function IncompleteWorldRow({ name }: { name: string }) {
