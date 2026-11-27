@@ -22,7 +22,7 @@ uniform float uTime;      // segundos
 uniform sampler2D uImage;
 uniform float uHasImage;
 uniform vec4 uImageRect;  // retângulo desenhado da imagem: x, y, largura, altura (px, origem em cima)
-uniform vec2 uClipY;      // faixa vertical visível da imagem (px)
+uniform vec4 uClip;       // área visível da imagem: esquerda, topo, direita, base (px)
 uniform vec2 uFocus;      // centro da figura (px): de onde a página se forma
 uniform vec3 uBase;       // fundo da página
 uniform vec3 uAccent;     // cor de destaque do tema
@@ -45,7 +45,7 @@ vec3 film(float x) {
 }
 vec4 sampleImage(vec2 px) {
   vec2 uv = (px - uImageRect.xy) / uImageRect.zw;
-  float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0) * step(uClipY.x, px.y) * step(px.y, uClipY.y);
+  float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0) * step(uClip.x, px.x) * step(px.x, uClip.z) * step(uClip.y, px.y) * step(px.y, uClip.w);
   return uHasImage * inside * texture2D(uImage, clamp(uv, 0.0, 1.0));
 }
 
@@ -89,7 +89,12 @@ void main() {
   float alpha = 1.0 - formed;
   color = mix(color, imageColor, image.a * max(formed, 0.35 * edge));
   alpha = max(alpha, image.a * (0.35 + 0.65 * formed));
+  // A imagem real fica por baixo do canvas: a silhueta dela fica sempre coberta até a troca.
+  alpha = max(alpha, still.a);
   alpha = max(alpha, edge * 0.6);
-  gl_FragColor = vec4(color, clamp(alpha, 0.0, 1.0));
+  // Cor já multiplicada pela opacidade: é o formato que todo navegador compõe igual. Com a cor
+  // "solta", o Chromium no Windows somava o fluido à página mesmo onde ele já era transparente.
+  float a = clamp(alpha, 0.0, 1.0);
+  gl_FragColor = vec4(color * a, a);
 }
 `
