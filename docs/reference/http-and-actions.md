@@ -99,7 +99,12 @@ Parâmetros opcionais:
 
 - q: texto fuzzy; vazio retorna os primeiros itens;
 - type: filtra pelo ID do tipo;
+- tag: filtra por uma etiqueta inteira, ignorando maiúsculas, acentos e espaços nas extremidades;
 - limit: inteiro limitado entre 1 e 100; o padrão é 8.
+
+Os filtros de tipo, etiqueta e os prefixos `#etiqueta` em `q` são combinados no mundo ativo antes
+da ordenação textual e do limite. Por exemplo, `?q=Aurora&type=location&tag=capital&limit=1`
+retorna até um Local com a etiqueta `capital` e correspondência textual com `Aurora`.
 
 Resposta 200:
 

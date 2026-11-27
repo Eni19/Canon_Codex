@@ -7,6 +7,7 @@ import { ArrowRight, FolderTree, Search, SlidersHorizontal } from 'lucide-react'
 import { EntityCard } from '@/components/entities/entity-card'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import { tagKey } from '@/domain/entities/entityTags'
 import { buildLocationTree, filterLocationTree, type LocationNode } from '@/domain/entities/locationTree'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { cn } from '@/lib/utils'
@@ -15,10 +16,6 @@ import styles from './entity-catalog.module.css'
 type CatalogMode = 'name' | 'organization' | 'location' | 'hierarchy' | 'nature' | 'recordKind' | 'discipline' | 'subtype'
 
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
-
-function normalize(value: string) {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
-}
 
 function referenceId(value: unknown): string | undefined {
   return typeof value === 'string' && value ? value : undefined
@@ -93,9 +90,11 @@ export function EntityCatalog({
   const [mode, setMode] = useState<CatalogMode>(() => initialMode(entityType.id))
   const [query, setQuery] = useState('')
   const titleById = useMemo(() => new Map(relatedEntities.map((entity) => [entity.id, entity.title])), [relatedEntities])
-  const normalizedQuery = normalize(query.trim())
+  const normalizedQuery = tagKey(query)
   const filtered = useMemo(
-    () => entities.filter((entity) => normalize(entity.title).includes(normalizedQuery)),
+    () => entities.filter((entity) =>
+      [entity.title, ...entity.aliases, ...entity.tags].some((value) => tagKey(value).includes(normalizedQuery)),
+    ),
     [entities, normalizedQuery],
   )
 
@@ -135,8 +134,8 @@ export function EntityCatalog({
     <div className={styles.toolbar}>
       <label className={styles.search}>
         <Search aria-hidden="true" />
-        <span className="sr-only">Pesquisar por nome</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Pesquisar ${entityType.pluralLabel.toLocaleLowerCase('pt-BR')} por nome…`} />
+        <span className="sr-only">Pesquisar por nome, apelido ou tag</span>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar por nome, apelido ou tag" />
         {query && <button type="button" onClick={() => setQuery('')}>Limpar</button>}
       </label>
       {modes.length > 1 && <div className={styles.modes} aria-label="Organizar catálogo">
@@ -147,7 +146,7 @@ export function EntityCatalog({
 
     <div className={styles.resultCount}>{filtered.length} {filtered.length === 1 ? 'registro encontrado' : 'registros encontrados'}</div>
 
-    {filtered.length === 0 ? <div className={styles.empty}><Search /><strong>Nenhum resultado</strong><p>Tente pesquisar usando outra parte do nome.</p></div>
+    {filtered.length === 0 ? <div className={styles.empty}><Search /><strong>Nenhum resultado</strong><p>Tente outro nome, apelido ou tag.</p></div>
       : mode === 'hierarchy'
         ? <LocationHierarchy entities={entities} filteredIds={new Set(filtered.map((entity) => entity.id))} searching={Boolean(normalizedQuery)} entityType={entityType} />
         : <div className={styles.groups}>{groups.map((group) => <section key={group.label} className={styles.group}>

@@ -219,7 +219,7 @@ as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
 
-Os catálogos permitem pesquisar por nome ou título. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
+Nos catálogos, digite um trecho do nome, do apelido ou da tag. A comparação ignora maiúsculas, minúsculas e acentos. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
 
 **Pesquisa por etiquetas.** Na paleta de comandos, termos com `#` filtram por etiqueta: `#nob`
 encontra registros com a etiqueta "nobreza", `#nob #porto capitão` combina duas etiquetas com

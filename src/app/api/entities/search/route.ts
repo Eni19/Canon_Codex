@@ -6,10 +6,11 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const query = url.searchParams.get('q') ?? ''
   const type = url.searchParams.get('type') ?? undefined
+  const tag = url.searchParams.get('tag') ?? undefined
   const requestedLimit = Number(url.searchParams.get('limit') ?? 8)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 100) : 8
 
   const world = await getCurrentWorld()
-  const results = await searchEntities(world.id, query, { type, limit })
+  const results = await searchEntities(world.id, query, { type, tag, limit })
   return NextResponse.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }

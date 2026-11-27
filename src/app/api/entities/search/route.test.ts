@@ -19,6 +19,29 @@ async function search(title: string) {
   return response.json()
 }
 
+it('combina texto, tipo e etiqueta inteira no mundo ativo antes do limite', async () => {
+  const db = new SqliteDatabase(':memory:')
+  try {
+    const sqlite = new SqliteWorldRepository(db)
+    repo = sqlite
+    worldId = sqlite.createWorld('Mundo ativo').id
+    const otherWorld = sqlite.createWorld('Outro mundo').id
+    await repo.createEntity(otherWorld, { type: 'location', title: 'Aurora', tags: ['capital'] })
+    await repo.createEntity(worldId, { type: 'character', title: 'Aurora', tags: ['capital'] })
+    await repo.createEntity(worldId, { type: 'location', title: 'Aurora', tags: ['capital histórica'] })
+    await repo.createEntity(worldId, { type: 'location', title: 'Mirante', tags: ['capital'] })
+    const expected = await repo.createEntity(worldId, { type: 'location', title: 'Cidade de Aurora', tags: ['Capital'] })
+
+    const url = 'http://localhost/api/entities/search?q=Aurora&type=location&tag=CAPITAL'
+    for (const suffix of ['', '&limit=1']) {
+      const response = await GET(new Request(url + suffix))
+      expect(await response.json()).toMatchObject([{ id: expected.id }])
+    }
+  } finally {
+    db.close()
+  }
+})
+
 it.each(['filesystem', 'sqlite'])('reflete cada alteração na consulta seguinte com %s', async driver => {
   const directory = await mkdtemp(path.join(tmpdir(), 'canon-search-'))
   vi.stubEnv('WIKI_WORKSPACE_DIR', directory)
