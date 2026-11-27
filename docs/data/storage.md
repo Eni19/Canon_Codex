@@ -237,7 +237,8 @@ imagem no editor volta o enquadramento ao padrão.
 Excluir entidade, asset, quadro ou cena move seu diretório para o `trash/` do mundo, com prefixo,
 ID e timestamp. Excluir um mundo move sua pasta para `<workspace>/trash/worlds/`. Não há job de
 retenção, restauração pela UI, descarte permanente ou backup automático. Não use `trash/` como
-substituto de backup; cópia externa é necessária.
+substituto de backup; cópia externa é necessária. O prazo de 7 dias e a tela da lixeira existem só
+no SQLite ([ADR-009](../architecture/ADR-009-trash-retention.md)).
 
 ## Reconciliação de registros em linhas do tempo (TL-10)
 

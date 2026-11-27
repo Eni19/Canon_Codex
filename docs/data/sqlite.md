@@ -52,6 +52,7 @@ do SQLite e verifica integridade e chaves estrangeiras. O destino deve ser novo 
 condições de publicação da importação. Para restaurar, preserve o backup original, gere outra cópia
 com o mesmo comando e aponte `SQLITE_DATABASE_PATH` para essa cópia. Abra a biblioteca e confira
 mundos, imagens e documentos. Para mover a biblioteca inteira a outra instalação, use o backup.
+O backup é a única forma de recuperar o que já saiu da lixeira depois do prazo de 7 dias.
 O aplicativo ainda não oferece exportação de um mundo isolado em formato legado.
 
 ## Schema e leitura de artigos
@@ -66,6 +67,18 @@ dos quadros e das cenas. Imagens e variantes são BLOBs separados dos metadados.
 
 Operações compostas usam uma transação SQLite. A lixeira é representada por exclusão lógica.
 A remoção de um registro da lista ativa preserva suas aparições enquanto o registro existir na lixeira.
+
+## Prazo da lixeira
+
+Um mundo, registro, quadro, cena, playlist ou imagem com `deleted_at` fica 7 dias na lixeira
+([ADR-009](../architecture/ADR-009-trash-retention.md)). `SqliteTrashRepository`
+(`src/repositories/sqlite/sqliteTrash.ts`) restaura (`deleted_at = NULL`), apaga na hora e limpa
+os vencidos com `DELETE`, numa transação. A limpeza roda ao abrir o banco, depois no máximo uma
+vez por hora e antes de listar a lixeira. Apagar um registro remove suas relações e as que apontam
+para ele, sua linha do tempo, sua posição no grafo, e reconcilia aparições e origem. Uma imagem
+vencida só é apagada quando nenhum documento do mundo cita o ID; restaurar um registro devolve as
+imagens que ele cita. Apagar um Codex remove todas as linhas com o seu `world_id`.
+Não há coluna nova nem migração: o prazo é calculado a partir de `deleted_at`.
 A conversão de datas legadas preserva sua prévia e permite restaurar o estado anterior quando os
 registros convertidos continuam compatíveis com o backup.
 

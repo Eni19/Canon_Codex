@@ -143,6 +143,10 @@ dependem do comportamento do Next.js em falhas não capturadas.
 
 Os testes SQLite usam bancos em memória ou diretórios temporários. Cobrem importação legada,
 rollback de operações compostas, isolamento, revisão de artigos, lixeira e backup reaberto.
+`sqliteTrash.test.ts` cobre o prazo de 7 dias com relógio falso: listagem com vencimento,
+restauração no prazo, recusa depois dele, descarte imediato com isolamento entre mundos, limpeza
+de relações e aparições, imagens sem uso e restauração de Codex com slug ocupado. O cálculo do
+prazo e do tempo restante fica em `src/domain/trash/trash.test.ts`.
 Os testes do adaptador filesystem continuam cobrindo a compatibilidade legada.
 
 ## Mudança de migração

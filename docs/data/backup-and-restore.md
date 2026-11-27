@@ -87,6 +87,9 @@ tentativa e retorna erro. A pasta de origem permanece intocada.
 
 ## `trash/` e descarte
 
+Esta seção vale para o driver filesystem legado. No SQLite, a lixeira tem prazo de 7 dias,
+restauração e descarte pela interface; veja [prazo da lixeira](sqlite.md#prazo-da-lixeira).
+
 Excluir um mundo, entidade, asset, quadro ou cena move o diretório para `trash/` com ID e timestamp.
 Os catálogos normais não exibem essa pasta; linhas do tempo consultam seus metadados. Não há tela para restaurar, retenção automática ou ação de
 descarte permanente. Portanto:

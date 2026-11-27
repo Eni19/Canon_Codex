@@ -21,6 +21,7 @@ uma cena para apresentação.
 | Quadros | `/boards` |
 | Cenas | `/scenes` |
 | Trilha sonora | `/soundtrack` |
+| Lixeira do mundo ativo | `/trash` |
 
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.

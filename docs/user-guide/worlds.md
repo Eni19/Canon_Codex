@@ -161,8 +161,11 @@ o `World.id`.
 2. Edite o nome e salve para renomear.
 3. Para remover, confirme **Excluir**.
 
-A remoção tira o mundo da biblioteca e mantém seus dados na lixeira do SQLite. A restauração
-integral está documentada em [backup e restauração](../data/sqlite.md#backup-e-restauração).
+A remoção tira o mundo da biblioteca e o leva para a seção **Lixeira** da biblioteca (`/`), com o
+tempo que falta para o descarte. Por 7 dias, **Restaurar** devolve o Codex inteiro; se outro Codex
+ativo usar o mesmo nome de pasta, o restaurado recebe um sufixo. **Apagar agora** apaga o Codex e
+tudo o que é dele, sem volta. Ao fim do prazo, ele é apagado de vez automaticamente. Depois disso,
+só o [backup](../data/sqlite.md#backup-e-restauração) recupera.
 
 ## Limites atuais
 
