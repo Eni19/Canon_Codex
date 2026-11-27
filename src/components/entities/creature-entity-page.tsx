@@ -4,6 +4,7 @@ import { BacklinksPanel } from './backlinks-panel'
 import { CreatureComposition, CreatureSection, CreatureVisual, creaturePresentation, creatureProperties } from './creature-composition'
 import { Gallery } from './gallery'
 import { PageScrollLock } from './page-scroll-lock'
+import { HoloFormation } from '@/components/holo-formation/holo-formation'
 import { RelationsPanel } from './relations-panel'
 import { ContentRenderer } from '@/components/editor/content-renderer'
 import { Button } from '@/components/ui/button'
@@ -13,8 +14,10 @@ import type { EntityPageProps } from './entity-page'
 import styles from './creature-entity-page.module.css'
 
 export function CreatureEntityPage({ entity, entityType, worldName, content, entityTitleById, backlinks, relationTargetOptions, calendar }: EntityPageProps) {
-  return <div data-character-theme={entity.theme ?? 'amber'} className={styles.shell}>
+  return <div data-character-theme={entity.theme ?? 'amber'} data-holo-root className={styles.shell}>
     <PageScrollLock />
+    {/* A página se forma a partir de um fluido holográfico, primeiro a criatura. */}
+    <HoloFormation rootSelector="[data-holo-root]" imageSelector="img[data-framing-target]" />
     <CreatureComposition
       breadcrumbs={<Breadcrumbs items={[{ label: worldName, href: '/codex' }, { label: entityType.pluralLabel, href: `/${entityType.id}` }, { label: entity.title }]} />}
       action={<Button asChild variant="outline" size="sm"><Link replace href={`/entity/${entity.id}/edit`}><Pencil className="size-4" />Editar</Link></Button>}

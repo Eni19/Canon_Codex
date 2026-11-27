@@ -45,6 +45,18 @@ invisível do HTML por cima para os cliques. Abrir um registro a partir do cader
 máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
 ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
+## Formação holográfica
+
+`HoloFormation` (`src/components/holo-formation/`) é uma entrada de página em WebGL puro, sem
+three.js: um canvas fixo cobre a raiz da página e um shader de fragmento desenha um fluido com
+deformação de domínio que se desfaz por profundidade. A profundidade vem da imagem principal (a
+parte opaca da figura fica perto) e da distância até ela; a frente da formação ganha cor de
+película. O shader redesenha a imagem no mesmo lugar em que a página a mostra (caixa já com o
+enquadramento, encaixe lido de `object-fit` e `object-position` e corte vertical do contêiner),
+deformada até assentar; nesse meio-tempo a imagem real fica invisível e volta quando o canvas sai.
+As páginas de Personagem (`portrait-entity-page.tsx`) e de Criatura (`creature-entity-page.tsx`)
+usam a entrada.
+
 ## Parede de evidências
 
 A página de Evidência (`src/components/entities/evidence-board-page.tsx`) monta no servidor os dados
@@ -67,6 +79,26 @@ próprios. A bancada desenha as ferramentas em geometria (paquímetro e lupa) e 
 foto do objeto: a lente mostra uma cópia ampliada da textura da foto e os detalhes que caem dentro dela. Arrumação inicial, limites e a leitura do paquímetro a partir do texto de
 "Dimensões" são regras puras em `src/domain/objects/objectBench.ts`; leitura e gravação da arrumação
 ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem a própria cena.
+
+## Caixa-arquivo de Organizações
+
+A página de Organização (`src/components/entities/organization-archive-page.tsx`) monta no servidor
+os dados e os painéis de leitura e os entrega a `OrgArchive` (`src/components/org-archive/`),
+carregado só no navegador; sem WebGL, mostra o dossiê em HTML (`organization-dossier-page.tsx`). A
+cena usa a mesma base das superfícies 3D, com opções que a caixa pede: `restZ` (a altura de
+repouso depende de onde a peça está: empilhada no fundo da caixa ou rente à mesa, subindo só a
+espessura do documento de baixo), `liftZ` (a peça erguida passa por cima da borda), `raisedIds` (a
+página ergue um documento antes de movê-lo, para ele sair da caixa sem atravessar a parede),
+`instantIds` (os documentos acompanham a caixa arrastada sem atraso) e `fitScale` (a vista começa
+mais afastada). A área de trabalho é invisível e só recebe os cliques; o tampo visível é uma textura
+só, maior que ela, para a vista afastada não mostrar emenda nem vazio. A caixa pode ser arrastada e
+a posição dela fica salva à parte da arrumação. A tampa é uma dobradiça com mola amortecida. Membros e
+subgrupos não viram uma peça cada: ficam num livro de registro e numa pasta sanfonada, para a mesa
+aguentar organizações grandes. As páginas do livro são pintadas só quando aparecem e a folha que
+vira é um plano de duas faces girando pela lombada. Medidas, espessuras, alturas de repouso, limites da
+caixa e dos documentos (para qualquer posição da caixa), arrumação inicial, a busca de espaço livre
+para onde cada documento vai ao sair e a paginação do livro são regras puras em
+`src/domain/organizations/archiveBox.ts`.
 
 ## Canvas de relacionamentos
 

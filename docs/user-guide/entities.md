@@ -1,6 +1,6 @@
 # Registros, tipos e relações
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito contra os textos
 > de `src/`.
 
 ## Criar e editar
@@ -70,9 +70,9 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `character` | Personagem | retrato com enquadramento ajustável, idade, espécie, ocupação, afiliação e local atual |
 | `species` | Espécie / Povo | classificação, habitats, idiomas, características e organizações |
 | `location` | Local | blueprint/mapa, pontos de interesse e cenas associadas |
-| `organization` | Organização | dossiê, líderes, membros e grupos |
+| `organization` | Organização | caixa-arquivo, líderes, membros e grupos |
 | `case` | Caso | status, data, envolvidos e locais; apresentação genérica |
-| `event` | Evento | jornal, estado, data, local e participantes |
+| `event` | Evento | página padrão, estado, data, local e participantes |
 | `tale` | Conto | leitura editorial, capa e até 50 capítulos/páginas |
 | `document` | Documento | tipo, autor, data; apresentação genérica |
 | `evidence` | Evidência | quadro de evidência, formato, tipo, contexto e descobertas |
@@ -96,6 +96,9 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
+- personagens e criaturas abrem com uma formação holográfica: a página começa como um fluido
+  escuro e marmorizado, a figura da imagem se forma primeiro e o resto da página aparece a partir dela; um
+  clique ou **Esc** pula, e com movimento reduzido no sistema a página abre direto;
 - evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
 - artefatos aceitam até 24 detalhes com posição, rótulo e descrição;
@@ -121,6 +124,39 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 - **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
 - A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
 - Sem WebGL, a página mostra o quadro em HTML.
+
+### Caixa-arquivo da Organização
+
+A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de madeira. A caixa
+começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Por dentro
+da tampa fica o índice do conteúdo. Cada tipo de informação é um objeto só, qualquer que seja o
+tamanho da organização (só a liderança, que costuma ser pequena, tem uma peça por pessoa):
+
+- **Dossiê:** insígnia ou capa e os dados da organização.
+- **Polaroides da liderança:** uma para cada líder, com o retrato do personagem; na leitura, os
+  subgrupos do líder e o link para a ficha.
+- **Folhas do relatório:** o conteúdo, datilografado; texto que não cabe vira folha nova.
+- **Livro de registro:** todos os membros, numerados, com a liderança primeiro (★) e os subgrupos
+  de cada um. Na leitura, **‹ ›** ou as setas viram as páginas do livro na mesa; a busca filtra por
+  nome ou subgrupo e o botão do livro abre na página daquele membro.
+- **Pasta sanfonada:** uma aba por subgrupo (as que não cabem viram "+N"). Na leitura, cada
+  subgrupo é uma divisória que abre com a descrição e os integrantes.
+- **Estatuto:** objetivos e ideais como artigos, com lacre de cera. Só aparece quando há objetivos
+  ou ideais.
+- **Correspondência:** um maço de envelopes amarrado, endereçado aos registros relacionados. Na
+  leitura ficam as relações institucionais (editáveis) e as citações em outros registros.
+
+- **Clique na tampa** (ou em **Abrir a caixa**) para abrir; clique de novo para fechar.
+- **Clique** num documento dentro da caixa para tirá-lo: ele sobe acima da borda e vai para a mesa.
+  Na mesa, **clique** para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na mesa fecha.
+- **Arraste** documentos pela mesa ou de volta para dentro da caixa. **Tirar tudo** espalha o que
+  está na caixa pelo espaço livre da mesa; **Guardar tudo** devolve tudo para a pilha.
+- **Arraste a caixa** (pelas paredes, pelo fundo ou pela tampa) para mudá-la de lugar: o que está
+  dentro vai junto, e os documentos da mesa que ficarem embaixo dela são empurrados para o lado.
+  Clicar na tampa sem arrastar continua abrindo e fechando.
+- A arrumação e a posição da caixa ficam salvas neste navegador.
+- Arraste a mesa para movê-la e use a roda do mouse para aproximar.
+- Sem WebGL, a página mostra o dossiê em HTML.
 
 ### Bancada do Objeto
 

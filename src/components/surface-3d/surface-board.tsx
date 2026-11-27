@@ -52,6 +52,16 @@ export interface SurfaceBoardProps {
   renderAttachment?: (piece: SurfacePiece) => ReactNode
   /** Altura da peça em foco, em relação à altura visível (0,7 = 70%). */
   focusFill?: number
+  /** Altura de repouso própria de onde a peça está (dentro de uma caixa, por exemplo); `null` usa a padrão. */
+  restZ?: (piece: SurfacePiece, x: number, y: number, order: number) => number | null
+  /** Altura da peça erguida (arrastada ou em `raisedIds`); precisa passar por cima do que houver na superfície. */
+  liftZ?: number
+  /** Peças erguidas pela página, por exemplo antes de saírem de dentro de uma caixa. */
+  raisedIds?: ReadonlySet<string>
+  /** Peças que vão direto para a posição, sem o atraso do peso (carregadas junto com outra coisa). */
+  instantIds?: ReadonlySet<string>
+  /** Distância da vista inicial em relação à que preenche a tela (1,2 = 20% mais longe, com a borda da superfície à vista). */
+  fitScale?: number
   children?: ReactNode
 }
 
@@ -97,7 +107,7 @@ export function useSurface() {
   return value
 }
 
-export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, children }: SurfaceBoardProps) {
+export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, restZ, liftZ = LIFT_Z, raisedIds, instantIds, fitScale = 1, children }: SurfaceBoardProps) {
   const { camera, gl, size } = useThree()
   // Posições vivas: as peças correm atrás delas a cada quadro, o que dá peso ao papel.
   const live = useRef(new Map<string, Live>())
@@ -124,7 +134,7 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
   const tan = Math.tan((FOV * Math.PI) / 360)
   const aspect = size.width / Math.max(1, size.height)
   /** Distância em que a superfície preenche a tela (o que sobra nas laterais se vê movendo a vista). */
-  const fitDistance = Math.min(surface.height / 2 / tan, surface.width / 2 / (tan * aspect)) * 0.98
+  const fitDistance = Math.min(surface.height / 2 / tan, surface.width / 2 / (tan * aspect)) * 0.98 * fitScale
 
   const ray = useMemo(() => new Raycaster(), [])
   const plane = useMemo(() => new Plane(new Vector3(0, 0, 1), 0), [])
@@ -255,12 +265,14 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
       const state = live.current.get(piece.id)
       const placement = layout[piece.id]
       if (!group || !state || !placement) continue
-      const lifted = dragging === piece.id
-      const z = lifted ? LIFT_Z : BASE_Z + placement.order * ORDER_Z + (hovered === piece.id && !focusId ? HOVER_Z : 0)
-      const k = reduced ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
+      const lifted = dragging === piece.id || Boolean(raisedIds?.has(piece.id))
+      const rest = restZ?.(piece, group.position.x, group.position.y, placement.order) ?? BASE_Z + placement.order * ORDER_Z
+      const z = lifted ? liftZ : rest + (hovered === piece.id && !focusId ? HOVER_Z : 0)
+      const k = reduced || instantIds?.has(piece.id) ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
       group.position.x += (state.x - group.position.x) * k
       group.position.y += (state.y - group.position.y) * k
-      group.position.z += (z - group.position.z) * (reduced ? 1 : 1 - Math.exp(-delta * 12))
+      // Sobe depressa ao pegar e desce um pouco mais devagar ao soltar, assentando.
+      group.position.z += (z - group.position.z) * (reduced ? 1 : 1 - Math.exp(-delta * (z < group.position.z ? 8 : 12)))
       const swing = lifted ? Math.max(-0.35, Math.min(0.35, -state.vx * 0.08)) : 0
       state.vx *= Math.exp(-delta * 6)
       group.rotation.z += (state.rotation + swing - group.rotation.z) * k
@@ -299,7 +311,17 @@ function PieceSlot({ piece, placement, register, onDown, onOver, renderPiece, re
     onPointerOut: () => onOver((h) => h === piece.id ? null : h),
   }
   return (
-    <group ref={(group) => register(piece.id, group)} position={[placement?.x ?? 0, placement?.y ?? 0, BASE_Z]} rotation={[0, 0, placement?.rotation ?? 0]}>
+    // A posição só é aplicada quando a peça aparece; depois quem move é o quadro a quadro. Passar
+    // position/rotation como props faria cada mudança de arrumação (soltar uma peça) teleportar a
+    // peça de volta à altura da superfície, sem a descida.
+    <group ref={(group) => {
+      if (group && !group.userData.placed) {
+        group.position.set(placement?.x ?? 0, placement?.y ?? 0, BASE_Z)
+        group.rotation.set(0, 0, placement?.rotation ?? 0)
+        group.userData.placed = true
+      }
+      register(piece.id, group)
+    }}>
       {renderPiece?.(piece, handlers) ?? <Paper piece={piece} handlers={handlers}/>}
       {renderAttachment?.(piece)}
     </group>
