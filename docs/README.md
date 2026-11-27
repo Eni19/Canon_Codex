@@ -71,6 +71,7 @@ evidências brutas citadas por eles.
 
 - [Grafo de relacionamentos](performance/relationship-graph.md).
 - [Quadro de investigação](performance/board.md).
+- [Busca geral](performance/search-latency.md): tempo de resposta da paleta (Ctrl+K).
 - [Calendário em produção](performance/calendar-production.md) e
   [referência inicial de metadados](performance/calendar-metadata-baseline.md).
 - [Linha do Tempo: mapa espacial](performance/timeline-cosmic-canvas.md).
