@@ -1,5 +1,7 @@
 import K from 'konva'
 import type { ShapeConfig } from 'konva/lib/Shape'
+import { traceSilhouette } from '@/domain/canvas/entitySilhouettes'
+import { entityVisualFor, NEUTRAL_ENTITY_VISUAL, type SilhouetteId } from '@/domain/entities/entityVisual'
 import {
   CARD_HEIGHT, CARD_WIDTH, cardCenter, fitGraph, freeArrowPoints, relationshipLanes, relationshipPoints, resizeGraph, zoomGraph,
   type ArrowEndpoint, type Camera, type Point,
@@ -76,9 +78,26 @@ function traceCurve(context: K.Context, shape: K.Shape) {
   context.strokeShape(shape)
 }
 
+// Cards take the silhouette of their record type (ADR-011). Every silhouette fits the card box and
+// touches the midpoint of each side, so anchors and framing still use the box; clicks use it too,
+// which keeps the hit graph a plain rectangle.
+type CardBoxConfig = ShapeConfig & { silhouette?: SilhouetteId }
+const silhouetteOf = (shape: K.Shape) => (shape.getAttr('silhouette') as SilhouetteId | undefined) ?? NEUTRAL_ENTITY_VISUAL.silhouette
+function traceCardBox(context: K.Context, shape: K.Shape) {
+  context.beginPath()
+  traceSilhouette(context, silhouetteOf(shape), 0, 0, CARD_WIDTH, CARD_HEIGHT)
+  context.fillStrokeShape(shape)
+}
+function hitCardBox(context: K.Context, shape: K.Shape) {
+  context.beginPath()
+  context.rect(0, 0, CARD_WIDTH, CARD_HEIGHT)
+  context.closePath()
+  context.fillStrokeShape(shape)
+}
+
 function createCard(item: GraphEntity, point: Point) {
   const group = new K.Group(point)
-  const box = new K.Rect({ width: CARD_WIDTH, height: CARD_HEIGHT, cornerRadius: 8, strokeWidth: 1.5, perfectDrawEnabled: false })
+  const box = new K.Shape<CardBoxConfig>({ width: CARD_WIDTH, height: CARD_HEIGHT, sceneFunc: traceCardBox, hitFunc: hitCardBox, strokeWidth: 1.5, perfectDrawEnabled: false })
   const title = new K.Text({ x: 13, y: 11, width: 154, height: 34, fontSize: 15, lineHeight: 1.12, fontStyle: 'bold', fontFamily: 'system-ui', ellipsis: true, wrap: 'word', listening: false })
   const type = new K.Text({ x: 13, y: 49, width: 154, fontSize: 12, fontFamily: 'system-ui', ellipsis: true, wrap: 'none', listening: false })
   const port = new K.Circle({ x: CARD_WIDTH - 1, y: CARD_HEIGHT / 2, radius: 7, hitStrokeWidth: 16, strokeWidth: 2, perfectDrawEnabled: false })
@@ -124,15 +143,15 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   const edgesLayer = new K.Layer()
   const cardsLayer = new K.Layer()
   const preview = new K.Arrow({ visible: false, listening: false, pointerLength: 12, pointerWidth: 10, strokeWidth: 2.5, dash: [7, 4] })
-  const targetRing = new K.Rect({ visible: false, listening: false, width: CARD_WIDTH, height: CARD_HEIGHT, cornerRadius: 8, strokeWidth: 3 })
-  let batchedCards: (Point & { id: string; faded?: boolean })[] = []
+  const targetRing = new K.Shape<CardBoxConfig>({ visible: false, listening: false, width: CARD_WIDTH, height: CARD_HEIGHT, sceneFunc: traceCardBox, strokeWidth: 3 })
+  let batchedCards: (Point & { id: string; silhouette: SilhouetteId; faded?: boolean })[] = []
   let batchedPorts = false
   const cardBatch = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc(context) {
     if (!batchedCards.length) return
     const solid = new Path2D(), faded = new Path2D(), ports = new Path2D()
     for (const point of batchedCards) {
       const path = point.faded ? faded : solid
-      path.roundRect(point.x, point.y, CARD_WIDTH, CARD_HEIGHT, 8)
+      traceSilhouette(path, point.silhouette, point.x, point.y, CARD_WIDTH, CARD_HEIGHT)
       if (batchedPorts) { ports.moveTo(point.x + CARD_WIDTH + 6, point.y + CARD_HEIGHT / 2); ports.arc(point.x + CARD_WIDTH - 1, point.y + CARD_HEIGHT / 2, 7, 0, Math.PI * 2) }
     }
     context.save()
@@ -260,6 +279,10 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     return (hit?.kind === 'card' || hit?.kind === 'port') && state?.visibleIds.has(hit.id) && !state.dimmedIds.has(hit.id) ? hit.id : ''
   }
   const cardPosition = (id: string) => cards.get(id)?.group.position()
+  const showTargetRing = (id: string, point: Point) => {
+    const box = cards.get(id)?.box
+    targetRing.setAttrs({ ...point, stroke: palette.accent, silhouette: box ? silhouetteOf(box) : NEUTRAL_ENTITY_VISUAL.silhouette })
+  }
   const annotationVisible = (arrow: FreeArrow) =>
     ![arrow.startCardId, arrow.endCardId].some((id) => id && cards.has(id) && !state?.visibleIds.has(id))
   function redrawPreview(p: Point | null) {
@@ -269,7 +292,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       const destination = state.arrowEnd ?? (p && hover !== state.arrowStart?.cardId ? { point: world(p), cardId: hover || undefined } : null)
       const target = destination?.cardId ? cardPosition(destination.cardId) : undefined
       targetRing.visible(!!(state.arrowStart && target))
-      if (target) targetRing.setAttrs({ ...target, stroke: palette.accent })
+      if (target && destination?.cardId) showTargetRing(destination.cardId, target)
       preview.visible(!!(state.arrowStart && destination))
       if (state.arrowStart && destination) {
         const points = freeArrowPoints(state.arrowStart, destination, cardPosition)
@@ -286,7 +309,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     const from = start ? { x: start.x + CARD_WIDTH, y: start.y + CARD_HEIGHT / 2 } : null
     const to = end ? cardCenter(end) : (p && hover !== originId && world(p))
     targetRing.visible(!!(start && end))
-    if (end) targetRing.setAttrs({ ...end, stroke: palette.accent })
+    if (end) showTargetRing(endId, end)
     const finalized = !!(start && state.target && !(drag?.hit?.kind === 'port' && drag.moved))
     preview.visible(!!(from && to && (!finalized || end)))
     if (from && to) {
@@ -328,12 +351,12 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     const batch = camera.scale < TITLE_SCALE
     batchedCards = []
     batchedPorts = batch && camera.scale >= PORT_SCALE && state.tool === 'connect'
-    for (const [id, { group, title, type, port }] of cards) {
+    for (const [id, { group, box, title, type, port }] of cards) {
       const x = group.x(), y = group.y()
       const visible = state.visibleIds.has(id) && (active === id || (x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y))
       const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
       const batched = visible && batch && !selected && active !== id
-      if (batched) batchedCards.push(Object.assign({ x, y, id }, state.dimmedIds.has(id) ? { faded: true } : {}))
+      if (batched) batchedCards.push(Object.assign({ x, y, id, silhouette: silhouetteOf(box) }, state.dimmedIds.has(id) ? { faded: true } : {}))
       show(cardsLayer, group, visible && !batched)
       if (visible && !batched) {
         title.visible(camera.scale >= TITLE_SCALE || selected)
@@ -450,7 +473,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       if (!(drag?.moved && !drag.pan && drag.hit?.kind === 'card' && drag.hit.id === item.id)) node.group.position(point)
       const active = item.id === next.selectedCard || item.id === next.source || item.id === next.target || item.id === next.arrowStart?.cardId || item.id === next.arrowEnd?.cardId
       node.group.opacity(next.dimmedIds.has(item.id) ? 0.22 : 1)
-      node.box.setAttrs({ fill: palette.card, stroke: active ? palette.accent : palette.border, strokeWidth: active ? 2.5 : 1.5 })
+      node.box.setAttrs({ silhouette: entityVisualFor(item.type).silhouette, fill: palette.card, stroke: active ? palette.accent : palette.border, strokeWidth: active ? 2.5 : 1.5 })
       node.title.setAttrs({ text: item.title, fill: palette.text })
       const typeLabel = next.typeLabels[item.type] ?? item.type
       node.type.setAttrs({ text: typeLabel, fill: palette.muted })
