@@ -5,7 +5,7 @@
 ## Estado atual em 23/09/2026
 
 Os tokens e a direção visual continuam implementados em `src/app/globals.css`. A arquitetura de
-quadros e cenas também usa componentes próprios e tldraw, mas isso não altera a decisão de tokens:
+quadros e cenas também usa componentes próprios e canvas em Konva, mas isso não altera a decisão de tokens:
 novos estilos devem continuar referenciando o sistema semântico. A visão e as limitações de
 segurança/operação da aplicação estão em [`docs/reference/operations-and-privacy.md`](../reference/operations-and-privacy.md).
 
