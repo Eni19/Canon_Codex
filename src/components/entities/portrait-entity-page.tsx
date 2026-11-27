@@ -7,6 +7,7 @@ import { PortraitComposition, PortraitSection, portraitAttributes, portraitSumma
 import { PortraitHero } from '@/components/entities/portrait-hero'
 import { PortraitAttributesCard } from '@/components/entities/portrait-attributes'
 import { PageScrollLock } from '@/components/entities/page-scroll-lock'
+import { HoloFormation } from '@/components/holo-formation/holo-formation'
 import { RelationsPanel, type RelationTargetOption } from '@/components/entities/relations-panel'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/wiki/breadcrumbs'
@@ -46,8 +47,10 @@ export function PortraitEntityPage({
   const attributes = portraitAttributes(entityType, entity.aliases, entity.properties, entityTitleById)
 
   return (
-    <div data-character-theme={entity.theme ?? 'amber'} className="px-4 pt-6 sm:px-8 sm:pt-8">
+    <div data-character-theme={entity.theme ?? 'amber'} data-holo-root className="px-4 pt-6 sm:px-8 sm:pt-8">
       <PageScrollLock />
+      {/* Personagens: a página se forma a partir de um fluido holográfico, primeiro a figura. */}
+      {entity.type === 'character' && <HoloFormation rootSelector="[data-holo-root]" imageSelector="img[data-framing-target]" />}
       <div className={styles.page}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <Breadcrumbs

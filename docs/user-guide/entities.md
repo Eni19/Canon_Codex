@@ -96,6 +96,9 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
+- personagens e criaturas abrem com uma formação holográfica: a página começa como um fluido
+  escuro e marmorizado, a figura da imagem se forma primeiro e o resto da página aparece a partir dela; um
+  clique ou **Esc** pula, e com movimento reduzido no sistema a página abre direto;
 - evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
 - artefatos aceitam até 24 detalhes com posição, rótulo e descrição;

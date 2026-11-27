@@ -45,6 +45,18 @@ invisível do HTML por cima para os cliques. Abrir um registro a partir do cader
 máscara de texto de `src/components/record-reveal/`, montada no `WikiShell`. A lista de páginas duplas, a geometria, as texturas e as peças de colagem
 ficam em módulos separados. Veja o [ADR-007](ADR-007-codex-notebook-home.md).
 
+## Formação holográfica
+
+`HoloFormation` (`src/components/holo-formation/`) é uma entrada de página em WebGL puro, sem
+three.js: um canvas fixo cobre a raiz da página e um shader de fragmento desenha um fluido com
+deformação de domínio que se desfaz por profundidade. A profundidade vem da imagem principal (a
+parte opaca da figura fica perto) e da distância até ela; a frente da formação ganha cor de
+película. O shader redesenha a imagem no mesmo lugar em que a página a mostra (caixa já com o
+enquadramento, encaixe lido de `object-fit` e `object-position` e corte vertical do contêiner),
+deformada até assentar; nesse meio-tempo a imagem real fica invisível e volta quando o canvas sai.
+As páginas de Personagem (`portrait-entity-page.tsx`) e de Criatura (`creature-entity-page.tsx`)
+usam a entrada.
+
 ## Parede de evidências
 
 A página de Evidência (`src/components/entities/evidence-board-page.tsx`) monta no servidor os dados
