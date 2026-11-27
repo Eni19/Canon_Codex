@@ -70,7 +70,7 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `character` | Personagem | retrato com enquadramento ajustável, idade, espécie, ocupação, afiliação e local atual |
 | `species` | Espécie / Povo | classificação, habitats, idiomas, características e organizações |
 | `location` | Local | blueprint/mapa, pontos de interesse e cenas associadas |
-| `organization` | Organização | dossiê, líderes, membros e grupos |
+| `organization` | Organização | caixa-arquivo, líderes, membros e grupos |
 | `case` | Caso | status, data, envolvidos e locais; apresentação genérica |
 | `event` | Evento | página padrão, estado, data, local e participantes |
 | `tale` | Conto | leitura editorial, capa e até 50 capítulos/páginas |
@@ -121,6 +121,22 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 - **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
 - A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
 - Sem WebGL, a página mostra o quadro em HTML.
+
+### Caixa-arquivo da Organização
+
+A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de madeira. A caixa
+começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Dentro dela
+estão o dossiê (insígnia ou capa e os dados da organização), as folhas do relatório (o conteúdo), uma
+pasta para cada subgrupo, uma ficha para cada membro (com carimbo de liderança) e memorandos de
+objetivos, ideais, relações institucionais e citações. Por dentro da tampa fica o índice do conteúdo.
+
+- **Clique na tampa** (ou em **Abrir a caixa**) para abrir; clique de novo para fechar.
+- **Clique** num documento dentro da caixa para tirá-lo: ele sobe acima da borda e vai para a mesa.
+  Na mesa, **clique** para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na mesa fecha.
+- **Arraste** documentos pela mesa ou de volta para dentro da caixa. **Tirar tudo** espalha o que
+  está na caixa; **Guardar tudo** devolve tudo para a pilha. A arrumação fica salva neste navegador.
+- Arraste a mesa para movê-la e use a roda do mouse para aproximar.
+- Sem WebGL, a página mostra o dossiê em HTML.
 
 ### Bancada do Objeto
 

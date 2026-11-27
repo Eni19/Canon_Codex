@@ -52,6 +52,12 @@ export interface SurfaceBoardProps {
   renderAttachment?: (piece: SurfacePiece) => ReactNode
   /** Altura da peça em foco, em relação à altura visível (0,7 = 70%). */
   focusFill?: number
+  /** Altura de repouso própria de onde a peça está (dentro de uma caixa, por exemplo); `null` usa a padrão. */
+  restZ?: (piece: SurfacePiece, x: number, y: number, order: number) => number | null
+  /** Altura da peça erguida (arrastada ou em `raisedIds`); precisa passar por cima do que houver na superfície. */
+  liftZ?: number
+  /** Peças erguidas pela página, por exemplo antes de saírem de dentro de uma caixa. */
+  raisedIds?: ReadonlySet<string>
   children?: ReactNode
 }
 
@@ -97,7 +103,7 @@ export function useSurface() {
   return value
 }
 
-export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, children }: SurfaceBoardProps) {
+export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, restZ, liftZ = LIFT_Z, raisedIds, children }: SurfaceBoardProps) {
   const { camera, gl, size } = useThree()
   // Posições vivas: as peças correm atrás delas a cada quadro, o que dá peso ao papel.
   const live = useRef(new Map<string, Live>())
@@ -255,8 +261,9 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
       const state = live.current.get(piece.id)
       const placement = layout[piece.id]
       if (!group || !state || !placement) continue
-      const lifted = dragging === piece.id
-      const z = lifted ? LIFT_Z : BASE_Z + placement.order * ORDER_Z + (hovered === piece.id && !focusId ? HOVER_Z : 0)
+      const lifted = dragging === piece.id || Boolean(raisedIds?.has(piece.id))
+      const rest = restZ?.(piece, group.position.x, group.position.y, placement.order) ?? BASE_Z + placement.order * ORDER_Z
+      const z = lifted ? liftZ : rest + (hovered === piece.id && !focusId ? HOVER_Z : 0)
       const k = reduced ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
       group.position.x += (state.x - group.position.x) * k
       group.position.y += (state.y - group.position.y) * k

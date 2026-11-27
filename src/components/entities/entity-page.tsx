@@ -9,7 +9,7 @@ import { Gallery } from '@/components/entities/gallery'
 import { PortraitEntityPage } from '@/components/entities/portrait-entity-page'
 import { LocationEntityPage } from '@/components/entities/location-entity-page'
 import { EvidenceBoardPage } from '@/components/entities/evidence-board-page'
-import { OrganizationDossierPage } from '@/components/entities/organization-dossier-page'
+import { OrganizationArchivePage } from '@/components/entities/organization-archive-page'
 import { CreatureEntityPage } from '@/components/entities/creature-entity-page'
 import { ObjectBenchPage } from '@/components/entities/object-bench-page'
 import { CosmologyEntityPage } from '@/components/entities/cosmology-entity-page'
@@ -60,7 +60,7 @@ export function EntityPage(props: EntityPageProps) {
 
   if (entity.type === 'location') return <LocationEntityPage {...props} />
   if (entity.type === 'evidence') return <EvidenceBoardPage {...props} />
-  if (entity.type === 'organization') return <OrganizationDossierPage {...props} />
+  if (entity.type === 'organization') return <OrganizationArchivePage {...props} />
   if (entity.type === 'creature') return <CreatureEntityPage {...props} />
   if (entity.type === 'artifact') return <ObjectBenchPage {...props} />
   if (entity.type === 'cosmology') return <CosmologyEntityPage {...props} />

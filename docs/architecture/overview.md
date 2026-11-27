@@ -68,6 +68,19 @@ foto do objeto: a lente mostra uma cópia ampliada da textura da foto e os detal
 "Dimensões" são regras puras em `src/domain/objects/objectBench.ts`; leitura e gravação da arrumação
 ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem a própria cena.
 
+## Caixa-arquivo de Organizações
+
+A página de Organização (`src/components/entities/organization-archive-page.tsx`) monta no servidor
+os dados e os painéis de leitura e os entrega a `OrgArchive` (`src/components/org-archive/`),
+carregado só no navegador; sem WebGL, mostra o dossiê em HTML (`organization-dossier-page.tsx`). A
+cena usa a mesma base das superfícies 3D, com três opções que a caixa pede: `restZ` (a altura de
+repouso depende de onde a peça está, empilhada no fundo da caixa ou na mesa), `liftZ` (a peça
+erguida passa por cima da borda) e `raisedIds` (a página ergue um documento antes de movê-lo, para
+ele sair da caixa sem atravessar a parede). A tampa é uma dobradiça com mola amortecida. Medidas da
+mesa e da caixa, arrumação inicial (tudo empilhado na caixa), onde cada documento vai ao sair e os
+limites (dentro da caixa ou fora das paredes dela) são regras puras em
+`src/domain/organizations/archiveBox.ts`.
+
 ## Canvas de relacionamentos
 
 `/relationships` entrega relações explícitas entre registros ativos e configurações versionadas do
