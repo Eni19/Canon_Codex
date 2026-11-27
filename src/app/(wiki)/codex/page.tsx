@@ -1,6 +1,9 @@
 import { NotebookLoader } from '@/components/codex-notebook/notebook-loader'
 import { getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
+import type { ToolId } from '@/domain/worlds/worldPreferences'
+
+const TOOL_HREFS: Record<ToolId, string> = { calendar: '/calendar', relationships: '/relationships', boards: '/boards', scenes: '/scenes', soundtrack: '/soundtrack' }
 
 /** Polaroids a record-type spread can hold. */
 const RECENT_PER_TYPE = 4
@@ -14,7 +17,8 @@ export default async function HomePage(props: PageProps<'/codex'>) {
   const toRecord = (entity: (typeof entities)[number]) => ({ id: entity.id, title: entity.title, coverAssetId: entity.coverAssetId })
 
   const types = world.entityTypes
-    .filter((type) => type.showInSidebar)
+    // Mesmas páginas da barra lateral: tipos desativados nas configurações do mundo ficam de fora.
+    .filter((type) => type.showInSidebar && !world.preferences.hiddenEntityTypes.includes(type.id))
     .map((type) => {
       const ofType = newestFirst.filter((entity) => entity.type === type.id)
       return {
@@ -33,6 +37,7 @@ export default async function HomePage(props: PageProps<'/codex'>) {
     types={types}
     world={{
       name: world.name,
+      hiddenToolHrefs: world.preferences.hiddenTools.map((id) => TOOL_HREFS[id]),
       description: world.description,
       recordCount: entities.length,
       createdYear: world.createdAt.slice(0, 4),

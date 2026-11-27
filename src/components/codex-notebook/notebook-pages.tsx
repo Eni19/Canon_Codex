@@ -16,6 +16,8 @@ export interface NotebookWorld {
   recordCount: number
   createdYear: string
   recent: (NotebookRecord & { typeId: string; typeLabel: string; href: string })[]
+  /** Rotas das ferramentas desativadas nas configurações do mundo; somem da página Ferramentas. */
+  hiddenToolHrefs?: string[]
 }
 
 export interface SpreadPages {
@@ -87,7 +89,7 @@ export function IndexCard({ spreads, current, onOpen }: { spreads: Spread[]; cur
 export function renderSpread(spread: Spread, index: number, world: NotebookWorld, spreads: Spread[], onTurnTo: (index: number) => void): SpreadPages {
   const [leftNumber, rightNumber] = pageNumbers(index)
   const pages = spread.kind === 'preface' ? prefacePages(world, spreads, leftNumber, rightNumber, onTurnTo)
-    : spread.kind === 'tools' ? toolsPages(leftNumber, rightNumber)
+    : spread.kind === 'tools' ? toolsPages(leftNumber, rightNumber, world.hiddenToolHrefs ?? [])
     : typePages(spread, leftNumber, rightNumber, spreads.length)
   // Every spread gets its turning arrows: back on the left (closing the book from the first page),
   // forward on the right (except on the last spread).
@@ -206,7 +208,7 @@ function typePages(spread: Extract<Spread, { kind: 'type' }>, leftNumber: number
   }
 }
 
-const TOOLS = [
+const ALL_TOOLS = [
   { href: '/calendar', title: 'Calendário', line: 'datas, luas e estações' },
   { href: '/relationships', title: 'Relacionamentos', line: 'quem se liga a quem' },
   { href: '/boards', title: 'Quadros', line: 'investigações e pistas' },
@@ -215,7 +217,8 @@ const TOOLS = [
   { href: '/all', title: 'Todos os conteúdos', line: 'o índice completo' },
 ]
 
-function toolsPages(leftNumber: number, rightNumber: number): SpreadPages {
+function toolsPages(leftNumber: number, rightNumber: number, hiddenHrefs: string[]): SpreadPages {
+  const TOOLS = ALL_TOOLS.filter((tool) => !hiddenHrefs.includes(tool.href))
   return {
     left: <Sheet side="left" paper="lined" number={leftNumber}>
       <CutoutTitle x={70} y={70} r={-2} w={460} text="Ferramentas" seed="tools" size={46}/>

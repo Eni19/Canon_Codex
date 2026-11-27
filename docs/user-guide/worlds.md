@@ -1,6 +1,6 @@
 # Mundos e biblioteca
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito contra os textos
 > de `src/`.
 
 ## Selecionar um mundo
@@ -21,6 +21,23 @@ correspondente de um backup para abrir esse mundo novamente. Para retirar a past
 **Arquivar pasta** e confirme: a biblioteca move a pasta inteira para `trash/worlds/` dentro de
 `WIKI_WORKSPACE_DIR`, preservando seus arquivos. Sem mundos disponíveis, uma rota
 interna volta para a biblioteca.
+
+## Configurar o que aparece
+
+Em **Configurações**, no fim da barra lateral, escolha o que este mundo mostra. As mudanças são
+salvas na hora, valem em qualquer navegador e entram no backup do mundo.
+
+- **Conteúdos**: cada tipo com um resumo e os campos da ficha. Desativado, o tipo some da barra
+  lateral e do caderno de `/codex`; os registros continuam no mundo, na busca e nos links.
+- **Ferramentas**: Calendário, Relacionamentos, Quadros, Cenas e Trilha sonora, cada uma com um
+  resumo do que tem. Desativada, some da barra lateral e da página Ferramentas do caderno; nada do
+  que foi criado nela é apagado. Desativar a Trilha sonora também tira o tocador da barra.
+- **Interfaces**: Organizações, Evidências e Objetos têm duas versões de página. **Interativa** é a
+  caixa-arquivo, a parede ou a bancada em 3D; **Prática** mostra a mesma informação numa página
+  única, mais direta.
+
+A antiga opção **Personalizar guias** foi substituída por estas configurações. Os tipos que ela
+escondia neste navegador passam para o mundo na primeira vez que a barra abre.
 
 ## Criar um mundo
 

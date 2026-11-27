@@ -7,14 +7,17 @@ import { SoundtrackDock } from '@/components/soundtrack/soundtrack-dock'
 import { WikiSidebarNav } from '@/components/wiki/wiki-sidebar-nav'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import type { WorldPreferences } from '@/domain/worlds/worldPreferences'
 
 /** Desktop-only chrome (see MobileNav for the small-viewport equivalent) — spec 17: desktop-first. */
 export function WikiSidebar({
   worldName,
   entityTypes,
+  preferences,
 }: {
   worldName: string
   entityTypes: EntityTypeDefinition[]
+  preferences: WorldPreferences
 }) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -41,8 +44,9 @@ export function WikiSidebar({
         </Button>
       </div>
 
-      <WikiSidebarNav entityTypes={entityTypes} collapsed={collapsed} />
-      <SoundtrackDock collapsed={collapsed} />
+      <WikiSidebarNav entityTypes={entityTypes} preferences={preferences} collapsed={collapsed} />
+      {/* O tocador da trilha sonora faz parte da ferramenta: desativada, ele também sai da barra. */}
+      {!preferences.hiddenTools.includes('soundtrack') && <SoundtrackDock collapsed={collapsed} />}
     </aside>
   )
 }

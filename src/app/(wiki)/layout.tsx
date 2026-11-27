@@ -6,5 +6,5 @@ import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
 export default async function WikiLayout({ children }: { children: ReactNode }) {
   const world = await getCurrentWorld()
-  return <CommandPaletteProvider><SoundtrackProvider><WikiShell worldName={world.name} entityTypes={world.entityTypes}>{children}</WikiShell></SoundtrackProvider></CommandPaletteProvider>
+  return <CommandPaletteProvider><SoundtrackProvider><WikiShell worldId={world.id} worldName={world.name} entityTypes={world.entityTypes} preferences={world.preferences}>{children}</WikiShell></SoundtrackProvider></CommandPaletteProvider>
 }
