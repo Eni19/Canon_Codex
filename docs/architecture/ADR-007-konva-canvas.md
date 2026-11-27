@@ -1,7 +1,7 @@
 # ADR-007: Canvas próprio em Konva para relações e, depois, para os outros canvas
 
-> **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam o painel de estilo dos Quadros e a
-> retirada do pacote tldraw, que continua no `package.json` sem nenhum import em `src/`) ·
+> **Estado:** parcial (grafo, Cenas e Quadros usam Konva e o pacote tldraw saiu do projeto; falta
+> o painel de estilo dos Quadros) ·
 > **Última verificação:** 27/11/2026,
 > `package.json`, `src/components/boards/board-stage.ts`, `src/components/scenes/scene-stage.ts` e
 > `src/domain/canvas/`.
@@ -72,6 +72,8 @@ motor, não o motor.
   original do mesmo autor, em vez da cópia interna do tldraw, que segue a licença dele. Marca-texto,
   laser e moldura ficaram de fora por decisão do usuário. **Pendente:** painel de estilo (etapa 3).
 - Nenhum canvas depende mais de `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`.
+- **Pacote retirado (27/11/2026):** `tldraw` saiu do `package.json`. Os conversores de snapshots
+  antigos não importam o pacote; leem o JSON gravado e continuam funcionando.
 - Câmera, seleção, toque, culling e desenho em lote passam a ser responsabilidade do projeto, e
   cada canvas migrado precisa de um perfil de desempenho próprio.
 - A migração exige converter snapshots tldraw para um formato Canon versionado. Os formatos
