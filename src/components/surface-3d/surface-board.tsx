@@ -271,7 +271,8 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
       const k = reduced || instantIds?.has(piece.id) ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
       group.position.x += (state.x - group.position.x) * k
       group.position.y += (state.y - group.position.y) * k
-      group.position.z += (z - group.position.z) * (reduced ? 1 : 1 - Math.exp(-delta * 12))
+      // Sobe depressa ao pegar e desce um pouco mais devagar ao soltar, assentando.
+      group.position.z += (z - group.position.z) * (reduced ? 1 : 1 - Math.exp(-delta * (z < group.position.z ? 8 : 12)))
       const swing = lifted ? Math.max(-0.35, Math.min(0.35, -state.vx * 0.08)) : 0
       state.vx *= Math.exp(-delta * 6)
       group.rotation.z += (state.rotation + swing - group.rotation.z) * k
@@ -310,7 +311,17 @@ function PieceSlot({ piece, placement, register, onDown, onOver, renderPiece, re
     onPointerOut: () => onOver((h) => h === piece.id ? null : h),
   }
   return (
-    <group ref={(group) => register(piece.id, group)} position={[placement?.x ?? 0, placement?.y ?? 0, BASE_Z]} rotation={[0, 0, placement?.rotation ?? 0]}>
+    // A posição só é aplicada quando a peça aparece; depois quem move é o quadro a quadro. Passar
+    // position/rotation como props faria cada mudança de arrumação (soltar uma peça) teleportar a
+    // peça de volta à altura da superfície, sem a descida.
+    <group ref={(group) => {
+      if (group && !group.userData.placed) {
+        group.position.set(placement?.x ?? 0, placement?.y ?? 0, BASE_Z)
+        group.rotation.set(0, 0, placement?.rotation ?? 0)
+        group.userData.placed = true
+      }
+      register(piece.id, group)
+    }}>
       {renderPiece?.(piece, handlers) ?? <Paper piece={piece} handlers={handlers}/>}
       {renderAttachment?.(piece)}
     </group>
