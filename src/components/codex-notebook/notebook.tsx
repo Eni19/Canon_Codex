@@ -58,6 +58,8 @@ interface Drag {
 }
 
 export interface NotebookProps {
+  /** Mantém os tipos na ordem recebida (a ordem escolhida nas configurações do mundo). */
+  keepTypeOrder?: boolean
   world: NotebookWorld
   types: NotebookType[]
   /** Spread id from `?pagina=`, to reopen where the reader was. */
@@ -90,8 +92,8 @@ function turnKeys(spreads: { id: string }[], turn: { from: number; to: number })
   return [pageKey(from, 'left'), pageKey(from, 'right'), pageKey(to, 'left'), pageKey(to, 'right')]
 }
 
-export function Notebook({ world, types, initialSpread }: NotebookProps) {
-  const spreads = useMemo(() => buildSpreads(types), [types])
+export function Notebook({ world, types, initialSpread, keepTypeOrder = false }: NotebookProps) {
+  const spreads = useMemo(() => buildSpreads(types, keepTypeOrder), [keepTypeOrder, types])
   const reveal = useRecordReveal()
   // The notebook renders only in the browser (see notebook-loader), so the first state can read the
   // spread saved when the reader followed a link out of it.

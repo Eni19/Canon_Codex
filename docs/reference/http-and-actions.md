@@ -1,6 +1,6 @@
 # Referência HTTP e Server Actions
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, todas as rotas de `src/app/api/` e
+> **Estado:** implementado · **Última verificação:** 27/11/2026, todas as rotas de `src/app/api/` e
 > todas as actions exportadas de `src/app/actions/` têm seção aqui.
 
 Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
@@ -222,6 +222,13 @@ ou exclui logicamente; se o removido era ativo, seleciona outro ou limpa o cooki
 No driver legado em arquivos, `archiveIncompleteWorldAction` recebe o nome de uma pasta da biblioteca,
 recusa a operação se `world.json` já estiver presente, move a pasta para `trash/worlds/` e atualiza `/`.
 A seleção do mundo ativo permanece a mesma.
+
+`updateWorldPreferencesAction(worldId, preferences)` grava as preferências do mundo ativo, vindas da
+janela **Configurações** da barra lateral: tipos de conteúdo e ferramentas escondidos, ordem dos tipos
+e tipos que abrem na interface prática. Recebe argumentos simples (não `FormData`), valida com
+`WorldPreferencesSchema`, recusa se o mundo ativo mudou, grava por
+`WorldRepository.updateWorldPreferences` (que normaliza contra os tipos do mundo) e revalida o
+layout. Devolve `{ ok: true, preferences }` ou `{ ok: false, error }`, sem exceção.
 
 `updateCalendarAction` recebe o calendário serializado e o `worldId` do formulário de `/calendar`,
 valida o calendário com `CalendarSchema` e confere se o ID corresponde ao mundo ainda ativo antes de

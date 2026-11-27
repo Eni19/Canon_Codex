@@ -1,6 +1,7 @@
 import { addWorldV24Fields } from '@/domain/worlds/entityFieldsV24'
 import { renameObjectType } from '@/domain/worlds/objectLabelsV25'
 import { removeObjectFields } from '@/domain/worlds/objectFieldsV26'
+import { defaultWorldPreferences } from '@/domain/worlds/worldPreferences'
 import 'server-only'
 import { ASSET_SCHEMA_VERSION } from '@/domain/assets/asset'
 import { CONTENT_SCHEMA_VERSION } from '@/domain/content/contentDocument'
@@ -339,6 +340,8 @@ export const worldMigrations: MigrationRegistry = {
       schemaVersion: 26,
       entityTypes: EntityTypeDefinitionSchema.array().parse(data.entityTypes).map(removeObjectFields),
     }),
+    // Preferências do Codex: tudo visível e interfaces interativas, como era antes.
+    26: (data) => ({ ...data, schemaVersion: 27, preferences: defaultWorldPreferences() }),
   },
 }
 export const entityMigrations: MigrationRegistry = {

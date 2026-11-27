@@ -7,8 +7,9 @@ import { CalendarExactDateSchema } from '@/domain/worlds/calendar-exact-date'
 import { CalendarLandmarksSchema } from '@/domain/worlds/calendar-landmarks'
 import { CalendarAppearanceSchema } from '@/domain/worlds/calendar-appearance'
 import { TimelineScaleSchema } from '@/domain/timelines/timelineScale'
+import { WorldPreferencesSchema, defaultWorldPreferences } from '@/domain/worlds/worldPreferences'
 
-export const WORLD_SCHEMA_VERSION = 26
+export const WORLD_SCHEMA_VERSION = 27
 
 export const WorldSchema = z.object({
   id: z.uuid(),
@@ -23,6 +24,11 @@ export const WorldSchema = z.object({
   campaignToday: CalendarExactDateSchema.nullable(),
   calendarLandmarks: CalendarLandmarksSchema,
   calendarAppearance: CalendarAppearanceSchema,
+  /**
+   * O que aparece na barra lateral e quais páginas usam a interface interativa (v27). Sem o campo
+   * (um documento gravado por código anterior à v27 depois da migração), vale o padrão: tudo visível.
+   */
+  preferences: WorldPreferencesSchema.default(defaultWorldPreferences),
   originEventId: z.uuid().optional(),
   schemaVersion: z.number().int(),
   createdAt: z.iso.datetime(),

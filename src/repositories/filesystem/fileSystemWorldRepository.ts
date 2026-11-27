@@ -1,4 +1,5 @@
 import 'server-only'
+import { WorldPreferencesSchema, normalizeWorldPreferences, type WorldPreferences } from '@/domain/worlds/worldPreferences'
 import { readFile, readdir, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { ContentDocumentSchema, emptyContentDocument, type ContentDocument } from '@/domain/content/contentDocument'
@@ -185,6 +186,17 @@ export class FileSystemWorldRepository implements WorldRepository {
   async getWorld(worldId: string): Promise<World> {
     const worldDir = await resolveWorldDir(worldId)
     return withWorldRead(worldDir, () => readWorldByDir(worldDir))
+  }
+
+  async updateWorldPreferences(worldId: string, preferences: WorldPreferences): Promise<World> {
+    const parsed = WorldPreferencesSchema.parse(preferences)
+    const worldDir = await resolveWorldDir(worldId)
+    return withWorldWriteLock(worldDir, async () => {
+      const current = await readWorldByDir(worldDir)
+      const next = WorldSchema.parse({ ...current, preferences: normalizeWorldPreferences(parsed, current.entityTypes.map((type) => type.id)), updatedAt: new Date().toISOString() })
+      await atomicWriteJson(getWorldJsonPath(worldDir), next)
+      return next
+    })
   }
 
   async updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World> {

@@ -1,6 +1,6 @@
 # Armazenamento em SQLite
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, tabelas em
+> **Estado:** implementado · **Última verificação:** 27/11/2026, tabelas em
 > `src/repositories/sqlite/schema.ts` e comandos `preview`, `import` e `backup` de
 > `scripts/sqlite-storage.ts`.
 
@@ -60,7 +60,8 @@ O aplicativo ainda não oferece exportação de um mundo isolado em formato lega
 O schema SQL tem versão própria, separada de `schemaVersion` dos documentos. Uma migração SQL pode
 alterar documentos quando o JSON gravado precisa mudar; a terceira renomeia o tipo `artifact` para
 "Objeto" nos mundos que ainda usam o nome padrão e os leva ao mundo v25; a quarta tira número de
-registro e materiais da ficha de Objeto e os leva ao mundo v26. Mundos e registros
+registro e materiais da ficha de Objeto e os leva ao mundo v26; a quinta acrescenta as preferências
+do mundo (barra lateral e interfaces) e os leva ao mundo v27. Mundos e registros
 preservam seus IDs. Relações e aparições ficam em tabelas com escopo de mundo e ordem explícita.
 O SQLite conserva os JSONs de calendário, campos personalizados, documentos Tiptap, o canvas
 dos quadros e das cenas. Imagens e variantes são BLOBs separados dos metadados.

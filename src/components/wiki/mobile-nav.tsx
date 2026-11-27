@@ -7,14 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { WikiSidebarNav } from '@/components/wiki/wiki-sidebar-nav'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import type { WorldPreferences } from '@/domain/worlds/worldPreferences'
 
 /** Small-viewport equivalent of WikiSidebar: a top bar + off-canvas drawer. Spec 17: sidebar deve se adaptar. */
 export function MobileNav({
   worldName,
   entityTypes,
+  preferences,
 }: {
   worldName: string
   entityTypes: EntityTypeDefinition[]
+  preferences: WorldPreferences
 }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -46,7 +49,7 @@ export function MobileNav({
           <SheetHeader className="border-b border-sidebar-border">
             <SheetTitle className="text-sidebar-foreground">{worldName}</SheetTitle>
           </SheetHeader>
-          <WikiSidebarNav entityTypes={entityTypes} onNavigate={() => setOpen(false)} />
+          <WikiSidebarNav entityTypes={entityTypes} preferences={preferences} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
     </>

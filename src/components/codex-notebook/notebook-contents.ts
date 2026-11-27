@@ -26,8 +26,13 @@ export type Spread =
 /** The record types readers reach for first open the notebook, in this order. */
 const LEADING_TYPES = ['character', 'location', 'organization', 'creature', 'species', 'artifact', 'cosmology', 'naturalScience', 'event', 'tale']
 
-export function buildSpreads(types: NotebookType[]): Spread[] {
+/**
+ * Páginas do caderno. Com `keepOrder`, os tipos ficam na ordem em que vieram (a escolhida nas
+ * configurações do mundo); sem ela, os tipos que mais se usam abrem primeiro.
+ */
+export function buildSpreads(types: NotebookType[], keepOrder = false): Spread[] {
   const rank = (id: string) => {
+    if (keepOrder) return 0
     const index = LEADING_TYPES.indexOf(id)
     return index === -1 ? LEADING_TYPES.length : index
   }

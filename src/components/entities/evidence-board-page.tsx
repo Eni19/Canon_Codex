@@ -23,6 +23,8 @@ import styles from './evidence-board.module.css'
  * relatório e notas) ligadas por linha vermelha. Sem WebGL, mostra o quadro em HTML.
  */
 export function EvidenceBoardPage(props: EntityPageProps) {
+  // Interface prática (configurações do Codex): o quadro em página única, sem a parede 3D.
+  if (props.plainInterface) return <ClassicEvidenceBoard {...props}/>
   const { entity, entityType, worldName, content, entityTitleById, allEntities, calendar, backlinks, relationTargetOptions } = props
   const parsed = EvidenceFindingsSchema.safeParse(entity.properties.evidenceFindings)
   const findings = parsed.success ? parsed.data : []

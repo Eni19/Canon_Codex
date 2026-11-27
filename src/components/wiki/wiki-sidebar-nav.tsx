@@ -2,49 +2,46 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useMemo, useState, useSyncExternalStore } from 'react'
-import { CalendarDays, Clapperboard, EyeOff, Layers, LayoutDashboard, LibraryBig, FolderInput, Music, Network, RotateCcw, Search, Settings2, Trash2 } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { CalendarDays, Clapperboard, LayoutDashboard, LibraryBig, FolderInput, Layers, Music, Network, Search, Settings } from 'lucide-react'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
+import { useCodexSettings } from '@/components/wiki/codex-settings-provider'
 import { useCommandPalette } from '@/components/wiki/command-palette-provider'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
+import { TOOL_GUIDE, TOOL_IDS, orderByPreference, type ToolId, type WorldPreferences } from '@/domain/worlds/worldPreferences'
 
-const HIDDEN_GUIDES_KEY = 'canon-codex:hidden-guides'
-const HIDDEN_GUIDES_EVENT = 'canon-codex:hidden-guides-changed'
-
-function subscribeToHiddenGuides(callback: () => void) {
-  window.addEventListener('storage', callback)
-  window.addEventListener(HIDDEN_GUIDES_EVENT, callback)
-  return () => { window.removeEventListener('storage', callback); window.removeEventListener(HIDDEN_GUIDES_EVENT, callback) }
+const TOOLS: Record<ToolId, { href: string; icon: ReactNode }> = {
+  calendar: { href: '/calendar', icon: <CalendarDays className="size-4" /> },
+  relationships: { href: '/relationships', icon: <Network className="size-4" /> },
+  boards: { href: '/boards', icon: <LayoutDashboard className="size-4" /> },
+  scenes: { href: '/scenes', icon: <Clapperboard className="size-4" /> },
+  soundtrack: { href: '/soundtrack', icon: <Music className="size-4" /> },
 }
 
-function hiddenGuidesSnapshot() { return window.localStorage.getItem(HIDDEN_GUIDES_KEY) ?? '[]' }
-function saveHiddenGuides(ids: string[]) {
-  window.localStorage.setItem(HIDDEN_GUIDES_KEY, JSON.stringify(ids))
-  window.dispatchEvent(new Event(HIDDEN_GUIDES_EVENT))
-}
-
+/**
+ * Navegação da barra lateral (desktop e menu móvel). Conteúdos e ferramentas desativados nas
+ * configurações do Codex (`preferences`) não aparecem; o botão Configurações abre a janela.
+ */
 export function WikiSidebarNav({
   entityTypes,
+  preferences,
   collapsed = false,
   onNavigate,
 }: {
   entityTypes: EntityTypeDefinition[]
+  preferences: WorldPreferences
   collapsed?: boolean
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
   const { setOpen: setCommandPaletteOpen } = useCommandPalette()
-  const [customizing, setCustomizing] = useState(false)
-  const hiddenSnapshot = useSyncExternalStore(subscribeToHiddenGuides, hiddenGuidesSnapshot, () => '[]')
-  const hiddenGuideIds = useMemo(() => {
-    try { const parsed: unknown = JSON.parse(hiddenSnapshot); return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []) }
-    catch { return new Set<string>() }
-  }, [hiddenSnapshot])
-  const availableTypes = entityTypes.filter((type) => type.showInSidebar)
+  const { openSettings } = useCodexSettings()
+  const contentTypes = orderByPreference(entityTypes, preferences.contentOrder).filter((type) => type.showInSidebar && !preferences.hiddenEntityTypes.includes(type.id))
+  const tools = TOOL_IDS.filter((id) => !preferences.hiddenTools.includes(id))
 
   return (
-    <nav className="flex-1 overflow-y-auto px-2 py-3">
+    <nav className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
       <button
         type="button"
         onClick={() => setCommandPaletteOpen(true)}
@@ -68,21 +65,11 @@ export function WikiSidebarNav({
       <SidebarLink href="/all" active={pathname === '/all'} collapsed={collapsed} label="Todos os conteúdos" onNavigate={onNavigate}>
         <Layers className="size-4" />
       </SidebarLink>
-      <SidebarLink href="/calendar" active={pathname.startsWith('/calendar')} collapsed={collapsed} label="Calendário" onNavigate={onNavigate}>
-        <CalendarDays className="size-4" />
-      </SidebarLink>
-      <SidebarLink href="/relationships" active={pathname.startsWith('/relationships')} collapsed={collapsed} label="Relacionamentos" onNavigate={onNavigate}>
-        <Network className="size-4" />
-      </SidebarLink>
 
-      {!collapsed && (
-        <p className="mt-5 mb-1 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Conteúdo</p>
-      )}
-      {collapsed && <div className="my-3 border-t border-sidebar-border" />}
-
-      {availableTypes
-        .filter((type) => !hiddenGuideIds.has(type.id))
-        .map((type) => (
+      {contentTypes.length > 0 && <>
+        {!collapsed && <p className="mt-5 mb-1 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Conteúdo</p>}
+        {collapsed && <div className="my-3 border-t border-sidebar-border" />}
+        {contentTypes.map((type) => (
           <SidebarLink
             key={type.id}
             href={`/${type.id}`}
@@ -94,33 +81,31 @@ export function WikiSidebarNav({
             <EntityTypeIcon name={type.icon} className="size-4" />
           </SidebarLink>
         ))}
-      {!collapsed && <p className="mt-5 mb-1 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Ferramentas</p>}
-      {collapsed && <div className="my-3 border-t border-sidebar-border" />}
-      <SidebarLink href="/boards" active={pathname.startsWith('/boards')} collapsed={collapsed} label="Quadros" onNavigate={onNavigate}>
-        <LayoutDashboard className="size-4" />
-      </SidebarLink>
-      <SidebarLink href="/scenes" active={pathname.startsWith('/scenes')} collapsed={collapsed} label="Cenas" onNavigate={onNavigate}>
-        <Clapperboard className="size-4" />
-      </SidebarLink>
-      <SidebarLink href="/soundtrack" active={pathname.startsWith('/soundtrack')} collapsed={collapsed} label="Trilha sonora" onNavigate={onNavigate}>
-        <Music className="size-4" />
-      </SidebarLink>
-      <SidebarLink href="/trash" active={pathname.startsWith('/trash')} collapsed={collapsed} label="Lixeira" onNavigate={onNavigate}>
-        <Trash2 className="size-4" />
-      </SidebarLink>
-      {!collapsed && <div className="mt-4 border-t border-sidebar-border pt-2">
-        <button type="button" onClick={() => setCustomizing((value) => !value)} className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-expanded={customizing}>
-          <Settings2 className="size-4" /><span>Personalizar guias</span>
-        </button>
-        {customizing && <div className="mt-2 rounded-md border border-sidebar-border bg-sidebar-accent/35 p-2">
-          <p className="mb-2 flex items-center gap-2 text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase"><EyeOff className="size-3.5" />Exibição</p>
-          <div className="flex flex-col gap-1">{availableTypes.map((type) => <label key={type.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-sidebar-accent">
-            <input type="checkbox" checked={!hiddenGuideIds.has(type.id)} onChange={(event) => { const next = new Set(hiddenGuideIds); if (event.target.checked) next.delete(type.id); else next.add(type.id); saveHiddenGuides([...next]) }} />
-            <EntityTypeIcon name={type.icon} className="size-3.5" /><span className="truncate">{type.pluralLabel}</span>
-          </label>)}</div>
-          {hiddenGuideIds.size > 0 && <button type="button" onClick={() => saveHiddenGuides([])} className="mt-2 flex items-center gap-1.5 text-[0.68rem] text-muted-foreground hover:text-sidebar-foreground"><RotateCcw className="size-3" />Mostrar todos</button>}
-        </div>}
-      </div>}
+      </>}
+
+      {tools.length > 0 && <>
+        {!collapsed && <p className="mt-5 mb-1 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Ferramentas</p>}
+        {collapsed && <div className="my-3 border-t border-sidebar-border" />}
+        {tools.map((id) => (
+          <SidebarLink key={id} href={TOOLS[id].href} active={pathname.startsWith(TOOLS[id].href)} collapsed={collapsed} label={TOOL_GUIDE[id].label} onNavigate={onNavigate}>
+            {TOOLS[id].icon}
+          </SidebarLink>
+        ))}
+      </>}
+
+      <div className="mt-auto pt-4">
+        <div className="border-t border-sidebar-border pt-2">
+          <button
+            type="button"
+            onClick={() => { onNavigate?.(); openSettings() }}
+            title={collapsed ? 'Configurações' : undefined}
+            className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+          >
+            <Settings className="size-4 shrink-0" />
+            {!collapsed && <span>Configurações</span>}
+          </button>
+        </div>
+      </div>
     </nav>
   )
 }
@@ -138,7 +123,7 @@ function SidebarLink({
   collapsed: boolean
   label: string
   onNavigate?: () => void
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <Link

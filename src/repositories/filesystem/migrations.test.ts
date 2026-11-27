@@ -228,6 +228,16 @@ describe('world calendar migration', () => {
     expect(migrated.calendar.intercalaryRules[1].name).toBe('Extra')
   })
 })
+describe('codex preferences migration (v27)', () => {
+  it('adds preferences with everything visible and interactive', () => {
+    const world: Record<string, unknown> = { ...createDefaultWorldSeed(), schemaVersion: 26 }
+    delete world.preferences
+    const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, world))
+    expect(migrated.preferences).toEqual({ hiddenEntityTypes: [], hiddenTools: [], plainInterfaces: [], contentOrder: [] })
+    expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
+  })
+})
+
 describe('object fields migration (v26)', () => {
   it('drops registration number and materials from the artifact type only', () => {
     const world = createDefaultWorldSeed()
