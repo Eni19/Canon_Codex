@@ -23,8 +23,9 @@ function ids(value: unknown) { return Array.isArray(value) ? value.filter((id): 
 
 /**
  * Página de Organização: uma caixa-arquivo em 3D. A caixa começa fechada; dentro dela estão o
- * dossiê, o relatório (o conteúdo), as pastas dos subgrupos, as fichas dos membros e os memorandos
- * (objetivos, ideais, relações e citações). Sem WebGL, mostra o dossiê em HTML.
+ * dossiê, o relatório (o conteúdo), o livro de registro com todos os membros, a pasta sanfonada com
+ * os subgrupos, o estatuto (objetivos e ideais) e o maço de correspondência (relações e citações).
+ * Cada um é um objeto só, para caber organizações de qualquer tamanho. Sem WebGL, mostra o dossiê em HTML.
  */
 export function OrganizationArchivePage(props: EntityPageProps) {
   const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar, backlinks } = props
@@ -43,14 +44,14 @@ export function OrganizationArchivePage(props: EntityPageProps) {
   const ideals = text(entity.properties.ideals)
   const organizationIds = new Set(allEntities.filter((item) => item.type === 'organization').map((item) => item.id))
   const organizationOptions = relationTargetOptions.filter((option) => organizationIds.has(option.id))
-  const relationLines = entity.relations.map((relation) => `${relation.label || relation.type}: ${titleOf(relation.targetId)}`)
-
-  const memos = [
-    ...(objectives ? [{ id: 'objetivos', code: 'DIRETRIZ', title: 'Objetivos', text: objectives }] : []),
-    ...(ideals ? [{ id: 'ideais', code: 'DOUTRINA', title: 'Ideais', text: ideals }] : []),
-    { id: 'relacoes', code: 'CORRESPONDÊNCIA', title: 'Relações institucionais', text: relationLines.join('\n') || 'Nenhuma relação registrada.' },
-    ...(backlinks.length ? [{ id: 'citacoes', code: 'REFERÊNCIAS', title: 'Citada em', text: backlinks.map((backlink) => backlink.entity.title).join('\n') }] : []),
+  const articles = [
+    ...(objectives ? [{ heading: 'Dos objetivos', text: objectives }] : []),
+    ...(ideals ? [{ heading: 'Dos ideais', text: ideals }] : []),
   ]
+  const addressees = [...new Set([
+    ...entity.relations.map((relation) => titleOf(relation.targetId)),
+    ...backlinks.map((backlink) => backlink.entity.title),
+  ])]
 
   const data: OrgArchiveData = {
     entityId: entity.id,
@@ -68,9 +69,10 @@ export function OrganizationArchivePage(props: EntityPageProps) {
       { label: 'Sede', value: headquarters ? titleOf(headquarters) : '' },
       { label: 'Também chamada', value: entity.aliases.join(', ') },
     ].filter((field) => field.value),
-    groups: groups.map((group) => ({ id: group.id, name: group.name, description: group.description, members: group.memberIds.map(titleOf) })),
-    members: personnel.map((member) => ({ id: member.id, name: member.title, coverAssetId: member.coverAssetId, leader: leaderIds.includes(member.id), groups: groupsOf(member.id) })),
-    memos,
+    groups: groups.map((group) => group.name),
+    members: personnel.map((member) => ({ id: member.id, name: member.title, leader: leaderIds.includes(member.id), groups: groupsOf(member.id) })),
+    charter: { founded, articles },
+    addressees,
     pages: content.pages.map((page) => ({ id: page.id, title: page.title, blocks: contentTextBlocks(page.body) })),
   }
 
@@ -87,29 +89,29 @@ export function OrganizationArchivePage(props: EntityPageProps) {
       {leaderIds.length > 0 && <><h3>Liderança</h3><div className={styles.panelList}>{leaderIds.map(link)}</div></>}
       {entity.tags.length > 0 && <><h3>Marcadores</h3><div className={styles.chips}>{entity.tags.map((tag) => <span key={tag}>{tag}</span>)}</div></>}
     </>,
-    'memo:relacoes': <><h2>Relações institucionais</h2><RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={organizationOptions}/></>,
-    'memo:citacoes': <><h2>Citada em</h2><BacklinksPanel backlinks={backlinks}/></>,
-  }
-  if (objectives) panels['memo:objetivos'] = <><h2>Objetivos</h2><p className="whitespace-pre-wrap">{objectives}</p></>
-  if (ideals) panels['memo:ideais'] = <><h2>Ideais</h2><p className="whitespace-pre-wrap">{ideals}</p></>
-  for (const group of groups) {
-    panels[`group:${group.id}`] = <>
-      <h2>{group.name}</h2>
-      {group.description && <p className="whitespace-pre-wrap">{group.description}</p>}
-      <h3>Integrantes</h3>
-      {group.memberIds.length ? <div className={styles.panelList}>{group.memberIds.map(link)}</div> : <p>Nenhum integrante neste subgrupo.</p>}
-    </>
-  }
-  for (const member of personnel) {
-    const memberGroups = groupsOf(member.id)
-    panels[`member:${member.id}`] = <>
-      {member.coverAssetId && <div className={styles.panelPhoto}><Image src={assetVariantUrl(member.coverAssetId, 'original')} alt="" fill sizes="480px" className="object-contain"/></div>}
-      <h2>{member.title}</h2>
-      {leaderIds.includes(member.id) && <span className={styles.badge}>LIDERANÇA</span>}
-      <h3>Subgrupos</h3>
-      <p>{memberGroups.length ? memberGroups.join(', ') : 'Sem subgrupo.'}</p>
-      <p><Link href={`/entity/${member.id}`}>Abrir a ficha do personagem →</Link></p>
-    </>
+    accordion: <>
+      <h2>Subgrupos</h2>
+      <p>{groups.length} divisória{groups.length === 1 ? '' : 's'}. Abra uma para ver a descrição e os integrantes.</p>
+      <div className={styles.dividers}>
+        {groups.map((group) => <details key={group.id}>
+          <summary><span>{group.name}</span><small>{group.memberIds.length} integrante{group.memberIds.length === 1 ? '' : 's'}</small></summary>
+          {group.description && <p className="whitespace-pre-wrap">{group.description}</p>}
+          {group.memberIds.length ? <div className={styles.panelList}>{group.memberIds.map(link)}</div> : <p>Nenhum integrante neste subgrupo.</p>}
+        </details>)}
+      </div>
+    </>,
+    charter: <>
+      <h2>Estatuto</h2>
+      <p>{entity.title}{founded ? `, fundada em ${founded}` : ''}.</p>
+      {articles.map((article, i) => <div key={article.heading}><h3>Art. {i + 1}º — {article.heading}</h3><p className="whitespace-pre-wrap">{article.text}</p></div>)}
+    </>,
+    letters: <>
+      <h2>Correspondência</h2>
+      <h3>Relações institucionais</h3>
+      <RelationsPanel entityId={entity.id} relations={entity.relations} entityTitleById={entityTitleById} targetOptions={organizationOptions}/>
+      <h3>Citada em</h3>
+      <BacklinksPanel backlinks={backlinks}/>
+    </>,
   }
   for (const page of content.pages) panels[`page:${page.id}`] = <><h2>{page.title}</h2><ContentRenderer content={{ ...content, pages: [page] }}/></>
 

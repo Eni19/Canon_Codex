@@ -125,16 +125,31 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 ### Caixa-arquivo da Organização
 
 A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de madeira. A caixa
-começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Dentro dela
-estão o dossiê (insígnia ou capa e os dados da organização), as folhas do relatório (o conteúdo), uma
-pasta para cada subgrupo, uma ficha para cada membro (com carimbo de liderança) e memorandos de
-objetivos, ideais, relações institucionais e citações. Por dentro da tampa fica o índice do conteúdo.
+começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Por dentro
+da tampa fica o índice do conteúdo. Cada tipo de informação é um objeto só, qualquer que seja o
+tamanho da organização:
+
+- **Dossiê:** insígnia ou capa e os dados da organização.
+- **Folhas do relatório:** o conteúdo, datilografado; texto que não cabe vira folha nova.
+- **Livro de registro:** todos os membros, numerados, com a liderança primeiro (★) e os subgrupos
+  de cada um. Na leitura, **‹ ›** ou as setas viram as páginas do livro na mesa; a busca filtra por
+  nome ou subgrupo e o botão do livro abre na página daquele membro.
+- **Pasta sanfonada:** uma aba por subgrupo (as que não cabem viram "+N"). Na leitura, cada
+  subgrupo é uma divisória que abre com a descrição e os integrantes.
+- **Estatuto:** objetivos e ideais como artigos, com lacre de cera. Só aparece quando há objetivos
+  ou ideais.
+- **Correspondência:** um maço de envelopes amarrado, endereçado aos registros relacionados. Na
+  leitura ficam as relações institucionais (editáveis) e as citações em outros registros.
 
 - **Clique na tampa** (ou em **Abrir a caixa**) para abrir; clique de novo para fechar.
 - **Clique** num documento dentro da caixa para tirá-lo: ele sobe acima da borda e vai para a mesa.
   Na mesa, **clique** para chegar perto e abrir a leitura ao lado; **Esc** ou um clique na mesa fecha.
 - **Arraste** documentos pela mesa ou de volta para dentro da caixa. **Tirar tudo** espalha o que
-  está na caixa; **Guardar tudo** devolve tudo para a pilha. A arrumação fica salva neste navegador.
+  está na caixa pelo espaço livre da mesa; **Guardar tudo** devolve tudo para a pilha.
+- **Arraste a caixa** (pelas paredes, pelo fundo ou pela tampa) para mudá-la de lugar: o que está
+  dentro vai junto, e os documentos da mesa que ficarem embaixo dela são empurrados para o lado.
+  Clicar na tampa sem arrastar continua abrindo e fechando.
+- A arrumação e a posição da caixa ficam salvas neste navegador.
 - Arraste a mesa para movê-la e use a roda do mouse para aproximar.
 - Sem WebGL, a página mostra o dossiê em HTML.
 

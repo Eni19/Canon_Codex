@@ -58,6 +58,10 @@ export interface SurfaceBoardProps {
   liftZ?: number
   /** Peças erguidas pela página, por exemplo antes de saírem de dentro de uma caixa. */
   raisedIds?: ReadonlySet<string>
+  /** Peças que vão direto para a posição, sem o atraso do peso (carregadas junto com outra coisa). */
+  instantIds?: ReadonlySet<string>
+  /** Distância da vista inicial em relação à que preenche a tela (1,2 = 20% mais longe, com a borda da superfície à vista). */
+  fitScale?: number
   children?: ReactNode
 }
 
@@ -103,7 +107,7 @@ export function useSurface() {
   return value
 }
 
-export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, restZ, liftZ = LIFT_Z, raisedIds, children }: SurfaceBoardProps) {
+export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp, onDrop, onSelect, onBackground, onShown, onCursor, surfaceMaterial, renderPiece, renderAttachment, focusFill = 0.7, restZ, liftZ = LIFT_Z, raisedIds, instantIds, fitScale = 1, children }: SurfaceBoardProps) {
   const { camera, gl, size } = useThree()
   // Posições vivas: as peças correm atrás delas a cada quadro, o que dá peso ao papel.
   const live = useRef(new Map<string, Live>())
@@ -130,7 +134,7 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
   const tan = Math.tan((FOV * Math.PI) / 360)
   const aspect = size.width / Math.max(1, size.height)
   /** Distância em que a superfície preenche a tela (o que sobra nas laterais se vê movendo a vista). */
-  const fitDistance = Math.min(surface.height / 2 / tan, surface.width / 2 / (tan * aspect)) * 0.98
+  const fitDistance = Math.min(surface.height / 2 / tan, surface.width / 2 / (tan * aspect)) * 0.98 * fitScale
 
   const ray = useMemo(() => new Raycaster(), [])
   const plane = useMemo(() => new Plane(new Vector3(0, 0, 1), 0), [])
@@ -264,7 +268,7 @@ export function SurfaceBoard({ surface, pieces, layout, focusId, reduced, clamp,
       const lifted = dragging === piece.id || Boolean(raisedIds?.has(piece.id))
       const rest = restZ?.(piece, group.position.x, group.position.y, placement.order) ?? BASE_Z + placement.order * ORDER_Z
       const z = lifted ? liftZ : rest + (hovered === piece.id && !focusId ? HOVER_Z : 0)
-      const k = reduced ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
+      const k = reduced || instantIds?.has(piece.id) ? 1 : 1 - Math.exp(-delta * (lifted ? 18 : 10))
       group.position.x += (state.x - group.position.x) * k
       group.position.y += (state.y - group.position.y) * k
       group.position.z += (z - group.position.z) * (reduced ? 1 : 1 - Math.exp(-delta * 12))

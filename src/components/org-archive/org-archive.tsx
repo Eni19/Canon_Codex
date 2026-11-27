@@ -1,15 +1,16 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Archive, ArchiveRestore, PackageOpen, X } from 'lucide-react'
 import type { ContentTextBlock } from '@/components/editor/content-text'
 import { hand, typewriter } from '@/components/codex-notebook/notebook-fonts'
 import { paginateSheet, paintSheet, type WallFonts } from '@/components/evidence-wall/wall-textures'
 import { bringToFront, readSurfaceLayout, serializeSurfaceLayout, type SurfaceLayout } from '@/domain/canvas/surfaceLayout'
-import { ARCHIVE_SIZE, clampToArchive, defaultArchiveLayout, isInBox, spreadPositions, type ArchiveItemKind } from '@/domain/organizations/archiveBox'
+import { ARCHIVE_SIZE, BOX_HOME, LEDGER_PER_PAGE, clampToArchive, defaultArchiveLayout, isInBox, ledgerPages, ledgerSpreadOf, readBoxPosition, spreadPositions, type ArchiveItemKind, type BoxAt } from '@/domain/organizations/archiveBox'
 import { assetVariantUrl } from '@/lib/assetUrl'
-import { GROUP_COLORS, MEMO_TINTS, paintDossier, paintGroupFolder, paintLidInside, paintLidTop, paintMemberCard, paintMemo } from './archive-textures'
+import { paintAccordion, paintCharter, paintDossier, paintEnvelope, paintLedgerPage, paintLidInside, paintLidTop, type LedgerEntry } from './archive-textures'
+import { LedgerPanel, type LedgerMember } from './ledger-panel'
 import type { ArchivePiece } from './org-archive-scene'
 import styles from './org-archive.module.css'
 
@@ -25,18 +26,25 @@ export type OrgArchiveData = {
   lidFields: Array<{ label: string; value: string }>
   /** Dados datilografados no dossiê. */
   dossierFields: Array<{ label: string; value: string }>
-  groups: Array<{ id: string; name: string; description: string; members: string[] }>
-  members: Array<{ id: string; name: string; coverAssetId?: string; leader: boolean; groups: string[] }>
-  memos: Array<{ id: string; code: string; title: string; text: string }>
+  /** Nomes dos subgrupos, para as abas da pasta sanfonada. */
+  groups: string[]
+  /** Quadro de pessoal para o livro de registro (a liderança vai primeiro). */
+  members: Array<{ id: string; name: string; leader: boolean; groups: string[] }>
+  /** Artigos do estatuto (objetivos e ideais); sem nenhum, o estatuto não entra na caixa. */
+  charter: { founded: string; articles: Array<{ heading: string; text: string }> }
+  /** Destinatários dos envelopes do maço de correspondência (relações e citações). */
+  addressees: string[]
   pages: Array<{ id: string; title: string; blocks: ContentTextBlock[] }>
 }
 
 /** O que abre no painel de leitura de cada documento (HTML de verdade, legível e clicável). */
-export type ArchivePanelKey = 'dossier' | `group:${string}` | `member:${string}` | `memo:${string}` | `page:${string}`
+export type ArchivePanelKey = 'dossier' | 'ledger' | 'accordion' | 'charter' | 'letters' | `page:${string}`
 
 type PieceInfo = ArchivePiece & { panel: ArchivePanelKey }
 
 const storageKey = (entityId: string) => `canon-codex:org-archive:${entityId}`
+/** Posição da caixa na mesa, guardada à parte da arrumação dos documentos. */
+const boxKey = (entityId: string) => `canon-codex:org-archive:${entityId}:caixa`
 const HINT_KEY = 'canon-codex:org-archive:hint-closed'
 /** Tempo para o papel subir acima da borda antes de sair, e para assentar depois. */
 const RAISE_MS = 230
@@ -67,11 +75,13 @@ function webglAvailable() {
   }
 }
 
-type Painted = { pieces: PieceInfo[]; lid: { top: ReturnType<typeof paintLidTop>; inside: ReturnType<typeof paintLidInside> } }
+type Texture = ReturnType<typeof paintLidTop>
+type Painted = { pieces: PieceInfo[]; lid: { top: Texture; inside: Texture }; envelopes: Texture[]; fonts: WallFonts }
 
 /**
  * Caixa-arquivo em 3D: a caixa de papelão fechada sobre a mesa guarda o dossiê, as folhas do
- * relatório, as pastas dos subgrupos, as fichas dos membros e os memorandos. Clicar na tampa abre a
+ * relatório, o livro de registro dos membros, a pasta sanfonada dos subgrupos, o estatuto e o maço de
+ * correspondência; cada um é um objeto só, qualquer que seja o tamanho da organização. Clicar na tampa abre a
  * caixa; clicar num documento dentro dela o tira para a mesa; clicar num documento na mesa abre a
  * leitura. Tudo é arrastável, inclusive de volta para a caixa. Sem WebGL, mostra `fallback`.
  */
@@ -80,7 +90,14 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
   const [supported] = useState(webglAvailable)
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const [cursor, setCursor] = useState('')
-  const [lidHover, setLidHover] = useState(false)
+  const [boxHover, setBoxHover] = useState(false)
+  const [box, setBox] = useState<BoxAt>(BOX_HOME)
+  const [carried, setCarried] = useState<ReadonlySet<string>>(new Set())
+  const [boxDragging, setBoxDragging] = useState(false)
+  // Posição da caixa e arrumação atuais para os eventos do arraste (que chegam entre renderizações).
+  const boxRef = useRef<BoxAt>(BOX_HOME)
+  const layoutRef = useRef<SurfaceLayout | null>(null)
+  const carryingRef = useRef(false)
   const [painted, setPainted] = useState<Painted | null>(null)
   const [layout, setLayout] = useState<SurfaceLayout | null>(null)
   const [open, setOpen] = useState(false)
@@ -88,7 +105,18 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
   const [selection, setSelection] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
   const [hintHidden, setHintHidden] = useState(hintClosed)
+  const [spread, setSpread] = useState(0)
   const timers = useRef<number[]>([])
+  const ledgerCache = useRef(new Map<number, Texture>())
+
+  // Livro de registro: páginas com a liderança primeiro e a abertura em que cada membro aparece.
+  const ledger = useMemo(() => {
+    const { pages, spreads } = ledgerPages(data.members)
+    const ordered = pages.slice(1).flat()
+    const members: LedgerMember[] = ordered.map((member, i) => ({ ...member, number: i + 1, spread: ledgerSpreadOf(i) }))
+    const entries: LedgerEntry[][] = pages.map((page, p) => page.map((member, i) => ({ ...member, number: (p - 1) * LEDGER_PER_PAGE + i + 1 })))
+    return { entries, spreads, members }
+  }, [data.members])
   const closeHint = () => {
     setHintHidden(true)
     try { window.localStorage.setItem(HINT_KEY, '1') } catch { /* armazenamento indisponível: fecha só nesta visita */ }
@@ -102,14 +130,12 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
     void (async () => {
       const fonts: WallFonts = { hand: hand.style.fontFamily, type: typewriter.style.fontFamily }
       await Promise.all([document.fonts.load(`40px ${fonts.hand}`), document.fonts.load(`40px ${fonts.type}`), document.fonts.load(`bold 40px ${fonts.type}`)]).catch(() => undefined)
-      const [cover, ...portraits] = await Promise.all([
-        data.coverAssetId ? loadImage(assetVariantUrl(data.coverAssetId, 'original')) : Promise.resolve(null),
-        ...data.members.map((member) => member.coverAssetId ? loadImage(assetVariantUrl(member.coverAssetId, 'thumbnail')) : Promise.resolve(null)),
-      ])
+      const cover = data.coverAssetId ? await loadImage(assetVariantUrl(data.coverAssetId, 'original')) : null
       if (!alive) return
-      const piece = (id: string, kind: ArchiveItemKind, label: string, panel: ArchivePanelKey, paint: ReturnType<typeof paintMemo>): PieceInfo => {
-        disposables.push(paint)
-        return { id, kind, label, panel, size: ARCHIVE_SIZE[kind], texture: paint, curl: 'paper' }
+      const piece = (id: string, kind: ArchiveItemKind, label: string, panel: ArchivePanelKey, paint?: Texture): PieceInfo => {
+        if (paint) disposables.push(paint)
+        // O livro aberto é largo: a câmera recua mais para ele caber inteiro ao lado da leitura.
+        return { id, kind, label, panel, size: ARCHIVE_SIZE[kind], texture: paint, curl: 'paper', ...(kind === 'ledger' ? { focusHeight: 1.6 } : {}) }
       }
       const pieces: PieceInfo[] = [piece('dossier', 'dossier', `Dossiê: ${data.title}`, 'dossier', paintDossier(cover, data.title, data.kind, data.dossierFields, fonts))]
       for (const page of data.pages) {
@@ -119,25 +145,53 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
           paintSheet(page.title, lines, n + 1, sheets.length, fonts, `${page.id}:${n}`, 'RELATÓRIO INSTITUCIONAL'),
         )))
       }
-      data.groups.forEach((group, i) => pieces.push(piece(`group:${group.id}`, 'group', `Subgrupo: ${group.name}`, `group:${group.id}`, paintGroupFolder(group.name, group.description, group.members, GROUP_COLORS[i % GROUP_COLORS.length], fonts))))
-      data.members.forEach((member, i) => pieces.push(piece(`member:${member.id}`, 'member', `Membro: ${member.name}`, `member:${member.id}`, paintMemberCard(portraits[i] ?? null, member.name, member.groups, member.leader, fonts))))
-      data.memos.forEach((memo, i) => pieces.push(piece(`memo:${memo.id}`, 'memo', memo.title, `memo:${memo.id}`, paintMemo(memo.code, memo.title, memo.text, MEMO_TINTS[i % MEMO_TINTS.length], fonts))))
+      pieces.push(piece('ledger', 'ledger', `Livro de registro (${data.members.length} membro${data.members.length === 1 ? '' : 's'})`, 'ledger'))
+      if (data.groups.length) pieces.push(piece('accordion', 'accordion', `Subgrupos (${data.groups.length})`, 'accordion', paintAccordion(data.groups, data.title, fonts)))
+      if (data.charter.articles.length) pieces.push(piece('charter', 'charter', 'Estatuto', 'charter', paintCharter(data.title, data.charter.founded, data.charter.articles, fonts)))
+      const addressees = data.addressees.length ? data.addressees : ['sem correspondência']
+      const envelopes = addressees.slice(0, 5).map((name, i) => paintEnvelope(name, fonts, `${data.entityId}:${i}`))
+      disposables.push(...envelopes)
+      pieces.push(piece('letters', 'letters', 'Correspondência', 'letters'))
       const lid = { top: paintLidTop(data.title, data.lidFields, fonts), inside: paintLidInside(pieces.map((item) => item.label), fonts) }
       disposables.push(lid.top, lid.inside)
 
       let saved: unknown = null
-      try { saved = JSON.parse(window.localStorage.getItem(storageKey(data.entityId)) ?? 'null') } catch { saved = null }
-      const loaded = readSurfaceLayout(saved, pieces, defaultArchiveLayout(pieces), (item, x, y) => clampToArchive(item.kind, x, y))
+      let savedBox: unknown = null
+      try {
+        saved = JSON.parse(window.localStorage.getItem(storageKey(data.entityId)) ?? 'null')
+        savedBox = JSON.parse(window.localStorage.getItem(boxKey(data.entityId)) ?? 'null')
+      } catch { saved = null }
+      const at = readBoxPosition(savedBox)
+      const loaded = readSurfaceLayout(saved, pieces, defaultArchiveLayout(pieces, at), (item, x, y) => clampToArchive(item.kind, x, y, at))
+      setBox(at)
+      boxRef.current = at
       setLayout(loaded)
       // A caixa começa fechada, a menos que algum documento já esteja na mesa.
-      setOpen(Object.values(loaded).some((p) => !isInBox(p.x, p.y)))
-      setPainted({ pieces, lid })
+      setOpen(Object.values(loaded).some((p) => !isInBox(p.x, p.y, at)))
+      setPainted({ pieces, lid, envelopes, fonts })
     })()
     return () => { alive = false; for (const item of disposables) item.dispose() }
   }, [data, supported])
 
   useEffect(() => () => { for (const timer of timers.current) window.clearTimeout(timer) }, [])
+
+  // Páginas do livro pintadas só quando aparecem (uma organização pode ter centenas de membros).
+  const ledgerPage = useCallback((page: number) => {
+    const cache = ledgerCache.current
+    let painting = cache.get(page)
+    if (!painting && painted) {
+      painting = paintLedgerPage(ledger.entries[page] ?? [], page, ledger.entries.length, data.title, painted.fonts)
+      cache.set(page, painting)
+    }
+    return painting ?? painted!.lid.inside
+  }, [data.title, ledger, painted])
+  useEffect(() => {
+    const cache = ledgerCache.current
+    return () => { for (const painting of cache.values()) painting.dispose(); cache.clear() }
+  }, [ledger, painted])
   const later = (ms: number, action: () => void) => { timers.current.push(window.setTimeout(action, reduced ? 0 : ms)) }
+
+  useEffect(() => { layoutRef.current = layout }, [layout])
 
   const persist = useCallback((next: SurfaceLayout) => {
     try { window.localStorage.setItem(storageKey(data.entityId), JSON.stringify(serializeSurfaceLayout(next))) } catch { /* armazenamento indisponível: a arrumação vale só nesta visita */ }
@@ -168,17 +222,17 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [update, reduced])
 
-  const inBox = useCallback((id: string) => { const p = layout?.[id]; return Boolean(p && isInBox(p.x, p.y)) }, [layout])
+  const inBox = useCallback((id: string) => { const p = layout?.[id]; return Boolean(p && isInBox(p.x, p.y, box)) }, [box, layout])
 
   const select = useCallback((id: string) => {
     if (!painted || !layout) return
     if (inBox(id)) {
-      const spot = spreadPositions(painted.pieces)[id]
+      const spot = spreadPositions(painted.pieces, box)[id]
       if (spot) move([{ id, ...spot }])
       return
     }
     setSelection(id)
-  }, [inBox, layout, move, painted])
+  }, [box, inBox, layout, move, painted])
 
   const onDrop = useCallback((id: string, x: number, y: number) => {
     update((current) => bringToFront({ ...current, [id]: { ...current[id], x, y } }, id))
@@ -187,7 +241,7 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
   const takeAll = () => {
     if (!painted || !layout) return
     setOpen(true); setSelection(null)
-    const spots = spreadPositions(painted.pieces)
+    const spots = spreadPositions(painted.pieces, box)
     // Sai primeiro o que está por cima da pilha.
     const inside = painted.pieces.filter((item) => inBox(item.id)).sort((a, b) => layout[b.id].order - layout[a.id].order)
     move(inside.map((item) => ({ id: item.id, ...spots[item.id] })))
@@ -195,17 +249,63 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
   const putAll = () => {
     if (!painted || !layout) return
     setOpen(true); setSelection(null)
-    const home = defaultArchiveLayout(painted.pieces)
+    const home = defaultArchiveLayout(painted.pieces, box)
     const outside = painted.pieces.filter((item) => !inBox(item.id)).sort((a, b) => home[a.id].order - home[b.id].order)
     move(outside.map((item) => ({ id: item.id, ...home[item.id] })))
   }
+  /**
+   * Arraste da caixa: o que está dentro vai junto, sem atraso (para não atravessar as paredes); ao
+   * soltar, os documentos da mesa que ficaram embaixo dela são empurrados para o lado.
+   */
+  const moveBox = useCallback((at: BoxAt) => {
+    const previous = boxRef.current
+    const dx = at.x - previous.x, dy = at.y - previous.y
+    if (!dx && !dy) return
+    boxRef.current = at
+    setBoxDragging(true); setSelection(null)
+    setBox(at)
+    // Atualizações puras (o React pode repetir a função em desenvolvimento): mover só o que estava dentro.
+    setLayout((current) => {
+      if (!current) return current
+      const next = { ...current }
+      for (const [id, p] of Object.entries(current)) if (isInBox(p.x, p.y, previous)) next[id] = { ...p, x: p.x + dx, y: p.y + dy }
+      return next
+    })
+    if (!carryingRef.current) {
+      carryingRef.current = true
+      setCarried(new Set(Object.entries(layoutRef.current ?? {}).filter(([, p]) => isInBox(p.x, p.y, previous)).map(([id]) => id)))
+    }
+  }, [])
+  const dropBox = useCallback((at: BoxAt) => {
+    carryingRef.current = false
+    setBoxDragging(false); setCarried(new Set())
+    try { window.localStorage.setItem(boxKey(data.entityId), JSON.stringify(at)) } catch { /* armazenamento indisponível: a posição vale só nesta visita */ }
+    if (!painted) return
+    const kinds = new Map(painted.pieces.map((item) => [item.id, item.kind]))
+    update((current) => {
+      const next = { ...current }
+      for (const [id, p] of Object.entries(current)) {
+        const kind = kinds.get(id)
+        if (!kind || isInBox(p.x, p.y, at)) continue
+        next[id] = { ...p, ...clampToArchive(kind, p.x, p.y, at, true) }
+      }
+      return next
+    })
+  }, [data.entityId, painted, update])
+
   const toggleLid = () => { setSelection(null); setOpen((current) => !current) }
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelection(null) }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelection(null)
+      // Com o livro em leitura, as setas viram as páginas (fora de campos de texto).
+      if (selection !== 'ledger' || event.target instanceof HTMLInputElement) return
+      if (event.key === 'ArrowRight') setSpread((current) => Math.min(ledger.spreads - 1, current + 1))
+      if (event.key === 'ArrowLeft') setSpread((current) => Math.max(0, current - 1))
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [ledger.spreads, selection])
 
   if (!supported) return <>{fallback}</>
   const pieces = painted?.pieces ?? []
@@ -215,11 +315,12 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
 
   return (
     <div className={`${styles.room} ${hand.variable} ${typewriter.variable}`}>
-      <div className={styles.stage} style={{ cursor: lidHover && !selection ? 'pointer' : cursor }} aria-hidden="true">
+      <div className={styles.stage} style={{ cursor: boxDragging ? 'grabbing' : boxHover && !selection ? 'grab' : cursor }} aria-hidden="true">
         {painted && layout && <Scene
           pieces={painted.pieces} layout={layout} focusId={selection} reduced={reduced}
-          open={open} raisedIds={raised} lid={painted.lid}
-          onToggleLid={toggleLid} onLidHover={setLidHover}
+          open={open} raisedIds={raised} carriedIds={carried} box={box} lid={painted.lid}
+          ledgerSpread={spread} ledgerPage={ledgerPage} envelopes={painted.envelopes}
+          onToggleLid={toggleLid} onBoxHover={setBoxHover} onBoxMove={moveBox} onBoxDrop={dropBox}
           onDrop={onDrop} onSelect={select}
           onBackground={() => setSelection(null)} onShown={() => setShown(true)} onCursor={setCursor}
         />}
@@ -228,7 +329,7 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
       <header className={styles.header}>{header}</header>
       <div className={styles.toolbar}>
         {!hintHidden && <span className={styles.hint}>
-          {open ? 'Clique num documento para tirá-lo da caixa · clique de novo para ler · arraste para arrumar' : 'Clique na tampa para abrir a caixa'}
+          {open ? 'Clique num documento para tirá-lo da caixa · clique de novo para ler · arraste documentos ou a própria caixa' : 'Clique na tampa para abrir a caixa · arraste a caixa para mudá-la de lugar'}
           <button type="button" className={styles.hintClose} onClick={closeHint} aria-label="Fechar o texto guia" title="Fechar o texto guia"><X/></button>
         </span>}
         <button type="button" onClick={toggleLid}>{open ? <><Archive/> Fechar a caixa</> : <><PackageOpen/> Abrir a caixa</>}</button>
@@ -242,7 +343,11 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
       {selected && (
         <aside className={styles.panel} aria-label={selected.label}>
           <button type="button" className={styles.close} onClick={() => setSelection(null)} aria-label="Fechar leitura"><X/></button>
-          <div className={styles.panelBody}>{panels[selected.panel] ?? <p>Nada para ler neste documento.</p>}</div>
+          <div className={styles.panelBody}>
+            {selected.panel === 'ledger'
+              ? <LedgerPanel title={data.title} members={ledger.members} spread={spread} spreads={ledger.spreads} onSpread={setSpread}/>
+              : panels[selected.panel] ?? <p>Nada para ler neste documento.</p>}
+          </div>
         </aside>
       )}
     </div>

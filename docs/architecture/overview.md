@@ -73,12 +73,19 @@ ficam em `src/domain/canvas/surfaceLayout.ts`. A parede de evidências ainda tem
 A página de Organização (`src/components/entities/organization-archive-page.tsx`) monta no servidor
 os dados e os painéis de leitura e os entrega a `OrgArchive` (`src/components/org-archive/`),
 carregado só no navegador; sem WebGL, mostra o dossiê em HTML (`organization-dossier-page.tsx`). A
-cena usa a mesma base das superfícies 3D, com três opções que a caixa pede: `restZ` (a altura de
-repouso depende de onde a peça está, empilhada no fundo da caixa ou na mesa), `liftZ` (a peça
-erguida passa por cima da borda) e `raisedIds` (a página ergue um documento antes de movê-lo, para
-ele sair da caixa sem atravessar a parede). A tampa é uma dobradiça com mola amortecida. Medidas da
-mesa e da caixa, arrumação inicial (tudo empilhado na caixa), onde cada documento vai ao sair e os
-limites (dentro da caixa ou fora das paredes dela) são regras puras em
+cena usa a mesma base das superfícies 3D, com opções que a caixa pede: `restZ` (a altura de
+repouso depende de onde a peça está: empilhada no fundo da caixa ou rente à mesa, subindo só a
+espessura do documento de baixo), `liftZ` (a peça erguida passa por cima da borda), `raisedIds` (a
+página ergue um documento antes de movê-lo, para ele sair da caixa sem atravessar a parede),
+`instantIds` (os documentos acompanham a caixa arrastada sem atraso) e `fitScale` (a vista começa
+mais afastada). A área de trabalho é invisível e só recebe os cliques; o tampo visível é uma textura
+só, maior que ela, para a vista afastada não mostrar emenda nem vazio. A caixa pode ser arrastada e
+a posição dela fica salva à parte da arrumação. A tampa é uma dobradiça com mola amortecida. Membros e
+subgrupos não viram uma peça cada: ficam num livro de registro e numa pasta sanfonada, para a mesa
+aguentar organizações grandes. As páginas do livro são pintadas só quando aparecem e a folha que
+vira é um plano de duas faces girando pela lombada. Medidas, espessuras, alturas de repouso, limites da
+caixa e dos documentos (para qualquer posição da caixa), arrumação inicial, a busca de espaço livre
+para onde cada documento vai ao sair e a paginação do livro são regras puras em
 `src/domain/organizations/archiveBox.ts`.
 
 ## Canvas de relacionamentos

@@ -3,8 +3,8 @@ import { canvas, grain, hash, seeded, stains, texture, wrap, writeLines, type Wa
 
 /**
  * Texturas da caixa-arquivo das Organizações, todas desenhadas em código: mesa de madeira, papelão
- * da caixa, etiqueta da tampa, índice colado por dentro da tampa e os documentos (dossiê, pastas dos
- * subgrupos, fichas dos membros e memorandos).
+ * da caixa, etiqueta da tampa, índice colado por dentro da tampa e os documentos (dossiê, páginas
+ * do livro de registro, pasta sanfonada, estatuto e envelopes).
  */
 
 const INK = '#26231f'
@@ -57,9 +57,9 @@ function paperclip(c: CanvasRenderingContext2D, x: number, y: number, length: nu
 }
 
 /** Tampo de madeira escura, com tábuas, veios e marcas de uso. */
-export function paintDesk(width = 2048, height = 1176): Texture {
+export function paintDesk(width = 2048, height = 1176, planks = 6): Texture {
   const { element, c } = canvas(width, height)
-  const planks = 6, plankH = height / planks
+  const plankH = height / planks
   const random = seeded(41)
   for (let p = 0; p < planks; p++) {
     const base = 52 + random() * 14
@@ -270,110 +270,249 @@ export function paintDossier(image: HTMLImageElement | null, title: string, kind
   return texture(element)
 }
 
-/** Pasta de um subgrupo: cartolina colorida com aba, nome à mão e a lista de integrantes. */
-export const GROUP_COLORS = ['#c9a76a', '#9fb39a', '#b59a8c', '#9fb0bf'] as const
-export function paintGroupFolder(name: string, description: string, members: string[], color: string, fonts: WallFonts, width = 840, height = 620): Texture {
-  const { element, c } = canvas(width, height)
-  c.fillStyle = color
+/** Percalina da capa do livro de registro: tecido verde-escuro com trama fina. */
+export function paintCloth(size = 512): Texture {
+  const { element, c } = canvas(size, size)
+  c.fillStyle = '#26382c'
+  c.fillRect(0, 0, size, size)
+  const random = seeded(71)
+  for (let i = 0; i < size; i += 3) {
+    c.fillStyle = `rgba(255,255,255,${0.02 + random() * 0.03})`; c.fillRect(0, i, size, 1)
+    c.fillStyle = `rgba(0,0,0,${0.04 + random() * 0.05})`; c.fillRect(i, 0, 1, size)
+  }
+  stains(c, size, size, 12, 73, '10,16,12', 0.25, 90)
+  return texture(element)
+}
+
+export const LEDGER_PAGE_PX = { width: 640, height: 880 }
+export type LedgerEntry = { name: string; groups: string[]; leader: boolean; number: number }
+
+/** Papel do livro: creme pautado, com a sombra da lombada do lado de dentro. */
+function ledgerPaper(c: CanvasRenderingContext2D, side: 'left' | 'right', seed: number) {
+  const { width, height } = LEDGER_PAGE_PX
+  c.fillStyle = '#f0e9d8'
   c.fillRect(0, 0, width, height)
-  stains(c, width, height, 10, hash(name), '60,45,20', 0.12, 140)
-  grain(c, width, height, 7000, hash(name) + 1, 0.1)
-  c.fillStyle = 'rgba(0,0,0,0.08)'
-  c.fillRect(0, 0, width, 92)
-  c.fillStyle = '#f2ede0'
-  c.fillRect(30, 18, width * 0.66, 58)
-  c.fillStyle = '#1d2a4a'
-  c.font = `52px ${fonts.hand}`
-  c.textBaseline = 'middle'
-  let label = name
-  while (c.measureText(label).width > width * 0.66 - 30 && label.length > 4) label = `${label.slice(0, -2)}…`
-  c.fillText(label, 46, 50)
+  stains(c, width, height, 8, seed, '150,120,70', 0.08, 140)
+  grain(c, width, height, 5000, seed + 1, 0.08)
+  const gutter = c.createLinearGradient(side === 'left' ? width : 0, 0, side === 'left' ? width - 70 : 70, 0)
+  gutter.addColorStop(0, 'rgba(60,40,20,0.28)'); gutter.addColorStop(1, 'rgba(60,40,20,0)')
+  c.fillStyle = gutter
+  c.fillRect(0, 0, width, height)
+}
+
+/**
+ * Página do livro de registro: a folha de rosto (página 0) ou uma tabela pautada com número, nome e
+ * subgrupos; a liderança leva uma estrela.
+ */
+export function paintLedgerPage(entries: LedgerEntry[], page: number, total: number, title: string, fonts: WallFonts): Texture {
+  const { width, height } = LEDGER_PAGE_PX
+  const { element, c } = canvas(width, height)
+  ledgerPaper(c, page % 2 === 0 ? 'left' : 'right', hash(`${title}:${page}`))
   c.fillStyle = INK
-  c.font = `24px ${fonts.type}`
+  if (page === 0) {
+    c.textAlign = 'center'; c.textBaseline = 'middle'
+    c.strokeStyle = 'rgba(38,35,31,0.5)'; c.lineWidth = 2
+    c.strokeRect(60, 80, width - 120, height - 160)
+    c.font = `bold 40px ${fonts.type}`
+    c.fillText('LIVRO DE REGISTRO', width / 2, 250)
+    c.font = `26px ${fonts.type}`
+    c.fillText('QUADRO DE PESSOAL', width / 2, 300)
+    c.fillStyle = '#1d2a4a'
+    c.font = `58px ${fonts.hand}`
+    let name = title
+    while (c.measureText(name).width > width - 160 && name.length > 4) name = `${name.slice(0, -2)}…`
+    c.fillText(name, width / 2, 450)
+    c.fillStyle = INK
+    c.font = `24px ${fonts.type}`
+    const sheets = total - 1
+    c.fillText(sheets > 0 ? `${sheets} folha${sheets === 1 ? '' : 's'} de registro` : 'nenhum registro', width / 2, 620)
+    return texture(element)
+  }
+  const top = 120, row = 50, left = 56
+  c.strokeStyle = 'rgba(80,110,160,0.35)'; c.lineWidth = 2
+  for (let y = top + row; y < height - 40; y += row) { c.beginPath(); c.moveTo(30, y); c.lineTo(width - 30, y); c.stroke() }
+  c.strokeStyle = 'rgba(180,60,50,0.5)'
+  c.beginPath(); c.moveTo(left + 52, top - 30); c.lineTo(left + 52, height - 40); c.stroke()
+  c.font = `20px ${fonts.type}`
+  c.textBaseline = 'alphabetic'
+  c.fillText('Nº', left, top + 10)
+  c.fillText('NOME', left + 66, top + 10)
   c.textAlign = 'right'
-  c.fillText('SUBGRUPO', width - 34, 50)
+  c.fillText('SUBGRUPO', width - 40, top + 10)
+  c.fillText(`fl. ${page}`, width - 40, height - 20)
+  entries.forEach((entry, i) => {
+    const y = top + row * (i + 1) + 38
+    c.textAlign = 'left'
+    c.fillStyle = INK
+    c.font = `20px ${fonts.type}`
+    c.fillText(String(entry.number).padStart(3, '0'), left - 8, y)
+    c.fillStyle = '#1d2a4a'
+    c.font = `34px ${fonts.hand}`
+    let name = `${entry.leader ? '★ ' : ''}${entry.name}`
+    while (c.measureText(name).width > 300 && name.length > 4) name = `${name.slice(0, -2)}…`
+    c.fillText(name, left + 66, y)
+    c.textAlign = 'right'
+    c.font = `26px ${fonts.hand}`
+    let groups = entry.groups.join(', ') || '—'
+    while (c.measureText(groups).width > 170 && groups.length > 4) groups = `${groups.slice(0, -2)}…`
+    c.fillText(groups, width - 40, y)
+  })
+  c.textAlign = 'left'
+  if (!entries.length) {
+    c.globalAlpha = 0.5; c.font = `24px ${fonts.type}`
+    c.fillText('(página em branco)', left + 66, top + row + 38)
+    c.globalAlpha = 1
+  }
+  return texture(element)
+}
+
+/**
+ * Pasta sanfonada vista de cima: corpo de papelão com a etiqueta e, em cima, as divisórias com uma
+ * aba por subgrupo, em fileiras escalonadas; o que não cabe vira "+N".
+ */
+export const ACCORDION_PX = { width: 1000, height: 780 }
+export function paintAccordion(groups: string[], title: string, fonts: WallFonts): Texture {
+  const { width, height } = ACCORDION_PX
+  const { element, c } = canvas(width, height)
+  const tabColors = ['#e6d3a8', '#c9d6c2', '#e2c3b5', '#c8d3de', '#e8dca0']
+  const perRow = 4, maxRows = 3, tabW = (width - 60) / perRow, tabH = 64, step = tabH - 12
+  const capacity = perRow * maxRows
+  const visible = groups.length > capacity ? capacity - 1 : groups.length
+  const labels = [...groups.slice(0, visible), ...(groups.length > visible ? [`+${groups.length - visible}`] : [])]
+  const rows = Math.max(1, Math.ceil(labels.length / perRow))
+  const bodyTop = 16 + rows * step + 26
+  c.fillStyle = '#7a5a33'
+  c.fillRect(0, 0, width, height)
+  // Divisórias com abas: as de trás aparecem mais acima.
+  for (let r = 0; r < rows; r++) {
+    const y = 16 + r * step
+    c.fillStyle = tabColors[r % tabColors.length]
+    c.fillRect(12, y + tabH - 8, width - 24, height)
+    c.strokeStyle = 'rgba(60,45,20,0.35)'; c.lineWidth = 2
+    c.beginPath(); c.moveTo(12, y + tabH - 8); c.lineTo(width - 12, y + tabH - 8); c.stroke()
+    for (let k = 0; k < perRow; k++) {
+      const label = labels[r * perRow + k]
+      if (label === undefined) continue
+      const x = 24 + k * tabW + (r % 2) * 26
+      c.fillStyle = tabColors[(r + k + 1) % tabColors.length]
+      c.beginPath(); c.moveTo(x + 6, y + tabH - 8); c.lineTo(x + 18, y); c.lineTo(x + tabW - 30, y); c.lineTo(x + tabW - 18, y + tabH - 8); c.closePath(); c.fill()
+      c.stroke()
+      c.fillStyle = '#1d2a4a'
+      c.font = `32px ${fonts.hand}`
+      c.textBaseline = 'middle'
+      let text = label
+      while (c.measureText(text).width > tabW - 60 && text.length > 3) text = `${text.slice(0, -2)}…`
+      c.fillText(text, x + 26, y + tabH / 2)
+    }
+  }
+  // Corpo da pasta, em sanfona.
+  c.fillStyle = '#a7804c'
+  c.fillRect(0, bodyTop, width, height - bodyTop)
+  const random = seeded(hash(title))
+  for (let k = 0; k < 1400; k++) {
+    c.strokeStyle = `rgba(${random() < 0.5 ? '90,62,30' : '214,186,138'},${0.05 + random() * 0.08})`
+    c.lineWidth = 1
+    const x = random() * width, y = bodyTop + random() * (height - bodyTop)
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + 6 + random() * 16, y); c.stroke()
+  }
+  for (const x of [0, width - 26]) {
+    const fold = c.createLinearGradient(x, 0, x + 26, 0)
+    fold.addColorStop(0, 'rgba(50,32,12,0.45)'); fold.addColorStop(0.5, 'rgba(255,230,190,0.15)'); fold.addColorStop(1, 'rgba(50,32,12,0.45)')
+    c.fillStyle = fold; c.fillRect(x, bodyTop, 26, height - bodyTop)
+  }
+  const ly = bodyTop + (height - bodyTop) / 2 - 70
+  c.fillStyle = '#f2ede0'
+  c.fillRect(width / 2 - 260, ly, 520, 140)
+  c.strokeStyle = '#2f4a3a'; c.lineWidth = 4; c.strokeRect(width / 2 - 260, ly, 520, 140)
+  c.fillStyle = INK
+  c.textAlign = 'center'; c.textBaseline = 'middle'
+  c.font = `bold 40px ${fonts.type}`
+  c.fillText('SUBGRUPOS', width / 2, ly + 46)
+  c.font = `26px ${fonts.type}`
+  c.fillText(groups.length ? `${groups.length} divisória${groups.length === 1 ? '' : 's'}` : 'nenhuma divisória', width / 2, ly + 100)
+  c.textAlign = 'left'
+  return texture(element)
+}
+
+/**
+ * Estatuto: papel encorpado com moldura ornamental, os artigos (objetivos e ideais) e as linhas de
+ * assinatura. O lacre é um objeto 3D preso por cima, no canto de baixo à direita.
+ */
+export const CHARTER_PX = { width: 800, height: 1050 }
+export function paintCharter(title: string, founded: string, articles: Array<{ heading: string; text: string }>, fonts: WallFonts): Texture {
+  const { width, height } = CHARTER_PX
+  const { element, c } = canvas(width, height)
+  c.fillStyle = '#efe6cf'
+  c.fillRect(0, 0, width, height)
+  stains(c, width, height, 18, hash(title) + 11, '150,115,60', 0.12, 160)
+  grain(c, width, height, 8000, hash(title) + 12, 0.08)
+  // Moldura: fio duplo e um friso de losangos.
+  c.strokeStyle = '#5b4a2e'; c.lineWidth = 4
+  c.strokeRect(34, 34, width - 68, height - 68)
+  c.lineWidth = 1.5
+  c.strokeRect(48, 48, width - 96, height - 96)
+  c.fillStyle = 'rgba(91,74,46,0.75)'
+  const diamond = (x: number, y: number) => { c.beginPath(); c.moveTo(x, y - 5); c.lineTo(x + 4, y); c.lineTo(x, y + 5); c.lineTo(x - 4, y); c.fill() }
+  for (let x = 70; x < width - 60; x += 22) { diamond(x, 41); diamond(x, height - 41) }
+  for (let y = 70; y < height - 60; y += 22) { diamond(41, y); diamond(width - 41, y) }
+  c.fillStyle = INK
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic'
+  c.font = `bold 56px ${fonts.type}`
+  c.fillText('ESTATUTO', width / 2, 150)
+  c.font = `46px ${fonts.hand}`
+  let name = title
+  while (c.measureText(name).width > width - 200 && name.length > 4) name = `${name.slice(0, -2)}…`
+  c.fillText(name, width / 2, 210)
+  if (founded) { c.font = `20px ${fonts.type}`; c.fillText(`fundada em ${founded}`, width / 2, 246) }
   c.textAlign = 'left'
   c.textBaseline = 'top'
-  let y = 120
-  if (description) {
-    c.font = `28px ${fonts.type}`
-    y = writeLines(c, wrap(c, description, width - 80), 40, y, 34, y + 34 * 3) + 16
-  }
-  c.font = `24px ${fonts.type}`
-  c.fillText(`INTEGRANTES (${members.length})`, 40, y)
-  y += 36
-  c.font = `30px ${fonts.type}`
-  const columns = members.length > 5 ? 2 : 1, colW = (width - 80) / columns
-  const perColumn = Math.max(1, Math.floor((height - y - 30) / 38))
-  members.slice(0, perColumn * columns).forEach((member, i) => {
-    const col = Math.floor(i / perColumn), row = i % perColumn
-    let text = `– ${member}`
-    while (c.measureText(text).width > colW - 20 && text.length > 4) text = `${text.slice(0, -2)}…`
-    c.fillText(text, 40 + col * colW, y + row * 38)
+  let y = 290
+  articles.forEach((article, i) => {
+    c.font = `bold 24px ${fonts.type}`
+    c.fillText(`ART. ${i + 1}º — ${article.heading.toUpperCase()}`, 90, y)
+    c.font = `22px ${fonts.type}`
+    const bottom = i === articles.length - 1 ? height - 240 : Math.min(height - 360, y + 40 + 30 * 8)
+    y = writeLines(c, wrap(c, article.text, width - 180), 90, y + 40, 30, bottom) + 28
   })
-  if (!members.length) { c.globalAlpha = 0.55; c.fillText('(nenhum integrante)', 40, y); c.globalAlpha = 1 }
-  return texture(element)
-}
-
-/** Ficha de membro: cartão pautado com retrato grampeado, nome datilografado e carimbo de líder. */
-export function paintMemberCard(image: HTMLImageElement | null, name: string, groups: string[], leader: boolean, fonts: WallFonts, width = 750, height = 1020): Texture {
-  const { element, c } = canvas(width, height)
-  c.fillStyle = '#f2eee4'
-  c.fillRect(0, 0, width, height)
-  stains(c, width, height, 8, hash(name), '150,120,70', 0.1, 120)
-  grain(c, width, height, 5000, hash(name) + 1, 0.1)
-  c.strokeStyle = 'rgba(80,110,160,0.3)'; c.lineWidth = 2
-  for (let y = 640; y < height - 30; y += 50) { c.beginPath(); c.moveTo(0, y); c.lineTo(width, y); c.stroke() }
-  c.strokeStyle = 'rgba(180,60,50,0.5)'; c.lineWidth = 3
-  c.beginPath(); c.moveTo(0, 110); c.lineTo(width, 110); c.stroke()
-  c.fillStyle = INK
-  c.font = `26px ${fonts.type}`
   c.textBaseline = 'alphabetic'
-  c.fillText('FICHA DE MEMBRO', 40, 72)
-  // Retrato 3×4 grampeado.
-  const pw = 360, ph = 440, px = (width - pw) / 2, py = 150
-  c.save()
-  c.shadowColor = 'rgba(0,0,0,0.3)'; c.shadowBlur = 10; c.shadowOffsetY = 4
-  c.fillStyle = '#e8e2d4'
-  c.fillRect(px, py, pw, ph)
-  c.restore()
-  if (image) drawCover(c, image, px + 12, py + 12, pw - 24, ph - 24, 'grayscale(0.85) sepia(0.3) contrast(1.1)')
-  else {
-    c.fillStyle = '#cfc8b8'; c.fillRect(px + 12, py + 12, pw - 24, ph - 24)
-    c.fillStyle = 'rgba(60,55,48,0.5)'
-    c.beginPath(); c.ellipse(px + pw / 2, py + ph * 0.42, pw * 0.2, ph * 0.18, 0, 0, Math.PI * 2); c.fill()
-    c.beginPath(); c.ellipse(px + pw / 2, py + ph * 0.95, pw * 0.38, ph * 0.3, 0, Math.PI, 0); c.fill()
+  // Assinaturas.
+  c.strokeStyle = 'rgba(38,35,31,0.7)'; c.lineWidth = 1.5
+  for (const x of [100, 330]) { c.beginPath(); c.moveTo(x, height - 140); c.lineTo(x + 190, height - 140); c.stroke() }
+  c.strokeStyle = '#1d2a4a'; c.lineWidth = 2.5
+  const random = seeded(hash(title) + 13)
+  for (const x of [110, 340]) {
+    c.beginPath(); c.moveTo(x, height - 155)
+    for (let k = 1; k < 9; k++) c.quadraticCurveTo(x + k * 20 - 10, height - 175 + random() * 40, x + k * 20, height - 152 - random() * 14)
+    c.stroke()
   }
-  c.strokeStyle = '#8d9296'; c.lineWidth = 6; c.lineCap = 'round'
-  c.beginPath(); c.moveTo(px + pw / 2 - 40, py + 6); c.lineTo(px + pw / 2 + 40, py + 2); c.stroke()
-  c.fillStyle = INK
-  c.font = `bold 40px ${fonts.type}`
-  let label = name.toUpperCase()
-  while (c.measureText(label).width > width - 80 && label.length > 4) label = `${label.slice(0, -2)}…`
-  c.fillText(label, 40, 680)
-  c.font = `28px ${fonts.type}`
-  writeLines(c, wrap(c, groups.length ? groups.join(', ') : 'Sem subgrupo', width - 80), 40, 740, 50, height - 30)
-  if (leader) stamp(c, 'LIDERANÇA', width - 210, 560, 40, -0.2, fonts, hash(name) + 3)
   return texture(element)
 }
 
-/** Memorando em papel de cópia (fino e colorido), datilografado. */
-export const MEMO_TINTS = ['#e9dcc8', '#d9e2e6', '#e6d6d6'] as const
-export function paintMemo(code: string, title: string, text: string, tint: string, fonts: WallFonts, width = 930, height = 690): Texture {
+/** Envelope endereçado à mão, com selo e carimbo do correio. */
+export const ENVELOPE_PX = { width: 660, height: 420 }
+export function paintEnvelope(addressee: string, fonts: WallFonts, seedText: string): Texture {
+  const { width, height } = ENVELOPE_PX
   const { element, c } = canvas(width, height)
-  c.fillStyle = tint
+  const random = seeded(hash(seedText))
+  const tones = ['#ece3cf', '#e6d7b8', '#dfe2da']
+  c.fillStyle = tones[Math.floor(random() * tones.length)]
   c.fillRect(0, 0, width, height)
-  grain(c, width, height, 6000, hash(title), 0.08)
-  stains(c, width, height, 8, hash(title) + 2, '120,100,70', 0.1, 120)
-  c.fillStyle = INK
-  c.textBaseline = 'top'
-  c.font = `24px ${fonts.type}`
-  c.fillText(`MEMORANDO · ${code}`, 50, 40)
-  c.font = `bold 38px ${fonts.type}`
-  c.fillText(title.toUpperCase(), 50, 80)
-  c.strokeStyle = 'rgba(38,35,31,0.55)'; c.lineWidth = 2
-  c.beginPath(); c.moveTo(50, 136); c.lineTo(width - 50, 136); c.stroke()
-  c.font = `30px ${fonts.type}`
-  writeLines(c, wrap(c, text || '(nada registrado)', width - 100), 50, 160, 40, height - 40)
+  stains(c, width, height, 8, hash(seedText) + 1, '150,120,70', 0.1, 120)
+  grain(c, width, height, 4000, hash(seedText) + 2, 0.08)
+  c.fillStyle = ['#9e3b2f', '#2f5a7a', '#4d6b3a'][Math.floor(random() * 3)]
+  c.fillRect(width - 130, 30, 90, 110)
+  c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 3; c.strokeRect(width - 122, 38, 74, 94)
+  c.strokeStyle = 'rgba(38,35,31,0.55)'; c.lineWidth = 3
+  c.beginPath(); c.arc(width - 170, 110, 48, 0, Math.PI * 2); c.stroke()
+  for (let k = 0; k < 4; k++) { c.beginPath(); c.moveTo(width - 230 - k * 6, 70 + k * 18); c.quadraticCurveTo(width - 170, 60 + k * 18, width - 90, 72 + k * 18); c.stroke() }
+  c.fillStyle = '#1d2a4a'
+  c.font = `28px ${fonts.type}`
+  c.fillText('À', 100, 232)
+  c.font = `52px ${fonts.hand}`
+  let name = addressee
+  while (c.measureText(name).width > width - 220 && name.length > 4) name = `${name.slice(0, -2)}…`
+  c.fillText(name, 140, 240)
+  c.strokeStyle = 'rgba(38,35,31,0.35)'; c.lineWidth = 2
+  for (const y of [258, 310, 360]) { c.beginPath(); c.moveTo(130, y); c.lineTo(width - 70, y); c.stroke() }
   return texture(element)
 }

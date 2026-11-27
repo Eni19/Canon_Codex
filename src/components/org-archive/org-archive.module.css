@@ -41,3 +41,28 @@
 @keyframes panel-in { from { opacity: 0; transform: translateX(1.5rem); } }
 @media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
 @media (max-width: 767px) { .hint { display: none; } .panel { top: auto; height: 60dvh; } }
+
+/* Livro de registro: controles das páginas, busca e lista numerada. */
+.ledgerNav { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin: 0.6rem 0 0.9rem; padding: 0.3rem; border: 1px solid #26231f33; font-family: var(--font-type); font-size: 0.72rem; }
+.ledgerNav button { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; color: #26231f; }
+.ledgerNav button:hover:not(:disabled) { background: rgb(0 0 0 / 8%); }
+.ledgerNav button:disabled { opacity: 0.3; }
+.ledgerNav svg { width: 1rem; }
+.ledgerSearch { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; padding: 0 0.6rem; border: 1px solid #26231f55; background: #fff8; }
+.ledgerSearch svg { width: 0.9rem; color: #6b5d4b; }
+.ledgerSearch input { flex: 1; padding: 0.45rem 0; background: transparent; color: #26231f; font-size: 0.88rem; outline: none; }
+.ledgerList { display: grid; }
+.ledgerList li { display: grid; grid-template-columns: 2.4rem 1fr auto; align-items: center; gap: 0.5rem; border-bottom: 1px dotted #8f887d; padding: 0.35rem 0; }
+.ledgerNumber { font-family: var(--font-type); font-size: 0.72rem; color: #6b5d4b; }
+.ledgerName { display: grid; font-size: 0.9rem; }
+.ledgerName small { color: #6b5d4b; font-size: 0.75rem; }
+.ledgerList button { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; color: #6b5d4b; }
+.ledgerList button:hover { background: rgb(0 0 0 / 8%); color: #26231f; }
+.ledgerList svg { width: 0.95rem; }
+
+/* Pasta sanfonada: cada subgrupo é uma divisória que abre no painel. */
+.dividers { display: grid; gap: 0.35rem; margin-top: 0.8rem; }
+.dividers details { border: 1px solid #26231f33; background: #fff6; }
+.dividers summary { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding: 0.45rem 0.7rem; cursor: pointer; font-family: var(--font-hand); font-size: 1.35rem; line-height: 1.1; color: #1d2a4a; }
+.dividers summary small { font-family: var(--font-type); font-size: 0.68rem; color: #6b5d4b; }
+.dividers details > :not(summary) { margin: 0 0.7rem 0.6rem; }
