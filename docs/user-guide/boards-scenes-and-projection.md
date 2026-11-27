@@ -74,7 +74,7 @@ grade quadrada desativada, célula 70, opacidade 0,25 e encaixe desligado.
 ## Preparar e mestrar
 
 Na cena, use **Preparar** para adicionar tokens de personagem, criatura, organização, evidência e
-artefato. Você pode mover, redimensionar, alternar entre recorte e círculo, inverter, travar,
+objeto. Você pode mover, redimensionar, alternar entre recorte e círculo, inverter, travar,
 ocultar/revelar, ordenar camadas e configurar a grade. Pontos de interesse vêm dos pontos do local;
 no modo **Mestrar**, revele-os individualmente ou todos e revele descobertas progressivamente.
 

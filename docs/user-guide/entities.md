@@ -101,7 +101,7 @@ O tipo controla propriedades e blocos, mas algumas páginas têm componentes ded
   clique ou **Esc** pula, e com movimento reduzido no sistema a página abre direto;
 - evidências aceitam até 24 descobertas e abrem numa parede 3D (veja abaixo);
 - organizações aceitam até 20 grupos e cada grupo até 30 membros;
-- artefatos aceitam até 24 detalhes com posição, rótulo e descrição;
+- objetos aceitam até 24 detalhes com posição, rótulo e descrição;
 - conceitos aceitam até 40 blocos entre visão geral, operação, estrutura, regras, exemplos,
   limitações, terminologia, diagrama e notas;
 - contos podem ter no máximo 50 páginas, chamadas de capítulos no editor;
