@@ -50,6 +50,7 @@ O ponto de partida para quem chega é o [CONTRIBUTING](../CONTRIBUTING.md) na ra
 - [ADR-005](architecture/ADR-005-design-system.md): tokens semânticos e tema editorial.
 - [ADR-006](architecture/ADR-006-sqlite-storage.md): persistência em SQLite.
 - [ADR-007](architecture/ADR-007-konva-canvas.md): canvas próprio em Konva no lugar do tldraw.
+- [ADR-008](architecture/ADR-008-codex-notebook-home.md): o início do mundo como caderno do Codex.
 
 ## Planos: `plans/`
 

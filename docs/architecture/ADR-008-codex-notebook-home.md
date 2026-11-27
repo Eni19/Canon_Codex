@@ -1,4 +1,4 @@
-# ADR-007 · Caderno do Codex no início do mundo
+# ADR-008: Caderno do Codex no início do mundo
 
 > **Estado:** implementado · **Última verificação:** 26/11/2026, componentes em `src/components/codex-notebook/` e `src/components/record-reveal/`, página `src/app/(wiki)/codex/page.tsx`.
 
