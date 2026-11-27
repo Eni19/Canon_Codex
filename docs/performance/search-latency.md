@@ -1,5 +1,9 @@
 # Tempo de resposta da busca geral
 
+> **Estado:** parcial (medição até a entrega ao componente feita; falta a medição visual no
+> navegador) · **Última verificação:** 26/11/2026, `src/components/wiki/palette-search.ts` e
+> `scripts/search-perf.test.ts`.
+
 A meta inicial é exibir a lista em até 300 ms em 95% das consultas. O ensaio usa SQLite com 1.000 personagens sintéticos, quatro consultas alternadas (Auorra, Mirante, Coruja e #lunar), uma rodada de aquecimento e dez rodadas medidas. O p95 é a 38ª menor das 40 durações.
 
 ## Reproduzir
