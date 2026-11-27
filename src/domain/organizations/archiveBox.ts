@@ -2,8 +2,8 @@ import { clampInside, tilt, type SurfaceLayout } from '@/domain/canvas/surfaceLa
 
 /**
  * A caixa-arquivo 3D de uma Organização: uma caixa de papelão com tampa numa mesa de madeira. Os
- * documentos (dossiê, folhas do relatório, livro de registro dos membros, pasta sanfonada dos
- * subgrupos, estatuto e o maço de correspondência) começam empilhados dentro da caixa e saem para a
+ * documentos (dossiê, polaroides da liderança, folhas do relatório, livro de registro dos membros,
+ * pasta sanfonada dos subgrupos, estatuto e o maço de correspondência) começam empilhados dentro da caixa e saem para a
  * mesa. Cada tipo é um objeto só, qualquer que seja o número de membros ou subgrupos. A caixa também
  * pode ser arrastada pela mesa, levando o que está dentro. Unidades da cena, mesa centrada na origem.
  */
@@ -25,7 +25,7 @@ const BOX_GAP = 0.04
 const DESK_REST = 0.0012
 const LAYER_GAP = 0.0008
 
-export type ArchiveItemKind = 'dossier' | 'sheet' | 'ledger' | 'accordion' | 'charter' | 'letters'
+export type ArchiveItemKind = 'dossier' | 'sheet' | 'ledger' | 'accordion' | 'charter' | 'letters' | 'polaroid'
 export const ARCHIVE_SIZE: Record<ArchiveItemKind, { w: number; h: number }> = {
   dossier: { w: 0.92, h: 1.18 },
   sheet: { w: 0.66, h: 0.91 },
@@ -33,10 +33,11 @@ export const ARCHIVE_SIZE: Record<ArchiveItemKind, { w: number; h: number }> = {
   accordion: { w: 1.0, h: 0.78 },
   charter: { w: 0.8, h: 1.05 },
   letters: { w: 0.66, h: 0.42 },
+  polaroid: { w: 0.5, h: 0.606 },
 }
 /** Espessura de cada objeto, para as pilhas (na caixa e na mesa) não se atravessarem. */
 export const ARCHIVE_THICKNESS: Record<ArchiveItemKind, number> = {
-  dossier: 0.006, sheet: 0.002, ledger: 0.036, accordion: 0.03, charter: 0.026, letters: 0.03,
+  dossier: 0.006, sheet: 0.002, ledger: 0.036, accordion: 0.03, charter: 0.026, letters: 0.03, polaroid: 0.004,
 }
 
 export type ArchiveItemRef = { id: string; kind: ArchiveItemKind }
@@ -126,7 +127,7 @@ const angleIn = (item: ArchiveItemRef) => tilt(item.id, item.kind === 'dossier' 
 const angleOut = (item: ArchiveItemRef) => tilt(`${item.id}:mesa`, item.kind === 'dossier' ? 0.03 : 0.07)
 
 /** Ordem da pilha na caixa: os volumes grossos no fundo e o dossiê por cima, o primeiro a ser visto. */
-const STACK: ArchiveItemKind[] = ['ledger', 'accordion', 'sheet', 'letters', 'charter', 'dossier']
+const STACK: ArchiveItemKind[] = ['ledger', 'accordion', 'sheet', 'letters', 'charter', 'polaroid', 'dossier']
 
 /** Arrumação inicial: tudo dentro da caixa, empilhado com folgas e inclinações diferentes. */
 export function defaultArchiveLayout(items: ArchiveItemRef[], box: BoxAt = BOX_HOME): SurfaceLayout {
@@ -152,9 +153,10 @@ const PREFERRED: Record<ArchiveItemKind, { x: number; y: number }> = {
   letters: { x: 1.22, y: -0.2 },
   accordion: { x: 1.68, y: -0.86 },
   ledger: { x: -1.22, y: -0.98 },
+  polaroid: { x: 1.95, y: 0.7 },
 }
 /** Ordem de escolha: os maiores primeiro, para os pequenos ocuparem as sobras. */
-const SPREAD_ORDER: ArchiveItemKind[] = ['dossier', 'ledger', 'sheet', 'charter', 'accordion', 'letters']
+const SPREAD_ORDER: ArchiveItemKind[] = ['dossier', 'ledger', 'sheet', 'charter', 'accordion', 'letters', 'polaroid']
 /** Quanto a tampa aberta ocupa atrás da caixa, vista de cima. */
 const LID_REACH = 0.5
 const SEARCH_STEP = 0.05
@@ -166,8 +168,8 @@ const overlapArea = (a: Rect, b: Rect) =>
 
 /**
  * Onde cada documento vai quando sai da caixa. Cada tipo tem um lugar preferido (o dossiê com o
- * estatuto embaixo, as folhas, a correspondência e a pasta sanfonada à direita, o livro embaixo à
- * esquerda); com a caixa levada para a direita ou para baixo, as preferências se espelham. Cada
+ * estatuto embaixo, as folhas, a correspondência, a pasta sanfonada e as polaroides da liderança à
+ * direita, o livro embaixo à esquerda); com a caixa levada para a direita ou para baixo, as preferências se espelham. Cada
  * documento fica no ponto livre da mesa mais perto do preferido, sem cair na caixa, na tampa aberta
  * nem em cima dos que já foram postos. As folhas do relatório saem em leque, sobrepostas de propósito.
  */
@@ -188,7 +190,7 @@ export function spreadPositions(items: ArchiveItemRef[], box: BoxAt = BOX_HOME):
         const rect = { x, y, w, h }
         const blocked = obstacles.reduce((sum, obstacle) => sum + overlapArea(rect, obstacle), 0)
         const crowded = placed.reduce((sum, other) => sum + overlapArea(rect, other), 0)
-        const cost = Math.hypot(x - prefer.x, y - prefer.y) + blocked * 40 + crowded * 8
+        const cost = Math.hypot(x - prefer.x, y - prefer.y) + blocked * 40 + crowded * 30
         if (cost < best.cost) best = { x, y, cost }
       }
     }
@@ -212,7 +214,8 @@ export function spreadPositions(items: ArchiveItemRef[], box: BoxAt = BOX_HOME):
       continue
     }
     ofKind.forEach((item, i) => {
-      const at = find(size.w, size.h, { x: prefer.x + i * 0.1, y: prefer.y - i * 0.08 })
+      const step = kind === 'polaroid' ? { x: -0.56 * sx, y: 0 } : { x: 0.1, y: -0.08 }
+      const at = find(size.w, size.h, { x: prefer.x + i * step.x, y: prefer.y + i * step.y })
       spots[item.id] = { ...clampToArchive(kind, at.x, at.y, box, true), rotation: angleOut(item) }
     })
   }

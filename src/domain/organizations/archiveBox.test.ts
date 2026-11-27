@@ -8,6 +8,9 @@ const items: ArchiveItemRef[] = [
   { id: 'accordion', kind: 'accordion' },
   { id: 'charter', kind: 'charter' },
   { id: 'letters', kind: 'letters' },
+  { id: 'leader:a', kind: 'polaroid' },
+  { id: 'leader:b', kind: 'polaroid' },
+  { id: 'leader:c', kind: 'polaroid' },
 ]
 const elsewhere: BoxAt = { x: 1.2, y: -0.7 }
 

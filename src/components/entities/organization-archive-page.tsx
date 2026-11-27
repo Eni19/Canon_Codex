@@ -23,9 +23,10 @@ function ids(value: unknown) { return Array.isArray(value) ? value.filter((id): 
 
 /**
  * Página de Organização: uma caixa-arquivo em 3D. A caixa começa fechada; dentro dela estão o
- * dossiê, o relatório (o conteúdo), o livro de registro com todos os membros, a pasta sanfonada com
- * os subgrupos, o estatuto (objetivos e ideais) e o maço de correspondência (relações e citações).
- * Cada um é um objeto só, para caber organizações de qualquer tamanho. Sem WebGL, mostra o dossiê em HTML.
+ * dossiê, uma polaroide para cada líder, o relatório (o conteúdo), o livro de registro com todos os
+ * membros, a pasta sanfonada com os subgrupos, o estatuto (objetivos e ideais) e o maço de
+ * correspondência (relações e citações). Membros e subgrupos são um objeto só, para caber
+ * organizações de qualquer tamanho. Sem WebGL, mostra o dossiê em HTML.
  */
 export function OrganizationArchivePage(props: EntityPageProps) {
   const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar, backlinks } = props
@@ -70,6 +71,7 @@ export function OrganizationArchivePage(props: EntityPageProps) {
       { label: 'Também chamada', value: entity.aliases.join(', ') },
     ].filter((field) => field.value),
     groups: groups.map((group) => group.name),
+    leaders: personnel.filter((member) => leaderIds.includes(member.id)).map((member) => ({ id: member.id, name: member.title, coverAssetId: member.coverAssetId })),
     members: personnel.map((member) => ({ id: member.id, name: member.title, leader: leaderIds.includes(member.id), groups: groupsOf(member.id) })),
     charter: { founded, articles },
     addressees,
@@ -112,6 +114,17 @@ export function OrganizationArchivePage(props: EntityPageProps) {
       <h3>Citada em</h3>
       <BacklinksPanel backlinks={backlinks}/>
     </>,
+  }
+  for (const leader of personnel.filter((member) => leaderIds.includes(member.id))) {
+    const leaderGroups = groupsOf(leader.id)
+    panels[`leader:${leader.id}`] = <>
+      {leader.coverAssetId && <div className={styles.panelPhoto}><Image src={assetVariantUrl(leader.coverAssetId, 'original')} alt="" fill sizes="480px" className="object-contain"/></div>}
+      <h2>{leader.title}</h2>
+      <span className={styles.badge}>LIDERANÇA</span>
+      <h3>Subgrupos</h3>
+      <p>{leaderGroups.length ? leaderGroups.join(', ') : 'Sem subgrupo.'}</p>
+      <p><Link href={`/entity/${leader.id}`}>Abrir a ficha do personagem →</Link></p>
+    </>
   }
   for (const page of content.pages) panels[`page:${page.id}`] = <><h2>{page.title}</h2><ContentRenderer content={{ ...content, pages: [page] }}/></>
 

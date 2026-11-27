@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Archive, ArchiveRestore, PackageOpen, X } from 'lucide-react'
 import type { ContentTextBlock } from '@/components/editor/content-text'
 import { hand, typewriter } from '@/components/codex-notebook/notebook-fonts'
-import { paginateSheet, paintSheet, type WallFonts } from '@/components/evidence-wall/wall-textures'
+import { paginateSheet, paintPolaroid, paintSheet, type WallFonts } from '@/components/evidence-wall/wall-textures'
 import { bringToFront, readSurfaceLayout, serializeSurfaceLayout, type SurfaceLayout } from '@/domain/canvas/surfaceLayout'
 import { ARCHIVE_SIZE, BOX_HOME, LEDGER_PER_PAGE, clampToArchive, defaultArchiveLayout, isInBox, ledgerPages, ledgerSpreadOf, readBoxPosition, spreadPositions, type ArchiveItemKind, type BoxAt } from '@/domain/organizations/archiveBox'
 import { assetVariantUrl } from '@/lib/assetUrl'
@@ -28,6 +28,8 @@ export type OrgArchiveData = {
   dossierFields: Array<{ label: string; value: string }>
   /** Nomes dos subgrupos, para as abas da pasta sanfonada. */
   groups: string[]
+  /** Liderança, cada um numa polaroide (com o retrato, quando há). */
+  leaders: Array<{ id: string; name: string; coverAssetId?: string }>
   /** Quadro de pessoal para o livro de registro (a liderança vai primeiro). */
   members: Array<{ id: string; name: string; leader: boolean; groups: string[] }>
   /** Artigos do estatuto (objetivos e ideais); sem nenhum, o estatuto não entra na caixa. */
@@ -38,7 +40,7 @@ export type OrgArchiveData = {
 }
 
 /** O que abre no painel de leitura de cada documento (HTML de verdade, legível e clicável). */
-export type ArchivePanelKey = 'dossier' | 'ledger' | 'accordion' | 'charter' | 'letters' | `page:${string}`
+export type ArchivePanelKey = 'dossier' | 'ledger' | 'accordion' | 'charter' | 'letters' | `page:${string}` | `leader:${string}`
 
 type PieceInfo = ArchivePiece & { panel: ArchivePanelKey }
 
@@ -130,7 +132,10 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
     void (async () => {
       const fonts: WallFonts = { hand: hand.style.fontFamily, type: typewriter.style.fontFamily }
       await Promise.all([document.fonts.load(`40px ${fonts.hand}`), document.fonts.load(`40px ${fonts.type}`), document.fonts.load(`bold 40px ${fonts.type}`)]).catch(() => undefined)
-      const cover = data.coverAssetId ? await loadImage(assetVariantUrl(data.coverAssetId, 'original')) : null
+      const [cover, ...portraits] = await Promise.all([
+        data.coverAssetId ? loadImage(assetVariantUrl(data.coverAssetId, 'original')) : Promise.resolve(null),
+        ...data.leaders.map((leader) => leader.coverAssetId ? loadImage(assetVariantUrl(leader.coverAssetId, 'original')) : Promise.resolve(null)),
+      ])
       if (!alive) return
       const piece = (id: string, kind: ArchiveItemKind, label: string, panel: ArchivePanelKey, paint?: Texture): PieceInfo => {
         if (paint) disposables.push(paint)
@@ -145,6 +150,7 @@ export function OrgArchive({ data, panels, header, fallback }: { data: OrgArchiv
           paintSheet(page.title, lines, n + 1, sheets.length, fonts, `${page.id}:${n}`, 'RELATÓRIO INSTITUCIONAL'),
         )))
       }
+      data.leaders.forEach((leader, i) => pieces.push(piece(`leader:${leader.id}`, 'polaroid', `Liderança: ${leader.name}`, `leader:${leader.id}`, paintPolaroid(portraits[i] ?? null, leader.name, fonts, leader.id))))
       pieces.push(piece('ledger', 'ledger', `Livro de registro (${data.members.length} membro${data.members.length === 1 ? '' : 's'})`, 'ledger'))
       if (data.groups.length) pieces.push(piece('accordion', 'accordion', `Subgrupos (${data.groups.length})`, 'accordion', paintAccordion(data.groups, data.title, fonts)))
       if (data.charter.articles.length) pieces.push(piece('charter', 'charter', 'Estatuto', 'charter', paintCharter(data.title, data.charter.founded, data.charter.articles, fonts)))

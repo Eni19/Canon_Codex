@@ -127,9 +127,11 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de madeira. A caixa
 começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Por dentro
 da tampa fica o índice do conteúdo. Cada tipo de informação é um objeto só, qualquer que seja o
-tamanho da organização:
+tamanho da organização (só a liderança, que costuma ser pequena, tem uma peça por pessoa):
 
 - **Dossiê:** insígnia ou capa e os dados da organização.
+- **Polaroides da liderança:** uma para cada líder, com o retrato do personagem; na leitura, os
+  subgrupos do líder e o link para a ficha.
 - **Folhas do relatório:** o conteúdo, datilografado; texto que não cabe vira folha nova.
 - **Livro de registro:** todos os membros, numerados, com a liderança primeiro (★) e os subgrupos
   de cada um. Na leitura, **‹ ›** ou as setas viram as páginas do livro na mesa; a busca filtra por
