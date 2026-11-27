@@ -31,11 +31,10 @@ Copie `.env.example` para `.env.local` (ignorado pelo Git) só se precisar mudar
 | `WIKI_WORKSPACE_DIR` | pasta dos dados; padrão `workspace/` na raiz do projeto |
 | `SQLITE_DATABASE_PATH` | arquivo do banco, se quiser um específico |
 | `PERSISTENCE_DRIVER` | `filesystem` só para abrir uma biblioteca antiga em JSON |
-| `NEXT_PUBLIC_TLDRAW_LICENSE_KEY` | chave do tldraw para Quadros e Cenas fora de `localhost` |
 
-Sem a chave do tldraw, Quadros e Cenas funcionam em `localhost` com marca d'água. Detalhes em
-[configuração](docs/reference/configuration.md) e no
-[levantamento da licença](docs/research/tldraw-license.md).
+Quadros e Cenas usam canvas próprio em Konva e não pedem chave nem conta; um
+`NEXT_PUBLIC_TLDRAW_LICENSE_KEY` antigo no `.env.local` pode ser apagado. Detalhes em
+[configuração](docs/reference/configuration.md).
 
 ### Dados privados
 
