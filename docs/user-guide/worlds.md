@@ -28,7 +28,9 @@ Em **Configurações**, no fim da barra lateral, escolha o que este mundo mostra
 salvas na hora, valem em qualquer navegador e entram no backup do mundo.
 
 - **Conteúdos**: cada tipo com um resumo e os campos da ficha. Desativado, o tipo some da barra
-  lateral e do caderno de `/codex`; os registros continuam no mundo, na busca e nos links.
+  lateral e do caderno de `/codex`; os registros continuam no mundo, na busca e nos links. Arraste
+  um tipo pela alça, ou use as setas, para mudar a ordem; ela vale para a barra lateral, o menu
+  móvel e o caderno. **Voltar à ordem padrão** desfaz a ordem escolhida.
 - **Ferramentas**: Calendário, Relacionamentos, Quadros, Cenas e Trilha sonora, cada uma com um
   resumo do que tem. Desativada, some da barra lateral e da página Ferramentas do caderno; nada do
   que foi criado nela é apagado. Desativar a Trilha sonora também tira o tocador da barra.

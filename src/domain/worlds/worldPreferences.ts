@@ -17,10 +17,15 @@ export const WorldPreferencesSchema = z.object({
   hiddenTools: z.array(z.enum(TOOL_IDS)).max(TOOL_IDS.length),
   /** Tipos que abrem na versão prática, sem a interface interativa. */
   plainInterfaces: z.array(z.string().min(1)).max(200),
+  /**
+   * Ordem dos tipos de conteúdo escolhida pela pessoa (barra lateral, menu móvel e caderno). Tipos
+   * fora da lista vêm depois, na ordem padrão. Vazia, vale a ordem padrão de cada lugar.
+   */
+  contentOrder: z.array(z.string().min(1)).max(200).default([]),
 })
 export type WorldPreferences = z.infer<typeof WorldPreferencesSchema>
 
-export const defaultWorldPreferences = (): WorldPreferences => ({ hiddenEntityTypes: [], hiddenTools: [], plainInterfaces: [] })
+export const defaultWorldPreferences = (): WorldPreferences => ({ hiddenEntityTypes: [], hiddenTools: [], plainInterfaces: [], contentOrder: [] })
 
 /**
  * Normaliza preferências antes de gravar: sem repetições, só ferramentas conhecidas e só tipos que
@@ -34,7 +39,30 @@ export function normalizeWorldPreferences(input: WorldPreferences, entityTypeIds
     hiddenEntityTypes: unique(input.hiddenEntityTypes).filter((id) => types.has(id)),
     hiddenTools: unique(input.hiddenTools).filter((id) => (TOOL_IDS as readonly string[]).includes(id)),
     plainInterfaces: unique(input.plainInterfaces).filter((id) => types.has(id) && hasInteractiveInterface(id)),
+    contentOrder: unique(input.contentOrder ?? []).filter((id) => types.has(id)),
   }
+}
+
+/**
+ * Ordena itens com `id` pela ordem escolhida: primeiro os que estão em `order`, na sequência dela;
+ * depois os demais, na ordem em que chegaram. Ordem vazia devolve a lista como veio.
+ */
+export function orderByPreference<T extends { id: string }>(items: T[], order: string[]): T[] {
+  if (!order.length) return items
+  const rank = new Map(order.map((id, index) => [id, index]))
+  return items
+    .map((item, index) => ({ item, index, rank: rank.get(item.id) ?? order.length }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ item }) => item)
+}
+
+/** Move o item `id` para a posição `to` da lista já ordenada e devolve a nova ordem completa. */
+export function moveInOrder(ids: string[], id: string, to: number): string[] {
+  const from = ids.indexOf(id)
+  if (from < 0) return ids
+  const next = ids.filter((item) => item !== id)
+  next.splice(Math.max(0, Math.min(next.length, to)), 0, id)
+  return next
 }
 
 /** Tipos que têm uma página interativa e uma prática. Tipos futuros entram aqui. */

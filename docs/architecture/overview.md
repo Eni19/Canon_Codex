@@ -104,11 +104,12 @@ para onde cada documento vai ao sair e a paginação do livro são regras puras 
 ## Preferências do mundo
 
 `world.preferences` (`WorldPreferences`, `src/domain/worlds/worldPreferences.ts`, mundo v27) guarda
-o que aparece na barra lateral e quais tipos usam a interface prática. A janela **Configurações**
+o que aparece na barra lateral, a ordem dos tipos e quais tipos usam a interface prática. A janela **Configurações**
 (`src/components/wiki/codex-settings-dialog.tsx`), montada uma vez pelo `WikiShell` em
 `CodexSettingsProvider`, grava cada mudança na hora por `updateWorldPreferencesAction`, que normaliza
 contra os tipos do mundo e revalida o layout. A barra lateral, o menu móvel e o caderno de `/codex`
-leem as preferências do mundo ativo. `EntityReadScreen` passa `plainInterface` às páginas que têm
+leem as preferências do mundo ativo; a ordem escolhida (`orderByPreference`) substitui a ordem padrão
+de cada um. `EntityReadScreen` passa `plainInterface` às páginas que têm
 interface interativa (Organização, Evidência e Objeto), que então mostram direto a versão HTML que
 já usavam sem WebGL. Os resumos de cada tipo e ferramenta também ficam no domínio; os campos de
 cada tipo vêm da própria definição, então tipos personalizados aparecem sem código novo.

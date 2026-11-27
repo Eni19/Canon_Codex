@@ -23,7 +23,7 @@ _Evitar_: biblioteca de Codex, workspace.
 
 **Preferências do mundo**:
 Escolhas de um mundo sobre a própria interface: tipos de conteúdo e ferramentas que aparecem na
-barra lateral e, para cada tipo com interface interativa, se a página usa a interativa ou a prática.
+barra lateral, a ordem dos tipos e, para cada tipo com interface interativa, se a página usa a interativa ou a prática.
 Ficam no próprio mundo, não no navegador.
 _Evitar_: configurações do navegador, guias ocultas.
 _No código_: `WorldPreferences` (`world.preferences`).

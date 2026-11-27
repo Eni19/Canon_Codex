@@ -157,7 +157,7 @@ export const migrations = [
   // Mundo v27: preferências do Codex (barra lateral e interfaces), começando com tudo visível e
   // interativo (mesmo padrão de defaultWorldPreferences).
   `
-  UPDATE worlds SET document = json_set(document, '$.preferences', json('{"hiddenEntityTypes":[],"hiddenTools":[],"plainInterfaces":[]}'))
+  UPDATE worlds SET document = json_set(document, '$.preferences', json('{"hiddenEntityTypes":[],"hiddenTools":[],"plainInterfaces":[],"contentOrder":[]}'))
   WHERE json_type(document, '$.preferences') IS NULL;
   UPDATE worlds SET document = json_set(document, '$.schemaVersion', 27) WHERE json_extract(document, '$.schemaVersion') = 26;
   `,

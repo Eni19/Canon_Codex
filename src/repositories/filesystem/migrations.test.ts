@@ -233,7 +233,7 @@ describe('codex preferences migration (v27)', () => {
     const world: Record<string, unknown> = { ...createDefaultWorldSeed(), schemaVersion: 26 }
     delete world.preferences
     const migrated = WorldSchema.parse(migrateToLatest(worldMigrations, world))
-    expect(migrated.preferences).toEqual({ hiddenEntityTypes: [], hiddenTools: [], plainInterfaces: [] })
+    expect(migrated.preferences).toEqual({ hiddenEntityTypes: [], hiddenTools: [], plainInterfaces: [], contentOrder: [] })
     expect(migrated.schemaVersion).toBe(WORLD_SCHEMA_VERSION)
   })
 })

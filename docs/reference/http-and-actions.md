@@ -224,8 +224,8 @@ recusa a operação se `world.json` já estiver presente, move a pasta para `tra
 A seleção do mundo ativo permanece a mesma.
 
 `updateWorldPreferencesAction(worldId, preferences)` grava as preferências do mundo ativo, vindas da
-janela **Configurações** da barra lateral: tipos de conteúdo e ferramentas escondidos e tipos que
-abrem na interface prática. Recebe argumentos simples (não `FormData`), valida com
+janela **Configurações** da barra lateral: tipos de conteúdo e ferramentas escondidos, ordem dos tipos
+e tipos que abrem na interface prática. Recebe argumentos simples (não `FormData`), valida com
 `WorldPreferencesSchema`, recusa se o mundo ativo mudou, grava por
 `WorldRepository.updateWorldPreferences` (que normaliza contra os tipos do mundo) e revalida o
 layout. Devolve `{ ok: true, preferences }` ou `{ ok: false, error }`, sem exceção.

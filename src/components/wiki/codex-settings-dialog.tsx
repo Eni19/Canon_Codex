@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useTransition, type ReactNode } from 'react'
-import { Boxes, CalendarDays, Clapperboard, LayoutDashboard, LayoutList, Music, Network, Sparkles, Wrench } from 'lucide-react'
+import { ArrowDown, ArrowUp, Boxes, CalendarDays, Clapperboard, GripVertical, LayoutDashboard, LayoutList, Music, Network, RotateCcw, Sparkles, Wrench } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateWorldPreferencesAction } from '@/app/actions/world-preferences'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
-import { CONTENT_GUIDE, INTERACTIVE_INTERFACES, TOOL_GUIDE, TOOL_IDS, type ToolId, type WorldPreferences } from '@/domain/worlds/worldPreferences'
+import { CONTENT_GUIDE, INTERACTIVE_INTERFACES, TOOL_GUIDE, TOOL_IDS, moveInOrder, orderByPreference, type ToolId, type WorldPreferences } from '@/domain/worlds/worldPreferences'
 
 const TOOL_ICONS: Record<ToolId, ReactNode> = {
   calendar: <CalendarDays className="size-4" />,
@@ -58,7 +58,15 @@ export function CodexSettingsDialog({ open, onOpenChange, worldId, entityTypes, 
     save({ ...draft, [key]: on ? [...current, id] : current.filter((item) => item !== id) })
   }
 
-  const contentTypes = entityTypes.filter((type) => type.showInSidebar)
+  const contentTypes = orderByPreference(entityTypes, draft.contentOrder).filter((type) => type.showInSidebar)
+  const contentIds = contentTypes.map((type) => type.id)
+  /** Leva o tipo `id` para a posição `to` e grava a ordem inteira. */
+  const reorder = (id: string, to: number) => {
+    const next = moveInOrder(contentIds, id, to)
+    if (next.join() !== contentIds.join()) save({ ...draft, contentOrder: next })
+  }
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
   const interactiveTypes = entityTypes.filter((type) => type.id in INTERACTIVE_INTERFACES)
 
   return (
@@ -85,10 +93,24 @@ export function CodexSettingsDialog({ open, onOpenChange, worldId, entityTypes, 
           </nav>
 
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
-            {tab === 'content' && <Section title="Conteúdos" description="Desativado, o tipo some da barra lateral. Os registros continuam no Codex e podem ser abertos pela busca ou por links.">
-              {contentTypes.map((type) => (
+            {tab === 'content' && <Section title="Conteúdos" description="Desativado, o tipo some da barra lateral. Os registros continuam no Codex e podem ser abertos pela busca ou por links. Arraste pela alça (ou use as setas) para mudar a ordem da barra lateral e do caderno.">
+              {draft.contentOrder.length > 0 && <button type="button" onClick={() => save({ ...draft, contentOrder: [] })} className="-mt-1 mb-1 flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                <RotateCcw className="size-3.5" />Voltar à ordem padrão
+              </button>}
+              {contentTypes.map((type, index) => (
                 <ItemCard
                   key={type.id}
+                  order={{
+                    position: index,
+                    total: contentTypes.length,
+                    onMove: (to) => reorder(type.id, to),
+                    dragging: dragging === type.id,
+                    over: over === type.id && dragging !== type.id,
+                    onDragStart: () => setDragging(type.id),
+                    onDragOver: () => setOver(type.id),
+                    onDragEnd: () => { setDragging(null); setOver(null) },
+                    onDrop: () => { if (dragging) reorder(dragging, index); setDragging(null); setOver(null) },
+                  }}
                   icon={<EntityTypeIcon name={type.icon} className="size-4" />}
                   title={type.pluralLabel}
                   summary={CONTENT_GUIDE[type.id] ?? 'Tipo de conteúdo personalizado deste Codex.'}
@@ -145,13 +167,40 @@ function Section({ title, description, children }: { title: string; description:
   </section>
 }
 
-/** Cartão de um conteúdo ou ferramenta: nome, resumo, o que tem dentro e o interruptor. */
-function ItemCard({ icon, title, summary, partsLabel, parts, enabled, onToggle }: {
-  icon: ReactNode; title: string; summary: string; partsLabel: string; parts: string[]; enabled: boolean; onToggle: (on: boolean) => void
+type Ordering = {
+  position: number
+  total: number
+  onMove: (to: number) => void
+  dragging: boolean
+  over: boolean
+  onDragStart: () => void
+  onDragOver: () => void
+  onDragEnd: () => void
+  onDrop: () => void
+}
+
+/**
+ * Cartão de um conteúdo ou ferramenta: nome, resumo, o que tem dentro e o interruptor. Com
+ * `order`, ganha a alça de arrastar e as setas para mudar a posição.
+ */
+function ItemCard({ icon, title, summary, partsLabel, parts, enabled, onToggle, order }: {
+  icon: ReactNode; title: string; summary: string; partsLabel: string; parts: string[]; enabled: boolean; onToggle: (on: boolean) => void; order?: Ordering
 }) {
   return (
-    <div className={cn('rounded-lg border border-border p-4 transition-opacity', !enabled && 'opacity-60')}>
+    <div
+      className={cn('rounded-lg border border-border p-4 transition-[opacity,box-shadow]', !enabled && 'opacity-60', order?.dragging && 'opacity-40', order?.over && 'ring-2 ring-primary')}
+      draggable={Boolean(order)}
+      onDragStart={order ? (event) => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', title); order.onDragStart() } : undefined}
+      onDragOver={order ? (event) => { event.preventDefault(); order.onDragOver() } : undefined}
+      onDragEnd={order?.onDragEnd}
+      onDrop={order ? (event) => { event.preventDefault(); order.onDrop() } : undefined}
+    >
       <div className="flex items-start gap-3">
+        {order && <div className="-ml-1 flex shrink-0 flex-col items-center gap-0.5 text-muted-foreground">
+          <span className="cursor-grab active:cursor-grabbing" title="Arraste para mudar a ordem" aria-hidden="true"><GripVertical className="size-4" /></span>
+          <button type="button" onClick={() => order.onMove(order.position - 1)} disabled={order.position === 0} aria-label={`Subir ${title}`} className="rounded p-0.5 hover:bg-accent hover:text-foreground disabled:opacity-30"><ArrowUp className="size-3.5" /></button>
+          <button type="button" onClick={() => order.onMove(order.position + 1)} disabled={order.position === order.total - 1} aria-label={`Descer ${title}`} className="rounded p-0.5 hover:bg-accent hover:text-foreground disabled:opacity-30"><ArrowDown className="size-3.5" /></button>
+        </div>}
         <span className="mt-0.5 text-primary">{icon}</span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">

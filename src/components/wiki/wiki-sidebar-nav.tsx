@@ -9,7 +9,7 @@ import { useCodexSettings } from '@/components/wiki/codex-settings-provider'
 import { useCommandPalette } from '@/components/wiki/command-palette-provider'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
-import { TOOL_GUIDE, TOOL_IDS, type ToolId, type WorldPreferences } from '@/domain/worlds/worldPreferences'
+import { TOOL_GUIDE, TOOL_IDS, orderByPreference, type ToolId, type WorldPreferences } from '@/domain/worlds/worldPreferences'
 
 const TOOLS: Record<ToolId, { href: string; icon: ReactNode }> = {
   calendar: { href: '/calendar', icon: <CalendarDays className="size-4" /> },
@@ -37,7 +37,7 @@ export function WikiSidebarNav({
   const pathname = usePathname()
   const { setOpen: setCommandPaletteOpen } = useCommandPalette()
   const { openSettings } = useCodexSettings()
-  const contentTypes = entityTypes.filter((type) => type.showInSidebar && !preferences.hiddenEntityTypes.includes(type.id))
+  const contentTypes = orderByPreference(entityTypes, preferences.contentOrder).filter((type) => type.showInSidebar && !preferences.hiddenEntityTypes.includes(type.id))
   const tools = TOOL_IDS.filter((id) => !preferences.hiddenTools.includes(id))
 
   return (

@@ -179,8 +179,9 @@ A migração v25 → v26 tira as definições `registrationNumber` e `materials`
 Os valores já gravados continuam nas propriedades dos registros, fora do formulário.
 
 A migração v26 → v27 acrescenta `preferences` (`WorldPreferences` em
-`src/domain/worlds/worldPreferences.ts`): tipos e ferramentas escondidos da barra lateral e tipos que
-abrem na interface prática. O padrão (`defaultWorldPreferences`) deixa tudo como antes; a mesma regra
+`src/domain/worlds/worldPreferences.ts`): tipos e ferramentas escondidos da barra lateral, tipos que
+abrem na interface prática e a ordem escolhida dos tipos (`contentOrder`, vazia por padrão; ausente,
+vale vazia). O padrão (`defaultWorldPreferences`) deixa tudo como antes; a mesma regra
 roda no SQLite como a quinta migração do schema SQL. Um mundo lido sem o campo (por exemplo, gravado
 de novo por código anterior à v27) recebe o padrão, sem erro.
 

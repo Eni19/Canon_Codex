@@ -30,8 +30,8 @@ describe('FileSystemWorldRepository', () => {
   })
 
   it('saves codex preferences normalized against the world types', async () => {
-    const saved = await repo.updateWorldPreferences(worldId, { hiddenEntityTypes: ['event', 'removido'], hiddenTools: ['scenes'], plainInterfaces: ['organization', 'event'] })
-    expect(saved.preferences).toEqual({ hiddenEntityTypes: ['event'], hiddenTools: ['scenes'], plainInterfaces: ['organization'] })
+    const saved = await repo.updateWorldPreferences(worldId, { hiddenEntityTypes: ['event', 'removido'], hiddenTools: ['scenes'], plainInterfaces: ['organization', 'event'], contentOrder: [] })
+    expect(saved.preferences).toEqual({ hiddenEntityTypes: ['event'], hiddenTools: ['scenes'], plainInterfaces: ['organization'], contentOrder: [] })
     expect((await repo.getWorld(worldId)).preferences).toEqual(saved.preferences)
   })
 
