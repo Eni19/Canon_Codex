@@ -13,7 +13,7 @@ export function DeleteBoardButton({ boardId, title }: { boardId: string; title: 
       className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
       aria-label={`Excluir ${title}`}
       onClick={() => {
-        if (!window.confirm(`Mover o quadro “${title}” para a lixeira?`)) return
+        if (!window.confirm(`Mover o quadro “${title}” para a lixeira? Ele pode ser restaurado por 7 dias.`)) return
         startTransition(() => void deleteBoardAction(boardId))
       }}
     >

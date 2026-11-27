@@ -8,7 +8,7 @@ export function DeleteEntityButton({ action, label }: { action: () => void | Pro
     <form
       action={action}
       onSubmit={(event) => {
-        if (!window.confirm(`Excluir "${label}"? Ela poderá ser restaurada na lixeira.`)) {
+        if (!window.confirm(`Excluir "${label}"? O registro fica 7 dias na lixeira, onde pode ser restaurado, e depois é apagado de vez.`)) {
           event.preventDefault()
         }
       }}

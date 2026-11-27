@@ -31,7 +31,8 @@ fica em [PROJECT.md](../../PROJECT.md#stack).
 `domain/` não faz I/O. Componentes não devem conhecer nomes de arquivos. A factory em
 `src/repositories/index.ts` mantém a escolha do driver em um único lugar. No estado atual existem
 cinco contratos: `WorldRepository`, `AssetStore`, `BoardRepository`, `SceneRepository` e
-`PlaylistRepository`. O SQLite usa `node:sqlite` com Node.js `>=24.15.0`, preferencialmente a versão
+`PlaylistRepository`. No SQLite há ainda o `TrashRepository`, que lista, restaura e apaga de vez
+itens da lixeira com prazo de 7 dias ([ADR-009](ADR-009-trash-retention.md)). O SQLite usa `node:sqlite` com Node.js `>=24.15.0`, preferencialmente a versão
 24 LTS. O banco padrão é `canon-codex.sqlite` dentro de `WIKI_WORKSPACE_DIR` ou, por padrão, de
 `workspace/`. `SQLITE_DATABASE_PATH` seleciona o arquivo diretamente.
 `PERSISTENCE_DRIVER=filesystem` seleciona o driver legado. Veja [SQLite local](../data/sqlite.md).
