@@ -1,7 +1,7 @@
 # Registros, tipos e relações
 
 > **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito contra os textos
-> de `src/`.
+> de `src/` e silhuetas dos cartões do grafo em `src/domain/canvas/entitySilhouettes.ts`.
 
 ## Criar e editar
 
@@ -197,6 +197,13 @@ Na vista do mundo inteiro, aparecem registros ativos de todos os tipos, inclusiv
 e registros que ainda não têm vínculos.
 Em um grafo denso, aproxime para ver rótulos e pontas das conexões ou selecione um vínculo para
 realçá-lo.
+
+Cada tipo do mundo semente tem um contorno de cartão próprio, para reconhecer o tipo mesmo com o
+zoom afastado, quando o nome do tipo some: Personagem é um crachá de cantos bem arredondados,
+Evento uma bandeira com ponta à direita, Pista uma etiqueta com furo à esquerda, Documento uma
+folha com o canto dobrado, e assim por diante. Tipos criados no mundo mantêm o cartão retangular.
+O contorno não muda o lugar das conexões nem a área de clique, que continua sendo o retângulo
+inteiro do cartão.
 
 Abra **Busca e filtros** direto na barra do grafo. Ao buscar por nome, os cartões sem correspondência
 ficam esmaecidos enquanto você digita. Eles saem do recorte com **Enter** ou uma pausa na digitação.

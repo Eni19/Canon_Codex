@@ -1,17 +1,20 @@
 # ADR-011: Forma e textura próprias por tipo de registro
 
-> **Estado:** parcial; o catálogo existe, os renderizadores ainda não o usam · **Última
-> verificação:** 27/11/2026, `src/domain/entities/entityVisual.ts`.
+> **Estado:** parcial; o grafo usa as silhuetas, texturas e Quadros ainda não · **Última
+> verificação:** 27/11/2026, `src/domain/entities/entityVisual.ts`,
+> `src/domain/canvas/entitySilhouettes.ts` e `src/components/relations/relationship-scene.ts`.
 
 ## Estado atual em 27/11/2026
 
 O catálogo de identidade visual está no domínio (`entityVisual.ts`), com testes de unicidade e do
-padrão neutro. O grafo de relacionamentos e os Quadros ainda desenham o cartão de hoje para todos os
-tipos. As próximas fatias do #72 ligam o catálogo aos dois canvas, uma por PR e cada uma com
-medição de desempenho:
+padrão neutro. As silhuetas são traçadas por `entitySilhouettes.ts` em qualquer caminho 2D, e o grafo
+de relacionamentos já as usa no cartão individual, no lote do zoom afastado e no anel de destino.
+Os Quadros ainda desenham o cartão de hoje para todos os tipos. As fatias do #72, uma por PR e cada
+uma com medição de desempenho:
 
 1. catálogo de domínio e testes (feito);
-2. silhuetas no grafo, no cartão individual e no lote;
+2. silhuetas no grafo, no cartão individual e no lote (feito; medição em
+   [relationship-graph.md](../performance/relationship-graph.md#silhuetas-por-tipo--27112026));
 3. gerador de ladrilhos compartilhado e texturas no grafo;
 4. silhueta, textura e ícone nos cartões dos Quadros;
 5. legenda, intensidade da textura em Configurações, modos de contraste e guias de uso.
