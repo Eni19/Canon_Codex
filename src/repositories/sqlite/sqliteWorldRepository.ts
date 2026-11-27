@@ -167,6 +167,16 @@ export class SqliteWorldRepository implements WorldRepository {
     return world
   }
 
+  /** Para a lixeira: limpa aparições e a origem que apontavam para registros apagados. Exige transação de escrita. */
+  reconcileLifecycle(worldId: string): void {
+    this.reconcile(worldId)
+  }
+
+  /** Para a lixeira: slug livre entre os mundos ativos. */
+  availableSlug(input: string): string {
+    return this.uniqueSlug(input)
+  }
+
   private reconcile(worldId: string): void {
     const world = this.readWorld(worldId)
     const lines = this.db.connection.prepare(`
