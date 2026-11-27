@@ -37,6 +37,40 @@ function cssColor(value: string, fallback: [number, number, number]): [number, n
   return [r / 255, g / 255, b / 255]
 }
 
+/** Uma medida de `inset()` em px (px, %, vw ou vh), relativa ao tamanho `size` da caixa. */
+function insetLength(value: string, size: number) {
+  const number = parseFloat(value)
+  if (Number.isNaN(number)) return 0
+  if (value.endsWith('%')) return (number / 100) * size
+  if (value.endsWith('vw')) return (number / 100) * window.innerWidth
+  if (value.endsWith('vh')) return (number / 100) * window.innerHeight
+  return number
+}
+
+/**
+ * Área em que a imagem aparece de fato: a interseção dos ancestrais que a cortam (`overflow` que
+ * não é visível ou `clip-path: inset(...)`) até a raiz. Sem nenhum corte, a imagem aparece inteira.
+ */
+function visibleArea(image: HTMLElement, root: HTMLElement) {
+  let left = -Infinity, top = -Infinity, right = Infinity, bottom = Infinity
+  for (let element = image.parentElement; element && element !== root.parentElement; element = element.parentElement) {
+    const style = getComputedStyle(element)
+    const rect = element.getBoundingClientRect()
+    if (style.overflowX !== 'visible') { left = Math.max(left, rect.left); right = Math.min(right, rect.right) }
+    if (style.overflowY !== 'visible') { top = Math.max(top, rect.top); bottom = Math.min(bottom, rect.bottom) }
+    const inset = style.clipPath.match(/^inset\(([^)]*)\)/)
+    if (inset) {
+      const parts = inset[1].split(/\s+round\s+/)[0].trim().split(/\s+/)
+      const [t, r = t, b = t, l = r] = parts
+      top = Math.max(top, rect.top + insetLength(t, rect.height))
+      right = Math.min(right, rect.right - insetLength(r, rect.width))
+      bottom = Math.min(bottom, rect.bottom - insetLength(b, rect.height))
+      left = Math.max(left, rect.left + insetLength(l, rect.width))
+    }
+  }
+  return { left, top, right, bottom }
+}
+
 /** Deslocamento da imagem dentro da caixa a partir de `object-position` (porcentagens ou px). */
 function objectPosition(value: string, freeX: number, freeY: number): [number, number] {
   const parts = value.trim().split(/\s+/)
@@ -98,11 +132,10 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
     canvas.setAttribute('aria-hidden', 'true')
     document.body.appendChild(canvas)
 
+    // A imagem real continua na página, por baixo: o shader cobre exatamente a silhueta dela até a
+    // troca. Assim o brilho em volta da figura (um drop-shadow num ancestral da imagem) existe durante
+    // a animação e aparece pelo fluido conforme a área em volta da figura se revela.
     const image = imageSelector ? root.querySelector<HTMLImageElement>(imageSelector) : null
-    if (image) image.style.opacity = '0'
-
-    // O brilho em volta da figura (um drop-shadow num ancestral da imagem) começa apagado e acende
-    // devagar depois da troca, em vez de surgir de uma vez quando a imagem real volta.
     let glow: { element: HTMLElement; inline: string } | null = null
     for (let element = image?.parentElement ?? null; element && element !== root; element = element.parentElement) {
       const filter = getComputedStyle(element).filter
@@ -111,17 +144,16 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
     // Começa na mesma cor de destaque, só que sem opacidade nem espalhamento: partir de "transparent"
     // (preto transparente) faria a transição passar por tons quase pretos e o brilho só aparecer no fim.
     if (glow) glow.element.style.filter = 'drop-shadow(0 0 0 color-mix(in oklch, var(--primary) 1%, transparent))'
-    const lightUp = (immediate: boolean) => {
+    /** Acende o brilho até o valor da própria página (inline ou da classe) em `ms`; 0 volta na hora. */
+    const lightUp = (ms: number) => {
       if (!glow) return
       const { element, inline } = glow
       glow = null
-      // Desmontando (ou o React refazendo o efeito em desenvolvimento): volta na hora, sem transição.
-      if (immediate) { element.style.filter = inline; return }
-      // Volta ao valor da própria página (inline ou da classe), com transição.
-      element.style.transition = 'filter 2.2s cubic-bezier(0.33, 0, 0.2, 1)'
+      if (ms <= 0) { element.style.filter = inline; return }
+      element.style.transition = `filter ${ms}ms cubic-bezier(0.33, 0, 0.2, 1)`
       void element.offsetWidth
       element.style.filter = inline
-      timers.push(window.setTimeout(() => element.style.removeProperty('transition'), 2300))
+      timers.push(window.setTimeout(() => element.style.removeProperty('transition'), ms + 100))
     }
 
     gl.useProgram(program)
@@ -157,7 +189,7 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
      */
     const placeImage = (element: HTMLImageElement) => {
       const rect = element.getBoundingClientRect()
-      const clip = (element.parentElement ?? element).getBoundingClientRect()
+      const clip = visibleArea(element, root)
       const fit = getComputedStyle(element)
       const fitScale = fit.objectFit === 'contain' ? Math.min : Math.max
       const scale = fitScale(rect.width / element.naturalWidth, rect.height / element.naturalHeight)
@@ -165,8 +197,12 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
       const [px, py] = objectPosition(fit.objectPosition, rect.width - w, rect.height - h)
       const x = rect.left + px - box.left, y = rect.top + py - box.top
       gl.uniform4f(u('uImageRect'), x * dpr, y * dpr, w * dpr, h * dpr)
-      gl.uniform2f(u('uClipY'), (clip.top - box.top) * dpr, (clip.bottom - box.top) * dpr)
-      gl.uniform2f(u('uFocus'), (x + w / 2) * dpr, (Math.max(y, clip.top - box.top) + Math.min(h, clip.height) * 0.38) * dpr)
+      // Infinito não passa para o shader: sem corte num lado, usa uma borda bem fora da tela.
+      const edge = (value: number, fallback: number) => (Number.isFinite(value) ? value : fallback)
+      const clipTop = edge(clip.top, -1e5) - box.top, clipBottom = edge(clip.bottom, 1e5) - box.top
+      gl.uniform4f(u('uClip'), (edge(clip.left, -1e5) - box.left) * dpr, clipTop * dpr, (edge(clip.right, 1e5) - box.left) * dpr, clipBottom * dpr)
+      const visibleTop = Math.max(y, clipTop), visibleBottom = Math.min(y + h, clipBottom)
+      gl.uniform2f(u('uFocus'), (x + w / 2) * dpr, (visibleTop + (visibleBottom - visibleTop) * 0.38) * dpr)
     }
 
     let frame = 0, start = 0, finished = false, alive = true
@@ -181,8 +217,9 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
       if (finished) return
       finished = true
       cancelAnimationFrame(frame)
-      if (image) image.style.removeProperty('opacity')
-      lightUp(immediate)
+      // Normalmente o brilho já acendeu junto com a formação; se a animação foi pulada, acende rápido.
+      // Desmontando (ou o React refazendo o efeito em desenvolvimento), volta na hora.
+      lightUp(immediate ? 0 : 600)
       canvas.style.opacity = '0'
       timers.push(window.setTimeout(() => canvas.remove(), 480))
       window.removeEventListener('pointerdown', skip)
@@ -219,7 +256,13 @@ export function HoloFormation({ rootSelector, imageSelector, duration = 4500, ha
     frame = requestAnimationFrame(loop)
 
     // A formação começa quando a imagem chega (ou logo, se não houver imagem ou ela demorar).
-    const begin = () => { if (!start) start = performance.now() }
+    const begin = () => {
+      if (start) return
+      start = performance.now()
+      // O brilho acende enquanto a figura se forma e chega ao valor cheio pouco antes da troca.
+      const handOff = Math.min(handOffAt, duration)
+      timers.push(window.setTimeout(() => lightUp(handOff * 0.72), handOff * 0.2))
+    }
     if (image) {
       const ready = () => {
         if (!alive || finished || !image.naturalWidth) { begin(); return }
