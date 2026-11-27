@@ -53,6 +53,7 @@ O ponto de partida para quem chega é o [CONTRIBUTING](../CONTRIBUTING.md) na ra
 - [ADR-008](architecture/ADR-008-codex-notebook-home.md): o início do mundo como caderno do Codex.
 - [ADR-009](architecture/ADR-009-trash-retention.md): lixeira com prazo de 7 dias até a exclusão definitiva.
 - [ADR-010](architecture/ADR-010-hybrid-entity-pages.md): páginas próprias por tipo sobre o compositor genérico.
+- [ADR-011](architecture/ADR-011-entity-type-visuals.md): forma e textura próprias por tipo de registro no grafo e nos Quadros.
 
 ## Planos: `plans/`
 
