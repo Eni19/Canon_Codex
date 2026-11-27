@@ -29,6 +29,12 @@ describe('FileSystemWorldRepository', () => {
     await rm(workspaceDir, { recursive: true, force: true })
   })
 
+  it('saves codex preferences normalized against the world types', async () => {
+    const saved = await repo.updateWorldPreferences(worldId, { hiddenEntityTypes: ['event', 'removido'], hiddenTools: ['scenes'], plainInterfaces: ['organization', 'event'] })
+    expect(saved.preferences).toEqual({ hiddenEntityTypes: ['event'], hiddenTools: ['scenes'], plainInterfaces: ['organization'] })
+    expect((await repo.getWorld(worldId)).preferences).toEqual(saved.preferences)
+  })
+
   it('seeds a default world with all preconfigured entity types', async () => {
     const worlds = await repo.listWorlds()
     expect(worlds).toHaveLength(1)

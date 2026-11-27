@@ -1,4 +1,5 @@
 import 'server-only'
+import { WorldPreferencesSchema, normalizeWorldPreferences, type WorldPreferences } from '@/domain/worlds/worldPreferences'
 import { EntityPatchSchema, EntitySchema, type EntityPatch, type NewEntityInput } from '@/domain/entities/entity'
 import type { ContentDocument } from '@/domain/content/contentDocument'
 import { indexGraphFolders, InvalidFolderMemberError } from '@/domain/relations/graphFolders'
@@ -67,6 +68,15 @@ export class SqliteWorldRepository implements WorldRepository {
       }, null)
       this.markInitialized()
       return world
+    })
+  }
+
+  async updateWorldPreferences(id: string, preferences: WorldPreferences): Promise<World> {
+    const parsed = WorldPreferencesSchema.parse(preferences)
+    return this.db.write(() => {
+      const current = this.readWorld(id)
+      const next = normalizeWorldPreferences(parsed, current.entityTypes.map((type) => type.id))
+      return this.saveWorld({ ...current, preferences: next, updatedAt: new Date().toISOString() })
     })
   }
 

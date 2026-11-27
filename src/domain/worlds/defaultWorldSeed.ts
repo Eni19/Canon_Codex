@@ -1,4 +1,5 @@
 import { addWorldV24Fields } from '@/domain/worlds/entityFieldsV24'
+import { defaultWorldPreferences } from '@/domain/worlds/worldPreferences'
 import { newId } from '@/lib/ids'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { WORLD_SCHEMA_VERSION, type World } from '@/domain/worlds/world'
@@ -374,6 +375,7 @@ export function createDefaultWorldSeed(): World {
     campaignToday: null,
     calendarLandmarks: { categories: [], landmarks: [] },
     calendarAppearance: { activeTheme: 'codex', customThemes: [] },
+    preferences: defaultWorldPreferences(),
     schemaVersion: WORLD_SCHEMA_VERSION,
     createdAt: now,
     updatedAt: now,

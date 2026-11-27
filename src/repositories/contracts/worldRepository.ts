@@ -1,4 +1,5 @@
 import type { ContentDocument } from '@/domain/content/contentDocument'
+import type { WorldPreferences } from '@/domain/worlds/worldPreferences'
 import type { Entity, EntityPatch, NewEntityInput } from '@/domain/entities/entity'
 import type { NewRelationInput, Relation, RelationChanges } from '@/domain/relations/relation'
 import type { World } from '@/domain/worlds/world'
@@ -44,6 +45,8 @@ export interface WorldRepository {
   updateCalendarLandmarks(worldId: string, landmarks: CalendarLandmarks, expectedLandmarks: string, expectedCalendar: string): Promise<World>
   updateCalendarAppearance(worldId: string, appearance: CalendarAppearance, expectedAppearance: string): Promise<World>
   updateTimelineScaleDefaults(worldId: string, defaults: Record<string, TimelineScale>): Promise<World>
+  /** Grava as preferências do Codex (barra lateral e interfaces), já normalizadas contra os tipos do mundo. */
+  updateWorldPreferences(worldId: string, preferences: WorldPreferences): Promise<World>
   createOriginEvent(worldId: string, input: NewEntityInput, content?: ContentDocument): Promise<Entity>
   previewOriginEvent(worldId: string, eventId: string): Promise<OriginEventPreview>
   replaceOriginEvent(worldId: string, eventId: string, fingerprint: string): Promise<World>

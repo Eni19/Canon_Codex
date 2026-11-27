@@ -21,6 +21,19 @@ _Evitar_: Codex como sinônimo de mundo ou de biblioteca.
 Conjunto de mundos disponíveis nesta instalação, apresentado na página inicial.
 _Evitar_: biblioteca de Codex, workspace.
 
+**Preferências do mundo**:
+Escolhas de um mundo sobre a própria interface: tipos de conteúdo e ferramentas que aparecem na
+barra lateral e, para cada tipo com interface interativa, se a página usa a interativa ou a prática.
+Ficam no próprio mundo, não no navegador.
+_Evitar_: configurações do navegador, guias ocultas.
+_No código_: `WorldPreferences` (`world.preferences`).
+
+**Interface prática**:
+Versão de página única de um tipo que também tem interface interativa (caixa-arquivo, parede de
+investigação, bancada de estudo), com a mesma informação organizada para achar rápido.
+_Evitar_: modo simples, versão antiga, modo sem 3D.
+_No código_: `plainInterfaces`.
+
 **Mundo ativo**:
 Mundo aberto no momento, em que todas as leituras e gravações acontecem.
 _Evitar_: mundo atual da sessão, mundo selecionado no servidor.

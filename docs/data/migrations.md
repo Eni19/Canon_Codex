@@ -1,6 +1,6 @@
 # Migrações e compatibilidade
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, constantes de versão em
+> **Estado:** implementado · **Última verificação:** 27/11/2026, constantes de versão em
 > `src/domain/` e registry em `src/repositories/filesystem/migrations.ts`.
 
 Veja [SQLite](sqlite.md) para migrar a biblioteca. As versões documentadas aqui também são
@@ -23,7 +23,7 @@ linkam para cá em vez de repetir o número. Ao subir uma constante, atualize es
 
 | Registro | Versão atual | Constante no código |
 | --- | ---: | --- |
-| `World` | 26 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
+| `World` | 27 | `WORLD_SCHEMA_VERSION` em [`src/domain/worlds/world.ts`](../../src/domain/worlds/world.ts) |
 | `Entity` | 4 | `ENTITY_SCHEMA_VERSION` em [`src/domain/entities/entity.ts`](../../src/domain/entities/entity.ts) |
 | `ContentDocument` | 2 | `CONTENT_SCHEMA_VERSION` em [`src/domain/content/contentDocument.ts`](../../src/domain/content/contentDocument.ts) |
 | Linha do tempo | 2 | `TIMELINE_SCHEMA_VERSION` em [`src/domain/timelines/timeline.ts`](../../src/domain/timelines/timeline.ts) |
@@ -129,7 +129,7 @@ com ou sem IDs de cartões nas pontas e tipos com ou sem sentido padrão. Builds
 podem recusar o novo formato. Relações sem o campo opcional `bidirectional` mantêm a leitura
 original de `directional`.
 
-## Mundo: v1 → v26
+## Mundo: v1 → v27
 
 Registry: `worldMigrations` em
 [`src/repositories/filesystem/migrations.ts`](../../src/repositories/filesystem/migrations.ts).
@@ -161,6 +161,7 @@ Registry: `worldMigrations` em
 | 23 | 24 | acrescenta sete definições opcionais às fichas, preservando definições com a mesma chave e os dados das entidades |
 | 24 | 25 | renomeia o tipo `artifact` de "Objeto / Artefato" para "Objeto" (plural "Objetos"); nomes personalizados ficam |
 | 25 | 26 | tira "Número de registro" e "Materiais" da ficha de Objeto; valores já preenchidos ficam nos registros |
+| 26 | 27 | acrescenta `preferences` (barra lateral e interfaces) com tudo visível e interativo |
 
 Mundos v16 criados na `main` antes da integração podem não ter calendário. O passo v16→v17
 acrescenta o calendário convencional quando ausente; os passos seguintes acrescentam os padrões
@@ -177,7 +178,13 @@ A migração v25 → v26 tira as definições `registrationNumber` e `materials`
 (`removeObjectFields` em `src/domain/worlds/objectFieldsV26.ts`), também espelhada numa migração SQL.
 Os valores já gravados continuam nas propriedades dos registros, fora do formulário.
 
-O seed atual já é v26, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
+A migração v26 → v27 acrescenta `preferences` (`WorldPreferences` em
+`src/domain/worlds/worldPreferences.ts`): tipos e ferramentas escondidos da barra lateral e tipos que
+abrem na interface prática. O padrão (`defaultWorldPreferences`) deixa tudo como antes; a mesma regra
+roda no SQLite como a quinta migração do schema SQL. Um mundo lido sem o campo (por exemplo, gravado
+de novo por código anterior à v27) recebe o padrão, sem erro.
+
+O seed atual já é v27, define 17 tipos, começa sem luas, estações ou marcos e inclui o calendário convencional (meses gregorianos,
 24 horas, sete dias e regra bissexta). Migrações de mundo preservam definições customizadas
 quando o código explicitamente procura uma propriedade existente, mas alterações manuais de
 `world.json` continuam sujeitas ao `EntityTypeDefinitionSchema`.
