@@ -29,7 +29,7 @@ contratos. Refaça esta página quando uma nova rodada de padronização termina
 | Cinco contratos de repositório | `src/repositories/index.ts` | PROJECT.md, arquitetura e CONTRIBUTING concordam |
 | Stack e comandos | `package.json` | PROJECT.md, README e desenvolvimento concordam, incluindo `pnpm storage` e `pnpm docs:check` |
 | Variáveis de ambiente | `.env.example` e código | quatro variáveis, todas na [configuração](../reference/configuration.md) |
-| Catálogo híbrido de tipos | `src/components/entities/entity-page.tsx` | ADR-002 e PROJECT.md concordam; decisão em aberto (#49) |
+| Catálogo híbrido de tipos | `src/components/entities/entity-page.tsx` | ADR-002, ADR-010 e PROJECT.md concordam; híbrido decidido em 27/11/2026 (#49) |
 | Links, âncoras e caminhos de `src/` | `pnpm docs:check` | nenhum problema em 49 arquivos |
 
 ## Verificações de regressão
