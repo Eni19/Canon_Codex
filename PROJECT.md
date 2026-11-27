@@ -85,9 +85,12 @@ Detalhes em [SQLite](docs/data/sqlite.md) e [armazenamento legado](docs/data/sto
 - Um registro é uma entidade genérica (`src/domain/entities/entity.ts`) com `properties` livres,
   relações e conteúdo separado. O tipo (`EntityTypeDefinition`, no documento do mundo) declara
   propriedades, ícone, visibilidade e blocos de layout ([ADR-002](docs/architecture/ADR-002-entity-model.md)).
-- A apresentação é **híbrida**: `src/components/entities/entity-page.tsx` usa páginas próprias para
-  vários tipos (local, organização, personagem e outros) e o compositor genérico para o
-  resto. A decisão entre manter assim ou voltar ao genérico está em aberto (#49).
+- A apresentação é **híbrida** por decisão ([ADR-010](docs/architecture/ADR-010-hybrid-entity-pages.md)):
+  `src/components/entities/entity-page.tsx` usa páginas próprias para vários tipos (local,
+  organização, personagem e outros) e o compositor genérico para o resto. Uma página própria é um
+  tema opcional sobre o registro genérico: não muda a forma persistida, declara as propriedades que
+  usa e deve cair no compositor genérico quando elas faltam. Todo tipo precisa renderizar no
+  compositor.
 - Relações ficam no array da entidade de origem; backlinks são derivados por varredura.
 - Conteúdo é `ContentDocument.pages[]`, com o corpo Tiptap tratado como opaco pelo domínio.
 - Cada mundo tem um calendário próprio, usado por todas as suas linhas do tempo. Os termos estão no

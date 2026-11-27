@@ -61,7 +61,8 @@ Para adicionar ou mudar um campo persistido:
 
 Para um novo tipo de entidade, uma definição genérica em world.json pode ser suficiente. Um
 renderizador, editor ou regra específica exige código em components/entities, testes e atualização
-do catálogo em docs/user-guide/entities.md.
+do catálogo em docs/user-guide/entities.md, seguindo a diretriz de contrato do
+[ADR-010](../architecture/ADR-010-hybrid-entity-pages.md).
 
 ## Mudança de persistência
 

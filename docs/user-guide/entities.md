@@ -92,7 +92,9 @@ genérico atual não os grava; nenhum tipo semeado depende deles.
 
 ## Apresentações específicas
 
-O tipo controla propriedades e blocos, mas algumas páginas têm componentes dedicados. Em resumo:
+O tipo controla propriedades e blocos, mas algumas páginas têm componentes dedicados, por decisão
+do [ADR-010](../architecture/ADR-010-hybrid-entity-pages.md). Caso, evento, documento, pista e
+fenômeno usam o compositor genérico. Em resumo:
 
 - locais usam pontos em coordenadas percentuais de 0 a 100; cada ponto pode ser texto, evidência
   ou documento e pode ter até 20 descobertas;
