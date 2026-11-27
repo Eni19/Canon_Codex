@@ -114,7 +114,7 @@ _Evitar_: mapa, quadro.
 _No código_: `Scene`.
 
 **Token**:
-Peça de um registro (personagem, criatura, organização, evidência ou artefato) posicionada na cena.
+Peça de um registro (personagem, criatura, organização, evidência ou objeto) posicionada na cena.
 _Evitar_: cartão, peão.
 
 **Ponto de interesse**:
