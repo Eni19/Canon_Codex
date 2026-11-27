@@ -22,7 +22,7 @@ export interface SearchResultItem {
 export async function searchEntities(
   worldId: string,
   query: string,
-  options?: { type?: string; tag?: string; limit?: number },
+  options?: { type?: string; tag?: string; tagPrefix?: string; limit?: number },
 ): Promise<SearchResultItem[]> {
   const limit = options?.limit ?? 8
   const repo = getWorldRepository()
@@ -45,6 +45,8 @@ export async function searchEntities(
   // "#etiqueta" filtra por prefixo de etiqueta; o texto restante segue para a busca aproximada.
   const { text, tagPrefixes } = parseTagQuery(query)
   const tag = tagKey(options?.tag ?? '')
+  const tagPrefix = tagKey(options?.tagPrefix ?? '')
+  if (tagPrefix) tagPrefixes.push(tagPrefix)
   const entities = allEntities.filter((entity) =>
     (!options?.type || entity.type === options.type) &&
     (!tag || entity.tags.some((value) => tagKey(value) === tag)) &&

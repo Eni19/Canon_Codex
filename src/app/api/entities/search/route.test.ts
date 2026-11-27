@@ -28,7 +28,7 @@ it('combina texto, tipo e etiqueta inteira no mundo ativo antes do limite', asyn
     const otherWorld = sqlite.createWorld('Outro mundo').id
     await repo.createEntity(otherWorld, { type: 'location', title: 'Aurora', tags: ['capital'] })
     await repo.createEntity(worldId, { type: 'character', title: 'Aurora', tags: ['capital'] })
-    await repo.createEntity(worldId, { type: 'location', title: 'Aurora', tags: ['capital histórica'] })
+    const historical = await repo.createEntity(worldId, { type: 'location', title: 'Aurora', tags: ['capital histórica'] })
     await repo.createEntity(worldId, { type: 'location', title: 'Mirante', tags: ['capital'] })
     const expected = await repo.createEntity(worldId, { type: 'location', title: 'Cidade de Aurora', tags: ['Capital'] })
 
@@ -37,6 +37,10 @@ it('combina texto, tipo e etiqueta inteira no mundo ativo antes do limite', asyn
       const response = await GET(new Request(url + suffix))
       expect(await response.json()).toMatchObject([{ id: expected.id }])
     }
+
+    const prefixQuery = new URLSearchParams({ q: 'Aurora', type: 'location', tagPrefix: 'CAPITAL HISTÓ', limit: '1' })
+    const prefixResponse = await GET(new Request(`http://localhost/api/entities/search?${prefixQuery}`))
+    expect(await prefixResponse.json()).toMatchObject([{ id: historical.id }])
   } finally {
     db.close()
   }

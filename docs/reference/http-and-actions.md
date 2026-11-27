@@ -1,7 +1,7 @@
 # Referência HTTP e Server Actions
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, todas as rotas de `src/app/api/` e
-> todas as actions exportadas de `src/app/actions/` têm seção aqui.
+> **Estado:** implementado · **Última verificação:** 27/11/2026, filtros em
+> `src/app/api/entities/search/route.ts` e `src/services/search/searchEntities.ts`.
 
 Estas são interfaces internas da aplicação. O SQLite é o driver padrão. Detalhes de caminhos e
 escritas de arquivos nesta referência descrevem o driver legado. Elas usam o mundo ativo
@@ -100,10 +100,12 @@ Parâmetros opcionais:
 - q: texto fuzzy; vazio retorna os primeiros itens;
 - type: filtra pelo ID do tipo;
 - tag: filtra por uma etiqueta inteira, ignorando maiúsculas, acentos e espaços nas extremidades;
+- tagPrefix: filtra pelo início de uma etiqueta, inclusive com espaços entre palavras. Usa a mesma
+  normalização de `tag`;
 - limit: inteiro limitado entre 1 e 100; o padrão é 8.
 
-Os filtros de tipo, etiqueta e os prefixos `#etiqueta` em `q` são combinados no mundo ativo antes
-da ordenação textual e do limite. Por exemplo, `?q=Aurora&type=location&tag=capital&limit=1`
+Os filtros de tipo, etiqueta, `tagPrefix` e os prefixos `#etiqueta` em `q` são combinados no mundo
+ativo antes da ordenação textual e do limite. Por exemplo, `?q=Aurora&type=location&tag=capital&limit=1`
 retorna até um Local com a etiqueta `capital` e correspondência textual com `Aurora`.
 
 Resposta 200:

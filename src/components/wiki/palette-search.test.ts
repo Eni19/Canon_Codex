@@ -6,6 +6,21 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('mantém o texto e o tipo ao remover a etiqueta', async () => {
+  vi.useFakeTimers()
+  const fetch = vi.fn().mockImplementation(async () => Response.json([]))
+  vi.stubGlobal('fetch', fetch)
+  schedulePaletteSearch('Aurora', vi.fn(), { type: 'location', tagPrefix: 'capital his' })
+  await vi.advanceTimersByTimeAsync(100)
+  schedulePaletteSearch('Aurora', vi.fn(), { type: 'location' })
+  await vi.advanceTimersByTimeAsync(100)
+
+  expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+    '/api/entities/search?q=Aurora&type=location&tagPrefix=capital+his',
+    '/api/entities/search?q=Aurora&type=location',
+  ])
+})
+
 it.each(['sucesso', 'falha'])('preserva a lista atual após %s tardio da consulta anterior', async outcome => {
   vi.useFakeTimers()
   let finishOld!: (response: Response) => void

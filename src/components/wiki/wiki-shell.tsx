@@ -21,6 +21,6 @@ export function WikiShell({ children, worldName, entityTypes }: { children: Reac
       <MobileNav worldName={worldName} entityTypes={entityTypes}/>
       <main className={surface ? 'relative min-h-0 min-w-0 flex-1 overflow-hidden' : 'min-w-0 flex-1 overflow-y-auto'}>{children}</main>
     </div>
-    <CommandPalette/>
+    <CommandPalette entityTypes={entityTypes}/>
   </RecordRevealProvider>
 }

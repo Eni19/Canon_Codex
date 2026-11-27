@@ -1,7 +1,7 @@
 # Registros, tipos e relações
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
-> de `src/`.
+> **Estado:** implementado · **Última verificação:** 27/11/2026, filtro de etiquetas da busca geral
+> em `src/components/wiki/command-palette.tsx`.
 
 ## Criar e editar
 
@@ -218,6 +218,10 @@ falha, use **Repetir**; se outra aba tiver salvo uma revisão mais recente, **Re
 as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
+
+Na busca geral (`Ctrl+K`), digite o início de uma etiqueta no campo **Etiqueta**. A lista se
+atualiza conforme você digita e combina a etiqueta com o texto da busca e o tipo selecionado.
+Para remover o filtro de etiqueta, apague o campo ou clique no **×** do filtro ativo.
 
 Nos catálogos, digite um trecho do nome, do apelido ou da tag. A comparação ignora maiúsculas, minúsculas e acentos. A busca do catálogo é textual e não pesquisa o corpo completo dos documentos. A paleta de comandos e a busca contextual de registros usam a mesma fonte de dados, com correspondência aproximada sobre título, aliases e tags; a API limita o resultado a 100 itens e a paleta normalmente solicita até 8.
 
