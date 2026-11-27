@@ -125,7 +125,8 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
   parede fecha.
 - **Arraste a parede** para movê-la e use a **roda do mouse** para aproximar, dentro de limites.
 - A luz da lanterna segue o ponteiro. Com movimento reduzido no sistema, a câmera não balança.
-- Sem WebGL, a página mostra o quadro em HTML.
+- Sem WebGL, ou com a interface **Prática** escolhida em **Configurações**, a página mostra o
+  quadro em HTML.
 
 ### Caixa-arquivo da Organização
 
@@ -158,7 +159,8 @@ tamanho da organização (só a liderança, que costuma ser pequena, tem uma pe�
   Clicar na tampa sem arrastar continua abrindo e fechando.
 - A arrumação e a posição da caixa ficam salvas neste navegador.
 - Arraste a mesa para movê-la e use a roda do mouse para aproximar.
-- Sem WebGL, a página mostra o dossiê em HTML.
+- Sem WebGL, ou com a interface **Prática** escolhida em **Configurações**, a página mostra o
+  dossiê em HTML.
 
 ### Bancada do Objeto
 
@@ -177,7 +179,8 @@ referências), etiquetas (tipo e marcadores) e o conteúdo como folhas do relat�
   neste navegador; **Reorganizar** volta à inicial. Arraste a bancada para movê-la e use a roda do
   mouse para aproximar.
 - O texto guia na barra de baixo tem um **×** para fechá-lo; fechado, não volta neste navegador.
-- Sem WebGL, a página mostra a ficha de catalogação em HTML.
+- Sem WebGL, ou com a interface **Prática** escolhida em **Configurações**, a página mostra a
+  ficha de catalogação em HTML.
 
 ## Referências e relações
 

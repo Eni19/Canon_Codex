@@ -51,6 +51,8 @@ export interface EntityPageProps {
   relatedScenes: SceneSummary[]
   calendar: Calendar
   campaignToday?: CalendarExactDate | null
+  /** Configurações do Codex: a página abre na versão prática, sem a interface interativa. */
+  plainInterface?: boolean
   timeline?: TimelineData
 }
 

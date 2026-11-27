@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { EntityPage } from '@/components/entities/entity-page'
+import { hasInteractiveInterface, usesInteractiveInterface } from '@/domain/worlds/worldPreferences'
 import { getSceneRepository, getWorldRepository } from '@/repositories'
 import { getCurrentWorld } from '@/services/worlds/getCurrentWorld'
 
@@ -67,6 +68,7 @@ export async function EntityReadScreen({ entityId }: { entityId: string }) {
       relatedScenes={relatedScenes}
       calendar={world.calendar}
       campaignToday={world.campaignToday}
+      plainInterface={hasInteractiveInterface(entity.type) && !usesInteractiveInterface(world.preferences, entity.type)}
       timeline={timeline}
     />
   )

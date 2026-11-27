@@ -32,6 +32,8 @@ const NOTE_GROUPS = [
  * folhas do relatório completam o resto. Sem WebGL, mostra a ficha de catalogação em HTML.
  */
 export function ObjectBenchPage(props: EntityPageProps) {
+  // Interface prática (configurações do Codex): a ficha de catalogação, sem a bancada 3D.
+  if (props.plainInterface) return <ArtifactEntityPage {...props}/>
   const { entity, entityType, worldName, content, entityTitleById, calendar, backlinks, relationTargetOptions } = props
   const parsedDetails = ArtifactDetailsSchema.safeParse(entity.properties.artifactDetails)
   const details = parsedDetails.success ? parsedDetails.data : []

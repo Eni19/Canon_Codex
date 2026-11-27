@@ -29,6 +29,8 @@ function ids(value: unknown) { return Array.isArray(value) ? value.filter((id): 
  * organizações de qualquer tamanho. Sem WebGL, mostra o dossiê em HTML.
  */
 export function OrganizationArchivePage(props: EntityPageProps) {
+  // Interface prática (configurações do Codex): o dossiê em página única, sem a caixa-arquivo 3D.
+  if (props.plainInterface) return <OrganizationDossierPage {...props}/>
   const { entity, entityType, worldName, content, entityTitleById, allEntities, relationTargetOptions, calendar, backlinks } = props
   const byId = new Map(allEntities.map((item) => [item.id, item]))
   const titleOf = (id: string) => entityTitleById[id] ?? byId.get(id)?.title ?? 'Registro removido'
