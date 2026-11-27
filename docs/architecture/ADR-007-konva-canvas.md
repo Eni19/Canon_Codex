@@ -1,7 +1,8 @@
 # ADR-007: Canvas próprio em Konva para relações e, depois, para os outros canvas
 
 > **Estado:** parcial (grafo, Cenas e Quadros usam Konva; faltam o painel de estilo dos Quadros e a
-> retirada do pacote tldraw) · **Última verificação:** 26/11/2026,
+> retirada do pacote tldraw, que continua no `package.json` sem nenhum import em `src/`) ·
+> **Última verificação:** 27/11/2026,
 > `package.json`, `src/components/boards/board-stage.ts`, `src/components/scenes/scene-stage.ts` e
 > `src/domain/canvas/`.
 
@@ -38,11 +39,11 @@ motor, não o motor.
 - Konva é o motor de canvas do projeto. Não se adiciona outro renderizador ou framework de animação
   só para redesenhar uma tela; o motor só é reconsiderado diante de um impedimento reproduzível
   e medido.
-- **Planejado:** migrar Cenas e depois Quadros do tldraw para o canvas Konva, com conversor de
-  snapshots idempotente, prévia, backup e restauração, e então retirar o tldraw e
-  `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`. A Linha do Tempo só migra se não houver regressão em relação
-  ao perfil atual. As etapas estão no [REL-08](../plans/relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas)
-  e são acompanhadas nos issues #16 e #17.
+- Cenas e depois Quadros migram do tldraw para o canvas Konva, com conversor de snapshots
+  idempotente, prévia, backup e restauração, e então o tldraw e `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`
+  saem do projeto. A Linha do Tempo só migra se não houver regressão em relação ao perfil atual.
+  As etapas estão no [REL-08](../plans/relationship-graph-plan.md#rel-08--etapa-final-migrar-os-outros-canvas);
+  os issues #16 e #17 foram fechados com a migração das Cenas e dos Quadros.
 - Uma base compartilhada entre canvas só é extraída quando houver um segundo consumidor real.
 
 ## Alternativas consideradas

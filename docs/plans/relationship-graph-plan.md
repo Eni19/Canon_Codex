@@ -259,8 +259,8 @@ com leitor de tela permanece em REL-07.
 
 ## REL-08 — Etapa final: migrar os outros canvas
 
-Esta é a **última etapa**. Quadros e Cenas usam tldraw/snapshots; a Linha do Tempo usa superfície
-própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de grafo aos outros editores.
+Esta é a **última etapa**. Quadros e Cenas usavam tldraw/snapshots e já migraram para Konva
+(26/11/2026); a Linha do Tempo usa superfície própria com SVG/cartões HTML. Reaproveitar base validada sem impor layout de grafo aos outros editores.
 
 1. **Inventariar/converter:** cartões, desenhos, anotações, texto, imagens, grupos e setas vinculadas.
    Formato Canon versionado; conversor idempotente com prévia, backup, incompatibilidades e restauração.
