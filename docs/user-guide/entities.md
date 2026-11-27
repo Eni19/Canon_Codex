@@ -1,6 +1,6 @@
 # Registros, tipos e relações
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito contra os textos
+> **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito contra os textos
 > de `src/`.
 
 ## Criar e editar
@@ -72,7 +72,7 @@ O mundo semente define 17 tipos. Casos, Pistas, Fenômenos e Documentos ficam oc
 | `location` | Local | blueprint/mapa, pontos de interesse e cenas associadas |
 | `organization` | Organização | dossiê, líderes, membros e grupos |
 | `case` | Caso | status, data, envolvidos e locais; apresentação genérica |
-| `event` | Evento | jornal, estado, data, local e participantes |
+| `event` | Evento | página padrão, estado, data, local e participantes |
 | `tale` | Conto | leitura editorial, capa e até 50 capítulos/páginas |
 | `document` | Documento | tipo, autor, data; apresentação genérica |
 | `evidence` | Evidência | quadro de evidência, formato, tipo, contexto e descobertas |

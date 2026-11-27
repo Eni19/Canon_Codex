@@ -11,7 +11,6 @@ import { LocationEntityPage } from '@/components/entities/location-entity-page'
 import { EvidenceBoardPage } from '@/components/entities/evidence-board-page'
 import { OrganizationDossierPage } from '@/components/entities/organization-dossier-page'
 import { CreatureEntityPage } from '@/components/entities/creature-entity-page'
-import { EventNewspaperPage } from '@/components/entities/event-newspaper-page'
 import { ObjectBenchPage } from '@/components/entities/object-bench-page'
 import { CosmologyEntityPage } from '@/components/entities/cosmology-entity-page'
 import { TaleEntityPage } from '@/components/entities/tale-entity-page'
@@ -63,7 +62,6 @@ export function EntityPage(props: EntityPageProps) {
   if (entity.type === 'evidence') return <EvidenceBoardPage {...props} />
   if (entity.type === 'organization') return <OrganizationDossierPage {...props} />
   if (entity.type === 'creature') return <CreatureEntityPage {...props} />
-  if (entity.type === 'event') return <EventNewspaperPage {...props} />
   if (entity.type === 'artifact') return <ObjectBenchPage {...props} />
   if (entity.type === 'cosmology') return <CosmologyEntityPage {...props} />
   if (entity.type === 'tale') return <TaleEntityPage {...props} />

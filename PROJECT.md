@@ -1,6 +1,6 @@
 # PROJECT.md: memória arquitetural do Canon Codex
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, `package.json`,
+> **Estado:** implementado · **Última verificação:** 27/11/2026, `package.json`,
 > `src/repositories/index.ts` e `src/components/entities/entity-page.tsx`.
 
 Este arquivo guarda as regras e decisões que orientam qualquer mudança no código. Ele não descreve
@@ -86,7 +86,7 @@ Detalhes em [SQLite](docs/data/sqlite.md) e [armazenamento legado](docs/data/sto
   relações e conteúdo separado. O tipo (`EntityTypeDefinition`, no documento do mundo) declara
   propriedades, ícone, visibilidade e blocos de layout ([ADR-002](docs/architecture/ADR-002-entity-model.md)).
 - A apresentação é **híbrida**: `src/components/entities/entity-page.tsx` usa páginas próprias para
-  vários tipos (local, evento, organização, personagem e outros) e o compositor genérico para o
+  vários tipos (local, organização, personagem e outros) e o compositor genérico para o
   resto. A decisão entre manter assim ou voltar ao genérico está em aberto (#49).
 - Relações ficam no array da entidade de origem; backlinks são derivados por varredura.
 - Conteúdo é `ContentDocument.pages[]`, com o corpo Tiptap tratado como opaco pelo domínio.
