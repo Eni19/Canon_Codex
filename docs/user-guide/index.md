@@ -1,6 +1,7 @@
 # Guia de uso
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rotas da tabela contra `src/app/`.
+> **Estado:** implementado · **Última verificação:** 27/11/2026, rotas da tabela contra `src/app/` e busca em
+> `src/components/wiki/command-palette.tsx`.
 
 O Canon Codex é uma aplicação local. O fluxo normal é: escolher um mundo na biblioteca, criar
 registros, enriquecer o conteúdo, conectar referências e, quando necessário, preparar um quadro ou
@@ -23,6 +24,15 @@ uma cena para apresentação.
 
 Os links da barra lateral mostram apenas tipos cujo `showInSidebar` é verdadeiro; tipos ocultos
 continuam acessíveis por referências ou pela URL direta quando existem.
+
+## Busca geral
+
+Em qualquer tela do mundo, **Ctrl+K** (**⌘K** no Mac) abre a busca. Digite parte do nome, um
+apelido ou uma etiqueta: até três caracteres encontram trechos literais, inclusive no meio do nome;
+termos mais longos toleram erro de digitação. `#etiqueta` filtra pelos registros com etiquetas que
+começam assim, e o resto do texto continua buscando. Use **↑**/**↓** para escolher e **Enter** ou
+clique para abrir o registro; **Esc** fecha. As regras de ordenação estão na
+[referência da rota de busca](../reference/http-and-actions.md).
 
 ## Caderno do Codex
 
