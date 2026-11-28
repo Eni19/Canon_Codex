@@ -1,9 +1,10 @@
 # ADR-011: Forma e textura próprias por tipo de registro
 
-> **Estado:** parcial; o grafo usa silhuetas e texturas, os Quadros ainda não · **Última
+> **Estado:** parcial; grafo e Quadros usam silhuetas e texturas, legenda e ajustes ainda não · **Última
 > verificação:** 27/11/2026, `src/domain/entities/entityVisual.ts`,
-> `src/domain/canvas/entitySilhouettes.ts`, `src/lib/canvas/entityTextures.ts` e
-> `src/components/relations/relationship-scene.ts`.
+> `src/domain/canvas/entitySilhouettes.ts`, `src/lib/canvas/entityTextures.ts`,
+> `src/lib/canvas/textureTheme.ts`, `src/components/relations/relationship-scene.ts` e
+> `src/components/boards/board-render.ts`.
 
 ## Estado atual em 27/11/2026
 
@@ -12,7 +13,9 @@ padrão neutro. As silhuetas são traçadas por `entitySilhouettes.ts` em qualqu
 de relacionamentos já as usa no cartão individual, no lote do zoom afastado e no anel de destino.
 As texturas são ladrilhos gerados em `entityTextures.ts`, com cache único de até 34 ladrilhos, e o
 grafo as desenha com a opacidade de `textureOpacity` (`colorContrast.ts`), que preserva 4,5:1 nos
-textos do cartão. Os Quadros ainda desenham o cartão de hoje para todos os tipos. As fatias do #72, uma por PR e cada
+textos do cartão. Os cartões dos Quadros usam a mesma silhueta (sombra, recorte e borda), a mesma
+textura com a mesma regra de tinta e opacidade (`textureTheme.ts`) e o ícone do tipo antes do
+rótulo. As fatias do #72, uma por PR e cada
 uma com medição de desempenho:
 
 1. catálogo de domínio e testes (feito);
@@ -20,7 +23,8 @@ uma com medição de desempenho:
    [relationship-graph.md](../performance/relationship-graph.md#silhuetas-por-tipo--27112026));
 3. gerador de ladrilhos compartilhado e texturas no grafo (feito; medição em
    [relationship-graph.md](../performance/relationship-graph.md#texturas-por-tipo--27112026));
-4. silhueta, textura e ícone nos cartões dos Quadros;
+4. silhueta, textura e ícone nos cartões dos Quadros (feito; medição em
+   [board.md](../performance/board.md#silhueta-textura-e-ícone-do-tipo--27112026));
 5. legenda, intensidade da textura em Configurações, modos de contraste e guias de uso.
 
 ## Contexto

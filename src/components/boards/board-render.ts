@@ -1,13 +1,18 @@
 import { arrowheadBase, arrowheadShape, arrowStrokeWidth, pathLength, pointAlong, type ArrowGeometry } from '@/domain/boards/boardArrow'
 import type { BoardArrow, BoardCard, BoardFont, BoardLegacy, BoardText } from '@/domain/boards/boardCanvas'
 import { ARROW_LABEL_FONT_SIZES, ARROW_LABEL_PADDING, BOARD_BACKGROUND, BOARD_FONT_VARIABLES, BOARD_PALETTE, TEXT_FONT_SIZES, TEXT_LINE_HEIGHT } from '@/domain/boards/boardStyles'
+import { traceSilhouette } from '@/domain/canvas/entitySilhouettes'
 import type { Point } from '@/domain/canvas/geometry'
+import { entityVisualFor, type SilhouetteId } from '@/domain/entities/entityVisual'
+import { readTextureTheme, texturePaint, type TextureTheme } from '@/lib/canvas/textureTheme'
 import type { BoardEntitySummary } from './board-types'
 
 export type BoardPalette = {
   primary: string; primary14: string; primary30: string; primary35Border: string; primary48Border: string; primary55Black: string; primaryForeground: string
   surface96: string; surface: string; background: string; foreground: string; muted: string; warning: string; border: string
   sans: string; serif: string; rem: number; fonts: Record<BoardFont, string>
+  /** Ink and opacities of the record-type textures on this theme (ADR-011). */
+  texture: TextureTheme
 }
 
 export function readBoardPalette(host: HTMLElement): BoardPalette {
@@ -16,7 +21,7 @@ export function readBoardPalette(host: HTMLElement): BoardPalette {
   host.appendChild(probe)
   const color = (css: string) => { probe.style.color = ''; probe.style.color = css; return getComputedStyle(probe).color }
   const family = (css: string) => { probe.style.fontFamily = ''; probe.style.fontFamily = css; return getComputedStyle(probe).fontFamily }
-  const palette: BoardPalette = {
+  const palette: Omit<BoardPalette, 'texture'> = {
     primary: color('var(--primary)'),
     primary14: color('color-mix(in oklch, var(--primary) 14%, transparent)'),
     primary30: color('color-mix(in oklch, var(--primary) 30%, transparent)'),
@@ -42,7 +47,9 @@ export function readBoardPalette(host: HTMLElement): BoardPalette {
     },
   }
   probe.remove()
-  return palette
+  // Text drawn over a card's body: title, subtitle and type label.
+  const texture = readTextureTheme({ card: palette.surface, background: palette.background, foreground: palette.foreground, texts: [palette.foreground, palette.muted, palette.primary] })
+  return { ...palette, texture }
 }
 
 type Ctx = CanvasRenderingContext2D
@@ -213,6 +220,24 @@ export function drawLegacy(ctx: Ctx, shape: BoardLegacy, palette: BoardPalette) 
 
 type ImageGetter = (assetId: string, variant: 'original' | 'thumbnail') => HTMLImageElement | null
 type IconGetter = () => HTMLImageElement | null
+type TypeIconGetter = (name: string) => CanvasImageSource | null
+
+// Card outlines by record type (ADR-011), cached per silhouette and size: cards keep their size
+// across frames, so each outline is traced once. The cache is small and is simply reset when full.
+const outlines = new Map<string, Path2D>()
+/** Smallest on-screen card height, in device pixels, that still gets its texture. */
+const MIN_TEXTURE_PX = 48
+function cardOutline(silhouette: SilhouetteId, x: number, y: number, w: number, h: number) {
+  const key = `${silhouette}|${x}|${y}|${w}|${h}`
+  let path = outlines.get(key)
+  if (!path) {
+    if (outlines.size >= 512) outlines.clear()
+    path = new Path2D()
+    traceSilhouette(path, silhouette, x, y, w, h)
+    outlines.set(key, path)
+  }
+  return path
+}
 
 const VIEW_COLUMNS: Record<BoardCard['viewMode'], number | null> = { minimal: null, card: 0.35, portrait: 0.58, dossier: 0.42, wide: 0.72 }
 
@@ -249,7 +274,7 @@ function drawImageFit(ctx: Ctx, img: HTMLImageElement | HTMLCanvasElement, x: nu
  * Cartão de registro, reproduzindo o CSS de `investigation-board.module.css` (`.entityCard` e as
  * visualizações mínima, cartão, retrato, dossiê e local amplo).
  */
-export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary | undefined, palette: BoardPalette, image: ImageGetter, warningIcon: IconGetter, supportsFilter: boolean) {
+export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary | undefined, palette: BoardPalette, image: ImageGetter, warningIcon: IconGetter, typeIcon: TypeIconGetter, supportsFilter: boolean) {
   const { w, h } = card
   const rem = palette.rem
   if (!entity) {
@@ -278,13 +303,29 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   }
   const mode = card.viewMode
   const border = mode === 'dossier' ? 2 : 1
+  // The card takes the silhouette of its record type; shadow, clip and border follow it.
+  const visual = entityVisualFor(entity.type)
+  const outline = cardOutline(visual.silhouette, 0, 0, w, h)
   ctx.save()
   // box-shadow: .45rem .55rem 0 color-mix(black 28%)
+  ctx.save()
+  ctx.translate(0.45 * rem, 0.55 * rem)
   ctx.fillStyle = 'rgba(0,0,0,0.28)'
-  ctx.fillRect(0.45 * rem, 0.55 * rem, w, h)
-  ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip()
+  ctx.fill(outline)
+  ctx.restore()
+  ctx.clip(outline)
   ctx.fillStyle = palette.surface96
   ctx.fillRect(0, 0, w, h)
+  // The type's texture lies under the image column and the text. On a card only a few dozen pixels
+  // tall the texture is noise, so it is left out there, as below the port zoom of the graph.
+  const screen = ctx.getTransform()
+  const texture = Math.hypot(screen.a, screen.b) * h >= MIN_TEXTURE_PX ? texturePaint(palette.texture, visual.texture, ctx, globalThis.devicePixelRatio || 1) : null
+  if (texture) {
+    ctx.save()
+    ctx.globalAlpha *= texture.opacity; ctx.fillStyle = texture.pattern
+    ctx.fillRect(0, 0, w, h)
+    ctx.restore()
+  }
   const innerX = border, innerY = border, innerW = w - border * 2, innerH = h - border * 2
   const column = VIEW_COLUMNS[mode]
   const thumbnail = card.showImage && entity.thumbnailAssetId ? entity.thumbnailAssetId : undefined
@@ -319,10 +360,15 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   const blocks: Block[] = []
   const gap = 0.32 * rem
   if (card.showType) {
-    const size = 0.55 * rem
+    const size = 0.55 * rem, iconSize = size * 1.5
     blocks.push({ height: size * 1.5, draw: (top) => {
+      // The type's icon leads the label, so the type does not depend on colour or text alone.
+      // Like text, an icon under 3 px on screen is a blur and is skipped.
+      const icon = Math.hypot(screen.a, screen.b) * iconSize >= MIN_READABLE_PX ? typeIcon(entity.typeIcon) : null
+      if (icon) ctx.drawImage(icon, contentX, top, iconSize, iconSize)
+      const labelX = contentX + (icon ? iconSize + 0.25 * rem : 0)
       ctx.font = `800 ${size}px ${palette.sans}`; setSpacing(ctx, size * 0.14); ctx.fillStyle = palette.primary
-      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; fillCentered(ctx, entity.typeLabel.toUpperCase(), contentX, top + size * 0.75)
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; fillCentered(ctx, entity.typeLabel.toUpperCase(), labelX, top + size * 0.75)
       setSpacing(ctx, 0)
     } })
   }
@@ -406,7 +452,7 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   ctx.strokeStyle = palette.primary48Border
   ctx.lineWidth = border
   if (mode === 'minimal') ctx.setLineDash([3, 3])
-  ctx.strokeRect(border / 2, border / 2, w - border, h - border)
+  ctx.stroke(cardOutline(visual.silhouette, border / 2, border / 2, w - border, h - border))
   ctx.restore()
   if (mode !== 'minimal') {
     const d = 0.65 * rem, x = w / 2 + d / 2, y = 0.35 * rem + d / 2

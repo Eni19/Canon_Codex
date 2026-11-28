@@ -46,6 +46,9 @@ const ICONS: Record<string, LucideIcon> = {
   Eclipse,
 }
 
+/** The Lucide component of a type icon name, or a circle for an unknown name. */
+export const entityTypeIconComponent = (name: string): LucideIcon => ICONS[name] ?? Circle
+
 export function EntityTypeIcon({ name, className }: { name: string; className?: string }) {
   const Icon = ICONS[name] ?? Circle
   return <Icon className={className} aria-hidden="true" />

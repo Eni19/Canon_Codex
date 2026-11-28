@@ -1,7 +1,40 @@
 # Quadro de investigação: desempenho
 
-> **Estado:** histórico · **Última verificação:** 26/11/2026, build de produção em Edge headless
+> **Estado:** histórico · **Última verificação:** 27/11/2026, build de produção em Chrome headless
 > com o quadro sintético de 1.400 itens; cada seção traz a própria data e protocolo.
+
+## Silhueta, textura e ícone do tipo · 27/11/2026
+
+Medição da fatia 4 do #72 ([ADR-011](../architecture/ADR-011-entity-type-visuals.md)): o cartão de
+registro passa a usar a silhueta do tipo na sombra, no recorte e na borda, a textura do tipo no
+fundo e o ícone do tipo antes do rótulo. Windows, Ryzen 7 5700U, Next.js 16.3.4, Chrome
+158.0.8127.88 headless a 1.440 × 900 e DPR 1, com o mundo gerado por
+`scripts/seed-board-stress.test.ts` e `BOARD_STRESS_TYPES=all`, que distribui os 300 cartões pelos
+17 tipos do mundo semente. Mesmo protocolo da seção abaixo (`scripts/board-profile.mjs`, três
+repetições de 10 s por gesto, depois de uma rodada de aquecimento). A base é o commit `b2e375a`,
+compilado nesta mesma pasta e medido com o mesmo mundo.
+
+Neste Chrome, o pan pela roda fica em p50 de 33 ms nas duas versões, o dobro da medição de 26/11 em
+Edge: a cadência dos eventos de roda mudou com o navegador, então só vale a comparação entre as
+linhas desta tabela.
+
+| Vista | Gesto | Base (p95) | Identidade do tipo (p95) | `DroppedFrame` base / nova |
+| --- | --- | ---: | ---: | --- |
+| Quadro inteiro | Pan | 35,68–37,31 ms | 36,31–37,22 ms | 55–70 / 79–85 |
+| Quadro inteiro | Zoom | 31,56–31,64 ms | 31,58–32,05 ms | 250–251 / 251–262 |
+| Zoom 100% | Pan | 34,38–34,67 ms | 34,66–34,95 ms | 0–1 / 4–6 |
+| Zoom 100% | Zoom | 20,09–20,75 ms | 19,95–20,61 ms | 280–285 / 284–285 |
+| Zoom 100% | Arraste de cartão | 23,47–24,00 ms | 22,33–23,85 ms | 45–60 / 20–44 |
+
+A primeira versão desenhava a imagem SVG do ícone em cada cartão: com o quadro inteiro na tela, o
+p95 do pan foi a 43,41–45,61 ms e o perfil de CPU mostrou `drawImage` como o maior custo. O ícone
+passou a ser rasterizado uma vez por ícone e cor num bitmap de 64 px, e deixa de ser desenhado abaixo
+de 3 px na tela, como o texto. A textura também não é desenhada em cartões com menos de 48 px de
+altura na tela. Com isso o p95 ficou no máximo 0,4 ms acima da base, dentro do limite de 1 ms do #72.
+Os quadros perdidos no pan subiram (de 55–70 para 79–85 com o quadro inteiro e de 0–1 para 4–6 a
+100%), então o critério "nenhum gesto com mais quadros perdidos" não foi atingido no pan; no arraste
+eles caíram. Os contornos ficam em cache por silhueta e tamanho, e os ladrilhos de textura são os
+mesmos do grafo (no máximo 34). Heap após GC e tela física não foram medidos.
 
 ## Caches por objeto e itens fora da vista · 26/11/2026
 

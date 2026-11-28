@@ -1,7 +1,7 @@
 # Quadros, cenas e projeção
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, rótulos em negrito e rotas contra
-> `src/`.
+> **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito e rotas contra
+> `src/`, cartões de registro em `src/components/boards/board-render.ts`.
 
 ## Quadro de investigação
 
@@ -9,7 +9,9 @@
 2. Preencha título, descrição e tags e escolha **Criar quadro**.
 3. No canvas, adicione registros pela busca, pelo botão ou arrastando-os para a mesa.
 4. Selecione um cartão para escolher visualização mínima, cartão, retrato, dossiê ou, para locais,
-   local amplo; altere imagem, tipo, status, tags e rótulo personalizado.
+   local amplo; altere imagem, tipo, status, tags e rótulo personalizado. O cartão tem o contorno e
+   a textura do tipo do registro, os mesmos do grafo de **Relacionamentos**, e o ícone do tipo
+   abre o rótulo do tipo. Tipos criados no mundo mantêm o cartão retangular.
 5. O estado do canvas é salvo automaticamente por `PUT /api/boards/<boardId>` após uma pequena
    espera; o indicador mostra salvo, salvando ou erro.
 
