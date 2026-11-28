@@ -220,11 +220,13 @@ export function drawLegacy(ctx: Ctx, shape: BoardLegacy, palette: BoardPalette) 
 
 type ImageGetter = (assetId: string, variant: 'original' | 'thumbnail') => HTMLImageElement | null
 type IconGetter = () => HTMLImageElement | null
-type TypeIconGetter = (name: string) => HTMLImageElement | null
+type TypeIconGetter = (name: string) => CanvasImageSource | null
 
 // Card outlines by record type (ADR-011), cached per silhouette and size: cards keep their size
 // across frames, so each outline is traced once. The cache is small and is simply reset when full.
 const outlines = new Map<string, Path2D>()
+/** Smallest on-screen card height, in device pixels, that still gets its texture. */
+const MIN_TEXTURE_PX = 48
 function cardOutline(silhouette: SilhouetteId, x: number, y: number, w: number, h: number) {
   const key = `${silhouette}|${x}|${y}|${w}|${h}`
   let path = outlines.get(key)
@@ -314,8 +316,10 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   ctx.clip(outline)
   ctx.fillStyle = palette.surface96
   ctx.fillRect(0, 0, w, h)
-  // The type's texture lies under the image column and the text.
-  const texture = texturePaint(palette.texture, visual.texture, ctx, globalThis.devicePixelRatio || 1)
+  // The type's texture lies under the image column and the text. On a card only a few dozen pixels
+  // tall the texture is noise, so it is left out there, as below the port zoom of the graph.
+  const screen = ctx.getTransform()
+  const texture = Math.hypot(screen.a, screen.b) * h >= MIN_TEXTURE_PX ? texturePaint(palette.texture, visual.texture, ctx, globalThis.devicePixelRatio || 1) : null
   if (texture) {
     ctx.save()
     ctx.globalAlpha *= texture.opacity; ctx.fillStyle = texture.pattern
@@ -359,7 +363,8 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
     const size = 0.55 * rem, iconSize = size * 1.5
     blocks.push({ height: size * 1.5, draw: (top) => {
       // The type's icon leads the label, so the type does not depend on colour or text alone.
-      const icon = typeIcon(entity.typeIcon)
+      // Like text, an icon under 3 px on screen is a blur and is skipped.
+      const icon = Math.hypot(screen.a, screen.b) * iconSize >= MIN_READABLE_PX ? typeIcon(entity.typeIcon) : null
       if (icon) ctx.drawImage(icon, contentX, top, iconSize, iconSize)
       const labelX = contentX + (icon ? iconSize + 0.25 * rem : 0)
       ctx.font = `800 ${size}px ${palette.sans}`; setSpacing(ctx, size * 0.14); ctx.fillStyle = palette.primary

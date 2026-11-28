@@ -130,15 +130,22 @@ export function createBoardEditor(host: HTMLElement, options: {
     warningSrc ??= `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(TriangleAlert)).replaceAll('currentColor', palette.warning))}`
     return loadImage(warningSrc)
   }
-  // Lucide icon of each record type, in the type-label colour, as an image the canvas can draw.
-  const typeIconSources = new Map<string, string>()
+  // Lucide icon of each record type, in the type-label colour. The SVG is rasterized once per icon
+  // and colour into a small bitmap: drawing the SVG image itself on every card cost more than the
+  // rest of the card.
+  const TYPE_ICON_PX = 64
+  const typeIconBitmaps = new Map<string, HTMLCanvasElement>()
   const typeIcon = (name: string) => {
-    let src = typeIconSources.get(name)
-    if (!src) {
-      src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(entityTypeIconComponent(name))).replaceAll('currentColor', palette.primary))}`
-      typeIconSources.set(name, src)
-    }
-    return loadImage(src)
+    const key = name + '|' + palette.primary
+    const cached = typeIconBitmaps.get(key)
+    if (cached) return cached
+    const svg = renderToStaticMarkup(createElement(entityTypeIconComponent(name))).replaceAll('currentColor', palette.primary)
+    const img = loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`)
+    if (!img) return null
+    const bitmap = Object.assign(document.createElement('canvas'), { width: TYPE_ICON_PX, height: TYPE_ICON_PX })
+    bitmap.getContext('2d')?.drawImage(img, 0, 0, TYPE_ICON_PX, TYPE_ICON_PX)
+    typeIconBitmaps.set(key, bitmap)
+    return bitmap
   }
 
   // ---------- Medidas ----------
