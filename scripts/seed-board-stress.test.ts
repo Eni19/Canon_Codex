@@ -11,7 +11,7 @@ it('cria um mundo sintético com um quadro de 1.400 itens só dentro da pasta te
   const root = path.resolve(configured); const relative = path.relative(path.resolve(tmpdir()), root)
   if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('A pasta de teste precisa estar dentro do diretório temporário.')
   await mkdir(root) // Falha em vez de sobrescrever uma pasta existente.
-  const { world, entities, board } = createBoardStressFixture()
+  const { world, entities, board } = createBoardStressFixture({ allTypes: process.env.BOARD_STRESS_TYPES === 'all' })
   const worldDir = path.join(root, 'worlds', world.slug)
   await mkdir(path.join(worldDir, 'boards', board.id), { recursive: true })
   await writeFile(path.join(worldDir, 'world.json'), JSON.stringify(world))

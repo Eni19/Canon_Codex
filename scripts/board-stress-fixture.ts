@@ -8,10 +8,12 @@ export const BOARD_STRESS_COUNTS = { cards: 300, arrows: 300, notes: 200, geos: 
 
 /**
  * Quadro sintético e determinístico com 1.400 itens de todos os tipos, sobre o mundo sintético do
- * grafo (500 registros). Serve só para medir desempenho; nada vem de \`workspace/\`.
+ * grafo (500 registros). Serve só para medir desempenho; nada vem de \`workspace/\`. Com
+ * `allTypes`, os registros passam pelos 17 tipos do mundo semente, para os cartões mostrarem todas
+ * as silhuetas (#72).
  */
-export function createBoardStressFixture() {
-  const { world, entities } = createRelationshipStressFixture()
+export function createBoardStressFixture({ allTypes = false } = {}) {
+  const { world, entities } = createRelationshipStressFixture({ allTypes })
   const base = { rotation: 0, opacity: 1, locked: false }
   const shapes: BoardShape[] = []
   const color = (i: number) => BOARD_COLORS[i % (BOARD_COLORS.length - 1)]
