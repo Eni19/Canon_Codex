@@ -1,6 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { NotebookDeskStage } from '@/components/codex-notebook/notebook-desk-background'
+import { hand } from '@/components/codex-notebook/notebook-fonts'
+import albumStyles from '../entity-card.module.css'
 import { useEffect, useLayoutEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from 'react'
 import { animate, stagger } from 'animejs'
 import { AtSign, CircleAlert, Crop, Loader2, Tag } from 'lucide-react'
@@ -74,6 +77,7 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [dirty, setDirty] = useState(false)
   const [theme, setTheme] = useState<CharacterTheme>(entity?.theme ?? 'amber')
+  const characterAlbum = entityType.id === 'character' && supportsCover(entityType)
   const [coverId, setCoverId] = useState<string | undefined>(entity?.coverAssetId)
   const typeFraming = defaultCoverFraming(entityType)
   const [framing, setFraming] = useState(() => readCoverFraming(entity?.properties.coverFraming, typeFraming))
@@ -179,136 +183,174 @@ export function EntityEditor({ mode, entityType, entity, worldName, worldId, cal
     })
   }
 
+  const titleField = <>
+    <label className="group/title relative block">
+      <span className="mb-2 flex items-baseline gap-2 text-sm font-medium">
+        Nome
+        <span aria-hidden="true" className="font-normal text-muted-foreground">(obrigatório)</span>
+      </span>
+      <input
+        name="title"
+        aria-required="true"
+        aria-invalid={Boolean(fieldErrors.title)}
+        aria-describedby={fieldErrors.title ? "entity-error-title" : undefined}
+        autoFocus={mode === 'create'}
+        defaultValue={entity?.title ?? initialTitle}
+        placeholder="Dê um nome a este registro"
+        autoComplete="off"
+        className={characterAlbum
+          ? albumStyles.albumNameInput
+          : 'w-full bg-transparent pb-2 font-serif text-2xl font-medium tracking-tight outline-none placeholder:text-muted-foreground/45 sm:text-4xl'}
+      />
+      <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border"/>
+      <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within/title:scale-x-100"/>
+    </label>
+    <FieldError name="title" message={fieldErrors.title}/>
+  </>
+
+  const coverFields = <>
+    {supportsCover(entityType) && <ImageField
+      name="coverAssetId"
+      label={coverLabel(entityType)}
+      hint={entityType.id === 'tale' ? 'Única imagem do conto; também aparece no cartão de prévia.' : undefined}
+      initialAssetId={entity?.coverAssetId}
+      onChange={(id) => { setCoverId(id ?? undefined); setFraming(typeFraming); setDirty(true) }}
+      aspect={entityType.id === 'tale' ? 'aspect-3/4' : characterAlbum ? 'aspect-square' : 'aspect-4/3'}
+      contain={characterAlbum}
+      albumCaption={characterAlbum ? titleField : undefined}
+    />}
+    <FieldError name="coverAssetId" message={fieldErrors.coverAssetId}/>
+    {supportsCoverFraming(entityType) && <div className={cn('flex flex-wrap items-center justify-between gap-2', !characterAlbum && '-mt-5')}>
+      <input type="hidden" name="coverFraming" value={JSON.stringify(framing)}/>
+      <Button ref={framingButtonRef} type="button" variant="outline" size="sm" disabled={!coverId} onClick={openFramingStudio} title={coverId ? undefined : 'Escolha uma imagem primeiro'}>
+        <Crop/>Ajustar enquadramento
+      </Button>
+      <span className="text-xs text-muted-foreground">{isDefaultCoverFraming(framing, typeFraming) ? 'Padrão' : 'Personalizado'}</span>
+    </div>}
+    <FieldError name="coverFraming" message={fieldErrors.coverFraming}/>
+  </>
+
+  const visualFields = (
+    <aside aria-label="Identidade visual" data-reveal={characterAlbum ? undefined : 1}
+      className={cn('flex min-w-0 flex-col', characterAlbum ? 'mt-6 gap-6' : 'gap-8 xl:sticky xl:top-24')}>
+      {!characterAlbum && coverFields}
+      {supportsSymbol(entityType) && <ImageField
+        name="symbolAssetId"
+        label="Selo ou símbolo"
+        hint="Imagem simples, de preferência PNG com fundo transparente."
+        initialAssetId={typeof values.symbolAssetId === 'string' ? values.symbolAssetId : undefined}
+        onChange={() => setDirty(true)}
+        aspect="aspect-[2/1]"
+        contain
+      />}
+      <FieldError name="symbolAssetId" message={fieldErrors.symbolAssetId}/>
+      {themed && <CharacterThemePicker value={theme} label={themeLabel(entityType)} onChange={(next) => { setTheme(next); setDirty(true) }}/>}
+      <FieldError name="theme" message={fieldErrors.theme}/>
+      {supportsStatus(entityType) && <div className="flex flex-col gap-1.5">
+        <Label htmlFor="status">Status</Label>
+        <Input id="status" name="status" defaultValue={entity?.status ?? ''} placeholder="Ex.: rascunho, canônico"/>
+      </div>}
+    </aside>
+  )
+
+  const formActions = (
+  <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+    <span className="mr-2 hidden text-xs text-muted-foreground lg:inline">
+      <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">Ctrl</kbd> <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">S</kbd> para salvar
+    </span>
+    {deleteAction && entity && <DeleteEntityButton action={deleteAction} label={entity.title}/>}
+    <Button asChild variant="ghost">
+      <Link href={cancelHref} replace onClick={(event) => { if (dirty && !window.confirm('Descartar as alterações não salvas?')) event.preventDefault() }}>Cancelar</Link>
+    </Button>
+    <Button type="submit" form={FORM_ID} disabled={pending} className="transition-[background-color,transform] active:scale-[0.97] lg:min-w-32">
+      {pending ? <><Loader2 className="animate-spin"/>Salvando…</> : mode === 'create' ? 'Criar registro' : 'Salvar alterações'}
+    </Button>
+  </div>
+  )
+
+  const editorForm = (
+    <form id={FORM_ID} ref={formRef} onSubmit={handleSubmit} onInput={() => setDirty(true)} className={characterAlbum
+      ? 'min-h-0 min-w-0 self-stretch'
+      : 'mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-y-10 px-4 pt-6 pb-24 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-x-14 xl:px-8 xl:pt-10'}>
+      <input type="hidden" name="type" value={entityType.id}/>
+      <input type="hidden" name="worldId" value={worldId}/>
+
+      <div className={characterAlbum ? albumStyles.albumEditorPages : 'flex min-w-0 flex-col gap-8 sm:gap-10'}>
+        <section aria-label="Identificação" data-reveal={0} className={characterAlbum ? albumStyles.albumEditorIdentity : undefined}>
+          {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
+          {characterAlbum ? <div className={cn('grid gap-3', albumStyles.albumEditorCover)}>{coverFields}</div> : titleField}
+          <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) && 'sm:grid-cols-2')}>
+            {supportsAliases(entityType) && <InlineField icon={<AtSign/>} name="aliases" label="Apelidos" placeholder="Outros nomes, separados por vírgula" defaultValue={entity?.aliases.join(', ')}/>}
+            <InlineField icon={<Tag/>} name="tags" label="Tags" placeholder="Tags, separadas por vírgula" defaultValue={entity?.tags.join(', ')}/>
+          </div>
+          {characterAlbum && visualFields}
+        </section>
+
+        <div className={cn('flex min-w-0 flex-col', characterAlbum ? albumStyles.albumEditorDetails : 'gap-8 sm:gap-10')}>
+          {(shortFields.length > 0 || (mode === 'create' && entityType.id === 'event')) && <EditorSection title="Ficha" reveal={2}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+              {shortFields.map((property) => <div key={property.key} className={cn('min-w-0', isWideField(property) && 'sm:col-span-2')}>
+                <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
+                <FieldError name={property.key} message={fieldErrors[property.key]}/>
+              </div>)}
+            </div>
+            {mode === 'create' && entityType.id === 'event' && <label className="mt-5 flex items-start gap-2.5 rounded-md bg-surface px-3 py-3 text-sm">
+              <input type="checkbox" name="isOrigin" value="yes" disabled={hasOriginEvent} className="mt-0.5 accent-(--primary)"/>
+              <span>Marcar como Evento de origem do calendário. A data informada será colocada no ano zero.{hasOriginEvent ? ' Já existe uma origem; substitua-a no calendário.' : ''}</span>
+            </label>}
+          </EditorSection>}
+
+          {longFields.length > 0 && <EditorSection title="Detalhes" reveal={3}>
+            <div className="flex flex-col gap-4 sm:gap-5">
+              {longFields.map((property) => <div key={property.key} className="flex flex-col gap-1.5">
+                <Label htmlFor={'property-' + property.key}>{property.label}</Label>
+                <textarea
+                  id={'property-' + property.key}
+                  name={property.key}
+                  defaultValue={typeof values[property.key] === 'string' ? values[property.key] as string : ''}
+                  className="field-sizing-content min-h-28 w-full rounded-lg border border-input bg-input/30 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </div>)}
+            </div>
+          </EditorSection>}
+
+          <StructuredEditor entityType={entityType} values={values} coverId={coverId} data={data}/>
+          {['pointsOfInterest', 'evidenceFindings', 'organizationGroups', 'artifactDetails', 'conceptBlocks'].map((name) =>
+            <FieldError key={name} name={name} message={fieldErrors[name]}/>,
+          )}
+
+          <EditorSection title={content.label} reveal={5}>
+            <ContentEditor content={data.content} theme={themed ? theme : entity?.theme} maxPages={content.maxPages} pageNoun={content.pageNoun}/>
+            <FieldError name="content" message={fieldErrors.content}/>
+          </EditorSection>
+        </div>
+      </div>
+
+      {!characterAlbum && visualFields}
+    </form>
+  )
+
   return (
-    <div data-character-theme={themed ? theme : undefined} className="min-h-full">
+    <div data-character-theme={themed ? theme : undefined} className={characterAlbum ? albumStyles.albumEditorShell : 'min-h-full'}>
       <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm lg:min-h-14 lg:gap-6 lg:px-8">
         <div className="min-w-0 max-w-full overflow-x-auto"><Breadcrumbs items={[
           { label: worldName, href: '/codex' },
           { label: entityType.pluralLabel, href: `/${entityType.id}` },
           ...(entity ? [{ label: entity.title, href: `/entity/${entity.id}` }, { label: 'Editar' }] : [{ label: 'Novo registro' }]),
         ]}/></div>
-        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-          <span className="mr-2 hidden text-xs text-muted-foreground lg:inline">
-            <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">Ctrl</kbd> <kbd className="rounded border border-border px-1 py-0.5 font-sans text-[0.7rem]">S</kbd> para salvar
-          </span>
-          {deleteAction && entity && <DeleteEntityButton action={deleteAction} label={entity.title}/>}
-          <Button asChild variant="ghost">
-            <Link href={cancelHref} replace onClick={(event) => { if (dirty && !window.confirm('Descartar as alterações não salvas?')) event.preventDefault() }}>Cancelar</Link>
-          </Button>
-          <Button type="submit" form={FORM_ID} disabled={pending} className="transition-[background-color,transform] active:scale-[0.97] lg:min-w-32">
-            {pending ? <><Loader2 className="animate-spin"/>Salvando…</> : mode === 'create' ? 'Criar registro' : 'Salvar alterações'}
-          </Button>
-        </div>
+        {!characterAlbum && formActions}
       </header>
 
       <ReferenceSelectionProvider initial={data.initialSelections}>
-        <form id={FORM_ID} ref={formRef} onSubmit={handleSubmit} onInput={() => setDirty(true)} className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-y-10 px-4 pt-6 pb-24 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-x-14 xl:px-8 xl:pt-10">
-          <input type="hidden" name="type" value={entityType.id}/>
-          <input type="hidden" name="worldId" value={worldId}/>
-
-          <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
-            <section aria-label="Identificação" data-reveal={0}>
-              {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mb-6 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2.5 text-sm text-destructive"><CircleAlert className="mt-0.5 size-4 shrink-0"/>{error}</p>}
-              <label className="group/title relative block">
-                <span className="mb-2 flex items-baseline gap-2 text-sm font-medium">
-                  Nome
-                  <span aria-hidden="true" className="font-normal text-muted-foreground">(obrigatório)</span>
-                </span>
-                <input
-                  name="title"
-                  aria-required="true"
-                  aria-invalid={Boolean(fieldErrors.title)}
-                  aria-describedby={fieldErrors.title ? "entity-error-title" : undefined}
-                  autoFocus={mode === 'create'}
-                  defaultValue={entity?.title ?? initialTitle}
-                  placeholder="Dê um nome a este registro"
-                  autoComplete="off"
-                  className="w-full bg-transparent pb-2 font-serif text-2xl font-medium tracking-tight outline-none placeholder:text-muted-foreground/45 sm:text-4xl"
-                />
-                <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border"/>
-                <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within/title:scale-x-100"/>
-              </label>
-              <FieldError name="title" message={fieldErrors.title}/>
-              <div className={cn('mt-4 grid gap-3', supportsAliases(entityType) && 'sm:grid-cols-2')}>
-                {supportsAliases(entityType) && <InlineField icon={<AtSign/>} name="aliases" label="Apelidos" placeholder="Outros nomes, separados por vírgula" defaultValue={entity?.aliases.join(', ')}/>}
-                <InlineField icon={<Tag/>} name="tags" label="Tags" placeholder="Tags, separadas por vírgula" defaultValue={entity?.tags.join(', ')}/>
-              </div>
-            </section>
-
-            {(shortFields.length > 0 || (mode === 'create' && entityType.id === 'event')) && <EditorSection title="Ficha" reveal={2}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-                {shortFields.map((property) => <div key={property.key} className={cn('min-w-0', isWideField(property) && 'sm:col-span-2')}>
-                  <PropertyField property={property} defaultValue={mode === 'create' && entityType.id === 'event' && property.key === 'eventDate' && initialEventDate ? { start: initialEventDate } : values[property.key]} referenceOptions={data.referenceOptionsByKey[property.key]} calendar={calendar} campaignToday={campaignToday}/>
-                  <FieldError name={property.key} message={fieldErrors[property.key]}/>
-                </div>)}
-              </div>
-              {mode === 'create' && entityType.id === 'event' && <label className="mt-5 flex items-start gap-2.5 rounded-md bg-surface px-3 py-3 text-sm">
-                <input type="checkbox" name="isOrigin" value="yes" disabled={hasOriginEvent} className="mt-0.5 accent-(--primary)"/>
-                <span>Marcar como Evento de origem do calendário. A data informada será colocada no ano zero.{hasOriginEvent ? ' Já existe uma origem; substitua-a no calendário.' : ''}</span>
-              </label>}
-            </EditorSection>}
-
-            {longFields.length > 0 && <EditorSection title="Detalhes" reveal={3}>
-              <div className="flex flex-col gap-4 sm:gap-5">
-                {longFields.map((property) => <div key={property.key} className="flex flex-col gap-1.5">
-                  <Label htmlFor={'property-' + property.key}>{property.label}</Label>
-                  <textarea
-                    id={'property-' + property.key}
-                    name={property.key}
-                    defaultValue={typeof values[property.key] === 'string' ? values[property.key] as string : ''}
-                    className="field-sizing-content min-h-28 w-full rounded-lg border border-input bg-input/30 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  />
-                </div>)}
-              </div>
-            </EditorSection>}
-
-            <StructuredEditor entityType={entityType} values={values} coverId={coverId} data={data}/>
-            {['pointsOfInterest', 'evidenceFindings', 'organizationGroups', 'artifactDetails', 'conceptBlocks'].map((name) =>
-              <FieldError key={name} name={name} message={fieldErrors[name]}/>,
-            )}
-
-            <EditorSection title={content.label} reveal={5}>
-              <ContentEditor content={data.content} theme={themed ? theme : entity?.theme} maxPages={content.maxPages} pageNoun={content.pageNoun}/>
-              <FieldError name="content" message={fieldErrors.content}/>
-            </EditorSection>
-          </div>
-
-          <aside aria-label="Identidade visual" data-reveal={1} className="flex min-w-0 flex-col gap-8 xl:sticky xl:top-24">
-            {supportsCover(entityType) && <ImageField
-              name="coverAssetId"
-              label={coverLabel(entityType)}
-              hint={entityType.id === 'tale' ? 'Única imagem do conto; também aparece no cartão de prévia.' : undefined}
-              initialAssetId={entity?.coverAssetId}
-              onChange={(id) => { setCoverId(id ?? undefined); setFraming(typeFraming); setDirty(true) }}
-              aspect={entityType.id === 'tale' ? 'aspect-3/4' : 'aspect-4/3'}
-            />}
-            <FieldError name="coverAssetId" message={fieldErrors.coverAssetId}/>
-            {supportsCoverFraming(entityType) && <div className="-mt-5 flex items-center justify-between gap-2">
-              <input type="hidden" name="coverFraming" value={JSON.stringify(framing)}/>
-              <Button ref={framingButtonRef} type="button" variant="outline" size="sm" disabled={!coverId} onClick={openFramingStudio} title={coverId ? undefined : 'Escolha uma imagem primeiro'}>
-                <Crop/>Ajustar enquadramento
-              </Button>
-              <span className="text-xs text-muted-foreground">{isDefaultCoverFraming(framing, typeFraming) ? 'Padrão' : 'Personalizado'}</span>
-            </div>}
-            <FieldError name="coverFraming" message={fieldErrors.coverFraming}/>
-            {supportsSymbol(entityType) && <ImageField
-              name="symbolAssetId"
-              label="Selo ou símbolo"
-              hint="Imagem simples, de preferência PNG com fundo transparente."
-              initialAssetId={typeof values.symbolAssetId === 'string' ? values.symbolAssetId : undefined}
-              onChange={() => setDirty(true)}
-              aspect="aspect-[2/1]"
-              contain
-            />}
-            <FieldError name="symbolAssetId" message={fieldErrors.symbolAssetId}/>
-            {themed && <CharacterThemePicker value={theme} label={themeLabel(entityType)} onChange={(next) => { setTheme(next); setDirty(true) }}/>}
-            <FieldError name="theme" message={fieldErrors.theme}/>
-            {supportsStatus(entityType) && <div className="flex flex-col gap-1.5">
-              <Label htmlFor="status">Status</Label>
-              <Input id="status" name="status" defaultValue={entity?.status ?? ''} placeholder="Ex.: rascunho, canônico"/>
-            </div>}
-          </aside>
-        </form>
+        {characterAlbum ? (
+          <NotebookDeskStage className={albumStyles.albumEditorDesk} backgroundClass={albumStyles.albumEditorBackground}
+            overlayClass={albumStyles.albumEditorOverlay} fitOverlay={false}>
+            <div className={cn(albumStyles.albumPaper, albumStyles.albumEditor, hand.variable)}>
+              {editorForm}
+              <footer className="border-t border-border pt-2">{formActions}</footer>
+            </div>
+          </NotebookDeskStage>
+        ) : editorForm}
       </ReferenceSelectionProvider>
 
       {studio && coverId && <CoverFramingStudio

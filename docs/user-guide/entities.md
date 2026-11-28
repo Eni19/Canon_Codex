@@ -1,7 +1,7 @@
 # Registros, tipos e relações
 
-> **Estado:** implementado · **Última verificação:** 28/11/2026, álbum de retratos em
-> `src/components/entities/entity-catalog.tsx`.
+> **Estado:** implementado · **Última verificação:** 28/11/2026, álbum na criação, leitura e edição
+> de personagens em `src/components/entities/`.
 
 ## Criar e editar
 
@@ -12,7 +12,15 @@
    o editor específico do tipo, quando existe; e **Conteúdo**. Imagem principal, símbolo (cosmologia),
    cor e status aparecem à direita em telas largas e abaixo do conteúdo em telas estreitas.
 4. Escolha **Criar registro**. Para alterar depois, use **Editar** na página e **Salvar
-   alterações**. O botão de salvar fica no cabeçalho durante a rolagem. `Ctrl+S` salva nos dois casos.
+   alterações**. `Ctrl+S` salva nos dois casos.
+
+Ao criar um personagem, preencha a própria folha do álbum. Escreva o **Nome** na legenda abaixo
+da moldura e clique nela para adicionar um retrato opcional. Preencha a ficha e o conteúdo na
+folha ao lado, ou logo abaixo em telas estreitas. O álbum cabe na área visível e os campos
+longos rolam dentro dele. **Criar registro** fica no rodapé do álbum, salva o personagem e
+abre sua ficha na mesma mesa e no mesmo formato de álbum. Na leitura, os campos longos também
+rolam dentro do livro, com **Editar** no rodapé. A edição abre o mesmo formulário do álbum
+com os dados preenchidos e **Salvar alterações** no rodapé. Acesse **Personagens** para voltar ao catálogo.
 
 No celular, os campos da **Ficha** aparecem um abaixo do outro. Em telas maiores, os campos
 curtos ocupam duas colunas e as datas e listas de referências ocupam a linha inteira.

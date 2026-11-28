@@ -22,7 +22,121 @@
   rotate: -5deg;
 }
 
-.albumPortrait h4 { font: 700 1.2rem/1.05 var(--font-hand), cursive; }
+.albumPortrait h4,
+.albumCaption { font: 700 1.2rem/1.05 var(--font-hand), cursive; }
+.albumCaption { padding: .65rem .5rem; overflow-wrap: anywhere; }
+
+.albumPaper {
+  --background: var(--nb-paper);
+  --foreground: var(--nb-ink);
+  --surface: var(--nb-card);
+  --popover: var(--nb-card);
+  --popover-foreground: var(--nb-ink);
+  --muted: var(--nb-paper-shade);
+  --muted-foreground: var(--nb-ink-soft);
+  --border: var(--nb-paper-aged);
+  --input: var(--nb-paper-aged);
+  --accent: var(--nb-paper-shade);
+  --accent-foreground: var(--nb-ink);
+  --destructive: var(--nb-red);
+  --sheet-seam: linear-gradient(transparent, transparent);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.4rem, 4vw, 3rem);
+  min-width: 0;
+  padding: clamp(1rem, 4vw, 2.4rem);
+  border: .45rem solid var(--nb-cover-deep);
+  border-radius: .35rem;
+  box-shadow: 0 .32rem var(--nb-paper-aged), 0 .56rem var(--nb-cover-deep), 0 1rem 2rem var(--nb-shadow);
+  background:
+    var(--sheet-seam),
+    repeating-linear-gradient(0deg, transparent 0 19px, var(--nb-rule) 19px 20px),
+    repeating-linear-gradient(90deg, transparent 0 19px, var(--nb-rule) 19px 20px),
+    var(--nb-paper);
+  color: var(--nb-ink);
+}
+
+.albumEditor {
+  width: min(100%, 70rem);
+  height: 100%;
+  margin-inline: auto;
+  padding: clamp(.6rem, 2vw, 1.3rem);
+  gap: .6rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.albumEditorShell { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.albumEditorDesk { position: relative; isolation: isolate; flex: 1; min-height: 0; }
+.albumEditorBackground {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(75% 70% at 50% 48%, var(--nb-backdrop), var(--nb-backdrop-deep));
+}
+.albumEditorOverlay {
+  container-type: inline-size;
+  height: 100%;
+  padding: clamp(.45rem, 3dvh, 1.65rem) clamp(.65rem, 6vw, 6.5rem);
+}
+.albumEditorPages {
+  display: grid;
+  min-height: 0;
+  height: 100%;
+  align-content: start;
+  gap: 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: .55rem;
+  scrollbar-color: var(--nb-paper-aged) transparent;
+  scrollbar-width: thin;
+}
+.albumEditorIdentity, .albumReadIdentity { min-width: 0; }
+.albumReadIdentity { display: grid; align-content: start; gap: 1rem; }
+.albumReadPhoto { position: relative; overflow: hidden; }
+.albumEditorCover { width: min(100%, clamp(9rem, 29dvh, 16rem)); }
+.albumEditorDetails { gap: 1.2rem; }
+.albumReadIdentity h1 { font-size: clamp(1.4rem, 4vw, 2rem); overflow-wrap: anywhere; }
+.albumReadPages { display: grid; gap: 1.5rem; }
+
+.albumNameInput {
+  width: 100%;
+  padding-bottom: .3rem;
+  outline: none;
+  font: 700 clamp(1.4rem, 4vw, 2rem)/1.15 var(--font-hand), cursive;
+}
+.albumNameInput::placeholder { color: var(--nb-ink-soft); }
+
+@media (min-width: 64rem) {
+  .albumRead {
+    --sheet-seam: linear-gradient(90deg, transparent 47.5%, var(--nb-shadow) 50%, transparent 52.5%);
+  }
+  .albumReadPages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(2rem, 6vw, 6rem);
+  }
+}
+
+@container (min-width: 48rem) {
+  .albumEditor {
+    --sheet-seam: linear-gradient(90deg, transparent 47.5%, var(--nb-shadow) 50%, transparent 52.5%);
+  }
+  .albumEditorPages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: clamp(2rem, 6vw, 6rem);
+    overflow: visible;
+  }
+  .albumEditorPages > * {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: var(--nb-paper-aged) transparent;
+    scrollbar-width: thin;
+    padding: .6rem;
+  }
+}
 .albumPortrait [data-context-label] { color: var(--nb-ink-soft); white-space: normal; overflow-wrap: anywhere; }
 
 .albumPortrait.albumPortrait:hover,
@@ -35,15 +149,15 @@
   outline-offset: 2px;
 }
 
-.albumPortrait > div:first-child {
+.albumPortrait > :is(div, button):first-child {
   background: repeating-linear-gradient(135deg, transparent 0 5px, var(--nb-rule) 5px 6px), var(--nb-paper-shade);
 }
 
-.albumPortrait > div:first-child svg {
+.albumPortrait > :is(div, button):first-child :is(svg, span) {
   color: var(--nb-ink-soft);
 }
 
-.albumPortrait > div:first-child::after {
+.albumPortrait > :is(div, button):first-child::after {
   content: '';
   position: absolute;
   inset: 0;

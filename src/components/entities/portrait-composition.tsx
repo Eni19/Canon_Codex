@@ -4,10 +4,13 @@ import type { PortraitAttribute } from '@/components/entities/portrait-attribute
 import { StaggerReveal } from '@/components/entities/stagger-reveal'
 import { ViewportPortrait } from '@/components/entities/viewport-portrait'
 import { Badge } from '@/components/ui/badge'
+import { hand } from '@/components/codex-notebook/notebook-fonts'
+import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { formatDateFieldValue } from '@/domain/worlds/calendar-date'
 import type { Calendar } from '@/domain/worlds/calendar'
 import styles from './portrait-entity-page.module.css'
+import albumStyles from './entity-card.module.css'
 
 /**
  * The character page's composition, shared by the real page and the framing preview in the
@@ -24,8 +27,12 @@ export function PortraitComposition({
   portrait,
   content,
   reveal = true,
+  album = false,
+  albumActions,
 }: {
   reveal?: boolean
+  album?: boolean
+  albumActions?: ReactNode
   title: string
   status?: string
   tags: string[]
@@ -34,6 +41,43 @@ export function PortraitComposition({
   portrait: ReactNode
   content: ReactNode
 }) {
+  const badges = (status || tags.length > 0) && (
+    <div data-reveal-item={1} className={styles.badges}>
+      {status && <Badge variant="outline">{status}</Badge>}
+      {tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+    </div>
+  )
+  const facts = summary.map((item) => (
+    <div key={item.key} data-reveal-item={1} className="min-w-0 max-w-full">
+      <dt className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">{item.label}</dt>
+      <dd className={`font-serif break-words ${item.emphasized ? 'bg-primary px-2 py-1 font-semibold text-primary-foreground uppercase' : 'py-1'}`}>
+        {item.href ? <Link href={item.href} className="text-primary hover:underline">{item.text}</Link> : item.text}
+      </dd>
+    </div>
+  ))
+
+  if (album) return (
+    <StaggerReveal className={cn(albumStyles.albumPaper, albumActions ? albumStyles.albumEditor : albumStyles.albumRead, hand.variable)} enabled={reveal}>
+      <div className={albumActions ? albumStyles.albumEditorPages : albumStyles.albumReadPages}>
+        <div className={albumStyles.albumReadIdentity}>
+          <figure className={cn(albumStyles.albumPortrait, albumStyles.albumEditorCover)}>
+            <div className={albumStyles.albumReadPhoto}>{portrait}</div>
+            <figcaption className={albumStyles.albumCaption}>
+              <h1>{title}</h1>
+            </figcaption>
+          </figure>
+          {badges}
+        </div>
+        <div className="grid min-w-0 content-start gap-6">
+          {facts.length > 0 && <dl className={styles.summary}>{facts}</dl>}
+          {content}
+          {details}
+        </div>
+      </div>
+      {albumActions && <footer className="border-t border-border pt-2">{albumActions}</footer>}
+    </StaggerReveal>
+  )
+
   return (
     <StaggerReveal className={styles.composition} enabled={reveal}>
       <div aria-hidden="true" className={styles.rule} />
@@ -42,26 +86,14 @@ export function PortraitComposition({
         <h1 data-reveal-item={0} className={`font-serif font-medium text-primary uppercase ${styles.name}`}>{title}</h1>
       </div>
       <div className={styles.metadata}>
-        {(status || tags.length > 0) && (
-          <div data-reveal-item={1} className={styles.badges}>
-            {status && <Badge variant="outline">{status}</Badge>}
-            {tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-          </div>
-        )}
+        {badges}
       </div>
       <div className={styles.details}>{details}</div>
 
       <ViewportPortrait className={styles.portrait}>{portrait}</ViewportPortrait>
 
       <dl className={styles.summary}>
-        {summary.map((item) => (
-          <div key={item.key} data-reveal-item={1} className="min-w-0 max-w-full">
-            <dt className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">{item.label}</dt>
-            <dd className={`font-serif break-words ${item.emphasized ? 'bg-primary px-2 py-1 font-semibold text-primary-foreground uppercase' : 'py-1'}`}>
-              {item.href ? <Link href={item.href} className="text-primary hover:underline">{item.text}</Link> : item.text}
-            </dd>
-          </div>
-        ))}
+        {facts}
       </dl>
       <div className={styles.content}>{content}</div>
     </StaggerReveal>

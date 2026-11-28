@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type DragEvent, type SyntheticEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type ReactNode, type SyntheticEvent } from 'react'
 import { animate } from 'animejs'
 import { ImagePlus, Loader2, RefreshCw, X } from 'lucide-react'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { cn } from '@/lib/utils'
+import styles from '../entity-card.module.css'
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif'
 
@@ -21,6 +22,7 @@ export function ImageField({
   onChange,
   contain = false,
   aspect = 'aspect-4/3',
+  albumCaption,
 }: {
   name: string
   label: string
@@ -29,6 +31,7 @@ export function ImageField({
   onChange?: (assetId: string | null) => void
   contain?: boolean
   aspect?: string
+  albumCaption?: ReactNode
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [assetId, setAssetId] = useState<string | null>(initialAssetId ?? null)
@@ -75,6 +78,7 @@ export function ImageField({
   }
 
   const src = localPreview ?? (assetId ? assetVariantUrl(assetId, 'thumbnail') : null)
+  const Frame = albumCaption === undefined ? 'div' : 'figure'
 
   // Only a freshly chosen file is revealed; stored images just appear, without a flash.
   function revealPreview(event: SyntheticEvent<HTMLImageElement>) {
@@ -94,41 +98,44 @@ export function ImageField({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        aria-label={src ? `Trocar ${label.toLowerCase()}` : `Escolher ${label.toLowerCase()}`}
-        className={cn(
-          'group/image relative w-full overflow-hidden rounded-lg bg-muted transition-[box-shadow,background-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-          aspect,
-          dragging ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-accent/60',
-        )}
-      >
-        {src ? (
-          // Plain <img>: blob previews and cookie-protected asset URLs both bypass next/image.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={src}
-            src={src}
-            alt=""
-            onLoad={revealPreview}
-            className={cn(
-              'absolute inset-0 size-full transition-[opacity,filter] duration-300',
-              contain ? 'object-contain p-4' : 'object-cover',
-              uploading && 'opacity-60 blur-[2px]',
-            )}
-          />
-        ) : (
-          <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground transition-colors group-hover/image:text-foreground">
-            <ImagePlus className="size-6 transition-transform duration-200 ease-out group-hover/image:-translate-y-0.5" aria-hidden/>
-            <span className="text-xs">{dragging ? 'Solte para enviar' : 'Clique ou arraste uma imagem'}</span>
-          </span>
-        )}
-        {uploading && <span className="absolute inset-0 grid place-items-center"><Loader2 className="size-5 animate-spin text-primary" aria-label="Enviando imagem"/></span>}
-      </button>
+      <Frame className={cn(albumCaption !== undefined && styles.albumPortrait)}>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          aria-label={src ? `Trocar ${label.toLowerCase()}` : `Escolher ${label.toLowerCase()}`}
+          className={cn(
+            'group/image relative block w-full overflow-hidden rounded-lg bg-muted transition-[box-shadow,background-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none',
+            aspect,
+            dragging ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-accent/60',
+          )}
+        >
+          {src ? (
+            // Plain <img>: blob previews and cookie-protected asset URLs both bypass next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={src}
+              src={src}
+              alt=""
+              onLoad={revealPreview}
+              className={cn(
+                'absolute inset-0 size-full transition-[opacity,filter] duration-300 motion-reduce:transition-none',
+                contain ? 'object-contain p-4' : 'object-cover',
+                uploading && 'opacity-60 blur-[2px]',
+              )}
+            />
+          ) : (
+            <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground transition-colors group-hover/image:text-foreground">
+              <ImagePlus className="size-6 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:group-hover/image:-translate-y-0.5" aria-hidden/>
+              <span className="text-xs">{dragging ? 'Solte para enviar' : 'Clique ou arraste uma imagem'}</span>
+            </span>
+          )}
+          {uploading && <span className="absolute inset-0 grid place-items-center"><Loader2 className="size-5 motion-safe:animate-spin text-primary" aria-label="Enviando imagem"/></span>}
+        </button>
+        {albumCaption !== undefined && <figcaption className={styles.albumCaption}>{albumCaption}</figcaption>}
+      </Frame>
 
       {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}

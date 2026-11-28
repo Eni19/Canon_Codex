@@ -37,18 +37,20 @@ function previewBreadcrumbs({ worldName, entityType, snapshot }: FramingPreviewP
 export function CharacterFramingPreview(props: FramingPreviewProps) {
   const { framing, coverAssetId, entityType, calendar, titleById, snapshot } = props
   const { className: artClass, ...artProps } = useFramingArt()
+  const album = entityType.id === 'character'
   return (
     <div className="h-full px-4 pt-6 sm:px-8 sm:pt-8">
       <div className={portraitStyles.page}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">{previewBreadcrumbs(props)}{previewBadge}</div>
         <PortraitComposition
+          album={album}
           reveal={false}
           title={snapshot.title}
           status={snapshot.status}
           tags={snapshot.tags}
           summary={portraitSummary(entityType, snapshot.properties, calendar, titleById)}
-          details={<PortraitSection title="Conteúdo"><div className={portraitStyles.storyScroll}><ContentRenderer content={snapshot.content}/></div></PortraitSection>}
-          portrait={<div {...artProps} className={`relative rounded-sm ${artClass ?? ''}`}><PortraitHero coverAssetId={coverAssetId} fallbackIcon={entityType.icon} className={portraitStyles.art} framing={framing}/></div>}
+          details={<PortraitSection title="Conteúdo"><div className={album ? undefined : portraitStyles.storyScroll}><ContentRenderer content={snapshot.content}/></div></PortraitSection>}
+          portrait={<div {...artProps} className={`relative rounded-sm ${artClass ?? ''}`}><PortraitHero coverAssetId={coverAssetId} fallbackIcon={entityType.icon} className={album ? 'aspect-square' : portraitStyles.art} framing={framing}/></div>}
           content={<>
             <PortraitAttributesCard attributes={portraitAttributes(entityType, snapshot.aliases, snapshot.properties, titleById)}/>
             <PortraitSection title="Personalidade">

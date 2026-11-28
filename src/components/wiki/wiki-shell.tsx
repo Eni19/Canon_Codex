@@ -12,7 +12,7 @@ export function WikiShell({ children, worldName, entityTypes }: { children: Reac
   const pathname = usePathname()
   if (pathname === '/') return <>{children}</>
   const relationships = pathname === '/relationships'
-  const characterAlbum = pathname === '/character'
+  const characterAlbum = pathname === '/character' || pathname === '/character/new'
   // The canvases and album use a viewport-height shell. The album can scroll inside it.
   const surface = relationships || pathname === '/codex' || characterAlbum
 
