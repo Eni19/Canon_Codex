@@ -51,6 +51,12 @@ mundo tem seus próprios tipos e pode criar novos.
 _Evitar_: classe, modelo, tabela.
 _No código_: `EntityTypeDefinition`.
 
+**Identidade visual do tipo**:
+Silhueta (contorno do cartão) e textura (padrão sutil do fundo) que distinguem um tipo de registro
+no grafo e nos Quadros sem depender de cor. Tipos fora do catálogo usam o cartão neutro.
+_Evitar_: skin, estilo do tipo, cor do tipo como sinônimo.
+_No código_: `EntityVisual` (`entityVisualFor`).
+
 **Propriedade**:
 Campo curto de um registro, declarado pelo seu tipo, como data, local atual ou status.
 _Evitar_: atributo, metadado.
