@@ -6,7 +6,7 @@ import { MeshStandardMaterial, Object3D, type Group, type Texture } from 'three'
 import { SurfaceBoard, SurfaceCanvas, useSurface, type PieceHandlers, type SurfacePiece } from '@/components/surface-3d/surface-board'
 import type { SurfaceLayout } from '@/domain/canvas/surfaceLayout'
 import { ARCHIVE_SIZE, ARCHIVE_THICKNESS, BOX, BOX_INTERIOR, DESK, clampBox, clampToArchive, restHeights, type ArchiveItemKind, type BoxAt } from '@/domain/organizations/archiveBox'
-import { paintCardboard, paintCloth, paintDesk } from './archive-textures'
+import { paintCardboard, paintCloth, paintSteelDesk } from './archive-textures'
 
 export type ArchivePiece = SurfacePiece & { kind: ArchiveItemKind }
 
@@ -48,12 +48,12 @@ const TABLETOP = 2.4
 const DRAG_THRESHOLD = 5
 
 export default function OrgArchiveScene(props: OrgArchiveSceneProps) {
-  return <SurfaceCanvas background="#15110d"><ArchiveScene {...props}/></SurfaceCanvas>
+  return <SurfaceCanvas background="#1b1d1c"><ArchiveScene {...props}/></SurfaceCanvas>
 }
 
 function ArchiveScene({ pieces, layout, focusId, reduced, open, raisedIds, carriedIds, box, lid, ledgerSpread, ledgerPage, envelopes, onToggleLid, onBoxHover, onBoxMove, onBoxDrop, onDrop, onSelect, onBackground, onShown, onCursor }: OrgArchiveSceneProps) {
   // Um tampo só, pintado no tamanho todo: sem emendas entre a área de trabalho e o resto da mesa.
-  const tabletop = useMemo(() => paintDesk(4096, Math.round(4096 * DESK.height / DESK.width), Math.round(6 * TABLETOP)), [])
+  const tabletop = useMemo(() => paintSteelDesk(4096, Math.round(4096 * DESK.height / DESK.width)), [])
   useEffect(() => () => tabletop.dispose(), [tabletop])
   // Altura de repouso de cada documento: empilhado na caixa ou rente à mesa (por cima de outro, só a espessura dele).
   const heights = useMemo(() => restHeights(pieces.flatMap((piece) => layout[piece.id] ? [{ id: piece.id, kind: piece.kind, ...layout[piece.id] }] : []), box), [box, layout, pieces])
@@ -84,12 +84,12 @@ function ArchiveScene({ pieces, layout, focusId, reduced, open, raisedIds, carri
   )
 }
 
-/** Luz quente de luminária de mesa, de cima e da esquerda, e um preenchimento fraco do ambiente. */
+/** Luz quente de luminária de mesa, de cima e da esquerda, larga e macia, e um preenchimento claro do ambiente. */
 function Lights() {
   const target = useMemo(() => new Object3D(), [])
   return <>
-    <hemisphereLight args={['#f3e3c8', '#1a120a', 1.15]}/>
-    <spotLight color="#ffdcae" intensity={70} decay={2} distance={0} position={[-2.6, 2.1, 4.3]} angle={0.8} penumbra={0.9} target={target} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}/>
+    <hemisphereLight args={['#f4ead9', '#1e1b17', 1.55]}/>
+    <spotLight color="#ffe8c8" intensity={82} decay={2} distance={0} position={[-2.6, 2.1, 4.3]} angle={0.95} penumbra={1} target={target} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}/>
     <primitive object={target} position={[0, -0.1, 0]}/>
   </>
 }

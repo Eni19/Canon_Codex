@@ -1,7 +1,7 @@
 import { clampInside, tilt, type SurfaceLayout } from '@/domain/canvas/surfaceLayout'
 
 /**
- * A caixa-arquivo 3D de uma Organização: uma caixa de papelão com tampa numa mesa de madeira. Os
+ * A caixa-arquivo 3D de uma Organização: uma caixa de papelão com tampa numa mesa de aço pintado. Os
  * documentos (dossiê, polaroides da liderança, folhas do relatório, livro de registro dos membros,
  * pasta sanfonada dos subgrupos, estatuto e o maço de correspondência) começam empilhados dentro da caixa e saem para a
  * mesa. Cada tipo é um objeto só, qualquer que seja o número de membros ou subgrupos. A caixa também

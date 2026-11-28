@@ -130,7 +130,7 @@ apresentação, cada descoberta, notas contextuais, relações e referências.
 
 ### Caixa-arquivo da Organização
 
-A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de madeira. A caixa
+A página de uma Organização é uma caixa-arquivo de papelão sobre uma mesa de arquivo de aço pintado. A caixa
 começa fechada, com a etiqueta da tampa preenchida à mão (nome, tipo, fundação e sede). Por dentro
 da tampa fica o índice do conteúdo. Cada tipo de informação é um objeto só, qualquer que seja o
 tamanho da organização (só a liderança, que costuma ser pequena, tem uma peça por pessoa):

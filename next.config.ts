@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Sem o indicador redondo do Next no canto da tela em desenvolvimento; erros continuam aparecendo.
+  devIndicators: false,
   outputFileTracingExcludes: {
     '/*': ['./workspace/**/*', './**/*.sqlite', './**/*.sqlite-*'],
   },

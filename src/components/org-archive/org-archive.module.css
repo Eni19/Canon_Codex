@@ -1,9 +1,9 @@
 /* Caixa-arquivo das Organizações em 3D: a cena ocupa a área inteira; cabeçalho, barra e painel de leitura flutuam por cima. */
-.room { position: relative; height: 100dvh; min-height: 0; overflow: hidden; background: #15110d; color: var(--foreground); }
+.room { position: relative; height: 100dvh; min-height: 0; overflow: hidden; background: #1b1d1c; color: var(--foreground); }
 .stage { position: absolute; inset: 0; touch-action: none; }
 .stage canvas { display: block; }
 
-.loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: #15110d; color: color-mix(in oklch, var(--foreground) 70%, transparent); font-family: var(--font-type); font-size: 0.85rem; letter-spacing: 0.12em; pointer-events: none; }
+.loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: #1b1d1c; color: color-mix(in oklch, var(--foreground) 70%, transparent); font-family: var(--font-type); font-size: 0.85rem; letter-spacing: 0.12em; pointer-events: none; }
 
 .header { position: absolute; z-index: 10; top: 1rem; left: 1.25rem; right: 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; pointer-events: none; }
 .header > * { pointer-events: auto; }

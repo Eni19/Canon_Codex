@@ -8,5 +8,5 @@ import dynamic from 'next/dynamic'
  */
 export const OrgArchiveLoader = dynamic(() => import('./org-archive').then((module) => module.OrgArchive), {
   ssr: false,
-  loading: () => <div style={{ height: '100dvh', background: '#15110d' }}/>,
+  loading: () => <div style={{ height: '100dvh', background: '#1b1d1c' }}/>,
 })
