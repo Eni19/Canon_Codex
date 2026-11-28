@@ -2,8 +2,7 @@ import K from 'konva'
 import type { ShapeConfig } from 'konva/lib/Shape'
 import { traceSilhouette } from '@/domain/canvas/entitySilhouettes'
 import { entityVisualFor, NEUTRAL_ENTITY_VISUAL, type SilhouetteId, type TextureId } from '@/domain/entities/entityVisual'
-import { textureOpacity, type Rgb } from '@/lib/canvas/colorContrast'
-import { entityTexturePatterns } from '@/lib/canvas/entityTextures'
+import { readTextureTheme, texturePaint } from '@/lib/canvas/textureTheme'
 import {
   CARD_HEIGHT, CARD_WIDTH, cardCenter, fitGraph, freeArrowPoints, relationshipLanes, relationshipPoints, resizeGraph, zoomGraph,
   type ArrowEndpoint, type Camera, type Point,
@@ -46,43 +45,11 @@ const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y
 const limit = (n: number) => Math.max(-1_000_000, Math.min(1_000_000, n))
 const isField = (target: EventTarget | null) => target instanceof Element && !!target.closest('input, textarea, select, button, a, [contenteditable], [role="dialog"]')
 
-/** A CSS colour as 8-bit sRGB, read back from a 1×1 canvas so any colour syntax works. */
-function toRgb(color: string, probe: CanvasRenderingContext2D | null): Rgb {
-  if (!probe) return [0, 0, 0]
-  probe.clearRect(0, 0, 1, 1); probe.fillStyle = '#000'; probe.fillStyle = color; probe.fillRect(0, 0, 1, 1)
-  const [r, g, b] = probe.getImageData(0, 0, 1, 1).data
-  return [r, g, b]
-}
-const brightness = ([r, g, b]: Rgb) => 0.2126 * r + 0.7152 * g + 0.0722 * b
-
 function readPalette(host: HTMLElement) {
   const style = getComputedStyle(host)
   const token = (name: string) => style.getPropertyValue('--' + name).trim()
   const colors = { card: token('surface-raised'), text: token('foreground'), muted: token('muted-foreground'), border: token('input'), accent: token('primary') }
-  // Textures always darken the card: they use the darker of the page's background and text colours,
-  // at the opacity that keeps the card's text readable (ADR-011).
-  const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-  const background = token('background')
-  const rgb = { card: toRgb(colors.card, probe), text: toRgb(colors.text, probe), muted: toRgb(colors.muted, probe), background: toRgb(background, probe) }
-  const darkBackground = brightness(rgb.background) < brightness(rgb.text)
-  return {
-    ...colors, ink: darkBackground ? background : colors.text, inkRgb: darkBackground ? rgb.background : rgb.text,
-    cardRgb: rgb.card, textRgbs: [rgb.text, rgb.muted], textureOpacity: new Map<TextureId, number>(),
-  }
-}
-type Palette = ReturnType<typeof readPalette>
-/** Contrast between the strongest texel of a texture and the plain card. */
-const TEXTURE_TARGET_CONTRAST = 1.2
-/** A texture's pattern and the opacity to draw it with on this palette, or null for none. */
-function texturePaint(palette: Palette, texture: TextureId, target: CanvasRenderingContext2D, dpr: number) {
-  const tile = entityTexturePatterns.get(target, texture, palette.ink, dpr)
-  if (!tile) return null
-  let opacity = palette.textureOpacity.get(texture)
-  if (opacity === undefined) {
-    opacity = textureOpacity({ card: palette.cardRgb, ink: palette.inkRgb, texts: palette.textRgbs, peak: tile.peak, target: TEXTURE_TARGET_CONTRAST })
-    palette.textureOpacity.set(texture, opacity)
-  }
-  return opacity > 0 ? { pattern: tile.pattern, opacity } : null
+  return { ...colors, texture: readTextureTheme({ card: colors.card, background: token('background'), foreground: colors.text, texts: [colors.text, colors.muted] }) }
 }
 
 type CurveConfig = ShapeConfig & { points?: number[] }
@@ -193,7 +160,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   let texturesVisible = true
   const pixelRatio = () => cardsLayer.getCanvas().getPixelRatio()
   const cardTexture = (texture: TextureId): TexturePaint | null =>
-    texture === 'none' ? null : (target) => texturesVisible ? texturePaint(palette, texture, target, pixelRatio()) : null
+    texture === 'none' ? null : (target) => texturesVisible ? texturePaint(palette.texture, texture, target, pixelRatio()) : null
   const cardBatch = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc(context) {
     if (!batchedCards.length) return
     const solid = new Path2D(), faded = new Path2D(), ports = new Path2D()
@@ -214,7 +181,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     context.setAttr('fillStyle', palette.card); context.setAttr('strokeStyle', palette.border)
     context.setAttr('globalAlpha', 1); context.fill(solid)
     for (const [texture, path] of textured) {
-      const paint = texturePaint(palette, texture, context._context, pixelRatio())
+      const paint = texturePaint(palette.texture, texture, context._context, pixelRatio())
       if (!paint) continue
       context.setAttr('globalAlpha', paint.opacity); context.setAttr('fillStyle', paint.pattern); context.fill(path)
     }
