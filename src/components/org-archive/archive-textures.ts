@@ -2,7 +2,7 @@ import type { Texture } from 'three'
 import { canvas, grain, hash, seeded, stains, texture, wrap, writeLines, type WallFonts } from '@/components/evidence-wall/wall-textures'
 
 /**
- * Texturas da caixa-arquivo das Organizações, todas desenhadas em código: mesa de madeira, papelão
+ * Texturas da caixa-arquivo das Organizações, todas desenhadas em código: mesa de aço pintado, papelão
  * da caixa, etiqueta da tampa, índice colado por dentro da tampa e os documentos (dossiê, páginas
  * do livro de registro, pasta sanfonada, estatuto e envelopes).
  */
@@ -56,29 +56,42 @@ function paperclip(c: CanvasRenderingContext2D, x: number, y: number, length: nu
   c.restore()
 }
 
-/** Tampo de madeira escura, com tábuas, veios e marcas de uso. */
-export function paintDesk(width = 2048, height = 1176, planks = 6): Texture {
+/**
+ * Tampo de mesa de arquivo em aço pintado: cinza-esverdeado fosco, grão fino da tinta, manchas de
+ * uso, riscos finos e alguns pontos onde a tinta gastou e o metal aparece. Numa textura só, no
+ * tamanho do tampo inteiro.
+ */
+export function paintSteelDesk(width = 2048, height = 1380): Texture {
   const { element, c } = canvas(width, height)
-  const plankH = height / planks
-  const random = seeded(41)
-  for (let p = 0; p < planks; p++) {
-    const base = 52 + random() * 14
-    c.fillStyle = `rgb(${base + 22},${base},${base - 18})`
-    c.fillRect(0, p * plankH, width, plankH)
-    for (let k = 0; k < 90; k++) {
-      const y = p * plankH + random() * plankH, v = random()
-      c.strokeStyle = `rgba(${v < 0.5 ? '20,12,6' : '140,100,64'},${0.06 + random() * 0.12})`
-      c.lineWidth = 1 + random() * 2.5
-      c.beginPath(); c.moveTo(0, y)
-      for (let x = 0; x <= width; x += 64) c.lineTo(x, y + Math.sin(x / (180 + random() * 60) + k) * (2 + random() * 5))
-      c.stroke()
-    }
-    c.fillStyle = 'rgba(10,6,3,0.75)'
-    c.fillRect(0, p * plankH, width, 3)
+  c.fillStyle = '#5d6360'
+  c.fillRect(0, 0, width, height)
+  // Variação larga da tinta (rolo e desgaste).
+  stains(c, width, height, 60, 81, '72,78,76', 0.35, 420)
+  stains(c, width, height, 40, 83, '118,124,120', 0.18, 360)
+  stains(c, width, height, 50, 85, '40,38,34', 0.16, 220)
+  grain(c, width, height, Math.round(width * height / 40), 87, 0.12)
+  const random = seeded(89)
+  // Riscos finos em direções quase iguais, como de papéis arrastados.
+  for (let k = 0; k < 900; k++) {
+    const x = random() * width, y = random() * height, length = 30 + random() * 260, angle = -0.25 + random() * 0.5 + (random() < 0.3 ? Math.PI / 2 : 0)
+    const light = random() < 0.6
+    c.strokeStyle = light ? `rgba(190,196,192,${0.05 + random() * 0.1})` : `rgba(25,24,22,${0.05 + random() * 0.08})`
+    c.lineWidth = 0.6 + random() * 1.1
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length); c.stroke()
   }
-  stains(c, width, height, 40, 43, '18,10,4', 0.25, 180)
-  stains(c, width, height, 18, 47, '150,110,70', 0.08, 220)
-  grain(c, width, height, 40000, 49, 0.08)
+  // Pontos gastos, onde aparece o metal por baixo da tinta.
+  for (let k = 0; k < 22; k++) {
+    const x = random() * width, y = random() * height, r = 1.5 + random() * 4
+    c.fillStyle = `rgba(140,143,138,${0.12 + random() * 0.14})`
+    c.beginPath(); c.ellipse(x, y, r * (1 + random()), r, random() * Math.PI, 0, Math.PI * 2); c.fill()
+  }
+  // Marcas circulares de copo, bem apagadas.
+  c.lineWidth = 6
+  for (let k = 0; k < 4; k++) {
+    const x = random() * width, y = random() * height, r = 70 + random() * 40
+    c.strokeStyle = `rgba(36,34,30,${0.06 + random() * 0.05})`
+    c.beginPath(); c.arc(x, y, r, random() * 2, random() * 2 + Math.PI * (1.2 + random() * 0.7)); c.stroke()
+  }
   return texture(element, 8)
 }
 
