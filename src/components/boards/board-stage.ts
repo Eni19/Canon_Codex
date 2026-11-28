@@ -3,6 +3,7 @@ import type { Context } from 'konva/lib/Context'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { TriangleAlert } from 'lucide-react'
+import { entityTypeIconComponent } from '@/components/entities/entity-type-icon'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { STROKE_WIDTHS, arrowFrame, arrowGeometry, arrowStrokeWidth, bendHandle, bendThrough, distanceToPath, type ArrowGeometry } from '@/domain/boards/boardArrow'
 import {
@@ -129,6 +130,16 @@ export function createBoardEditor(host: HTMLElement, options: {
     warningSrc ??= `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(TriangleAlert)).replaceAll('currentColor', palette.warning))}`
     return loadImage(warningSrc)
   }
+  // Lucide icon of each record type, in the type-label colour, as an image the canvas can draw.
+  const typeIconSources = new Map<string, string>()
+  const typeIcon = (name: string) => {
+    let src = typeIconSources.get(name)
+    if (!src) {
+      src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(entityTypeIconComponent(name))).replaceAll('currentColor', palette.primary))}`
+      typeIconSources.set(name, src)
+    }
+    return loadImage(src)
+  }
 
   // ---------- Medidas ----------
   const textLayouts = new Map<string, { key: string; layout: TextLayout }>()
@@ -233,7 +244,7 @@ export function createBoardEditor(host: HTMLElement, options: {
   const drawShape = (ctx: CanvasRenderingContext2D, shape: BoardShape) => {
     ctx.globalAlpha *= shape.opacity * (erasing.has(shape.id) ? ERASING_OPACITY : 1)
     switch (shape.kind) {
-      case 'card': drawCard(ctx, shape, entities.get(shape.entityId), palette, assetImage, warningIcon, supportsFilter); break
+      case 'card': drawCard(ctx, shape, entities.get(shape.entityId), palette, assetImage, warningIcon, typeIcon, supportsFilter); break
       case 'text': if (editingId !== shape.id) drawText(ctx, shape, textLayout(shape)); break
       case 'arrow': { const geometry = geometryOf(shape); drawArrow(ctx, editingId === shape.id ? { ...shape, text: '' } : shape, geometry, editingId === shape.id ? null : labelOf(shape, geometry)); break }
       case 'legacy': drawLegacy(ctx, shape, palette); break
