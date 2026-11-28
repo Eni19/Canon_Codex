@@ -2,8 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
-import { ArrowRight, FolderTree, Search, SlidersHorizontal } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { ArrowRight, ChevronLeft, ChevronRight, FolderTree, Search, SlidersHorizontal } from 'lucide-react'
+import { hand, typewriter } from '@/components/codex-notebook/notebook-fonts'
+import { NotebookDeskStage } from '@/components/codex-notebook/notebook-desk-background'
+import { CutoutTitle } from '@/components/codex-notebook/scraps'
 import { EntityCard } from '@/components/entities/entity-card'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
@@ -16,6 +19,9 @@ import styles from './entity-catalog.module.css'
 type CatalogMode = 'name' | 'organization' | 'location' | 'hierarchy' | 'nature' | 'recordKind' | 'discipline' | 'subtype'
 
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
+const PORTRAITS_PER_SHEET = 4
+const PORTRAITS_PER_SPREAD = 2 * PORTRAITS_PER_SHEET
+const FIRST_SPREAD = { page: 0, direction: 0 }
 
 function referenceId(value: unknown): string | undefined {
   return typeof value === 'string' && value ? value : undefined
@@ -81,14 +87,19 @@ export function EntityCatalog({
   entities,
   relatedEntities,
   entityType,
+  createButton,
+  breadcrumbs,
 }: {
   entities: Entity[]
   relatedEntities: Entity[]
   entityType: EntityTypeDefinition
+  createButton?: ReactNode
+  breadcrumbs?: ReactNode
 }) {
   const modes = modesFor(entityType.id)
   const [mode, setMode] = useState<CatalogMode>(() => initialMode(entityType.id))
   const [query, setQuery] = useState('')
+  const [turn, setTurn] = useState(FIRST_SPREAD)
   const titleById = useMemo(() => new Map(relatedEntities.map((entity) => [entity.id, entity.title])), [relatedEntities])
   const normalizedQuery = tagKey(query)
   const filtered = useMemo(
@@ -130,22 +141,46 @@ export function EntityCatalog({
     return alphabeticGroups(filtered)
   }, [filtered, mode, titleById])
 
-  return <div className={styles.catalog}>
-    <div className={styles.toolbar}>
+  function search(value: string) {
+    if (tagKey(value) !== normalizedQuery) setTurn(FIRST_SPREAD)
+    setQuery(value)
+  }
+
+  const toolbar = <div className={styles.toolbar}>
       <label className={styles.search}>
         <Search aria-hidden="true" />
         <span className="sr-only">Pesquisar por nome, apelido ou tag</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar por nome, apelido ou tag" />
-        {query && <button type="button" onClick={() => setQuery('')}>Limpar</button>}
+        <input value={query} onChange={(event) => search(event.target.value)} placeholder="Pesquisar por nome, apelido ou tag" />
+        {query && <button type="button" onClick={() => search('')}>Limpar</button>}
       </label>
       {modes.length > 1 && <div className={styles.modes} aria-label="Organizar catálogo">
         <span><SlidersHorizontal />Organizar</span>
-        {modes.map((option) => <button key={option.id} type="button" onClick={() => setMode(option.id)} data-active={mode === option.id}>{option.label}</button>)}
+        {modes.map((option) => <button key={option.id} type="button" onClick={() => {
+          if (mode !== option.id) setTurn(FIRST_SPREAD)
+          setMode(option.id)
+        }} aria-pressed={mode === option.id} data-active={mode === option.id}>{option.label}</button>)}
       </div>}
     </div>
 
-    <div className={styles.resultCount}>{filtered.length} {filtered.length === 1 ? 'registro encontrado' : 'registros encontrados'}</div>
+  if (entityType.id === 'character') return <div className={cn(styles.albumWorkspace, hand.variable, typewriter.variable)}>
+    <div className={styles.albumBreadcrumbs}>{breadcrumbs}</div>
+    <NotebookDeskStage className={styles.albumDesk} backgroundClass={styles.albumBackground} overlayClass={styles.albumOverlay}>
+      <CharacterAlbum groups={groups} entityType={entityType} total={entities.length}
+        showGroup={mode !== 'name'} turn={turn} onTurn={setTurn} toolbar={toolbar} createButton={createButton} />
+      <nav className={styles.albumIndex} aria-label="Índice de personagens">
+        <h2>Índice</h2>
+        {entities.length > 0 ? <ul>
+          {[...entities].sort((a, b) => collator.compare(a.title, b.title)).map((entity) =>
+            <li key={entity.id}><Link href={`/entity/${entity.id}`} prefetch={false}>{entity.title}</Link></li>,
+          )}
+        </ul> : <p>Nenhum personagem criado.</p>}
+      </nav>
+    </NotebookDeskStage>
+  </div>
 
+  return <div className={styles.catalog}>
+    {toolbar}
+    <div className={styles.resultCount}>{filtered.length} {filtered.length === 1 ? 'registro encontrado' : 'registros encontrados'}</div>
     {filtered.length === 0 ? <div className={styles.empty}><Search /><strong>Nenhum resultado</strong><p>Tente outro nome, apelido ou tag.</p></div>
       : mode === 'hierarchy'
         ? <LocationHierarchy entities={entities} filteredIds={new Set(filtered.map((entity) => entity.id))} searching={Boolean(normalizedQuery)} entityType={entityType} />
@@ -154,6 +189,72 @@ export function EntityCatalog({
           <div className={styles.grid}>{group.items.map((entity) => <EntityCard key={entity.id} entity={entity} entityType={entityType} />)}</div>
         </section>)}</div>}
   </div>
+}
+
+function CharacterAlbum({
+  groups,
+  entityType,
+  total,
+  showGroup,
+  turn,
+  onTurn,
+  toolbar,
+  createButton,
+}: {
+  groups: ReturnType<typeof alphabeticGroups>
+  entityType: EntityTypeDefinition
+  total: number
+  showGroup: boolean
+  turn: typeof FIRST_SPREAD
+  onTurn: (turn: typeof FIRST_SPREAD) => void
+  toolbar: ReactNode
+  createButton?: ReactNode
+}) {
+  const entries = groups.flatMap(({ label, items }) => items.map((entity) => ({ label, entity })))
+  const lastPage = Math.max(0, Math.ceil((entries.length - PORTRAITS_PER_SHEET) / PORTRAITS_PER_SPREAD))
+  const currentPage = Math.min(turn.page, lastPage)
+  const first = currentPage === 0
+  const start = first ? 0 : PORTRAITS_PER_SHEET + (currentPage - 1) * PORTRAITS_PER_SPREAD
+  const sheetStarts = first ? [start] : [start, start + PORTRAITS_PER_SHEET]
+
+  function turnPage(direction: number) {
+    const page = currentPage + direction
+    if (page >= 0 && page <= lastPage) onTurn({ page, direction })
+  }
+
+  return <section className={styles.album} data-first={first} aria-label="Álbum de retratos">
+    <header className={styles.albumIntro}>
+      <div hidden={!first} className={styles.albumHeading}>
+        <p className={styles.albumKicker}>Catálogo do arquivo</p>
+        <h1 className={styles.albumTitle}>
+          <CutoutTitle text={entityType.pluralLabel} seed="character-album" size="clamp(1.15rem, 3.7cqi, 2.5rem)" x={0} y={0} />
+        </h1>
+      </div>
+      <div className={styles.albumTools}>{toolbar}{createButton}</div>
+      {first && <p className={styles.albumNote} role="status">{entries.length} {entries.length === 1 ? 'personagem' : 'personagens'}{entries.length !== total ? ` de ${total}` : ''}</p>}
+    </header>
+    <div className={styles.albumSheets}>
+      {entries.length === 0 ? <div className={cn(styles.albumSheet, styles.albumEmpty)} role="status">
+        <strong>{total === 0 ? 'O álbum está vazio' : 'Nenhum personagem encontrado'}</strong>
+        <p>{total === 0 ? 'Crie um personagem para preencher a primeira página.' : 'Tente outro nome, apelido ou tag.'}</p>
+      </div> : sheetStarts.map((sheetStart) => <div className={styles.albumSheet} key={sheetStart}>
+        <div className={styles.albumPortraits} data-turn={turn.direction}>
+          {entries.slice(sheetStart, sheetStart + PORTRAITS_PER_SHEET).map(({ label, entity }) => <EntityCard key={entity.id} entity={entity} entityType={entityType}
+            variant="portrait" contextLabel={showGroup ? label : undefined} />)}
+        </div>
+      </div>)}
+    </div>
+    <nav className={styles.albumNavigation} aria-label="Páginas do álbum">
+      {first ? <Link href="/codex?pagina=character"><ChevronLeft aria-hidden="true" />Voltar ao início</Link>
+        : <button type="button" onClick={() => turnPage(-1)}>
+        <ChevronLeft aria-hidden="true" />Página anterior
+      </button>}
+      {lastPage > 0 && <span role="status">Página {currentPage + 1} de {lastPage + 1}</span>}
+      {lastPage > 0 && <button type="button" aria-disabled={currentPage === lastPage} onClick={() => turnPage(1)}>
+        Próxima página<ChevronRight aria-hidden="true" />
+      </button>}
+    </nav>
+  </section>
 }
 
 function LocationHierarchy({

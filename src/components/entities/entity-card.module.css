@@ -1,1 +1,58 @@
 .conceptCard{display:flex;min-height:13rem;flex-direction:column;border:1px solid var(--border);border-top:2px solid color-mix(in oklch,var(--primary) 70%,var(--border));background:var(--surface);padding:1rem 1.1rem;color:var(--foreground);transition:border-color .18s ease,background .18s ease,transform .18s ease}.conceptCard:hover{border-color:color-mix(in oklch,var(--primary) 55%,var(--border));background:color-mix(in oklch,var(--primary) 3%,var(--surface));transform:translateY(-2px)}.conceptCard:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.conceptCard>header{display:flex;align-items:center;justify-content:space-between;gap:.7rem;border-bottom:1px solid var(--border);padding-bottom:.65rem}.conceptCard>header span{display:flex;align-items:center;gap:.35rem;color:var(--primary);font:700 .52rem var(--font-mono);letter-spacing:.13em}.conceptCard>header svg{width:.8rem}.conceptCard>header em{overflow:hidden;color:var(--muted-foreground);font:.52rem var(--font-mono);font-style:normal;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}.conceptCard>h3{margin-top:1.15rem;font-family:var(--font-serif);font-size:1.35rem;font-weight:500;line-height:1.08;text-wrap:balance}.conceptCard>p{display:-webkit-box;overflow:hidden;margin-top:.7rem;color:var(--muted-foreground);font-size:.72rem;line-height:1.55;-webkit-box-orient:vertical;-webkit-line-clamp:3}.conceptCard>footer{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:auto;padding-top:1rem;color:var(--muted-foreground);font:.52rem var(--font-mono);letter-spacing:.05em;text-transform:uppercase}.conceptCard>footer svg{width:.85rem;color:var(--primary)}
+.albumPortrait.albumPortrait {
+  position: relative;
+  overflow: visible;
+  border: .3rem solid var(--nb-card);
+  background: var(--nb-card);
+  color: var(--nb-ink);
+  rotate: var(--portrait-angle, 0deg);
+  box-shadow: 0 0 0 1px var(--nb-paper-aged), 0 .2rem .4rem var(--nb-shadow);
+}
+
+.albumPortrait::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: -.65rem auto auto 30%;
+  width: 40%;
+  height: 1rem;
+  background: var(--portrait-tape, var(--nb-tape-blue));
+  clip-path: polygon(2% 0, 98% 5%, 100% 92%, 1% 100%, 4% 72%, 0 47%);
+  pointer-events: none;
+  rotate: -5deg;
+}
+
+.albumPortrait h4 { font: 700 1.2rem/1.05 var(--font-hand), cursive; }
+.albumPortrait [data-context-label] { color: var(--nb-ink-soft); white-space: normal; overflow-wrap: anywhere; }
+
+.albumPortrait.albumPortrait:hover,
+.albumPortrait.albumPortrait:focus-visible {
+  border-color: var(--nb-brass);
+}
+
+.albumPortrait.albumPortrait:focus-visible {
+  outline: 2px solid var(--nb-ink);
+  outline-offset: 2px;
+}
+
+.albumPortrait > div:first-child {
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--nb-rule) 5px 6px), var(--nb-paper-shade);
+}
+
+.albumPortrait > div:first-child svg {
+  color: var(--nb-ink-soft);
+}
+
+.albumPortrait > div:first-child::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, var(--nb-photo-backing) 50%, transparent 51%) top left,
+    linear-gradient(225deg, var(--nb-photo-backing) 50%, transparent 51%) top right,
+    linear-gradient(45deg, var(--nb-photo-backing) 50%, transparent 51%) bottom left,
+    linear-gradient(315deg, var(--nb-photo-backing) 50%, transparent 51%) bottom right;
+  background-repeat: no-repeat;
+  background-size: .75rem .75rem;
+}

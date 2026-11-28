@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import type { Entity } from '@/domain/entities/entity'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
 import { assetVariantUrl } from '@/lib/assetUrl'
+import { cn } from '@/lib/utils'
 import styles from './entity-card.module.css'
 
 /**
@@ -23,11 +24,13 @@ export function EntityCard({
   entityType,
   showTypeLabel = false,
   contextLabel,
+  variant,
 }: {
   entity: Entity
   entityType: EntityTypeDefinition
   showTypeLabel?: boolean
   contextLabel?: string
+  variant?: 'portrait'
 }) {
   if (entityType.id === 'concept') {
     const summary = text(entity.properties.summary)
@@ -41,13 +44,17 @@ export function EntityCard({
   }
 
   const fullFigure = FULL_FIGURE_TYPES.has(entityType.id)
+  const Title = variant === 'portrait' ? 'h4' : 'h3'
   const tall = entityType.id === 'tale' || fullFigure
   const picture = entity.coverAssetId ? assetVariantUrl(entity.coverAssetId, entityType.id === 'tale' ? 'original' : 'thumbnail') : null
 
   return (
     <Link
       href={`/entity/${entity.id}`}
-      className="group flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className={cn(
+        'group flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none',
+        variant === 'portrait' && styles.albumPortrait,
+      )}
     >
       <div className={`relative w-full shrink-0 overflow-hidden bg-muted ${tall ? 'aspect-3/4' : 'aspect-4/3'}`}>
         {picture && fullFigure ? (
@@ -78,8 +85,8 @@ export function EntityCard({
             <span>{entityType.label}</span>
           </div>
         )}
-        {contextLabel && <span className="truncate text-[0.6rem] tracking-wide text-primary uppercase">{contextLabel}</span>}
-        <h3 className="font-serif text-base leading-snug font-medium text-balance">{entity.title}</h3>
+        {contextLabel && <span data-context-label className="truncate text-[0.6rem] tracking-wide text-primary uppercase">{contextLabel}</span>}
+        <Title className="font-serif text-base leading-snug font-medium text-balance [overflow-wrap:anywhere]">{entity.title}</Title>
         {entity.tags.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1 pt-1">
             {entity.tags.slice(0, 3).map((tag) => <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>)}

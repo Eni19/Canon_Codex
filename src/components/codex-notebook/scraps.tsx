@@ -95,7 +95,7 @@ export function HandArrow({ flip, ...at }: Placement & { flip?: boolean }) {
 }
 
 /** A title made of letters cut from different magazines, each on its own scrap. */
-export function CutoutTitle({ text, seed, size = 46, ...at }: Placement & { text: string; seed: string; size?: number }) {
+export function CutoutTitle({ text, seed, size = 46, ...at }: Placement & { text: string; seed: string; size?: CSSProperties['fontSize'] }) {
   const next = seededRandom(seed)
   const words = text.split(' ')
   return <span aria-label={text} role="img" className={`${styles.piece} ${styles.cutout}`} style={place(at, { fontSize: size })}>

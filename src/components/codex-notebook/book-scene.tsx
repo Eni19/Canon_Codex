@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   BackSide, BufferAttribute, BufferGeometry, CanvasTexture, Color, FrontSide, PerspectiveCamera, PlaneGeometry,
@@ -59,12 +59,61 @@ export interface BookSceneProps {
   onShown?: () => void
 }
 
+function NotebookCanvas({ children, frameloop = 'always' }: { children: ReactNode; frameloop?: 'always' | 'demand' }) {
+  return <Canvas frameloop={frameloop} flat shadows dpr={[1, 2]} camera={{ fov: 30, near: 0.02, far: 30, position: [0, 0.85, 0.95] }} gl={{ antialias: true, alpha: true }}>{children}</Canvas>
+}
+
 export default function BookScene(props: BookSceneProps) {
   return (
-    <Canvas flat shadows dpr={[1, 2]} camera={{ fov: 30, near: 0.02, far: 30, position: [0, 0.85, 0.95] }} gl={{ antialias: true, alpha: true }}>
+    <NotebookCanvas>
       <Scene {...props}/>
-    </Canvas>
+    </NotebookCanvas>
   )
+}
+
+function LitDesk({ palette }: { palette: NotebookPalette }) {
+  const { color } = palette
+  const light = useRef<SpotLight>(null)
+
+  useLayoutEffect(() => {
+    const target = light.current?.target
+    if (!target) return
+    target.position.set(0.15, 0, 0.05)
+    target.updateMatrixWorld()
+  }, [])
+
+  return <>
+    <hemisphereLight args={[color.lamp, color['desk-deep'], 0.1]}/>
+    <spotLight
+      ref={light}
+      color={color.lamp}
+      intensity={2.5}
+      decay={0}
+      position={[-0.45, 2.1, -0.4]}
+      angle={0.5}
+      penumbra={1}
+      castShadow
+      shadow-mapSize={[2048, 2048]}
+      shadow-bias={-0.0004}
+      shadow-normalBias={0.01}
+      shadow-camera-near={0.5}
+      shadow-camera-far={4}
+    />
+    <directionalLight color={color.fill} intensity={0.22} position={[1.8, 1.1, 0.9]}/>
+    <pointLight color={color.brass} intensity={0.35} position={[0.4, 0.9, -0.6]} distance={3} decay={1.6}/>
+
+    {/* The desk: walnut, a felt pad under the book and a pen. It catches the book's shadow. */}
+    <Desk palette={palette}/>
+  </>
+}
+
+export function OpenDeskScene({ palette }: { palette: NotebookPalette }) {
+  const motion = useRef({ open: 1, progress: 0 })
+  const overlays = useRef<OverlayTargets>({ left: null, right: null, index: null })
+  return <NotebookCanvas frameloop="demand">
+    <CameraRig motion={motion} overlays={overlays} leftY={0} rightY={0}/>
+    <LitDesk palette={palette}/>
+  </NotebookCanvas>
 }
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
@@ -80,17 +129,9 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
   const book = useRef<Group>(null)
   const hinge = useRef<Group>(null)
   const indexPaper = useRef<Group>(null)
-  const light = useRef<SpotLight>(null)
   const { left: leftBlock, right: rightBlock } = blockHeights()
   const leftY = BOARD + leftBlock + 0.0008
   const rightY = BOARD + rightBlock + 0.0008
-
-  useLayoutEffect(() => {
-    const target = light.current?.target
-    if (!target) return
-    target.position.set(0.15, 0, 0.05)
-    target.updateMatrixWorld()
-  }, [])
 
   // Cover pose, book slide, index paper and camera all follow the single `open` value.
   useFrame(() => {
@@ -119,27 +160,7 @@ function Scene({ palette, worldName, recordLine, fonts, turn, motion, overlays, 
         edges of the desk, with soft shadows. A little sky light keeps the dark parts readable, and
         a faint cool light from the right picks out the pen. The pages themselves are
         not lit (see PagePlane), so they read the same everywhere. */}
-    <hemisphereLight args={[color.lamp, color['desk-deep'], 0.1]}/>
-    <spotLight
-      ref={light}
-      color={color.lamp}
-      intensity={2.5}
-      decay={0}
-      position={[-0.45, 2.1, -0.4]}
-      angle={0.5}
-      penumbra={1}
-      castShadow
-      shadow-mapSize={[2048, 2048]}
-      shadow-bias={-0.0004}
-      shadow-normalBias={0.01}
-      shadow-camera-near={0.5}
-      shadow-camera-far={4}
-    />
-    <directionalLight color={color.fill} intensity={0.22} position={[1.8, 1.1, 0.9]}/>
-    <pointLight color={color.brass} intensity={0.35} position={[0.4, 0.9, -0.6]} distance={3} decay={1.6}/>
-
-    {/* The desk: walnut, a felt pad under the book and a pen. It catches the book's shadow. */}
-    <Desk palette={palette}/>
+    <LitDesk palette={palette}/>
 
     <group ref={book}>
       <group onClick={(event) => { event.stopPropagation(); if (motion.current.open < 0.01) onOpenRequest() }}>

@@ -1,7 +1,7 @@
 # Registros, tipos e relações
 
-> **Estado:** implementado · **Última verificação:** 27/11/2026, filtro de etiquetas da busca geral
-> em `src/components/wiki/command-palette.tsx`.
+> **Estado:** implementado · **Última verificação:** 28/11/2026, álbum de retratos em
+> `src/components/entities/entity-catalog.tsx`.
 
 ## Criar e editar
 
@@ -218,6 +218,19 @@ falha, use **Repetir**; se outra aba tiver salvo uma revisão mais recente, **Re
 as alterações locais após aviso.
 
 ## Buscar e organizar catálogos
+
+Em **Personagens**, o catálogo abre como um caderno quadriculado, com retratos presos por fita.
+Na primeira abertura, o título divide espaço com até quatro retratos. Use **Página anterior** e
+**Próxima página** para folhear. As aberturas seguintes mostram até oito retratos. Com movimento
+reduzido ativado, a página troca imediatamente. A busca, os agrupamentos por **Nome**,
+**Organização** e **Local** e o botão **Nova entidade** ficam dentro do álbum. Abra a ficha pelo retrato
+ou pelo nome, que fica visível mesmo sem imagem. Na ficha, use **Personagens** na trilha de
+navegação para voltar ao álbum.
+
+A mesa, a caneta à esquerda e o livro usam o enquadramento do caderno inicial. O álbum se ajusta
+à altura e à largura disponíveis. À direita, o **Índice** lista todos os personagens do mundo ativo em
+ordem alfabética e abre a ficha pelo nome. Na primeira abertura, **Voltar ao início** abre o
+caderno inicial na seção **Personagens**.
 
 Na busca geral (`Ctrl+K`), digite o início de uma etiqueta no campo **Etiqueta**. A lista se
 atualiza conforme você digita e combina a etiqueta com o texto da busca e o tipo selecionado.

@@ -23,10 +23,24 @@ export default async function EntityTypeListingPage(props: PageProps<'/[entityTy
         repo.listEntities(world.id, { type: 'location' }),
       ])).flat()
     : []
+  const isCharacter = entityType.id === 'character'
+  const createButton = (
+    <Button asChild size="sm" className="rounded-sm">
+      <Link href={`/${entityType.id}/new`}>
+        <Plus className="size-4" />
+        Nova entidade
+      </Link>
+    </Button>
+  )
+
+  const breadcrumbs = <Breadcrumbs items={[{ label: world.name, href: '/codex' }, { label: entityType.pluralLabel }]} />
+
+  if (isCharacter) return <EntityCatalog entities={entities} relatedEntities={relatedEntities}
+    entityType={entityType} createButton={createButton} breadcrumbs={breadcrumbs} />
 
   return (
     <PageContainer className="max-w-6xl">
-      <Breadcrumbs items={[{ label: world.name, href: '/codex' }, { label: entityType.pluralLabel }]} />
+      {breadcrumbs}
 
       <header className="mt-4 flex items-end justify-between gap-4 border-b border-border pb-4">
         <div className="flex min-w-0 items-center gap-3">
@@ -38,12 +52,7 @@ export default async function EntityTypeListingPage(props: PageProps<'/[entityTy
             <h1 className="truncate font-serif text-3xl font-medium">{entityType.pluralLabel}</h1>
           </div>
         </div>
-        <Button asChild size="sm" className="rounded-sm">
-          <Link href={`/${entityType.id}/new`}>
-            <Plus className="size-4" />
-            Nova entidade
-          </Link>
-        </Button>
+        {createButton}
       </header>
 
       {entities.length === 0 ? (
