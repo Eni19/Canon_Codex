@@ -16,6 +16,7 @@ import { FreeArrowForm } from './graph-free-arrows'
 import { FolderMoveForm, FolderNameForm, GraphFolderNavigation, GraphFoldersPanel } from './graph-folders-panel'
 import { CreateGraphRelation, EditGraphRelation } from './graph-relation-forms'
 import { GraphStyleLegend } from './graph-style-legend'
+import { EntityTypeLegend } from '@/components/entities/entity-type-swatch'
 import form from './graph-forms.module.css'
 import type { createRelationshipScene, GraphTool, SceneState } from './relationship-scene'
 import { useGraphAutosave } from './use-graph-autosave'
@@ -102,8 +103,8 @@ function Pager({ page, total, setPage }: { page: number; total: number; setPage:
   </div>
 }
 
-export function RelationshipView({ entities, relations: initialRelations, initialFocus, initialSettings, typeLabels }: {
-  entities: GraphEntity[]; relations: Relation[]; initialFocus?: string; initialSettings: GraphSettings; typeLabels: Record<string, string>
+export function RelationshipView({ entities, relations: initialRelations, initialFocus, initialSettings, typeLabels, typeIcons }: {
+  entities: GraphEntity[]; relations: Relation[]; initialFocus?: string; initialSettings: GraphSettings; typeLabels: Record<string, string>; typeIcons: Record<string, string>
 }) {
   const [relations, setRelations] = useState(initialRelations)
   const [styles, setStyles] = useState(() => buildGraphCatalog(initialRelations.map((item) => item.type), initialSettings.styles))
@@ -150,6 +151,8 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   const scene = useRef<ReturnType<typeof createRelationshipScene> | null>(null)
   const view = useGraphAutosave(initialSettings)
   const types = useMemo(() => [...new Set(entities.map((item) => item.type))].sort(), [entities])
+  const legendTypes = useMemo(() => types.map((id) => ({ id, label: typeLabels[id] ?? id, icon: typeIcons[id] ?? '' }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')), [types, typeLabels, typeIcons])
   const relationTypes = useMemo(() => [...new Set(relations.map((item) => item.type))].sort(), [relations])
   const byId = useMemo(() => new Map(entities.map((item) => [item.id, item])), [entities])
   const membership = useMemo(() => indexGraphFolders(folders), [folders])
@@ -374,9 +377,9 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   }
 
   const sceneState = useMemo<SceneState>(() => ({
-    entities, relations, styles, annotations: visibleAnnotations, visibleIds: canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels,
+    entities, relations, styles, annotations: visibleAnnotations, visibleIds: canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels, typeIcons,
     tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd,
-  }), [entities, relations, styles, visibleAnnotations, canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
+  }), [entities, relations, styles, visibleAnnotations, canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, typeIcons, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
   const selectOnCanvas = useEffectEvent((hit: Parameters<Parameters<typeof createRelationshipScene>[1]['select']>[0], point: Point) => {
     const hitCard = hit?.kind === 'card' || hit?.kind === 'port' ? hit.id : ''
     if (hitCard && (!canvasIds.has(hitCard) || dimmedIds.has(hitCard))) return
@@ -562,7 +565,7 @@ export function RelationshipView({ entities, relations: initialRelations, initia
           <label className={form.field}>Tipo de vínculo <select className={form.control} value={relationType} onChange={(event) => changeFilters(type, event.target.value)}><option value="">Todos os vínculos</option>{relationTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
         </div>
       </>}
-      {panel === 'legend' && <><GraphStyleLegend styles={styles} relations={relations} update={updateStyle} />{notice && <p role="alert">{notice}</p>}</>}
+      {panel === 'legend' && <><EntityTypeLegend types={legendTypes} /><GraphStyleLegend styles={styles} relations={relations} update={updateStyle} />{notice && <p role="alert">{notice}</p>}</>}
       {panel === 'folders' && <GraphFoldersPanel folders={folders} memberCount={(item) => folderCounts.get(item.id) ?? 0}
         add={(name) => { const id = crypto.randomUUID(); saveFolders([...folders, { id, name, collapsed: false, members: [] }]); openFolder(id) }}
         open={openFolder} />}

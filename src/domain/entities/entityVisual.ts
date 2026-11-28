@@ -93,3 +93,19 @@ export const ENTITY_VISUAL_CATALOG: Readonly<Record<string, EntityVisual>> = Obj
 export function entityVisualFor(typeId: string): EntityVisual {
   return Object.hasOwn(ENTITY_VISUAL_CATALOG, typeId) ? ENTITY_VISUAL_CATALOG[typeId] : NEUTRAL_ENTITY_VISUAL
 }
+
+/** Names of the silhouettes for legends and screen readers (G111: the legend repeats the shape). */
+export const SILHOUETTE_LABELS: Readonly<Record<SilhouetteId, string>> = {
+  rounded: 'Retângulo', badge: 'Crachá', hexagon: 'Hexágono', ticket: 'Ingresso', pediment: 'Frontão',
+  folder: 'Pasta', flag: 'Bandeira', scroll: 'Pergaminho', foldedCorner: 'Folha dobrada', serrated: 'Lacre serrilhado',
+  tag: 'Etiqueta', organic: 'Orgânica', capsule: 'Cápsula', wavy: 'Ondulada', chamfered: 'Placa chanfrada',
+  squircle: 'Quadrado suave', arch: 'Arco', ruler: 'Régua',
+}
+
+/** Names of the textures for legends and screen readers. */
+export const TEXTURE_LABELS: Readonly<Record<TextureId, string>> = {
+  none: 'Sem textura', photoGrain: 'Grão fotográfico', honeycomb: 'Favo', contour: 'Curvas de nível', brick: 'Tijolos',
+  kraftFiber: 'Papel kraft', diagonalHatch: 'Hachura diagonal', agedStains: 'Manchas de papel velho', ruledLines: 'Pautas',
+  halftone: 'Retícula', crossHatch: 'Hachura cruzada', fur: 'Pelagem', cells: 'Células', sineWaves: 'Ondas',
+  brushedMetal: 'Metal escovado', grid: 'Quadriculado', orbitalRings: 'Anéis orbitais', verticalStripes: 'Riscas verticais',
+}

@@ -3,7 +3,8 @@ import type { Context } from 'konva/lib/Context'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { TriangleAlert } from 'lucide-react'
-import { entityTypeIconComponent } from '@/components/entities/entity-type-icon'
+import { typeIconBitmap } from '@/components/entities/type-icon-bitmap'
+import { subscribeCardDisplay } from '@/lib/canvas/cardDisplay'
 import { assetVariantUrl } from '@/lib/assetUrl'
 import { STROKE_WIDTHS, arrowFrame, arrowGeometry, arrowStrokeWidth, bendHandle, bendThrough, distanceToPath, type ArrowGeometry } from '@/domain/boards/boardArrow'
 import {
@@ -130,23 +131,10 @@ export function createBoardEditor(host: HTMLElement, options: {
     warningSrc ??= `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderToStaticMarkup(createElement(TriangleAlert)).replaceAll('currentColor', palette.warning))}`
     return loadImage(warningSrc)
   }
-  // Lucide icon of each record type, in the type-label colour. The SVG is rasterized once per icon
-  // and colour into a small bitmap: drawing the SVG image itself on every card cost more than the
-  // rest of the card.
-  const TYPE_ICON_PX = 64
-  const typeIconBitmaps = new Map<string, HTMLCanvasElement>()
-  const typeIcon = (name: string) => {
-    const key = name + '|' + palette.primary
-    const cached = typeIconBitmaps.get(key)
-    if (cached) return cached
-    const svg = renderToStaticMarkup(createElement(entityTypeIconComponent(name))).replaceAll('currentColor', palette.primary)
-    const img = loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`)
-    if (!img) return null
-    const bitmap = Object.assign(document.createElement('canvas'), { width: TYPE_ICON_PX, height: TYPE_ICON_PX })
-    bitmap.getContext('2d')?.drawImage(img, 0, 0, TYPE_ICON_PX, TYPE_ICON_PX)
-    typeIconBitmaps.set(key, bitmap)
-    return bitmap
-  }
+  // Lucide icon of each record type, in the type-label colour.
+  const typeIcon = (name: string) => typeIconBitmap(name, palette.primary, () => shapeLayer.batchDraw())
+  // Texture strength and contrast modes change how cards are drawn: redraw when they change.
+  const unsubscribeCardDisplay = subscribeCardDisplay(() => shapeLayer.batchDraw())
 
   // ---------- Medidas ----------
   const textLayouts = new Map<string, { key: string; layout: TextLayout }>()
@@ -1475,6 +1463,7 @@ export function createBoardEditor(host: HTMLElement, options: {
     zoomToFit: () => zoomToBounds(contentBounds(shapes)),
     zoomToSelection: () => zoomToBounds(contentBounds(selectedShapes()), true, Math.max(1, camera.z)),
     destroy() {
+      unsubscribeCardDisplay()
       stopEditing()
       stopCameraAnimation()
       observer.disconnect()

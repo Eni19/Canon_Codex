@@ -207,7 +207,11 @@ O contorno não muda o lugar das conexões nem a área de clique, que continua s
 inteiro do cartão. Cada tipo também tem uma textura discreta no fundo do cartão, como pautas no
 Documento, tijolos na Organização e curvas de nível no Local. Ela some quando o zoom fica tão
 afastado que os cartões viram poucos pixels, e nunca deixa o texto do cartão com contraste abaixo
-de 4,5:1.
+de 4,5:1. O ícone do tipo abre a linha com o nome do tipo. **Mais → Legenda e estilos** começa
+pela seção **Tipos de registro**, com o cartão em miniatura, o ícone, o nome e a forma e a textura
+por extenso de cada tipo presente no grafo. A intensidade da textura se escolhe em
+**Configurações → Aparência**; com o alto contraste do sistema, a textura some e o contorno fica
+mais grosso e na cor do texto.
 
 Abra **Busca e filtros** direto na barra do grafo. Ao buscar por nome, os cartões sem correspondência
 ficam esmaecidos enquanto você digita. Eles saem do recorte com **Enter** ou uma pausa na digitação.

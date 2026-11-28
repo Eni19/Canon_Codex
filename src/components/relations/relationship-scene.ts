@@ -2,6 +2,8 @@ import K from 'konva'
 import type { ShapeConfig } from 'konva/lib/Shape'
 import { traceSilhouette } from '@/domain/canvas/entitySilhouettes'
 import { entityVisualFor, NEUTRAL_ENTITY_VISUAL, type SilhouetteId, type TextureId } from '@/domain/entities/entityVisual'
+import { typeIconBitmap } from '@/components/entities/type-icon-bitmap'
+import { getCardDisplay, subscribeCardDisplay } from '@/lib/canvas/cardDisplay'
 import { readTextureTheme, texturePaint } from '@/lib/canvas/textureTheme'
 import {
   CARD_HEIGHT, CARD_WIDTH, cardCenter, fitGraph, freeArrowPoints, relationshipLanes, relationshipPoints, resizeGraph, zoomGraph,
@@ -18,7 +20,7 @@ export type SceneState = {
   entities: GraphEntity[]; relations: Relation[]; styles: GraphStyle[]; annotations: FreeArrow[]
   visibleIds: Set<string>; visibleRelationIds: Set<string>; positions: Record<string, Point>
   dimmedIds: Set<string>; dimmedRelationIds: Set<string>
-  typeLabels: Record<string, string>
+  typeLabels: Record<string, string>; typeIcons: Record<string, string>
   tool: GraphTool; source: string; target: string; selectedCard: string; selectedEdge: string; selectedArrow: string
   arrowStart: ArrowEndpoint | null; arrowEnd: ArrowEndpoint | null
 }
@@ -109,12 +111,14 @@ function createCard(item: GraphEntity, point: Point) {
   const group = new K.Group(point)
   const box = new K.Shape<CardBoxConfig>({ width: CARD_WIDTH, height: CARD_HEIGHT, sceneFunc: traceCardBox, hitFunc: hitCardBox, strokeWidth: 1.5, perfectDrawEnabled: false })
   const title = new K.Text({ x: 13, y: 11, width: 154, height: 34, fontSize: 15, lineHeight: 1.12, fontStyle: 'bold', fontFamily: 'system-ui', ellipsis: true, wrap: 'word', listening: false })
-  const type = new K.Text({ x: 13, y: 49, width: 154, fontSize: 12, fontFamily: 'system-ui', ellipsis: true, wrap: 'none', listening: false })
+  // The type's icon leads the type label, so the type never depends on colour alone (ADR-011).
+  const icon = new K.Image({ x: 13, y: 47, width: 14, height: 14, image: undefined, listening: false, perfectDrawEnabled: false })
+  const type = new K.Text({ x: 32, y: 49, width: 135, fontSize: 12, fontFamily: 'system-ui', ellipsis: true, wrap: 'none', listening: false })
   const port = new K.Circle({ x: CARD_WIDTH - 1, y: CARD_HEIGHT / 2, radius: 7, hitStrokeWidth: 16, strokeWidth: 2, perfectDrawEnabled: false })
   group.setAttr('graphHit', { kind: 'card', id: item.id } satisfies Hit)
   port.setAttr('graphHit', { kind: 'port', id: item.id } satisfies Hit)
-  group.add(box, title, type, port)
-  return { group, box, title, type, port }
+  group.add(box, title, icon, type, port)
+  return { group, box, title, icon, type, port }
 }
 function createEdge(id: string) {
   const group = new K.Group()
@@ -159,8 +163,20 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   // Below PORT_SCALE cards are a few pixels tall: only silhouette and fill are drawn.
   let texturesVisible = true
   const pixelRatio = () => cardsLayer.getCanvas().getPixelRatio()
+  // Texture strength and high-contrast modes, from the browser setting and the system (ADR-011).
+  let display = getCardDisplay()
+  const paintTexture = (texture: TextureId, target: CanvasRenderingContext2D) => {
+    if (!texturesVisible || display.textureScale === 0) return null
+    const paint = texturePaint(palette.texture, texture, target, pixelRatio())
+    return paint && { pattern: paint.pattern, opacity: paint.opacity * display.textureScale }
+  }
   const cardTexture = (texture: TextureId): TexturePaint | null =>
-    texture === 'none' ? null : (target) => texturesVisible ? texturePaint(palette.texture, texture, target, pixelRatio()) : null
+    texture === 'none' ? null : (target) => paintTexture(texture, target)
+  // Icons load asynchronously; when one is ready the cards are synced again, once per frame.
+  let iconFrame = 0
+  const iconReady = () => { if (!iconFrame) iconFrame = requestAnimationFrame(() => { iconFrame = 0; if (state) sync(state) }) }
+  const outlineColor = () => display.strongOutline ? palette.text : palette.border
+  const outlineWidth = (active = false) => (active ? 2.5 : 1.5) + (display.strongOutline ? 1.5 : 0)
   const cardBatch = new K.Shape({ listening: false, perfectDrawEnabled: false, sceneFunc(context) {
     if (!batchedCards.length) return
     const solid = new Path2D(), faded = new Path2D(), ports = new Path2D()
@@ -169,7 +185,7 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     for (const point of batchedCards) {
       const path = point.faded ? faded : solid
       traceSilhouette(path, point.silhouette, point.x, point.y, CARD_WIDTH, CARD_HEIGHT)
-      if (texturesVisible && !point.faded && point.texture !== 'none') {
+      if (texturesVisible && display.textureScale > 0 && !point.faded && point.texture !== 'none') {
         let texturePath = textured.get(point.texture)
         if (!texturePath) textured.set(point.texture, texturePath = new Path2D())
         traceSilhouette(texturePath, point.silhouette, point.x, point.y, CARD_WIDTH, CARD_HEIGHT)
@@ -177,11 +193,11 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       if (batchedPorts) { ports.moveTo(point.x + CARD_WIDTH + 6, point.y + CARD_HEIGHT / 2); ports.arc(point.x + CARD_WIDTH - 1, point.y + CARD_HEIGHT / 2, 7, 0, Math.PI * 2) }
     }
     context.save()
-    context.setAttr('lineWidth', 1.5)
-    context.setAttr('fillStyle', palette.card); context.setAttr('strokeStyle', palette.border)
+    context.setAttr('lineWidth', outlineWidth())
+    context.setAttr('fillStyle', palette.card); context.setAttr('strokeStyle', outlineColor())
     context.setAttr('globalAlpha', 1); context.fill(solid)
     for (const [texture, path] of textured) {
-      const paint = texturePaint(palette.texture, texture, context._context, pixelRatio())
+      const paint = paintTexture(texture, context._context)
       if (!paint) continue
       context.setAttr('globalAlpha', paint.opacity); context.setAttr('fillStyle', paint.pattern); context.fill(path)
     }
@@ -380,16 +396,17 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
     texturesVisible = camera.scale >= PORT_SCALE
     batchedCards = []
     batchedPorts = batch && camera.scale >= PORT_SCALE && state.tool === 'connect'
-    for (const [id, { group, box, title, type, port }] of cards) {
+    for (const [id, { group, box, title, icon, type, port }] of cards) {
       const x = group.x(), y = group.y()
       const visible = state.visibleIds.has(id) && (active === id || (x <= max.x && x + CARD_WIDTH >= min.x && y <= max.y && y + CARD_HEIGHT >= min.y))
       const selected = id === state.selectedCard || id === state.source || id === state.target || id === state.arrowStart?.cardId || id === state.arrowEnd?.cardId
       const batched = visible && batch && !selected && active !== id
-      if (batched) batchedCards.push(Object.assign({ x, y, id, silhouette: silhouetteOf(box), texture: (box.getAttr('textureId') as TextureId | undefined) ?? 'none' },state.dimmedIds.has(id) ? { faded: true } : {}))
+      if (batched) batchedCards.push(Object.assign({ x, y, id, silhouette: silhouetteOf(box), texture: (box.getAttr('textureId') as TextureId | undefined) ?? 'none' }, state.dimmedIds.has(id) ? { faded: true } : {}))
       show(cardsLayer, group, visible && !batched)
       if (visible && !batched) {
         title.visible(camera.scale >= TITLE_SCALE || selected)
         type.visible(camera.scale >= 0.72 || selected)
+        icon.visible(type.visible() && !!icon.image())
         port.visible((camera.scale >= PORT_SCALE && state.tool === 'connect') || (camera.scale >= 0.15 && selected))
       }
     }
@@ -504,10 +521,11 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
       node.group.opacity(next.dimmedIds.has(item.id) ? 0.22 : 1)
       const visual = entityVisualFor(item.type)
       if (node.box.getAttr('textureId') !== visual.texture) node.box.setAttrs({ textureId: visual.texture, texture: cardTexture(visual.texture) })
-      node.box.setAttrs({ silhouette: visual.silhouette, fill: palette.card, stroke: active ? palette.accent : palette.border, strokeWidth: active ? 2.5 : 1.5 })
+      node.box.setAttrs({ silhouette: visual.silhouette, fill: palette.card, stroke: active ? palette.accent : outlineColor(), strokeWidth: outlineWidth(active) })
       node.title.setAttrs({ text: item.title, fill: palette.text })
       const typeLabel = next.typeLabels[item.type] ?? item.type
       node.type.setAttrs({ text: typeLabel, fill: palette.muted })
+      node.icon.image(typeIconBitmap(next.typeIcons[item.type] ?? '', palette.muted, iconReady) ?? undefined)
       node.port.setAttrs({ fill: palette.accent, stroke: palette.card })
     }
     if (old?.relations !== next.relations) {
@@ -735,10 +753,11 @@ export function createRelationshipScene(host: HTMLDivElement, callbacks: Callbac
   observer.observe(host)
   const theme = new MutationObserver(() => { palette = readPalette(host); if (state) sync(state) })
   theme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  const unsubscribeDisplay = subscribeCardDisplay(() => { display = getCardDisplay(); if (state) sync(state) })
   return {
     sync, focus, fit, zoom: (factor: number) => setCamera(zoomGraph(camera, midpoint(), camera.scale * factor)),
     destroy() {
-      observer.disconnect(); theme.disconnect(); cancelAnimationFrame(frame)
+      observer.disconnect(); theme.disconnect(); unsubscribeDisplay(); cancelAnimationFrame(frame); cancelAnimationFrame(iconFrame)
       host.removeEventListener('pointerdown', down)
       window.removeEventListener('pointermove', move, true); window.removeEventListener('pointerup', up, true)
       window.removeEventListener('pointercancel', cancelPointer, true)

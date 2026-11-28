@@ -5,6 +5,8 @@ import {
   ENTITY_TEXTURES,
   ENTITY_VISUAL_CATALOG,
   NEUTRAL_ENTITY_VISUAL,
+  SILHOUETTE_LABELS,
+  TEXTURE_LABELS,
   entityVisualFor,
 } from './entityVisual'
 
@@ -57,5 +59,17 @@ describe('entityVisualFor', () => {
     for (const typeId of ['customType', 'Character', '', 'constructor', '__proto__', 'toString']) {
       expect(entityVisualFor(typeId), typeId).toBe(NEUTRAL_ENTITY_VISUAL)
     }
+  })
+})
+
+describe('legend names', () => {
+  it('names every silhouette and texture once', () => {
+    for (const labels of [SILHOUETTE_LABELS, TEXTURE_LABELS]) {
+      const names = Object.values(labels)
+      expect(names.every((name) => name.trim().length > 0)).toBe(true)
+      expect(new Set(names).size).toBe(names.length)
+    }
+    expect(Object.keys(SILHOUETTE_LABELS).sort()).toEqual([...ENTITY_SILHOUETTES].sort())
+    expect(Object.keys(TEXTURE_LABELS).sort()).toEqual([...ENTITY_TEXTURES].sort())
   })
 })

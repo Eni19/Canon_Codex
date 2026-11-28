@@ -1,10 +1,11 @@
 # ADR-011: Forma e textura próprias por tipo de registro
 
-> **Estado:** parcial; grafo e Quadros usam silhuetas e texturas, legenda e ajustes ainda não · **Última
+> **Estado:** implementado; falta o teste com pessoas do REL-07 · **Última
 > verificação:** 27/11/2026, `src/domain/entities/entityVisual.ts`,
 > `src/domain/canvas/entitySilhouettes.ts`, `src/lib/canvas/entityTextures.ts`,
-> `src/lib/canvas/textureTheme.ts`, `src/components/relations/relationship-scene.ts` e
-> `src/components/boards/board-render.ts`.
+> `src/lib/canvas/textureTheme.ts`, `src/lib/canvas/cardDisplay.ts`,
+> `src/components/relations/relationship-scene.ts`, `src/components/boards/board-render.ts` e
+> `src/components/entities/entity-type-swatch.tsx`.
 
 ## Estado atual em 27/11/2026
 
@@ -15,7 +16,10 @@ As texturas são ladrilhos gerados em `entityTextures.ts`, com cache único de a
 grafo as desenha com a opacidade de `textureOpacity` (`colorContrast.ts`), que preserva 4,5:1 nos
 textos do cartão. Os cartões dos Quadros usam a mesma silhueta (sombra, recorte e borda), a mesma
 textura com a mesma regra de tinta e opacidade (`textureTheme.ts`) e o ícone do tipo antes do
-rótulo. As fatias do #72, uma por PR e cada
+rótulo; o grafo também mostra o ícone. A legenda do grafo lista os tipos com cartão em miniatura,
+ícone, nome e forma e textura por extenso. A intensidade da textura (normal, sutil ou desligada)
+fica no navegador (`cardDisplay.ts`), e `prefers-contrast: more` ou `forced-colors: active`
+desligam a textura e reforçam o contorno. Falta o teste com pessoas do roteiro do REL-07. As fatias do #72, uma por PR e cada
 uma com medição de desempenho:
 
 1. catálogo de domínio e testes (feito);
@@ -25,7 +29,8 @@ uma com medição de desempenho:
    [relationship-graph.md](../performance/relationship-graph.md#texturas-por-tipo--27112026));
 4. silhueta, textura e ícone nos cartões dos Quadros (feito; medição em
    [board.md](../performance/board.md#silhueta-textura-e-ícone-do-tipo--27112026));
-5. legenda, intensidade da textura em Configurações, modos de contraste e guias de uso.
+5. legenda, intensidade da textura em Configurações, modos de contraste e guias de uso (feito;
+   medição em [relationship-graph.md](../performance/relationship-graph.md#ícone-legenda-e-ajuste-de-textura--27112026)).
 
 ## Contexto
 
@@ -51,6 +56,8 @@ seja o único meio de transmitir informação, e o REL-07 (acessibilidade do gra
   quando existir editor de tipos, com migração e documentação próprias.
 - As texturas são geradas em código, em ladrilhos pequenos reaproveitados por textura, tema e DPR,
   sem arquivos de imagem nem `cache()` do Konva por cartão.
+- A intensidade da textura é escolha de exibição de quem está na tela, como o tema: fica no
+  `localStorage`, vale para todos os mundos desse navegador e não muda a forma persistida do mundo.
 
 ## Alternativas consideradas
 

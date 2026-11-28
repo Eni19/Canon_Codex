@@ -37,6 +37,10 @@ salvas na hora, valem em qualquer navegador e entram no backup do mundo.
 - **Interfaces**: Organizações, Evidências e Objetos têm duas versões de página. **Interativa** é a
   caixa-arquivo, a parede ou a bancada em 3D; **Prática** mostra a mesma informação numa página
   única, mais direta.
+- **Aparência**: textura dos cartões de registro em Relacionamentos e Quadros, **Normal**, **Sutil**
+  (metade da intensidade) ou **Desligada**. Diferente das outras abas, esta escolha fica neste
+  navegador e vale para todos os mundos; não entra no backup. Com o alto contraste do sistema
+  ativo, a textura fica desligada e o contorno dos cartões reforçado, qualquer que seja a escolha.
 
 A antiga opção **Personalizar guias** foi substituída por estas configurações. Os tipos que ela
 escondia neste navegador passam para o mundo na primeira vez que a barra abre.

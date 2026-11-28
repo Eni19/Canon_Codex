@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useTransition, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Boxes, CalendarDays, Clapperboard, GripVertical, LayoutDashboard, LayoutList, Music, Network, RotateCcw, Sparkles, Wrench } from 'lucide-react'
+import { ArrowDown, ArrowUp, Boxes, CalendarDays, Clapperboard, Contrast, EyeOff, GripVertical, Layers, LayoutDashboard, LayoutList, Music, Network, Palette, RotateCcw, Sparkles, Wrench } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateWorldPreferencesAction } from '@/app/actions/world-preferences'
 import { EntityTypeIcon } from '@/components/entities/entity-type-icon'
+import { EntityTypeSwatch } from '@/components/entities/entity-type-swatch'
+import { getCardDisplay, readCardTextureSetting, writeCardTextureSetting, type CardTextureSetting } from '@/lib/canvas/cardDisplay'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { EntityTypeDefinition } from '@/domain/entities/entityType'
@@ -18,12 +20,35 @@ const TOOL_ICONS: Record<ToolId, ReactNode> = {
   soundtrack: <Music className="size-4" />,
 }
 
-type Tab = 'content' | 'tools' | 'interfaces'
+type Tab = 'content' | 'tools' | 'interfaces' | 'appearance'
 const TABS: Array<{ id: Tab; label: string; icon: ReactNode }> = [
   { id: 'content', label: 'Conteúdos', icon: <Boxes className="size-4" /> },
   { id: 'tools', label: 'Ferramentas', icon: <Wrench className="size-4" /> },
   { id: 'interfaces', label: 'Interfaces', icon: <Sparkles className="size-4" /> },
+  { id: 'appearance', label: 'Aparência', icon: <Palette className="size-4" /> },
 ]
+
+const TEXTURE_CHOICES: Array<{ id: CardTextureSetting; title: string; text: string; icon: ReactNode }> = [
+  { id: 'normal', title: 'Normal', text: 'Cada tipo tem uma textura discreta no fundo do cartão.', icon: <Layers className="size-4" /> },
+  { id: 'subtle', title: 'Sutil', text: 'A mesma textura, com metade da intensidade.', icon: <Contrast className="size-4" /> },
+  { id: 'off', title: 'Desligada', text: 'Só o contorno e o ícone distinguem os tipos.', icon: <EyeOff className="size-4" /> },
+]
+
+/** Texture strength of the record cards in the graph and the boards. It belongs to this browser. */
+function CardTextureChoice() {
+  const [setting, setSetting] = useState(readCardTextureSetting)
+  const highContrast = getCardDisplay().strongOutline
+  return <div className="space-y-3">
+    <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Textura dos cartões">
+      {TEXTURE_CHOICES.map((choice) => <Choice key={choice.id} selected={setting === choice.id} icon={choice.icon} title={choice.title} text={choice.text}
+        onSelect={() => { writeCardTextureSetting(choice.id); setSetting(choice.id) }} />)}
+    </div>
+    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+      {['character', 'location', 'event', 'document'].map((id) => <EntityTypeSwatch key={id} typeId={id} />)}
+    </div>
+    {highContrast && <p className="text-xs text-muted-foreground" role="status">O alto contraste do sistema está ativo: os cartões ficam sem textura e com contorno reforçado, qualquer que seja a escolha.</p>}
+  </div>
+}
 
 /**
  * Configurações do Codex: quais conteúdos e ferramentas aparecem na barra lateral e se as páginas
@@ -135,6 +160,10 @@ export function CodexSettingsDialog({ open, onOpenChange, worldId, entityTypes, 
                   onToggle={(on) => toggle('hiddenTools', id, !on)}
                 />
               ))}
+            </Section>}
+
+            {tab === 'appearance' && <Section title="Aparência" description="Textura dos cartões de registro em Relacionamentos e Quadros. A escolha vale para este navegador, em todos os Codex; o contorno e o ícone de cada tipo continuam aparecendo.">
+              <CardTextureChoice />
             </Section>}
 
             {tab === 'interfaces' && <Section title="Interfaces" description="Algumas páginas têm uma experiência interativa. Prefere algo mais direto? Escolha a versão prática: a mesma informação numa página única, organizada para achar rápido.">

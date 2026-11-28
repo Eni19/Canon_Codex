@@ -114,7 +114,9 @@ para onde cada documento vai ao sair e a paginação do livro são regras puras 
 ## Preferências do mundo
 
 `world.preferences` (`WorldPreferences`, `src/domain/worlds/worldPreferences.ts`, mundo v27) guarda
-o que aparece na barra lateral, a ordem dos tipos e quais tipos usam a interface prática. A janela **Configurações**
+o que aparece na barra lateral, a ordem dos tipos e quais tipos usam a interface prática. A aba
+**Aparência** é a exceção: a intensidade da textura dos cartões fica no `localStorage`
+(`src/lib/canvas/cardDisplay.ts`, [ADR-011](ADR-011-entity-type-visuals.md)). A janela **Configurações**
 (`src/components/wiki/codex-settings-dialog.tsx`), montada uma vez pelo `WikiShell` em
 `CodexSettingsProvider`, grava cada mudança na hora por `updateWorldPreferencesAction`, que normaliza
 contra os tipos do mundo e revalida o layout. A barra lateral, o menu móvel e o caderno de `/codex`

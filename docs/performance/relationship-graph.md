@@ -3,6 +3,27 @@
 > **Estado:** histórico · **Última verificação:** 27/11/2026, build de produção em Chrome headless
 > com 500 registros e 1.500 vínculos sintéticos; cada seção traz a própria data e protocolo.
 
+## Ícone, legenda e ajuste de textura · 27/11/2026
+
+Medição da fatia 5 do #72: o cartão do grafo ganha o ícone do tipo (um `Konva.Image` com o bitmap
+rasterizado, visível a partir do zoom 0,72, como o nome do tipo), e o desenho passa a consultar o
+ajuste de textura e os modos de contraste. Mesmo ambiente e protocolo da seção de texturas abaixo.
+Os ensaios anteriores moveram alguns cartões do mundo sintético, então o ponto de partida do pan
+mudou; por isso a base `b2e375a` foi medida de novo, no mesmo mundo. `PROFILE_ZOOM=5` começa os
+gestos com cerca de 0,88 de zoom, onde os ícones aparecem.
+
+| Zoom inicial | Versão | Pan p95 | Zoom p95 | Arraste p95 | `DroppedFrame` pan / zoom / arraste |
+| --- | --- | ---: | ---: | ---: | --- |
+| Enquadrado | Base | 17,14–17,51 ms | 19,79–20,34 ms | 17,10–17,22 ms | 0 / 5–9 / 1 |
+| Enquadrado | Fatia 5 | 17,59–17,76 ms | 19,76–20,71 ms | 17,15–17,43 ms | 0 / 5–14 / 1 |
+| Com ícones | Base | 17,05–17,60 ms | 34,19–34,60 ms | 17,43–17,67 ms | 1–2 / 52–65 / 0–3 |
+| Com ícones | Fatia 5 | 17,15–17,21 ms | 33,90–34,37 ms | 17,19–17,71 ms | 1–2 / 52–62 / 0–1 |
+
+O p95 ficou no máximo 0,6 ms acima da base (pan enquadrado), dentro do limite de 1 ms do #72; com
+os ícones visíveis não piorou. Com `prefers-contrast: more` emulado pelo CDP, os cartões apareceram
+sem textura e com o contorno grosso na cor do texto, e escolher **Desligada** em
+**Configurações → Aparência** tirou na hora a textura das amostras e gravou a escolha no navegador.
+
 ## Texturas por tipo · 27/11/2026
 
 Medição da fatia 3 do #72: os cartões ganham a textura do tipo, um segundo preenchimento do mesmo
