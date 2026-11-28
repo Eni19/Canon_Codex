@@ -11,7 +11,9 @@
 4. Selecione um cartão para escolher visualização mínima, cartão, retrato, dossiê ou, para locais,
    local amplo; altere imagem, tipo, status, tags e rótulo personalizado. O cartão tem o contorno e
    a textura do tipo do registro, os mesmos do grafo de **Relacionamentos**, e o ícone do tipo
-   abre o rótulo do tipo. Tipos criados no mundo mantêm o cartão retangular.
+   abre o rótulo do tipo. Tipos criados no mundo mantêm o cartão retangular. A textura segue o
+   ajuste de **Configurações → Aparência** e some com o alto contraste do sistema, quando o
+   contorno fica mais grosso e na cor do texto.
 5. O estado do canvas é salvo automaticamente por `PUT /api/boards/<boardId>` após uma pequena
    espera; o indicador mostra salvo, salvando ou erro.
 
