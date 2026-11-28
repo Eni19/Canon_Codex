@@ -218,9 +218,18 @@ leitor de tela, trackpad ou tela de toque físicos. Use um mundo sintético (vej
    arrastar um cartão até uma pasta o move; o aviso de salvamento aparece e some.
 5. **Desempenho percebido.** No mundo de 500 registros, desloque, aproxime e arraste por alguns
    segundos e anote travadas visíveis, com o modelo do dispositivo e o navegador.
+6. **Tipo pela silhueta ([ADR-011](../architecture/ADR-011-entity-type-visuals.md)).** Com pelo
+   menos três pessoas, no mundo sintético com todos os tipos (`RELATIONSHIP_STRESS_TYPES=all`),
+   afaste o zoom até os títulos sumirem e peça para identificar o tipo de dez cartões sorteados.
+   Anote acertos e confusões no perfil do grafo; uma silhueta com acerto baixo deve ser trocada.
 
 Em 25/11/2026, com o Chrome emulando toque pelo CDP, o toque em um cartão abriu a ficha e a pinça
 aproximou a câmera no mundo de 500 registros. Isso não conta como validação física.
+
+Em 27/11/2026 os cartões passaram a ter a silhueta do tipo (#72). A silhueta não usa cor: todos os
+cartões mantêm o mesmo preenchimento e a mesma borda de antes, então o contraste da borda não mudou
+e o tipo continua distinguível em escala de cinza e nas simulações de daltonismo. A lista acessível
+segue anunciando o tipo em texto. O teste com pessoas do passo 6 segue pendente.
 
 ## REL-09 — Pastas no grafo
 

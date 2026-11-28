@@ -1,7 +1,35 @@
 # Grafo de relacionamentos: verificação e desempenho
 
-> **Estado:** histórico · **Última verificação:** 25/11/2026, build de produção em Chrome headless
+> **Estado:** histórico · **Última verificação:** 27/11/2026, build de produção em Chrome headless
 > com 500 registros e 1.500 vínculos sintéticos; cada seção traz a própria data e protocolo.
+
+## Silhuetas por tipo · 27/11/2026
+
+Medição da fatia 2 do #72 ([ADR-011](../architecture/ADR-011-entity-type-visuals.md)): cada cartão
+passa a traçar a silhueta do seu tipo, no cartão individual, no lote do zoom afastado e no anel de
+destino. Mesmo ambiente da medição de 25/11 (Windows, Ryzen 7 5700U, Next.js 16.3.4), Chrome
+158.0.8127.88 headless a 1.440 × 900 e DPR 1. O mundo sintético de 500 registros e 1.500 vínculos foi
+gerado com `RELATIONSHIP_STRESS_TYPES=all`, que distribui os registros pelos 17 tipos do mundo
+semente, para todas as silhuetas aparecerem.
+
+O ensaio usa `scripts/relationship-graph-profile.mjs` com três repetições de 10 s por gesto, depois
+de uma rodada de aquecimento. O layout atual preenche o meio do canvas, então o script passou a
+procurar o ponto vazio do pan também nas margens; base e versão nova começaram o pan no mesmo ponto.
+A base é o commit `b2e375a`, que desenha o cartão retangular de antes. A versão nova foi medida
+duas vezes, a segunda depois de recompilar e com aquecimento.
+
+| Versão | Pan p95 | Zoom p95 | Arraste p95 | `DroppedFrame` pan / zoom / arraste |
+| --- | ---: | ---: | ---: | --- |
+| Base (`b2e375a`) | 17,48–17,59 ms | 20,24–20,62 ms | 17,22–17,68 ms | 0–1 / 6–11 / 0–2 |
+| Silhuetas, 1ª série | 17,69–17,74 ms | 20,13–20,30 ms | 17,18–17,52 ms | 0 / 8–9 / 1–34 |
+| Silhuetas, 2ª série | 17,66–17,77 ms | 20,43–20,94 ms | 17,16–17,72 ms | 0 / 8–15 / 0–3 |
+
+O p95 piorou no máximo 0,3 ms em pan e zoom e ficou igual no arraste, dentro do limite de 1 ms do
+#72. O p50 ficou em 16,6–16,9 ms nas três séries. A contagem de quadros perdidos variou mais entre
+repetições da mesma versão do que entre as versões: o pico de 34 no arraste apareceu só na primeira
+repetição da 1ª série, sem aquecimento, e não se repetiu na 2ª. O lote continua com dois
+preenchimentos por quadro, porque todas as silhuetas cabem num só caminho, e o clique continua
+usando o retângulo da caixa. O ensaio não mede tela física, trackpad ou toque reais.
 
 ## Desenho em lote e hit graph sob demanda · 25/11/2026
 

@@ -60,7 +60,9 @@ const empty = await evalJs(`(() => {
   const canvases = [...document.querySelectorAll('canvas')]
   const data = canvases.map((c) => c.getContext('2d').getImageData(0, 0, c.width, c.height).data)
   const r = canvases[0].getBoundingClientRect(); const w = canvases[0].width; const sx = w / r.width
-  for (let y = r.height * 0.3; y < r.height * 0.7; y += 7) for (let x = r.width * 0.3; x < r.width * 0.7; x += 7) {
+  // Prefer the middle of the canvas; a dense layout may fill it, so fall back to the margins. The pan
+  // gesture moves up to 200 px above the spot, so the fallback starts low enough to stay inside.
+  for (const [x0, x1, y0, y1] of [[0.3, 0.7, 0.3, 0.7], [0.15, 0.85, 0.35, 0.95]]) for (let y = r.height * y0; y < r.height * y1; y += 7) for (let x = r.width * x0; x < r.width * x1; x += 7) {
     const px = Math.round(x * sx), py = Math.round(y * sx)
     let clear = true
     for (let oy = -12; oy <= 12 && clear; oy += 4) for (let ox = -12; ox <= 12 && clear; ox += 4)
