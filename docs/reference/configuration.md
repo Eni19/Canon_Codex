@@ -1,6 +1,6 @@
 # Configuração e ambientes
 
-> **Estado:** implementado · **Última verificação:** 26/11/2026, `.env.example` e `next.config.ts`.
+> **Estado:** implementado · **Última verificação:** 27/11/2026, `.env.example` e `next.config.ts`.
 
 ## Variáveis suportadas
 
@@ -33,6 +33,8 @@ pnpm start. As opções de migração, backup e restauração estão em [SQLite]
 
 O next.config.ts configura:
 
+- sem o indicador do Next.js no canto da tela em desenvolvimento (`devIndicators: false`); erros de
+  compilação e de execução continuam aparecendo;
 - exclusão do workspace e arquivos SQLite do rastreamento de dependências do build;
 - limite de corpo de 2mb para Server Actions;
 - imagens Next sem otimização (unoptimized: true) porque o optimizer não encaminha o cookie do
