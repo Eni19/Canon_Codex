@@ -3,6 +3,42 @@
 > **Estado:** histórico · **Última verificação:** 27/11/2026, build de produção em Chrome headless
 > com 500 registros e 1.500 vínculos sintéticos; cada seção traz a própria data e protocolo.
 
+## Texturas por tipo · 27/11/2026
+
+Medição da fatia 3 do #72: os cartões ganham a textura do tipo, um segundo preenchimento do mesmo
+contorno com um ladrilho gerado em código. No lote, os cartões com textura são traçados de novo num
+caminho por textura (até 17 preenchimentos a mais por quadro); abaixo do zoom de 0,23 não há textura.
+Mesmo ambiente, mundo e protocolo da seção de silhuetas abaixo, com a base `b2e375a`.
+
+Com o mundo enquadrado o zoom fica abaixo de 0,23, onde a textura não é desenhada. Por isso o ensaio
+também rodou com `PROFILE_ZOOM=2` (lote com texturas, cerca de 0,44) e `PROFILE_ZOOM=4` (cartões
+completos, cerca de 0,6), que aproximam a câmera antes dos gestos. O gesto de zoom passa por todos os
+níveis de detalhe nos três casos; por isso o p95 dele é maior quando começa aproximado.
+
+| Zoom inicial | Versão | Pan p95 | Zoom p95 | Arraste p95 | `DroppedFrame` pan / zoom / arraste |
+| --- | --- | ---: | ---: | ---: | --- |
+| Enquadrado | Base | 17,48–17,59 ms | 20,24–20,62 ms | 17,22–17,68 ms | 0–1 / 6–11 / 0–2 |
+| Enquadrado | Texturas | 17,61–17,78 ms | 20,36–20,84 ms | 17,23–17,82 ms | 0 / 10–14 / 0–1 |
+| Lote com texturas | Base | 17,22–17,82 ms | 31,31–33,34 ms | 17,47–17,53 ms | 0–1 / 38–45 / 0 |
+| Lote com texturas | Texturas, 2 séries | 17,13–17,81 ms | 31,34–33,69 ms | 17,20–17,78 ms | 0–1 / 38–61 / 0–1 |
+| Cartões completos | Base | 17,09–17,15 ms | 32,94–33,84 ms | 17,48–17,78 ms | 1 / 46–55 / 0–1 |
+| Cartões completos | Texturas, 2 séries | 17,11–17,21 ms | 33,07–34,34 ms | 17,18–17,72 ms | 1 / 48–68 / 0–1 |
+
+Duas repetições ficaram fora da série e não se repetiram: um pan de 18,89 ms (9 quadros perdidos) e um
+arraste de 26,16 ms (130 perdidos), ambos com cartões completos; a tabela as deixa de fora. Sem elas, o
+p95 piorou no máximo 0,5 ms (zoom com cartões completos), dentro do limite de 1 ms do #72. Os quadros
+perdidos no zoom variaram muito dentro de cada versão, mas a segunda série com cartões completos
+ficou acima da base (60–68 contra 46–55): é o ponto a observar se o grafo denso ficar mais pesado. No
+perfil de CPU desse gesto, o preenchimento com o padrão não aparece entre os custos principais, que
+seguem sendo atributos, caches de transformação e texto do Konva.
+
+A opacidade de cada textura é calculada a partir das cores do tema: o texel mais forte chega a 1,2:1
+contra o fundo do cartão e nenhum texto do cartão fica abaixo de 4,5:1. A tinta é a mais escura entre
+o fundo da página e o texto, então no tema escuro a textura aumenta o contraste do texto em vez de
+reduzi-lo. O cache guarda no máximo 34 ladrilhos (17 texturas em duas combinações de cor e densidade
+de pixels); o teste `entityTextures.test.ts` confere que 20 trocas de tema e densidade não passam
+disso. Heap após GC no navegador não foi medido nesta fatia.
+
 ## Silhuetas por tipo · 27/11/2026
 
 Medição da fatia 2 do #72 ([ADR-011](../architecture/ADR-011-entity-type-visuals.md)): cada cartão

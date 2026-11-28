@@ -1,7 +1,8 @@
 # Registros, tipos e relações
 
 > **Estado:** implementado · **Última verificação:** 27/11/2026, rótulos em negrito contra os textos
-> de `src/` e silhuetas dos cartões do grafo em `src/domain/canvas/entitySilhouettes.ts`.
+> de `src/` e silhuetas e texturas dos cartões do grafo em `src/domain/canvas/entitySilhouettes.ts` e
+> `src/lib/canvas/entityTextures.ts`.
 
 ## Criar e editar
 
@@ -203,7 +204,10 @@ zoom afastado, quando o nome do tipo some: Personagem é um crachá de cantos be
 Evento uma bandeira com ponta à direita, Pista uma etiqueta com furo à esquerda, Documento uma
 folha com o canto dobrado, e assim por diante. Tipos criados no mundo mantêm o cartão retangular.
 O contorno não muda o lugar das conexões nem a área de clique, que continua sendo o retângulo
-inteiro do cartão.
+inteiro do cartão. Cada tipo também tem uma textura discreta no fundo do cartão, como pautas no
+Documento, tijolos na Organização e curvas de nível no Local. Ela some quando o zoom fica tão
+afastado que os cartões viram poucos pixels, e nunca deixa o texto do cartão com contraste abaixo
+de 4,5:1.
 
 Abra **Busca e filtros** direto na barra do grafo. Ao buscar por nome, os cartões sem correspondência
 ficam esmaecidos enquanto você digita. Eles saem do recorte com **Enter** ou uma pausa na digitação.

@@ -230,6 +230,10 @@ Em 27/11/2026 os cartões passaram a ter a silhueta do tipo (#72). A silhueta n�
 cartões mantêm o mesmo preenchimento e a mesma borda de antes, então o contraste da borda não mudou
 e o tipo continua distinguível em escala de cinza e nas simulações de daltonismo. A lista acessível
 segue anunciando o tipo em texto. O teste com pessoas do passo 6 segue pendente.
+As texturas entraram no mesmo dia: a opacidade é calculada para manter 4,5:1 nos textos do cartão
+sobre o texel mais escuro, e a textura só escurece o cartão. A borda continua com o mesmo contraste
+de antes; o critério de 3:1 para contorno e ícone (WCAG 1.4.11) fica para a fatia que reforça o
+contorno nos modos de alto contraste.
 
 ## REL-09 — Pastas no grafo
 

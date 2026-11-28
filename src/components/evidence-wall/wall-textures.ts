@@ -1,5 +1,6 @@
 import { CanvasTexture, SRGBColorSpace, type Texture } from 'three'
 import type { ContentTextBlock } from '@/components/editor/content-text'
+import { hash, seeded } from '@/lib/canvas/seeded'
 
 /**
  * Texturas da parede de evidências, todas desenhadas em código (nada é baixado): parede de reboco,
@@ -7,11 +8,7 @@ import type { ContentTextBlock } from '@/components/editor/content-text'
  */
 export type WallFonts = { hand: string; type: string }
 
-export function seeded(seed: number) {
-  let s = seed >>> 0
-  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 }
-}
-export const hash = (text: string) => { let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return h >>> 0 }
+export { hash, seeded }
 
 export function canvas(width: number, height: number) {
   const element = document.createElement('canvas')
