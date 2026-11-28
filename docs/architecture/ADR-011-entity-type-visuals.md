@@ -1,21 +1,25 @@
 # ADR-011: Forma e textura próprias por tipo de registro
 
-> **Estado:** parcial; o grafo usa as silhuetas, texturas e Quadros ainda não · **Última
+> **Estado:** parcial; o grafo usa silhuetas e texturas, os Quadros ainda não · **Última
 > verificação:** 27/11/2026, `src/domain/entities/entityVisual.ts`,
-> `src/domain/canvas/entitySilhouettes.ts` e `src/components/relations/relationship-scene.ts`.
+> `src/domain/canvas/entitySilhouettes.ts`, `src/lib/canvas/entityTextures.ts` e
+> `src/components/relations/relationship-scene.ts`.
 
 ## Estado atual em 27/11/2026
 
 O catálogo de identidade visual está no domínio (`entityVisual.ts`), com testes de unicidade e do
 padrão neutro. As silhuetas são traçadas por `entitySilhouettes.ts` em qualquer caminho 2D, e o grafo
 de relacionamentos já as usa no cartão individual, no lote do zoom afastado e no anel de destino.
-Os Quadros ainda desenham o cartão de hoje para todos os tipos. As fatias do #72, uma por PR e cada
+As texturas são ladrilhos gerados em `entityTextures.ts`, com cache único de até 34 ladrilhos, e o
+grafo as desenha com a opacidade de `textureOpacity` (`colorContrast.ts`), que preserva 4,5:1 nos
+textos do cartão. Os Quadros ainda desenham o cartão de hoje para todos os tipos. As fatias do #72, uma por PR e cada
 uma com medição de desempenho:
 
 1. catálogo de domínio e testes (feito);
 2. silhuetas no grafo, no cartão individual e no lote (feito; medição em
    [relationship-graph.md](../performance/relationship-graph.md#silhuetas-por-tipo--27112026));
-3. gerador de ladrilhos compartilhado e texturas no grafo;
+3. gerador de ladrilhos compartilhado e texturas no grafo (feito; medição em
+   [relationship-graph.md](../performance/relationship-graph.md#texturas-por-tipo--27112026));
 4. silhueta, textura e ícone nos cartões dos Quadros;
 5. legenda, intensidade da textura em Configurações, modos de contraste e guias de uso.
 
