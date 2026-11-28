@@ -1,6 +1,7 @@
 // Perfil de pan, zoom e arraste do grafo via CDP (DrawFrame). Use só com mundos sintéticos.
 // Uso: node scripts/relationship-graph-profile.mjs http://localhost:3211/relationships <rótulo> [segundos]
-// CHROME_PATH aponta para o Chrome; PROFILE=1 imprime as funções mais amostradas no zoom.
+// CHROME_PATH aponta para o Chrome; PROFILE=1 imprime as funções mais amostradas no zoom;
+// PROFILE_ZOOM=n aproxima n passos antes dos gestos.
 import { spawn } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -36,6 +37,13 @@ for (let i = 0; i < 100; i++) { if (await evalJs('!!document.querySelector("canv
 await sleep(1500)
 const rect = await evalJs('(() => { const c = [...document.querySelectorAll("canvas")].pop(); const r = c.parentElement.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } })()')
 const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2
+// PROFILE_ZOOM=n starts every gesture n zoom steps closer than the framed graph (about ×1.42 each),
+// to measure the levels of detail between the batched overview and full cards.
+for (let i = 0; i < Number(process.env.PROFILE_ZOOM ?? 0); i++) {
+  await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: cx, y: cy, deltaX: 0, deltaY: -27, modifiers: 2 })
+  await sleep(50)
+}
+if (process.env.PROFILE_ZOOM) await sleep(800)
 
 async function trace(gesture) {
   const events = []
