@@ -18,5 +18,6 @@ export default async function RelationshipsPage({ searchParams }: { searchParams
   const graph = buildRelationshipGraph(entities)
   const { entity } = await searchParams
   const typeLabels = Object.fromEntries(world.entityTypes.map((type) => [type.id, type.label]))
-  return <RelationshipView key={world.id} entities={graph.entities} relations={graph.relations} initialFocus={entity} initialSettings={settings} typeLabels={typeLabels} />
+  const typeIcons = Object.fromEntries(world.entityTypes.map((type) => [type.id, type.icon]))
+  return <RelationshipView key={world.id} entities={graph.entities} relations={graph.relations} initialFocus={entity} initialSettings={settings} typeLabels={typeLabels} typeIcons={typeIcons} />
 }

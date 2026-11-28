@@ -102,8 +102,8 @@ function Pager({ page, total, setPage }: { page: number; total: number; setPage:
   </div>
 }
 
-export function RelationshipView({ entities, relations: initialRelations, initialFocus, initialSettings, typeLabels }: {
-  entities: GraphEntity[]; relations: Relation[]; initialFocus?: string; initialSettings: GraphSettings; typeLabels: Record<string, string>
+export function RelationshipView({ entities, relations: initialRelations, initialFocus, initialSettings, typeLabels, typeIcons }: {
+  entities: GraphEntity[]; relations: Relation[]; initialFocus?: string; initialSettings: GraphSettings; typeLabels: Record<string, string>; typeIcons: Record<string, string>
 }) {
   const [relations, setRelations] = useState(initialRelations)
   const [styles, setStyles] = useState(() => buildGraphCatalog(initialRelations.map((item) => item.type), initialSettings.styles))
@@ -374,9 +374,9 @@ export function RelationshipView({ entities, relations: initialRelations, initia
   }
 
   const sceneState = useMemo<SceneState>(() => ({
-    entities, relations, styles, annotations: visibleAnnotations, visibleIds: canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels,
+    entities, relations, styles, annotations: visibleAnnotations, visibleIds: canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, positions: displayedPositions, typeLabels, typeIcons,
     tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd,
-  }), [entities, relations, styles, visibleAnnotations, canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
+  }), [entities, relations, styles, visibleAnnotations, canvasIds, visibleRelationIds, dimmedIds, dimmedRelationIds, displayedPositions, typeLabels, typeIcons, tool, source, target, selectedCard, selectedEdge, selectedArrow, arrowStart, arrowEnd])
   const selectOnCanvas = useEffectEvent((hit: Parameters<Parameters<typeof createRelationshipScene>[1]['select']>[0], point: Point) => {
     const hitCard = hit?.kind === 'card' || hit?.kind === 'port' ? hit.id : ''
     if (hitCard && (!canvasIds.has(hitCard) || dimmedIds.has(hitCard))) return
