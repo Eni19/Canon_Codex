@@ -4,6 +4,7 @@ import { ARROW_LABEL_FONT_SIZES, ARROW_LABEL_PADDING, BOARD_BACKGROUND, BOARD_FO
 import { traceSilhouette } from '@/domain/canvas/entitySilhouettes'
 import type { Point } from '@/domain/canvas/geometry'
 import { entityVisualFor, type SilhouetteId } from '@/domain/entities/entityVisual'
+import { getCardDisplay } from '@/lib/canvas/cardDisplay'
 import { readTextureTheme, texturePaint, type TextureTheme } from '@/lib/canvas/textureTheme'
 import type { BoardEntitySummary } from './board-types'
 
@@ -319,10 +320,12 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   // The type's texture lies under the image column and the text. On a card only a few dozen pixels
   // tall the texture is noise, so it is left out there, as below the port zoom of the graph.
   const screen = ctx.getTransform()
-  const texture = Math.hypot(screen.a, screen.b) * h >= MIN_TEXTURE_PX ? texturePaint(palette.texture, visual.texture, ctx, globalThis.devicePixelRatio || 1) : null
+  const display = getCardDisplay()
+  const texture = display.textureScale > 0 && Math.hypot(screen.a, screen.b) * h >= MIN_TEXTURE_PX
+    ? texturePaint(palette.texture, visual.texture, ctx, globalThis.devicePixelRatio || 1) : null
   if (texture) {
     ctx.save()
-    ctx.globalAlpha *= texture.opacity; ctx.fillStyle = texture.pattern
+    ctx.globalAlpha *= texture.opacity * display.textureScale; ctx.fillStyle = texture.pattern
     ctx.fillRect(0, 0, w, h)
     ctx.restore()
   }
@@ -449,10 +452,13 @@ export function drawCard(ctx: Ctx, card: BoardCard, entity: BoardEntitySummary |
   ctx.restore()
   // Borda por cima do conteúdo.
   ctx.save()
-  ctx.strokeStyle = palette.primary48Border
-  ctx.lineWidth = border
+  // In high-contrast modes the outline is thicker and in the text colour, so the silhouette still
+  // reads without the texture.
+  const outlineWidth = display.strongOutline ? border + 1.5 : border
+  ctx.strokeStyle = display.strongOutline ? palette.foreground : palette.primary48Border
+  ctx.lineWidth = outlineWidth
   if (mode === 'minimal') ctx.setLineDash([3, 3])
-  ctx.stroke(cardOutline(visual.silhouette, border / 2, border / 2, w - border, h - border))
+  ctx.stroke(cardOutline(visual.silhouette, outlineWidth / 2, outlineWidth / 2, w - outlineWidth, h - outlineWidth))
   ctx.restore()
   if (mode !== 'minimal') {
     const d = 0.65 * rem, x = w / 2 + d / 2, y = 0.35 * rem + d / 2
